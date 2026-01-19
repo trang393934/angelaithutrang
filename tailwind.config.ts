@@ -114,6 +114,26 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        "rank-up": {
+          "0%": { transform: "translateY(10px)", opacity: "0.5", backgroundColor: "hsla(142, 76%, 36%, 0.2)" },
+          "50%": { transform: "translateY(-5px)", backgroundColor: "hsla(142, 76%, 36%, 0.3)" },
+          "100%": { transform: "translateY(0)", opacity: "1", backgroundColor: "transparent" },
+        },
+        "rank-down": {
+          "0%": { transform: "translateY(-10px)", opacity: "0.5", backgroundColor: "hsla(0, 84%, 60%, 0.2)" },
+          "50%": { transform: "translateY(5px)", backgroundColor: "hsla(0, 84%, 60%, 0.3)" },
+          "100%": { transform: "translateY(0)", opacity: "1", backgroundColor: "transparent" },
+        },
+        "rank-highlight": {
+          "0%": { boxShadow: "0 0 0 0 hsla(43, 96%, 56%, 0.4)" },
+          "50%": { boxShadow: "0 0 20px 5px hsla(43, 96%, 56%, 0.6)" },
+          "100%": { boxShadow: "0 0 0 0 hsla(43, 96%, 56%, 0)" },
+        },
+        "coins-update": {
+          "0%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.2)", color: "hsl(43, 96%, 56%)" },
+          "100%": { transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -123,6 +143,10 @@ export default {
         "scale-in": "scale-in 0.6s ease-out forwards",
         "glow-pulse": "glow-pulse 4s ease-in-out infinite",
         "float": "float 6s ease-in-out infinite",
+        "rank-up": "rank-up 0.8s ease-out forwards",
+        "rank-down": "rank-down 0.8s ease-out forwards",
+        "rank-highlight": "rank-highlight 1.5s ease-out forwards",
+        "coins-update": "coins-update 0.6s ease-out forwards",
       },
     },
   },

@@ -1,14 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Trophy, Medal, Crown, Coins, Heart, Users, TrendingUp, ChevronDown, ChevronUp, Sparkles, Star } from "lucide-react";
+import { Trophy, Medal, Crown, Coins, Heart, Users, TrendingUp, ChevronDown, ChevronUp, Sparkles, Star, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { useLeaderboard, LeaderboardUser } from "@/hooks/useLeaderboard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
+
+interface RankChange {
+  rankDelta: number; // positive = moved up, negative = moved down
+  coinsDelta: number;
+  timestamp: number;
+}
 
 const getRankIcon = (rank: number, isCurrentUser: boolean = false) => {
   if (isCurrentUser && rank > 3) {
@@ -42,12 +48,25 @@ const getRankStyle = (rank: number, isCurrentUser: boolean = false) => {
   }
 };
 
+const getAnimationClass = (change: RankChange | undefined) => {
+  if (!change) return "";
+  const isRecent = Date.now() - change.timestamp < 3000; // Animation lasts 3 seconds
+  if (!isRecent) return "";
+  
+  if (change.rankDelta > 0) return "animate-rank-up";
+  if (change.rankDelta < 0) return "animate-rank-down";
+  if (change.coinsDelta > 0) return "animate-rank-highlight";
+  return "";
+};
+
 export function Leaderboard() {
   const { topUsers, topQuestions, stats, isLoading, allUsers } = useLeaderboard();
   const { t } = useLanguage();
   const [showAll, setShowAll] = useState(false);
   const [activeTab, setActiveTab] = useState<"coins" | "questions">("coins");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [rankChanges, setRankChanges] = useState<Map<string, RankChange>>(new Map());
+  const previousUsersRef = useRef<LeaderboardUser[]>([]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -56,6 +75,50 @@ export function Leaderboard() {
     };
     getUser();
   }, []);
+
+  // Track rank changes when allUsers updates
+  useEffect(() => {
+    if (previousUsersRef.current.length > 0 && allUsers.length > 0) {
+      const newChanges = new Map<string, RankChange>();
+      const now = Date.now();
+
+      allUsers.forEach(currentUser => {
+        const previousUser = previousUsersRef.current.find(u => u.user_id === currentUser.user_id);
+        
+        if (previousUser) {
+          const rankDelta = previousUser.rank - currentUser.rank; // positive means moved up
+          const coinsDelta = currentUser.lifetime_earned - previousUser.lifetime_earned;
+          
+          if (rankDelta !== 0 || coinsDelta > 0) {
+            newChanges.set(currentUser.user_id, {
+              rankDelta,
+              coinsDelta,
+              timestamp: now,
+            });
+          }
+        }
+      });
+
+      if (newChanges.size > 0) {
+        setRankChanges(prev => {
+          const merged = new Map(prev);
+          newChanges.forEach((value, key) => merged.set(key, value));
+          return merged;
+        });
+
+        // Clear old changes after animation
+        setTimeout(() => {
+          setRankChanges(prev => {
+            const updated = new Map(prev);
+            newChanges.forEach((_, key) => updated.delete(key));
+            return updated;
+          });
+        }, 3000);
+      }
+    }
+    
+    previousUsersRef.current = [...allUsers];
+  }, [allUsers]);
 
   // Find current user's rank
   const currentUserRank = allUsers.find(u => u.user_id === currentUserId);
@@ -129,13 +192,28 @@ export function Leaderboard() {
               ) : (
                 displayUsers.map((user) => {
                   const isCurrentUser = user.user_id === currentUserId;
+                  const change = rankChanges.get(user.user_id);
+                  const animationClass = getAnimationClass(change);
+                  const showRankIndicator = change && Date.now() - change.timestamp < 3000;
+                  
                   return (
                     <div
                       key={user.user_id}
-                      className={`flex items-center gap-3 px-4 py-2.5 transition-all hover:bg-gray-50 ${getRankStyle(user.rank, isCurrentUser)} border-l-2`}
+                      className={`flex items-center gap-3 px-4 py-2.5 transition-all hover:bg-gray-50 ${getRankStyle(user.rank, isCurrentUser)} border-l-2 ${animationClass}`}
                     >
-                      <div className="flex-shrink-0 w-6">
+                      <div className="flex-shrink-0 w-6 relative">
                         {getRankIcon(user.rank, isCurrentUser)}
+                        {showRankIndicator && change && change.rankDelta !== 0 && (
+                          <div className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center ${
+                            change.rankDelta > 0 ? 'bg-green-500' : 'bg-red-500'
+                          }`}>
+                            {change.rankDelta > 0 ? (
+                              <ArrowUp className="w-2.5 h-2.5 text-white" />
+                            ) : (
+                              <ArrowDown className="w-2.5 h-2.5 text-white" />
+                            )}
+                          </div>
+                        )}
                       </div>
                       <Avatar className="w-8 h-8 border border-primary/20">
                         <AvatarImage src={user.avatar_url || angelAvatar} />
@@ -154,9 +232,14 @@ export function Leaderboard() {
                       </div>
                       <div className="flex items-center gap-1 text-amber-600">
                         <Coins className="w-3.5 h-3.5" />
-                        <span className="text-sm font-semibold">
+                        <span className={`text-sm font-semibold ${showRankIndicator && change && change.coinsDelta > 0 ? 'animate-coins-update' : ''}`}>
                           {user.lifetime_earned.toLocaleString()}
                         </span>
+                        {showRankIndicator && change && change.coinsDelta > 0 && (
+                          <span className="text-xs text-green-500 font-medium animate-fade-in">
+                            +{change.coinsDelta.toLocaleString()}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
