@@ -16,6 +16,7 @@ import LightPointsDisplay from "@/components/LightPointsDisplay";
 import DailyGratitude from "@/components/DailyGratitude";
 import HealingMessagesPanel from "@/components/HealingMessagesPanel";
 import CamlyCoinDisplay from "@/components/CamlyCoinDisplay";
+import CoinWithdrawal from "@/components/CoinWithdrawal";
 import GratitudeJournal from "@/components/GratitudeJournal";
 
 interface Profile {
@@ -311,6 +312,9 @@ const Profile = () => {
             <CamlyCoinDisplay />
             <LightPointsDisplay />
           </div>
+
+          {/* Coin Withdrawal Section */}
+          <CoinWithdrawal />
 
           {/* Gratitude & Journal Section */}
           <div className="grid gap-6 md:grid-cols-2">

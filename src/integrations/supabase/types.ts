@@ -280,6 +280,48 @@ export type Database = {
         }
         Relationships: []
       }
+      coin_withdrawals: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          id: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          tx_hash: string | null
+          updated_at: string
+          user_id: string
+          wallet_address: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          tx_hash?: string | null
+          updated_at?: string
+          user_id: string
+          wallet_address: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          tx_hash?: string | null
+          updated_at?: string
+          user_id?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       community_helps: {
         Row: {
           coins_earned: number | null
@@ -1101,6 +1143,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_withdrawal_stats: {
+        Row: {
+          created_at: string
+          id: string
+          last_withdrawal_at: string | null
+          successful_withdrawals: number
+          total_requests: number
+          total_withdrawn: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_withdrawal_at?: string | null
+          successful_withdrawals?: number
+          total_requests?: number
+          total_withdrawn?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_withdrawal_at?: string | null
+          successful_withdrawals?: number
+          total_requests?: number
+          total_withdrawn?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vision_boards: {
         Row: {
           completed_goals_count: number | null
@@ -1210,6 +1285,17 @@ export type Database = {
           total_coins_today: number
         }[]
       }
+      get_user_withdrawal_status: {
+        Args: { _user_id: string }
+        Returns: {
+          available_balance: number
+          can_withdraw: boolean
+          pending_amount: number
+          remaining_daily_limit: number
+          total_withdrawn: number
+          withdrawn_today: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1228,6 +1314,14 @@ export type Database = {
           is_streak_bonus: boolean
           new_balance: number
           streak_count: number
+        }[]
+      }
+      request_coin_withdrawal: {
+        Args: { _amount: number; _user_id: string; _wallet_address: string }
+        Returns: {
+          message: string
+          success: boolean
+          withdrawal_id: string
         }[]
       }
     }
