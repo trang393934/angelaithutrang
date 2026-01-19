@@ -28,7 +28,7 @@ const BSC_TOKENS = [
   {
     symbol: "CAMLY",
     name: "Camly Coin",
-    address: "0x3CE2eb776292f2e4De2b19F1FFc14bA3D77b097D", // Camly Coin contract
+    address: "0x0910320181889fefde0bb1ca63962b0a8882e413", // Correct Camly Coin contract
     decimals: 18,
     logo: "/src/assets/camly-coin-logo.png",
   },

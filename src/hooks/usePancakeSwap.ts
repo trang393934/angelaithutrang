@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 // PancakeSwap V2 Router on BSC
 const PANCAKE_ROUTER_ADDRESS = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 const WBNB_ADDRESS = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
-const CAMLY_ADDRESS = "0x3CE2eb776292f2e4De2b19F1FFc14bA3D77b097D";
+const CAMLY_ADDRESS = "0x0910320181889fefde0bb1ca63962b0a8882e413"; // Correct Camly Coin contract
 
 // Supported tokens for swap
 export const SWAP_TOKENS = [
