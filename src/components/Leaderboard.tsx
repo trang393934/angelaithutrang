@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { useLanguage } from "@/contexts/LanguageContext";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 const getRankIcon = (rank: number) => {
@@ -36,6 +37,7 @@ const getRankStyle = (rank: number) => {
 
 export function Leaderboard() {
   const { topUsers, topQuestions, stats, isLoading, allUsers } = useLeaderboard();
+  const { t } = useLanguage();
   const [showAll, setShowAll] = useState(false);
   const [activeTab, setActiveTab] = useState<"coins" | "questions">("coins");
 
@@ -63,12 +65,12 @@ export function Leaderboard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-divine-gold" />
-            <span className="font-semibold text-primary-deep">Bảng Xếp Hạng</span>
+            <span className="font-semibold text-primary-deep">{t("leaderboard.title")}</span>
           </div>
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1 text-foreground-muted">
               <Users className="w-3.5 h-3.5" />
-              <span>{stats.total_users} người</span>
+              <span>{stats.total_users} {t("common.people")}</span>
             </div>
             <div className="flex items-center gap-1 text-amber-600">
               <Coins className="w-3.5 h-3.5" />
@@ -83,11 +85,11 @@ export function Leaderboard() {
           <TabsList className="grid w-full grid-cols-2 rounded-none bg-gray-50/50 h-10">
             <TabsTrigger value="coins" className="text-xs flex items-center gap-1.5 data-[state=active]:bg-white">
               <Coins className="w-3.5 h-3.5" />
-              Top Camly Coin
+              {t("leaderboard.topCamlyCoin")}
             </TabsTrigger>
             <TabsTrigger value="questions" className="text-xs flex items-center gap-1.5 data-[state=active]:bg-white">
               <Heart className="w-3.5 h-3.5" />
-              Câu Hỏi Hay
+              {t("leaderboard.topQuestions")}
             </TabsTrigger>
           </TabsList>
 
@@ -97,7 +99,7 @@ export function Leaderboard() {
               {displayUsers.length === 0 ? (
                 <div className="p-6 text-center">
                   <Sparkles className="w-8 h-8 text-primary/30 mx-auto mb-2" />
-                  <p className="text-sm text-foreground-muted">Chưa có dữ liệu</p>
+                  <p className="text-sm text-foreground-muted">{t("common.noData")}</p>
                 </div>
               ) : (
                 displayUsers.map((user) => (
@@ -116,10 +118,10 @@ export function Leaderboard() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">
-                        {user.display_name || "Ẩn danh"}
+                        {user.display_name || t("common.anonymous")}
                       </p>
                       {user.lifetime_earned === 0 && (
-                        <p className="text-xs text-foreground-muted">Chưa hoạt động</p>
+                        <p className="text-xs text-foreground-muted">{t("common.noActivity")}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-1 text-amber-600">
@@ -144,12 +146,12 @@ export function Leaderboard() {
                   {showAll ? (
                     <>
                       <ChevronUp className="w-4 h-4 mr-1" />
-                      Thu gọn
+                      {t("common.collapse")}
                     </>
                   ) : (
                     <>
                       <ChevronDown className="w-4 h-4 mr-1" />
-                      Xem tất cả ({allUsers.length} người)
+                      {t("common.viewAll")} ({allUsers.length} {t("common.people")})
                     </>
                   )}
                 </Button>
@@ -163,9 +165,9 @@ export function Leaderboard() {
               {topQuestions.length === 0 ? (
                 <div className="p-6 text-center">
                   <Heart className="w-8 h-8 text-pink-200 mx-auto mb-2" />
-                  <p className="text-sm text-foreground-muted">Chưa có câu hỏi nào được yêu thích</p>
+                  <p className="text-sm text-foreground-muted">{t("leaderboard.noQuestions")}</p>
                   <Link to="/community" className="text-xs text-primary hover:underline mt-1 inline-block">
-                    Xem cộng đồng →
+                    {t("leaderboard.viewCommunity")} →
                   </Link>
                 </div>
               ) : (
@@ -218,7 +220,7 @@ export function Leaderboard() {
                     className="w-full text-xs text-primary hover:text-primary-deep"
                   >
                     <TrendingUp className="w-4 h-4 mr-1" />
-                    Xem tất cả câu hỏi
+                    {t("leaderboard.viewAllQuestions")}
                   </Button>
                 </Link>
               </div>
