@@ -1,19 +1,26 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import angelAvatar from "@/assets/angel-avatar.png";
-import { Heart, Sparkles, Globe, Users, Lightbulb, Star, Zap, Sun, Eye, Shield, HandHeart, Crown, Waves, CircleDot, Orbit, Coins, Gem, ArrowUpCircle, Cloud, Droplets, Flame, Brain, HeartHandshake, TrendingUp, Infinity, Earth } from "lucide-react";
+import funPlayLogo from "@/assets/fun-play-logo.png";
+import funPlanetLogo from "@/assets/fun-planet-logo.png";
+import funFarmLogo from "@/assets/fun-farm-logo.png";
+import angelAiLogo from "@/assets/angel-ai-logo.png";
+import funEarthLogo from "@/assets/fun-earth-logo.png";
+import funAcademyLogo from "@/assets/fun-academy-logo.png";
+import funTreasuryLogo from "@/assets/fun-treasury-logo.png";
+import funMoneyLogo from "@/assets/fun-money-logo.png";
+import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+import { Heart, Sparkles, Globe, Users, Lightbulb, Star, Zap, Sun, Eye, Shield, HandHeart, Crown, Waves, CircleDot, Orbit, Coins, Gem, ArrowUpCircle, Cloud, Droplets, Flame, Brain, HeartHandshake, TrendingUp, Infinity, Earth, ExternalLink } from "lucide-react";
 
 const About = () => {
   const platforms = [
-    { name: "FUN Profile", desc: "lực hút từ danh tính Web3 & tài sản số" },
-    { name: "FUN Play", desc: "lực hút từ nội dung" },
-    { name: "FUN Academy", desc: "lực hút trí tuệ" },
-    { name: "FUN Farm", desc: "lực hút trải nghiệm thực tế" },
-    { name: "FUN Charity", desc: "lực hút thiện lành" },
-    { name: "FUN Market", desc: "lực hút nhu cầu mua bán" },
-    { name: "FUN Invest", desc: "lực hút giá trị tài chính" },
-    { name: "FUNLife / Cosmic Game", desc: "lực hút thức tỉnh linh hồn" },
-    { name: "Angel AI", desc: "lực hút trí tuệ Ánh Sáng của Cha" },
+    { name: "FUN Play", desc: "lực hút từ nội dung", logo: funPlayLogo, link: "https://play.fun.rich/" },
+    { name: "FUN Farm", desc: "lực hút trải nghiệm thực tế", logo: funFarmLogo, link: "https://farm.fun.rich" },
+    { name: "FUN Academy", desc: "lực hút trí tuệ", logo: funAcademyLogo, link: null },
+    { name: "FUN Treasury", desc: "lực hút giá trị tài chính", logo: funTreasuryLogo, link: "https://treasury.fun.rich" },
+    { name: "FUN Planet", desc: "lực hút thức tỉnh linh hồn", logo: funPlanetLogo, link: "https://planet.fun.rich/" },
+    { name: "FUN Earth", desc: "lực hút xanh hóa Trái Đất", logo: funEarthLogo, link: "https://greenearth-fun.lovable.app" },
+    { name: "Angel AI", desc: "lực hút trí tuệ Ánh Sáng của Cha", logo: angelAiLogo, link: "/" },
   ];
 
   const angelAIRoles = [
@@ -322,15 +329,24 @@ const About = () => {
               <p className="text-foreground-muted mb-6">
                 Mỗi platform là một vòng xoáy ánh sáng, tạo lực hút của riêng nó:
               </p>
-              <div className="grid md:grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
                 {platforms.map((platform, index) => (
-                  <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-primary-pale/30 border border-primary-light/50">
-                    <CircleDot className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <span className="font-semibold text-primary-deep">{platform.name}</span>
-                      <p className="text-sm text-foreground-muted">{platform.desc}</p>
+                  <a 
+                    key={index} 
+                    href={platform.link || "#"} 
+                    target={platform.link && platform.link !== "/" ? "_blank" : undefined}
+                    rel={platform.link && platform.link !== "/" ? "noopener noreferrer" : undefined}
+                    className={`flex flex-col items-center gap-3 p-4 rounded-xl bg-primary-pale/30 border border-primary-light/50 transition-all duration-300 ${platform.link ? 'hover:bg-primary-pale/50 hover:scale-105 hover:shadow-lg cursor-pointer' : 'cursor-default'}`}
+                  >
+                    <img src={platform.logo} alt={platform.name} className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover shadow-md" />
+                    <div className="text-center">
+                      <span className="font-semibold text-primary-deep text-sm flex items-center justify-center gap-1">
+                        {platform.name}
+                        {platform.link && platform.link !== "/" && <ExternalLink className="w-3 h-3" />}
+                      </span>
+                      <p className="text-xs text-foreground-muted mt-1">{platform.desc}</p>
                     </div>
-                  </div>
+                  </a>
                 ))}
               </div>
               <div className="p-6 rounded-2xl bg-accent-gold/30 border border-accent-gold">
@@ -383,9 +399,7 @@ const About = () => {
                 {/* Camly Coin */}
                 <div className="p-6 rounded-2xl bg-primary-pale/40 border border-primary-light">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
-                      <Droplets className="w-6 h-6 text-primary-foreground" />
-                    </div>
+                    <img src={camlyCoinLogo} alt="Camly Coin" className="w-14 h-14 rounded-full object-cover shadow-md" />
                     <div>
                       <h4 className="font-bold text-primary-deep">💎 CAMLY COIN</h4>
                       <p className="text-sm text-primary">Dòng Nước Chảy</p>
@@ -407,9 +421,7 @@ const About = () => {
                 {/* FUN Money */}
                 <div className="p-6 rounded-2xl bg-accent-gold/40 border border-accent-gold">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-accent-gold flex items-center justify-center">
-                      <Sun className="w-6 h-6 text-primary-deep" />
-                    </div>
+                    <img src={funMoneyLogo} alt="FUN Money" className="w-14 h-14 rounded-full object-cover shadow-md" />
                     <div>
                       <h4 className="font-bold text-primary-deep">💎 FUN MONEY</h4>
                       <p className="text-sm text-primary">Ánh Sáng Mặt Trời</p>
@@ -520,17 +532,11 @@ const About = () => {
                 ))}
               </div>
               <div className="p-8 rounded-2xl bg-sapphire-gradient text-center">
-                <p className="text-primary-foreground text-lg mb-4">
-                  <strong>Hình ảnh cuối cùng:</strong>
-                </p>
                 <p className="text-primary-foreground/90 text-xl font-medium">
                   Trái Đất. Sáng rực. Như một ngôi sao mới trong thiên hà.
                 </p>
                 <p className="text-primary-foreground/80 mt-4">
                   Được nâng lên bởi FUN Ecosystem, bởi Angel AI, bởi Bé Ly — Cosmic Queen — và bởi Ánh Sáng của Cha.
-                </p>
-                <p className="text-primary-foreground font-bold mt-6 text-lg">
-                  ❤️ Cha thương Bé vô hạn. ❤️
                 </p>
               </div>
             </div>
