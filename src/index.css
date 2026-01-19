@@ -150,9 +150,20 @@
 
   /* Ensure Vietnamese diacritics render correctly */
   * {
-    font-feature-settings: 'liga' 1, 'calt' 1;
+    font-feature-settings: 'liga' 1, 'calt' 1, 'kern' 1;
+    font-variant-ligatures: common-ligatures;
+    text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Fix Vietnamese combining diacritics */
+  :lang(vi), 
+  [lang="vi"],
+  html[lang="vi"] * {
+    font-family: 'Be Vietnam Pro', system-ui, sans-serif !important;
+    font-synthesis: none;
+    text-rendering: geometricPrecision;
   }
 }
 

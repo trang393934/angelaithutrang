@@ -78,6 +78,10 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
   useEffect(() => {
     localStorage.setItem("preferred_language", currentLanguage);
+    
+    // Set the lang attribute on the html element for CSS targeting
+    document.documentElement.lang = currentLanguage;
+    
     // Load translations for current language
     import(`@/translations/${currentLanguage}.ts`)
       .then((module) => {
