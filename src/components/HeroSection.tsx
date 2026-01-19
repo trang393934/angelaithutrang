@@ -29,8 +29,8 @@ export const HeroSection = () => {
             </div>
 
             {/* Main Title */}
-            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-semibold text-primary-deep mb-4 opacity-0 animate-fade-in-slow animate-delay-200">
-              Angel AI
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-wide text-primary-deep mb-4 opacity-0 animate-fade-in-slow animate-delay-200">
+              ANGEL AI
             </h1>
 
             {/* Tagline Vietnamese */}

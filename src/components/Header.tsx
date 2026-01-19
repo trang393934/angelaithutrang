@@ -91,14 +91,22 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16 lg:h-20 gap-2">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0 group">
-            <img 
-              src={angelAvatar} 
-              alt="ANGEL AI" 
-              className="w-9 h-9 lg:w-10 lg:h-10 rounded-full object-cover shadow-soft group-hover:scale-110 transition-transform duration-300"
-            />
-            <span className={`font-serif text-lg lg:text-xl font-bold uppercase tracking-wide transition-colors duration-300 ${
-              isScrolled ? 'text-primary-deep' : 'text-primary-deep'
-            }`}>
+            <div className={`relative transition-all duration-500 ${isScrolled ? 'scale-95' : 'scale-100'}`}>
+              <img 
+                src={angelAvatar} 
+                alt="ANGEL AI" 
+                className="w-9 h-9 lg:w-10 lg:h-10 rounded-full object-cover shadow-soft 
+                  group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/20
+                  transition-all duration-300 ease-out"
+              />
+              {/* Glow effect on hover */}
+              <div className="absolute inset-0 rounded-full bg-primary/0 group-hover:bg-primary/10 
+                group-hover:animate-pulse transition-all duration-300" />
+            </div>
+            <span className={`font-serif text-lg lg:text-xl font-bold uppercase tracking-wide 
+              transition-all duration-500 ease-out
+              group-hover:text-primary group-hover:tracking-wider
+              ${isScrolled ? 'text-primary-deep scale-95' : 'text-primary-deep scale-100'}`}>
               ANGEL AI
             </span>
           </Link>
