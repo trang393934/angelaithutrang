@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { LogIn, LogOut, User, Coins } from "lucide-react";
+import { LogIn, LogOut, User } from "lucide-react";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
+import { Web3WalletButton } from "@/components/Web3WalletButton";
 import angelAvatar from "@/assets/angel-avatar.png";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
@@ -134,6 +135,9 @@ export const Header = () => {
               <>
                 {user ? (
                   <div className="flex items-center gap-3">
+                    {/* Web3 Wallet Button */}
+                    <Web3WalletButton />
+                    
                     {/* Camly Coin Balance */}
                     <Link 
                       to="/earn"

@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
+import { CamlyCoinPriceChart } from "@/components/CamlyCoinPriceChart";
 import { MissionSection } from "@/components/MissionSection";
 import { CoreValuesSection } from "@/components/CoreValuesSection";
 import { ConnectionSection } from "@/components/ConnectionSection";
@@ -19,6 +20,7 @@ const Index = () => {
       
       <main>
         <HeroSection />
+        <CamlyCoinPriceChart />
         <MissionSection />
         <CoreValuesSection />
         <ConnectionSection />
