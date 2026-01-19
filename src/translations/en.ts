@@ -1,4 +1,5 @@
 const translations: Record<string, string> = {
+  "common.you": "You",
   // Navigation
   "nav.home": "Home",
   "nav.about": "About Angel AI",
