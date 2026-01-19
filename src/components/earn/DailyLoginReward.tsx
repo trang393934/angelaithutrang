@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { useDailyLogin } from "@/hooks/useDailyLogin";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Coins, Flame, Calendar, Gift, Sparkles, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
@@ -13,6 +14,7 @@ interface DailyLoginRewardProps {
 
 export function DailyLoginReward({ onClose }: DailyLoginRewardProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { 
     alreadyLoggedIn, 
     streakCount, 
@@ -45,7 +47,15 @@ export function DailyLoginReward({ onClose }: DailyLoginRewardProps) {
   if (!user || isLoading) return null;
 
   // Generate week days for streak display
-  const weekDays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+  const weekDays = [
+    t("earn.calendar.mon"),
+    t("earn.calendar.tue"),
+    t("earn.calendar.wed"),
+    t("earn.calendar.thu"),
+    t("earn.calendar.fri"),
+    t("earn.calendar.sat"),
+    t("earn.calendar.sun"),
+  ];
   const today = new Date().getDay();
   const currentDayInWeek = today === 0 ? 6 : today - 1; // Convert to Mon=0 format
   
@@ -58,7 +68,7 @@ export function DailyLoginReward({ onClose }: DailyLoginRewardProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
             <Gift className="h-5 w-5" />
-            Phần thưởng đăng nhập hàng ngày
+            {t("earn.login.title")}
           </DialogTitle>
         </DialogHeader>
 
@@ -112,7 +122,7 @@ export function DailyLoginReward({ onClose }: DailyLoginRewardProps) {
             
             {isStreakBonus && (
               <p className="text-orange-600 dark:text-orange-400 font-medium mt-1">
-                🎉 Chúc mừng! Bạn đã đăng nhập 7 ngày liên tiếp!
+                🎉 {t("earn.login.congrats")}
               </p>
             )}
           </div>
@@ -122,10 +132,10 @@ export function DailyLoginReward({ onClose }: DailyLoginRewardProps) {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Flame className="h-5 w-5 text-orange-500" />
-                <span className="font-medium text-foreground">Chuỗi đăng nhập</span>
+                <span className="font-medium text-foreground">{t("earn.login.streak")}</span>
               </div>
               <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {streakCount} ngày
+                {streakCount} {t("earn.login.days")}
               </span>
             </div>
 
@@ -167,8 +177,7 @@ export function DailyLoginReward({ onClose }: DailyLoginRewardProps) {
             {/* Days until bonus */}
             {getStreakDaysUntilBonus() > 0 && (
               <p className="text-center text-sm text-muted-foreground mt-3">
-                Còn <span className="font-bold text-orange-600">{getStreakDaysUntilBonus()}</span> ngày 
-                để nhận <span className="font-bold text-orange-600">1000 Camly Coin</span> bonus!
+                {getStreakDaysUntilBonus()} {t("earn.login.daysUntilBonus")} <span className="font-bold text-orange-600">1000 Camly Coin</span> {t("earn.login.bonus")}
               </p>
             )}
           </div>
@@ -177,16 +186,16 @@ export function DailyLoginReward({ onClose }: DailyLoginRewardProps) {
           <div className="space-y-2">
             <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Phần thưởng đăng nhập
+              {t("earn.login.rewards")}
             </h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="bg-white/50 dark:bg-black/20 rounded-lg p-2 flex items-center gap-2">
                 <Coins className="h-4 w-4 text-amber-500" />
-                <span>Mỗi ngày: <strong>100</strong></span>
+                <span>{t("earn.login.perDay")} <strong>100</strong></span>
               </div>
               <div className="bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 rounded-lg p-2 flex items-center gap-2">
                 <Gift className="h-4 w-4 text-orange-500" />
-                <span>Ngày 7: <strong>1000</strong></span>
+                <span>{t("earn.login.day7")} <strong>1000</strong></span>
               </div>
             </div>
           </div>
@@ -195,7 +204,7 @@ export function DailyLoginReward({ onClose }: DailyLoginRewardProps) {
             onClick={handleClose} 
             className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
           >
-            Tuyệt vời!
+            {t("earn.login.awesome")}
           </Button>
         </div>
       </DialogContent>

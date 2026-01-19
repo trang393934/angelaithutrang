@@ -1,5 +1,6 @@
 import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
@@ -27,9 +28,12 @@ interface EarnActivityProps {
   rewardPerAction: string;
   color: string;
   linkTo?: string;
+  completedText: string;
+  remainingText: string;
+  goToText: string;
 }
 
-function EarnActivity({ icon, title, description, rewarded, max, rewardPerAction, color, linkTo }: EarnActivityProps) {
+function EarnActivity({ icon, title, description, rewarded, max, rewardPerAction, color, linkTo, completedText, remainingText, goToText }: EarnActivityProps) {
   const remaining = Math.max(0, max - rewarded);
   const progress = max > 0 ? (rewarded / max) * 100 : 0;
   const isComplete = remaining === 0;
@@ -41,7 +45,7 @@ function EarnActivity({ icon, title, description, rewarded, max, rewardPerAction
         "p-2 rounded-lg cursor-pointer transition-all hover:scale-110 hover:shadow-md",
         isComplete ? "bg-green-100 dark:bg-green-900/30" : color
       )}
-      title={`Đi đến ${title}`}
+      title={`${goToText} ${title}`}
     >
       {icon}
     </Link>
@@ -72,7 +76,7 @@ function EarnActivity({ icon, title, description, rewarded, max, rewardPerAction
                 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
             )}>
-              {isComplete ? "Hoàn thành" : `Còn ${remaining} lượt`}
+              {isComplete ? completedText : `${remaining} ${remainingText}`}
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
@@ -91,6 +95,7 @@ function EarnActivity({ icon, title, description, rewarded, max, rewardPerAction
 
 export function EarnProgress() {
   const status = useExtendedRewardStatus();
+  const { t } = useLanguage();
 
   if (status.isLoading) {
     return (
@@ -110,83 +115,107 @@ export function EarnProgress() {
   const activities: EarnActivityProps[] = [
     {
       icon: <LogIn className="h-5 w-5 text-blue-600" />,
-      title: "Đăng nhập hàng ngày",
-      description: "Đăng nhập mỗi ngày để nhận thưởng, streak 7 ngày = 1000 coin bonus",
+      title: t("earn.activity.dailyLogin"),
+      description: t("earn.activity.dailyLoginDesc"),
       rewarded: status.loginsRewarded,
       max: 1,
       rewardPerAction: "100-1000 coin",
       color: "bg-blue-100 dark:bg-blue-900/30",
-      linkTo: undefined, // Already logged in
+      linkTo: undefined,
+      completedText: t("earn.completed"),
+      remainingText: t("earn.remaining"),
+      goToText: t("common.goTo"),
     },
     {
       icon: <MessageCircle className="h-5 w-5 text-purple-600" />,
-      title: "Câu hỏi chất lượng",
-      description: "Đặt câu hỏi có ý nghĩa và sâu sắc",
+      title: t("earn.activity.questions"),
+      description: t("earn.activity.questionsDesc"),
       rewarded: status.questionsRewarded,
       max: 10,
-      rewardPerAction: "1000-5000 coin/câu",
+      rewardPerAction: "1000-5000 coin",
       color: "bg-purple-100 dark:bg-purple-900/30",
       linkTo: "/chat",
+      completedText: t("earn.completed"),
+      remainingText: t("earn.remaining"),
+      goToText: t("common.goTo"),
     },
     {
       icon: <BookOpen className="h-5 w-5 text-emerald-600" />,
-      title: "Nhật ký biết ơn",
-      description: "Viết nhật ký sau 8 giờ tối (>50 ký tự)",
+      title: t("earn.activity.journal"),
+      description: t("earn.activity.journalDesc"),
       rewarded: status.journalsRewarded,
       max: 3,
-      rewardPerAction: "5000-9000 coin/bài",
+      rewardPerAction: "5000-9000 coin",
       color: "bg-emerald-100 dark:bg-emerald-900/30",
       linkTo: "/profile",
+      completedText: t("earn.completed"),
+      remainingText: t("earn.remaining"),
+      goToText: t("common.goTo"),
     },
     {
       icon: <Share2 className="h-5 w-5 text-pink-600" />,
-      title: "Chia sẻ nội dung",
-      description: "Chia sẻ lên mạng xã hội",
+      title: t("earn.activity.share"),
+      description: t("earn.activity.shareDesc"),
       rewarded: status.sharesRewarded,
       max: 5,
-      rewardPerAction: "500 coin/lần",
+      rewardPerAction: "500 coin",
       color: "bg-pink-100 dark:bg-pink-900/30",
       linkTo: "/chat",
+      completedText: t("earn.completed"),
+      remainingText: t("earn.remaining"),
+      goToText: t("common.goTo"),
     },
     {
       icon: <MessageSquare className="h-5 w-5 text-orange-600" />,
-      title: "Phản hồi hữu ích",
-      description: "Gửi phản hồi chi tiết (>100 ký tự)",
+      title: t("earn.activity.feedback"),
+      description: t("earn.activity.feedbackDesc"),
       rewarded: status.feedbacksRewarded,
       max: 2,
-      rewardPerAction: "2000 coin/lần",
+      rewardPerAction: "2000 coin",
       color: "bg-orange-100 dark:bg-orange-900/30",
       linkTo: "/feedback",
+      completedText: t("earn.completed"),
+      remainingText: t("earn.remaining"),
+      goToText: t("common.goTo"),
     },
     {
       icon: <Lightbulb className="h-5 w-5 text-yellow-600" />,
-      title: "Đóng góp ý tưởng",
-      description: "Gửi ý tưởng xây dựng app",
+      title: t("earn.activity.ideas"),
+      description: t("earn.activity.ideasDesc"),
       rewarded: status.ideasSubmitted,
       max: 2,
-      rewardPerAction: "1000 coin khi duyệt",
+      rewardPerAction: "1000 coin",
       color: "bg-yellow-100 dark:bg-yellow-900/30",
       linkTo: "/ideas",
+      completedText: t("earn.completed"),
+      remainingText: t("earn.remaining"),
+      goToText: t("common.goTo"),
     },
     {
       icon: <Upload className="h-5 w-5 text-cyan-600" />,
-      title: "Tải lên kiến thức",
-      description: "Đóng góp tài liệu vào kho kiến thức",
+      title: t("earn.activity.upload"),
+      description: t("earn.activity.uploadDesc"),
       rewarded: status.knowledgeUploads,
       max: 2,
-      rewardPerAction: "2000 coin khi duyệt",
+      rewardPerAction: "2000 coin",
       color: "bg-cyan-100 dark:bg-cyan-900/30",
       linkTo: "/knowledge",
+      completedText: t("earn.completed"),
+      remainingText: t("earn.remaining"),
+      goToText: t("common.goTo"),
     },
     {
       icon: <Users className="h-5 w-5 text-indigo-600" />,
-      title: "Hỗ trợ cộng đồng",
-      description: "Giúp đỡ thành viên khác",
+      title: t("earn.activity.community"),
+      description: t("earn.activity.communityDesc"),
       rewarded: status.communityHelpsRewarded,
       max: 5,
-      rewardPerAction: "300 coin/lần",
+      rewardPerAction: "300 coin",
       color: "bg-indigo-100 dark:bg-indigo-900/30",
       linkTo: "/community",
+      completedText: t("earn.completed"),
+      remainingText: t("earn.remaining"),
+      goToText: t("common.goTo"),
     },
   ];
 
@@ -195,7 +224,7 @@ export function EarnProgress() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Coins className="h-5 w-5 text-amber-600" />
-          <h2 className="text-lg font-semibold">Tích lũy ánh sáng hôm nay</h2>
+          <h2 className="text-lg font-semibold">{t("earn.progressTitle")}</h2>
         </div>
         <div className="flex items-center gap-2">
           <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
@@ -208,7 +237,7 @@ export function EarnProgress() {
       {status.currentStreak > 0 && (
         <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
           <Flame className="h-4 w-4" />
-          <span>Streak: {status.currentStreak} ngày liên tiếp</span>
+          <span>Streak: {status.currentStreak} {t("earn.streakDays")}</span>
         </div>
       )}
 
