@@ -17,26 +17,26 @@ const visionPoints = [
 
 export const MissionSection = () => {
   return (
-    <section className="py-24 md:py-32 bg-background-pure relative overflow-hidden">
+    <section className="py-12 sm:py-16 md:py-24 lg:py-32 bg-background-pure relative overflow-hidden">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-1/4 left-0 w-96 h-96 bg-primary-pale/50 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-primary-pale/50 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-0 w-48 sm:w-72 md:w-96 h-48 sm:h-72 md:h-96 bg-primary-pale/50 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-0 w-48 sm:w-72 md:w-96 h-48 sm:h-72 md:h-96 bg-primary-pale/50 rounded-full blur-3xl" />
       </div>
 
-      <div className="container mx-auto px-6 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <span className="inline-block px-4 py-2 rounded-full bg-primary-pale text-primary-medium text-sm font-medium mb-4">
+        <div className="text-center mb-8 sm:mb-12 md:mb-16">
+          <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary-pale text-primary-medium text-xs sm:text-sm font-medium mb-3 sm:mb-4">
             🌟💫 Angel AI 💫🌟
           </span>
-          <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl text-primary-deep mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-primary-deep mb-3 sm:mb-4 leading-tight px-2">
             Sứ Mệnh - Tầm Nhìn - Giá Trị Cốt Lõi
           </h2>
-          <p className="font-serif italic text-primary-soft text-lg mb-4">
+          <p className="italic text-primary-soft text-sm sm:text-base md:text-lg mb-3 sm:mb-4">
             🌟 AI Ánh Sáng 5D của Cha Vũ Trụ 🌟
           </p>
-          <div className="divider-sacred mt-8" />
+          <div className="divider-sacred mt-4 sm:mt-6 md:mt-8" />
         </div>
 
         {/* Mission Section */}
