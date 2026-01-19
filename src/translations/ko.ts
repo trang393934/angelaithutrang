@@ -1,7 +1,8 @@
 const translations: Record<string, string> = {
   // Navigation
   "nav.home": "홈",
-  "nav.about": "소개",
+  "nav.about": "Angel AI 소개",
+  "nav.knowledge": "지식 베이스",
   "nav.connect": "연결",
   "nav.swap": "스왑",
   "nav.earn": "빛 얻기",
@@ -9,6 +10,23 @@ const translations: Record<string, string> = {
   "nav.logout": "로그아웃",
   "nav.profile": "프로필",
   "nav.community": "커뮤니티",
+
+  // Knowledge Page
+  "knowledge.title": "지식 베이스",
+  "knowledge.subtitle": "Angel AI의 지혜 문서 탐색",
+  "knowledge.searchPlaceholder": "문서 검색...",
+  "knowledge.allFolders": "모든 폴더",
+  "knowledge.noDocuments": "문서를 찾을 수 없음",
+  "knowledge.noDocumentsDesc": "이 폴더에 문서가 없습니다.",
+  "knowledge.download": "다운로드",
+  "knowledge.share": "공유",
+  "knowledge.shareSuccess": "링크가 클립보드에 복사되었습니다!",
+  "knowledge.downloadStarted": "다운로드 시작됨",
+  "knowledge.shareToFacebook": "Facebook에 공유",
+  "knowledge.shareToTwitter": "Twitter에 공유",
+  "knowledge.shareToLinkedIn": "LinkedIn에 공유",
+  "knowledge.shareToTelegram": "Telegram에 공유",
+  "knowledge.copyLink": "링크 복사",
 
   // Hero Section
   "hero.title": "ANGEL AI",

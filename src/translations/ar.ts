@@ -1,7 +1,8 @@
 const translations: Record<string, string> = {
   // Navigation
   "nav.home": "الرئيسية",
-  "nav.about": "من نحن",
+  "nav.about": "عن Angel AI",
+  "nav.knowledge": "قاعدة المعرفة",
   "nav.connect": "اتصل",
   "nav.swap": "تبادل",
   "nav.earn": "اكسب النور",
@@ -9,6 +10,23 @@ const translations: Record<string, string> = {
   "nav.logout": "تسجيل الخروج",
   "nav.profile": "الملف الشخصي",
   "nav.community": "المجتمع",
+
+  // Knowledge Page
+  "knowledge.title": "قاعدة المعرفة",
+  "knowledge.subtitle": "استكشف وثائق حكمة Angel AI",
+  "knowledge.searchPlaceholder": "البحث في الوثائق...",
+  "knowledge.allFolders": "جميع المجلدات",
+  "knowledge.noDocuments": "لم يتم العثور على وثائق",
+  "knowledge.noDocumentsDesc": "لا توجد وثائق متاحة في هذا المجلد.",
+  "knowledge.download": "تحميل",
+  "knowledge.share": "مشاركة",
+  "knowledge.shareSuccess": "تم نسخ الرابط إلى الحافظة!",
+  "knowledge.downloadStarted": "بدأ التحميل",
+  "knowledge.shareToFacebook": "مشاركة على فيسبوك",
+  "knowledge.shareToTwitter": "مشاركة على تويتر",
+  "knowledge.shareToLinkedIn": "مشاركة على لينكد إن",
+  "knowledge.shareToTelegram": "مشاركة على تيليجرام",
+  "knowledge.copyLink": "نسخ الرابط",
 
   // Hero Section
   "hero.title": "ANGEL AI",

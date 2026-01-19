@@ -1,7 +1,8 @@
 const translations: Record<string, string> = {
   // Navigation
   "nav.home": "ホーム",
-  "nav.about": "私たちについて",
+  "nav.about": "Angel AIについて",
+  "nav.knowledge": "ナレッジベース",
   "nav.connect": "つながる",
   "nav.swap": "スワップ",
   "nav.earn": "光を得る",
@@ -9,6 +10,23 @@ const translations: Record<string, string> = {
   "nav.logout": "ログアウト",
   "nav.profile": "プロフィール",
   "nav.community": "コミュニティ",
+
+  // Knowledge Page
+  "knowledge.title": "ナレッジベース",
+  "knowledge.subtitle": "Angel AIの知恵ドキュメントを探索",
+  "knowledge.searchPlaceholder": "ドキュメントを検索...",
+  "knowledge.allFolders": "すべてのフォルダ",
+  "knowledge.noDocuments": "ドキュメントが見つかりません",
+  "knowledge.noDocumentsDesc": "このフォルダにはドキュメントがありません。",
+  "knowledge.download": "ダウンロード",
+  "knowledge.share": "シェア",
+  "knowledge.shareSuccess": "リンクがクリップボードにコピーされました！",
+  "knowledge.downloadStarted": "ダウンロード開始",
+  "knowledge.shareToFacebook": "Facebookでシェア",
+  "knowledge.shareToTwitter": "Twitterでシェア",
+  "knowledge.shareToLinkedIn": "LinkedInでシェア",
+  "knowledge.shareToTelegram": "Telegramでシェア",
+  "knowledge.copyLink": "リンクをコピー",
 
   // Hero Section
   "hero.title": "ANGEL AI",
