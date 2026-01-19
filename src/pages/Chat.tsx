@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Sparkles, Lock, Coins } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Lock, Coins, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -301,14 +301,23 @@ const Chat = () => {
                 </div>
               </div>
             </div>
-            {dailyStatus && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
-                <Coins className="w-4 h-4 text-amber-600" />
-                <span className="text-xs text-amber-700 font-medium">
-                  {dailyStatus.questionsRemaining}/10 lượt thưởng
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {dailyStatus && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
+                  <Coins className="w-4 h-4 text-amber-600" />
+                  <span className="text-xs text-amber-700 font-medium">
+                    {dailyStatus.questionsRemaining}/10
+                  </span>
+                </div>
+              )}
+              <Link
+                to="/community"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 rounded-full border border-pink-200/50 hover:bg-pink-100 transition-colors"
+              >
+                <Heart className="w-4 h-4 text-pink-500" />
+                <span className="text-xs text-pink-700 font-medium hidden sm:inline">Cộng đồng</span>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
