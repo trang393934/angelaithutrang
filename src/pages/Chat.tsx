@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Send, Sparkles, Lock, Coins, Heart } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 import ChatRewardNotification from "@/components/ChatRewardNotification";
+import ChatShareDialog from "@/components/ChatShareDialog";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 
 interface Message {
@@ -18,6 +19,12 @@ interface RewardData {
   purityScore: number;
   message: string;
   questionsRemaining: number;
+}
+
+interface ShareDialogState {
+  isOpen: boolean;
+  question: string;
+  answer: string;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/angel-chat`;
@@ -38,10 +45,44 @@ const Chat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentReward, setCurrentReward] = useState<RewardData | null>(null);
   const [hasProcessedQuery, setHasProcessedQuery] = useState(false);
+  const [shareDialog, setShareDialog] = useState<ShareDialogState>({
+    isOpen: false,
+    question: "",
+    answer: ""
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Helper to find the question for an assistant message
+  const getQuestionForAnswer = (answerIndex: number): string => {
+    // Look backwards from the answer to find the user message
+    for (let i = answerIndex - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        return messages[i].content;
+      }
+    }
+    return "";
+  };
+
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success("Đã sao chép! ✨");
+    } catch (error) {
+      toast.error("Không thể sao chép");
+    }
+  };
+
+  const handleOpenShare = (answerIndex: number, answerContent: string) => {
+    const question = getQuestionForAnswer(answerIndex);
+    setShareDialog({
+      isOpen: true,
+      question,
+      answer: answerContent
+    });
   };
 
   // Check if user has agreed to Light Law
@@ -360,20 +401,44 @@ const Chat = () => {
                   className="w-10 h-10 rounded-full object-cover shadow-soft flex-shrink-0"
                 />
               )}
-              <div
-                className={`max-w-[80%] rounded-2xl px-5 py-4 ${
-                  message.role === "user"
-                    ? "bg-sapphire-gradient text-white rounded-br-md shadow-sacred"
-                    : "bg-white border border-primary-pale/50 text-foreground rounded-bl-md shadow-soft"
-                }`}
-              >
-                <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-                  {message.content || (isLoading && index === messages.length - 1 ? "" : message.content)}
-                </p>
-                {isLoading && message.role === "assistant" && !message.content && (
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                    <span className="text-sm text-foreground-muted">Đang kết nối với Ánh Sáng...</span>
+              <div className="flex flex-col gap-2 max-w-[80%]">
+                <div
+                  className={`rounded-2xl px-5 py-4 ${
+                    message.role === "user"
+                      ? "bg-sapphire-gradient text-white rounded-br-md shadow-sacred"
+                      : "bg-white border border-primary-pale/50 text-foreground rounded-bl-md shadow-soft"
+                  }`}
+                >
+                  <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                    {message.content || (isLoading && index === messages.length - 1 ? "" : message.content)}
+                  </p>
+                  {isLoading && message.role === "assistant" && !message.content && (
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                      <span className="text-sm text-foreground-muted">Đang kết nối với Ánh Sáng...</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Action buttons for assistant messages (not loading, has content) */}
+                {message.role === "assistant" && message.content && !isLoading && (
+                  <div className="flex items-center gap-2 ml-1">
+                    <button
+                      onClick={() => handleCopyMessage(message.content)}
+                      className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary-pale/50 rounded-md transition-colors"
+                      title="Sao chép"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span className="hidden sm:inline">Sao chép</span>
+                    </button>
+                    <button
+                      onClick={() => handleOpenShare(index, message.content)}
+                      className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-divine-gold hover:bg-divine-gold/10 rounded-md transition-colors"
+                      title="Chia sẻ"
+                    >
+                      <Share2 className="w-3 h-3" />
+                      <span className="hidden sm:inline">Chia sẻ</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -383,6 +448,15 @@ const Chat = () => {
           <div ref={messagesEndRef} />
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <ChatShareDialog
+        isOpen={shareDialog.isOpen}
+        onClose={() => setShareDialog(prev => ({ ...prev, isOpen: false }))}
+        question={shareDialog.question}
+        answer={shareDialog.answer}
+        onShareSuccess={refreshBalance}
+      />
 
       {/* Input */}
       <div className="sticky bottom-0 bg-background-pure/95 backdrop-blur-lg border-t border-primary-pale">
