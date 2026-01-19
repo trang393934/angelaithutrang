@@ -19,14 +19,37 @@ import {
   Lightbulb,
   Gift,
   ArrowRight,
-  Eye
+  Eye,
+  Wallet
 } from "lucide-react";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 
 export default function Earn() {
   const { user } = useAuth();
   const { balance, lifetimeEarned, isLoading } = useCamlyCoin();
   const { t } = useLanguage();
+  const [totalWithdrawn, setTotalWithdrawn] = useState<number>(0);
+
+  // Fetch total withdrawn from user_withdrawal_stats
+  useEffect(() => {
+    const fetchTotalWithdrawn = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('user_withdrawal_stats')
+        .select('total_withdrawn')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!error && data) {
+        setTotalWithdrawn(data.total_withdrawn || 0);
+      }
+    };
+
+    fetchTotalWithdrawn();
+  }, [user]);
 
   if (!user) {
     return (
@@ -74,7 +97,7 @@ export default function Earn() {
           </div>
 
           {/* Balance Overview */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="bg-gradient-to-br from-amber-500 to-orange-500 text-white border-0">
               <div className="p-4 pb-2">
                 <div className="text-white/80 text-sm font-medium flex items-center gap-2">
@@ -104,6 +127,23 @@ export default function Earn() {
                   <Sparkles className="w-12 h-12" />
                   <span className="text-4xl font-bold">
                     {isLoading ? "..." : lifetimeEarned.toLocaleString()}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0">
+              <div className="p-4 pb-2">
+                <div className="text-white/80 text-sm font-medium flex items-center gap-2">
+                  <Wallet className="h-4 w-4" />
+                  {t("earn.totalWithdrawn")}
+                </div>
+              </div>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <Wallet className="w-12 h-12" />
+                  <span className="text-4xl font-bold">
+                    {totalWithdrawn.toLocaleString()}
                   </span>
                 </div>
               </CardContent>

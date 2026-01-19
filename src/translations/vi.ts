@@ -138,6 +138,7 @@ const translations: Record<string, string> = {
   "earn.balance": "Số dư hiện tại",
   "earn.lifetime": "Tổng đã kiếm",
   "earn.daily": "Mục tiêu hôm nay",
+  "earn.totalWithdrawn": "Tổng đã rút",
   "earn.streak": "Chuỗi đăng nhập",
   "earn.actions": "Hành động nhanh",
   "earn.loginRequired": "Đăng nhập để bắt đầu kiếm Camly Coin thông qua các hoạt động hữu ích",
