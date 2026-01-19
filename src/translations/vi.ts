@@ -439,6 +439,17 @@ const translations: Record<string, string> = {
   "knowledge.filterAll": "Tất cả",
   "knowledge.filterProcessed": "Đã xử lý",
   "knowledge.filterPending": "Đang chờ",
+
+  // Early Adopter Rewards
+  "earlyAdopter.congratulations": "Chúc mừng Early Adopter!",
+  "earlyAdopter.rank": "Thứ hạng",
+  "earlyAdopter.description": "Bạn là một trong 100 người dùng đầu tiên của Angel AI đã hỏi 10 câu hỏi hợp lệ! Đây là phần thưởng đặc biệt dành riêng cho bạn.",
+  "earlyAdopter.thankYou": "Cảm ơn bạn đã đồng hành cùng Angel AI từ những ngày đầu tiên!",
+  "earlyAdopter.awesome": "Tuyệt vời! ✨",
+  "earlyAdopter.progress": "Tiến độ Early Adopter",
+  "earlyAdopter.questionsNeeded": "câu hỏi để nhận thưởng",
+  "earlyAdopter.claimed": "Đã nhận thưởng!",
+  "earlyAdopter.notEligible": "Chưa đủ điều kiện",
 };
 
 export default translations;

@@ -522,6 +522,42 @@ export type Database = {
         }
         Relationships: []
       }
+      early_adopter_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          is_rewarded: boolean
+          registered_at: string
+          reward_amount: number
+          rewarded_at: string | null
+          updated_at: string
+          user_id: string
+          valid_questions_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_rewarded?: boolean
+          registered_at?: string
+          reward_amount?: number
+          rewarded_at?: string | null
+          updated_at?: string
+          user_id: string
+          valid_questions_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_rewarded?: boolean
+          registered_at?: string
+          reward_amount?: number
+          rewarded_at?: string | null
+          updated_at?: string
+          user_id?: string
+          valid_questions_count?: number
+        }
+        Relationships: []
+      }
       gratitude_journal: {
         Row: {
           content: string
@@ -1292,6 +1328,7 @@ export type Database = {
           questions_rewarded: number
         }[]
       }
+      get_early_adopter_rank: { Args: { p_user_id: string }; Returns: number }
       get_extended_daily_reward_status: {
         Args: { _user_id: string }
         Returns: {
@@ -1333,6 +1370,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_early_adopter_questions: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       is_admin: { Args: never; Returns: boolean }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
       is_user_suspended: { Args: { _user_id: string }; Returns: boolean }
@@ -1346,6 +1387,16 @@ export type Database = {
           streak_count: number
         }[]
       }
+      process_early_adopter_reward: {
+        Args: { p_user_id: string }
+        Returns: {
+          coins_awarded: number
+          message: string
+          success: boolean
+          user_rank: number
+        }[]
+      }
+      register_early_adopter: { Args: { p_user_id: string }; Returns: boolean }
       request_coin_withdrawal: {
         Args: { _amount: number; _user_id: string; _wallet_address: string }
         Returns: {

@@ -11,10 +11,12 @@ import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 import ChatRewardNotification from "@/components/ChatRewardNotification";
 import ChatShareDialog from "@/components/ChatShareDialog";
+import EarlyAdopterRewardPopup from "@/components/EarlyAdopterRewardPopup";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
 import { useImageGeneration } from "@/hooks/useImageGeneration";
 import { useImageAnalysis } from "@/hooks/useImageAnalysis";
+import { useEarlyAdopterReward } from "@/hooks/useEarlyAdopterReward";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +55,12 @@ const Chat = () => {
   const { t } = useLanguage();
   const { dailyStatus, refreshBalance } = useCamlyCoin();
   const { sharesRewarded, sharesRemaining, refreshStatus: refreshExtendedStatus } = useExtendedRewardStatus();
+  const { 
+    showRewardPopup: showEarlyAdopterPopup, 
+    rewardResult: earlyAdopterResult, 
+    incrementQuestionCount, 
+    dismissRewardPopup: dismissEarlyAdopterPopup 
+  } = useEarlyAdopterReward();
   const [hasAgreed, setHasAgreed] = useState<boolean | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -254,11 +262,16 @@ const Chat = () => {
           questionsRemaining: data.questionsRemaining,
         });
         refreshBalance();
+        
+        // Increment early adopter question count for valid non-greeting questions
+        if (!data.isGreeting && !data.isSpam && !data.isDuplicate) {
+          incrementQuestionCount();
+        }
       }
     } catch (error) {
       console.error("Reward analysis error:", error);
     }
-  }, [user, refreshBalance]);
+  }, [user, refreshBalance, incrementQuestionCount]);
 
   const handleGenerateImage = async (prompt: string) => {
     setMessages(prev => [...prev, { role: "user", content: `🎨 ${t("chat.createImage")} ${prompt}`, type: "text" }]);
@@ -442,6 +455,14 @@ const Chat = () => {
       <ChatRewardNotification 
         reward={currentReward} 
         onDismiss={() => setCurrentReward(null)} 
+      />
+
+      {/* Early Adopter Reward Popup */}
+      <EarlyAdopterRewardPopup
+        isOpen={showEarlyAdopterPopup}
+        coinsAwarded={earlyAdopterResult?.coinsAwarded || 0}
+        userRank={earlyAdopterResult?.userRank || 0}
+        onClose={dismissEarlyAdopterPopup}
       />
 
       {/* Header - Compact for mobile */}
