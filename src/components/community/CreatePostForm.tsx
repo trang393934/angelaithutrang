@@ -48,18 +48,26 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `community-posts/${fileName}`;
+      const filePath = `posts/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
+      console.log("Uploading to community bucket:", filePath);
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from("community")
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+
+      console.log("Upload success:", uploadData);
 
       const { data: urlData } = supabase.storage
-        .from("avatars")
+        .from("community")
         .getPublicUrl(filePath);
 
+      console.log("Public URL:", urlData.publicUrl);
       return urlData.publicUrl;
     } catch (error) {
       console.error("Error uploading image:", error);
