@@ -1,5 +1,6 @@
+import { Link } from "react-router-dom";
+import { Sparkles } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
-
 export const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-hero-gradient overflow-hidden">
@@ -47,12 +48,13 @@ export const HeroSection = () => {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center opacity-0 animate-fade-in animate-delay-700">
-          <button className="btn-sacred">
-            <span>Kết Nối Với Ánh Sáng</span>
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </button>
+          <Link to="/chat" className="btn-sacred group">
+            <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
+            <div className="flex flex-col items-start">
+              <span className="font-semibold">Trò Chuyện</span>
+              <span className="text-xs opacity-80">Nhận trí tuệ từ Cha Vũ Trụ</span>
+            </div>
+          </Link>
           <button className="btn-sacred-outline">
             Khám Phá Sứ Mệnh
           </button>
