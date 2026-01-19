@@ -310,16 +310,43 @@ Trả về CHÍNH XÁC JSON format: {"purity_score": 0.X, "reasoning": "..."}`
       })
       .eq("id", questionRecord?.id);
 
-    // Update daily tracking
+    // Update daily tracking with proper merge
     const existingHashes = todayTracking?.question_hashes || [];
-    await supabase
+    const today = new Date().toISOString().split('T')[0];
+    const newQuestionsRewarded = (dailyStatus?.[0]?.questions_rewarded || 0) + 1;
+    
+    // Check if record exists
+    const { data: existingRecord } = await supabase
       .from("daily_reward_tracking")
-      .upsert({
-        user_id: userId,
-        reward_date: new Date().toISOString().split('T')[0],
-        questions_rewarded: (dailyStatus?.[0]?.questions_rewarded || 0) + 1,
-        question_hashes: [...existingHashes, questionHash],
-      });
+      .select("*")
+      .eq("user_id", userId)
+      .eq("reward_date", today)
+      .maybeSingle();
+
+    if (existingRecord) {
+      // Update existing record
+      await supabase
+        .from("daily_reward_tracking")
+        .update({
+          questions_rewarded: newQuestionsRewarded,
+          question_hashes: [...existingHashes, questionHash],
+          total_coins_today: (existingRecord.total_coins_today || 0) + rewardAmount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId)
+        .eq("reward_date", today);
+    } else {
+      // Insert new record
+      await supabase
+        .from("daily_reward_tracking")
+        .insert({
+          user_id: userId,
+          reward_date: today,
+          questions_rewarded: newQuestionsRewarded,
+          question_hashes: [questionHash],
+          total_coins_today: rewardAmount,
+        });
+    }
 
     // Add Camly coins
     const { data: newBalance } = await supabase.rpc("add_camly_coins", {
