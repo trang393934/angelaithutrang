@@ -8,9 +8,10 @@ import {
   LogOut, Sparkles, CheckCircle, Clock,
   FileType, AlertCircle, FolderPlus, Folder,
   Edit2, X, ChevronDown, ChevronRight, GripVertical,
-  Search, Filter, XCircle
+  Search, Filter, XCircle, Link as LinkIcon, ExternalLink, Eye
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
+import * as XLSX from 'xlsx';
 
 interface KnowledgeFolder {
   id: string;
@@ -64,6 +65,16 @@ const AdminKnowledge = () => {
     file: null as File | null,
     folderId: null as string | null,
   });
+
+  // Google URL import
+  const [googleUrlForm, setGoogleUrlForm] = useState({
+    url: "",
+    title: "",
+    description: "",
+    folderId: null as string | null,
+  });
+  const [isFetchingGoogle, setIsFetchingGoogle] = useState(false);
+  const [googlePreview, setGooglePreview] = useState<{ content: string; sourceType: string } | null>(null);
 
   // Filtered documents based on search and filters
   const filteredDocuments = useMemo(() => {
@@ -298,7 +309,7 @@ const AdminKnowledge = () => {
 
     try {
       // Upload file to storage
-      const fileExt = uploadForm.file.name.split(".").pop();
+      const fileExt = uploadForm.file.name.split(".").pop()?.toLowerCase();
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
@@ -312,11 +323,28 @@ const AdminKnowledge = () => {
         .from("knowledge-documents")
         .getPublicUrl(fileName);
 
-      // Extract text content for TXT and MD files
+      // Extract text content based on file type
       let extractedContent = null;
-      if (uploadForm.file.type === "text/plain" || uploadForm.file.type === "text/markdown" || 
-          uploadForm.file.name.endsWith(".txt") || uploadForm.file.name.endsWith(".md")) {
-        extractedContent = await uploadForm.file.text();
+      const file = uploadForm.file;
+      const fileType = file.type || "";
+      const name = file.name.toLowerCase();
+
+      // TXT and MD files
+      if (fileType === "text/plain" || fileType === "text/markdown" || 
+          name.endsWith(".txt") || name.endsWith(".md")) {
+        extractedContent = await file.text();
+      }
+      // CSV files
+      else if (fileType === "text/csv" || name.endsWith(".csv")) {
+        const text = await file.text();
+        extractedContent = formatCSVToReadable(text);
+      }
+      // Excel files
+      else if (fileType === "application/vnd.ms-excel" || 
+               fileType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+               name.endsWith(".xlsx") || name.endsWith(".xls")) {
+        const buffer = await file.arrayBuffer();
+        extractedContent = extractExcelContent(buffer);
       }
 
       // Save document metadata to database
@@ -343,6 +371,186 @@ const AdminKnowledge = () => {
     } catch (error) {
       console.error("Upload error:", error);
       toast.error("Không thể upload tài liệu. Vui lòng thử lại.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Helper function to format CSV content
+  const formatCSVToReadable = (csvText: string): string => {
+    const lines = csvText.split('\n');
+    if (lines.length === 0) return csvText;
+
+    const parseCSVLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    const headers = parseCSVLine(lines[0]);
+    const rows = lines.slice(1).filter(line => line.trim()).map(parseCSVLine);
+
+    let formatted = `📊 BẢNG DỮ LIỆU (${rows.length} dòng)\n`;
+    formatted += `${'─'.repeat(50)}\n`;
+    formatted += `Các cột: ${headers.join(' | ')}\n`;
+    formatted += `${'─'.repeat(50)}\n\n`;
+
+    rows.forEach((row, index) => {
+      formatted += `--- Dòng ${index + 1} ---\n`;
+      headers.forEach((header, i) => {
+        const value = row[i] || '';
+        if (value) {
+          formatted += `${header}: ${value}\n`;
+        }
+      });
+      formatted += '\n';
+    });
+
+    return formatted;
+  };
+
+  // Helper function to extract Excel content
+  const extractExcelContent = (buffer: ArrayBuffer): string => {
+    try {
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      let content = '';
+
+      workbook.SheetNames.forEach((sheetName, sheetIndex) => {
+        const worksheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
+        
+        if (data.length === 0) return;
+
+        content += `\n📋 SHEET ${sheetIndex + 1}: ${sheetName}\n`;
+        content += `${'═'.repeat(50)}\n`;
+
+        const headers = data[0] || [];
+        const rows = data.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== ''));
+
+        content += `Các cột: ${headers.join(' | ')}\n`;
+        content += `${'─'.repeat(50)}\n\n`;
+
+        rows.forEach((row, index) => {
+          content += `--- Dòng ${index + 1} ---\n`;
+          headers.forEach((header, i) => {
+            const value = row[i];
+            if (value !== undefined && value !== '') {
+              content += `${header || `Cột ${i + 1}`}: ${value}\n`;
+            }
+          });
+          content += '\n';
+        });
+      });
+
+      return content || 'Không thể trích xuất nội dung từ file Excel';
+    } catch (error) {
+      console.error('Excel parse error:', error);
+      return 'Lỗi khi đọc file Excel';
+    }
+  };
+
+  // Handle Google URL fetch
+  const handleFetchGoogleUrl = async () => {
+    if (!googleUrlForm.url) {
+      toast.error("Vui lòng nhập URL Google Docs hoặc Google Sheets");
+      return;
+    }
+
+    setIsFetchingGoogle(true);
+    setGooglePreview(null);
+
+    try {
+      const response = await supabase.functions.invoke('fetch-google-content', {
+        body: { url: googleUrlForm.url }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to fetch content');
+      }
+
+      const data = response.data;
+      
+      if (data.error) {
+        toast.error(data.error);
+        if (data.hint) {
+          toast.info(data.hint, { duration: 5000 });
+        }
+        return;
+      }
+
+      setGooglePreview({
+        content: data.content,
+        sourceType: data.sourceType
+      });
+
+      // Auto-fill title if empty
+      if (!googleUrlForm.title) {
+        const urlType = data.sourceType === 'google_docs' ? 'Google Doc' : 'Google Sheet';
+        setGoogleUrlForm(prev => ({
+          ...prev,
+          title: `${urlType} - ${new Date().toLocaleDateString('vi-VN')}`
+        }));
+      }
+
+      toast.success("Đã lấy nội dung thành công! Xem preview bên dưới.");
+    } catch (error) {
+      console.error('Fetch error:', error);
+      toast.error(error instanceof Error ? error.message : 'Không thể lấy nội dung từ URL');
+    } finally {
+      setIsFetchingGoogle(false);
+    }
+  };
+
+  // Handle save Google content
+  const handleSaveGoogleContent = async () => {
+    if (!googlePreview || !googleUrlForm.title) {
+      toast.error("Vui lòng nhập tiêu đề và lấy nội dung trước");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const fileName = `${googlePreview.sourceType === 'google_docs' ? 'google-doc' : 'google-sheet'}-${Date.now()}.txt`;
+      
+      const { error: dbError } = await supabase
+        .from("knowledge_documents")
+        .insert({
+          title: googleUrlForm.title,
+          description: googleUrlForm.description || `Imported from ${googlePreview.sourceType === 'google_docs' ? 'Google Docs' : 'Google Sheets'}`,
+          file_name: fileName,
+          file_url: googleUrlForm.url,
+          file_type: 'text/plain',
+          file_size: new Blob([googlePreview.content]).size,
+          extracted_content: googlePreview.content,
+          is_processed: true,
+          created_by: user?.id,
+          folder_id: googleUrlForm.folderId,
+        });
+
+      if (dbError) throw dbError;
+
+      toast.success("Đã lưu tài liệu thành công! ✨");
+      setGoogleUrlForm({ url: "", title: "", description: "", folderId: selectedFolderId });
+      setGooglePreview(null);
+      fetchDocuments();
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Không thể lưu tài liệu. Vui lòng thử lại.");
     } finally {
       setIsUploading(false);
     }
@@ -659,6 +867,160 @@ const AdminKnowledge = () => {
           </form>
         </div>
 
+        {/* Google URL Import */}
+        <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
+          <h2 className="font-serif text-xl font-semibold text-primary-deep mb-4 flex items-center gap-2">
+            <LinkIcon className="w-5 h-5" />
+            Import từ Google Drive
+            <span className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Mới</span>
+          </h2>
+
+          <div className="bg-primary-pale/20 rounded-xl p-4 mb-4">
+            <p className="text-sm text-foreground-muted flex items-start gap-2">
+              <ExternalLink className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>
+                Hỗ trợ <strong>Google Docs</strong> và <strong>Google Sheets</strong>. 
+                File phải được chia sẻ công khai (Anyone with the link can view).
+              </span>
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground-muted mb-1">
+                URL Google Docs/Sheets *
+              </label>
+              <input
+                type="url"
+                value={googleUrlForm.url}
+                onChange={(e) => {
+                  setGoogleUrlForm(prev => ({ ...prev, url: e.target.value }));
+                  setGooglePreview(null);
+                }}
+                placeholder="https://docs.google.com/document/d/... hoặc https://docs.google.com/spreadsheets/d/..."
+                className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                disabled={isFetchingGoogle || isUploading}
+              />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground-muted mb-1">
+                  Tiêu đề *
+                </label>
+                <input
+                  type="text"
+                  value={googleUrlForm.title}
+                  onChange={(e) => setGoogleUrlForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Nhập tiêu đề tài liệu"
+                  className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  disabled={isFetchingGoogle || isUploading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground-muted mb-1">
+                  Thư mục
+                </label>
+                <select
+                  value={googleUrlForm.folderId || ""}
+                  onChange={(e) => setGoogleUrlForm(prev => ({ ...prev, folderId: e.target.value || null }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  disabled={isFetchingGoogle || isUploading}
+                >
+                  <option value="">-- Chưa phân loại --</option>
+                  {folders.map(folder => (
+                    <option key={folder.id} value={folder.id}>{folder.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground-muted mb-1">
+                Mô tả
+              </label>
+              <input
+                type="text"
+                value={googleUrlForm.description}
+                onChange={(e) => setGoogleUrlForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Mô tả ngắn về nội dung"
+                className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                disabled={isFetchingGoogle || isUploading}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleFetchGoogleUrl}
+                disabled={isFetchingGoogle || !googleUrlForm.url || isUploading}
+                className="flex-1 py-3 rounded-xl bg-primary-pale text-primary font-medium hover:bg-primary hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                {isFetchingGoogle ? (
+                  <>
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                    <span>Đang lấy dữ liệu...</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-5 h-5" />
+                    <span>Lấy & Xem Trước</span>
+                  </>
+                )}
+              </button>
+              
+              {googlePreview && (
+                <button
+                  type="button"
+                  onClick={handleSaveGoogleContent}
+                  disabled={isUploading || !googleUrlForm.title}
+                  className="flex-1 py-3 rounded-xl bg-sapphire-gradient text-white font-medium shadow-sacred hover:shadow-divine disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  {isUploading ? (
+                    <>
+                      <Sparkles className="w-5 h-5 animate-pulse" />
+                      <span>Đang lưu...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Lưu Tài Liệu</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Preview */}
+            {googlePreview && (
+              <div className="mt-4 border border-primary-pale rounded-xl overflow-hidden">
+                <div className="bg-primary-pale/30 px-4 py-2 flex items-center justify-between">
+                  <span className="font-medium text-primary-deep flex items-center gap-2">
+                    {googlePreview.sourceType === 'google_docs' ? '📄 Google Docs' : '📊 Google Sheets'}
+                    <span className="text-xs text-foreground-muted">
+                      ({new Blob([googlePreview.content]).size.toLocaleString()} bytes)
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => setGooglePreview(null)}
+                    className="p-1 rounded hover:bg-white/50 transition-colors"
+                  >
+                    <X className="w-4 h-4 text-foreground-muted" />
+                  </button>
+                </div>
+                <div className="p-4 max-h-64 overflow-auto bg-gray-50">
+                  <pre className="text-xs text-foreground-muted whitespace-pre-wrap font-mono">
+                    {googlePreview.content.slice(0, 2000)}
+                    {googlePreview.content.length > 2000 && (
+                      <span className="text-primary">... (còn {(googlePreview.content.length - 2000).toLocaleString()} ký tự)</span>
+                    )}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Search and Filter */}
         <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
@@ -940,7 +1302,8 @@ const AdminKnowledge = () => {
           <ul className="space-y-2 text-sm text-foreground-muted">
             <li>• <strong>Tạo thư mục:</strong> Tổ chức tài liệu theo chủ đề như "Giáo lý", "Thiền định", "Tình yêu"...</li>
             <li>• <strong>Kéo thả:</strong> Giữ và kéo tài liệu để di chuyển giữa các thư mục</li>
-            <li>• <strong>File TXT/MD:</strong> Nội dung sẽ được trích xuất tự động và Angel AI có thể sử dụng ngay</li>
+            <li>• <strong>File TXT/MD/CSV/Excel:</strong> Nội dung sẽ được trích xuất tự động và Angel AI có thể sử dụng ngay</li>
+            <li>• <strong>Google Docs/Sheets:</strong> Paste URL và nhấn "Lấy & Xem Trước" để import nội dung (file phải được chia sẻ công khai)</li>
             <li>• <strong>File PDF/DOCX:</strong> Cần được xử lý thêm để trích xuất nội dung</li>
             <li>• <strong>Không giới hạn dung lượng:</strong> Upload bất kỳ file nào bạn muốn</li>
             <li>• Nội dung trong các tài liệu sẽ được Angel AI sử dụng như nguồn kiến thức bổ sung</li>
