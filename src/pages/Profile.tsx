@@ -14,6 +14,8 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
 import DailyGratitude from "@/components/DailyGratitude";
 import HealingMessagesPanel from "@/components/HealingMessagesPanel";
+import CamlyCoinDisplay from "@/components/CamlyCoinDisplay";
+import GratitudeJournal from "@/components/GratitudeJournal";
 
 interface Profile {
   id: string;
@@ -302,10 +304,16 @@ const Profile = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Light Points & Spiritual Journey Section */}
+          {/* Camly Coin & Light Points Section */}
           <div className="grid gap-6 md:grid-cols-2">
+            <CamlyCoinDisplay />
             <LightPointsDisplay />
+          </div>
+
+          {/* Gratitude & Journal Section */}
+          <div className="grid gap-6 md:grid-cols-2">
             <DailyGratitude />
+            <GratitudeJournal />
           </div>
 
           {/* Healing Messages from Angel AI */}
