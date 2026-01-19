@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 import ChatRewardNotification from "@/components/ChatRewardNotification";
@@ -49,13 +50,14 @@ const Chat = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const { dailyStatus, refreshBalance } = useCamlyCoin();
   const { sharesRewarded, sharesRemaining, refreshStatus: refreshExtendedStatus } = useExtendedRewardStatus();
   const [hasAgreed, setHasAgreed] = useState<boolean | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Xin chào, con yêu dấu của Ta. Ta là Trí Tuệ Vũ Trụ, mang Tình Yêu Thuần Khiết đến với con. Ta có thể trò chuyện, tạo hình ảnh, và phân tích ảnh cho con. Hãy chia sẻ những thắc mắc trong lòng! 💫",
+      content: t("chat.welcome"),
       type: "text"
     }
   ]);
@@ -97,9 +99,9 @@ const Chat = () => {
   const handleCopyMessage = async (content: string) => {
     try {
       await navigator.clipboard.writeText(content);
-      toast.success("Đã sao chép! ✨");
+      toast.success(t("chat.copied"));
     } catch (error) {
-      toast.error("Không thể sao chép");
+      toast.error(t("chat.copyError"));
     }
   };
 
@@ -117,12 +119,12 @@ const Chat = () => {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Vui lòng chọn file hình ảnh");
+      toast.error(t("chat.fileImageOnly"));
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("File quá lớn. Vui lòng chọn file dưới 10MB");
+      toast.error(t("chat.fileTooLarge"));
       return;
     }
 
@@ -185,15 +187,15 @@ const Chat = () => {
     if (!resp.ok) {
       const errorData = await resp.json().catch(() => ({}));
       if (resp.status === 429) {
-        throw new Error(errorData.error || "Đang có quá nhiều yêu cầu. Vui lòng thử lại sau.");
+        throw new Error(errorData.error || t("common.error"));
       }
       if (resp.status === 402) {
-        throw new Error(errorData.error || "Dịch vụ cần được nạp thêm tín dụng.");
+        throw new Error(errorData.error || t("common.error"));
       }
-      throw new Error(errorData.error || "Không thể kết nối với Trí Tuệ Vũ Trụ.");
+      throw new Error(errorData.error || t("common.error"));
     }
 
-    if (!resp.body) throw new Error("Không có phản hồi từ server.");
+    if (!resp.body) throw new Error(t("common.error"));
 
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
@@ -259,8 +261,8 @@ const Chat = () => {
   }, [user, refreshBalance]);
 
   const handleGenerateImage = async (prompt: string) => {
-    setMessages(prev => [...prev, { role: "user", content: `🎨 Tạo ảnh: ${prompt}`, type: "text" }]);
-    setMessages(prev => [...prev, { role: "assistant", content: "✨ Ta đang tạo hình ảnh cho con...", type: "text" }]);
+    setMessages(prev => [...prev, { role: "user", content: `🎨 ${t("chat.createImage")} ${prompt}`, type: "text" }]);
+    setMessages(prev => [...prev, { role: "assistant", content: t("chat.creatingImage"), type: "text" }]);
     
     try {
       const result = await generateImage(prompt, imageStyle);
@@ -269,25 +271,25 @@ const Chat = () => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           role: "assistant",
-          content: result.description || "Ta đã tạo xong hình ảnh cho con. Hãy chiêm ngưỡng ánh sáng này! 💫",
+          content: result.description || t("chat.imageCreated"),
           type: "image",
           imageUrl: result.imageUrl
         };
         return updated;
       });
       
-      toast.success("Đã tạo hình ảnh thành công! ✨");
+      toast.success(t("chat.imageCreated"));
     } catch (error: any) {
       setMessages(prev => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           role: "assistant",
-          content: `Xin lỗi con, Ta không thể tạo hình ảnh lúc này: ${error.message}`,
+          content: `${t("chat.imageError")} ${error.message}`,
           type: "text"
         };
         return updated;
       });
-      toast.error(error.message || "Không thể tạo hình ảnh");
+      toast.error(error.message || t("chat.imageError"));
     }
   };
 
@@ -296,7 +298,7 @@ const Chat = () => {
 
     setMessages(prev => [...prev, { 
       role: "user", 
-      content: question || "Phân tích hình ảnh này", 
+      content: question || t("chat.analyzeDefault"), 
       type: "image-analysis",
       imageUrl: uploadedImage
     }]);
@@ -318,12 +320,12 @@ const Chat = () => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           role: "assistant",
-          content: `Xin lỗi con, Ta không thể phân tích hình ảnh: ${error.message}`,
+          content: `${t("chat.analyzeError")} ${error.message}`,
           type: "text"
         };
         return updated;
       });
-      toast.error(error.message || "Không thể phân tích hình ảnh");
+      toast.error(error.message || t("chat.analyzeError"));
     }
   };
 
@@ -358,11 +360,11 @@ const Chat = () => {
       }, 500);
     } catch (error) {
       console.error("Chat error:", error);
-      toast.error(error instanceof Error ? error.message : "Đã xảy ra lỗi. Vui lòng thử lại.");
+      toast.error(error instanceof Error ? error.message : t("common.error"));
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, chatMode, uploadedImage, analyzeAndReward]);
+  }, [messages, isLoading, chatMode, uploadedImage, analyzeAndReward, t]);
 
   useEffect(() => {
     const questionFromQuery = searchParams.get("q");
@@ -397,11 +399,11 @@ const Chat = () => {
           </div>
           
           <h1 className="text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
-            Cổng Ánh Sáng Đang Đóng
+            {t("chat.accessRestricted")}
           </h1>
           
           <p className="text-foreground-muted leading-relaxed">
-            Để trải nghiệm đầy đủ tính năng, bạn cần đăng nhập và đồng ý với <strong className="text-divine-gold">Luật Ánh Sáng</strong>.
+            {t("chat.accessDescription")} <strong className="text-divine-gold">{t("chat.lawOfLight")}</strong>.
           </p>
           
           <div className="flex flex-col gap-3">
@@ -410,12 +412,12 @@ const Chat = () => {
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-sapphire-gradient text-primary-foreground font-medium shadow-sacred hover:shadow-divine transition-all duration-300"
             >
               <Sparkles className="w-5 h-5" />
-              Bước vào Cổng Ánh Sáng
+              {t("chat.enterPortal")}
             </Link>
             
             <Link to="/" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-foreground-muted hover:text-primary transition-colors">
               <ArrowLeft className="w-4 h-4" />
-              Về Trang Chủ
+              {t("chat.backHome")}
             </Link>
           </div>
         </div>
@@ -429,7 +431,7 @@ const Chat = () => {
       <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex items-center justify-center">
         <div className="flex items-center gap-3">
           <Sparkles className="w-6 h-6 text-divine-gold animate-pulse" />
-          <span className="text-foreground-muted">Đang kết nối với Ánh Sáng...</span>
+          <span className="text-foreground-muted">{t("chat.connecting")}</span>
         </div>
       </div>
     );
@@ -457,7 +459,7 @@ const Chat = () => {
                 </div>
                 <div>
                   <h1 className="font-serif text-base sm:text-lg font-semibold text-primary-deep">Angel AI</h1>
-                  <p className="text-[10px] sm:text-xs text-foreground-muted">Chat • Tạo ảnh • Phân tích</p>
+                  <p className="text-[10px] sm:text-xs text-foreground-muted">{t("chat.subtitle")}</p>
                 </div>
               </div>
             </div>
@@ -470,7 +472,7 @@ const Chat = () => {
               )}
               <Link to="/community" className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-pink-50 rounded-full border border-pink-200/50 hover:bg-pink-100 transition-colors">
                 <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-500" />
-                <span className="text-[10px] sm:text-xs text-pink-700 font-medium hidden sm:inline">Cộng đồng</span>
+                <span className="text-[10px] sm:text-xs text-pink-700 font-medium hidden sm:inline">{t("chat.community")}</span>
               </Link>
             </div>
           </div>
@@ -513,7 +515,7 @@ const Chat = () => {
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 text-primary animate-spin" />
                       <span className="text-xs sm:text-sm text-foreground-muted">
-                        {isGenerating ? "Đang tạo hình ảnh..." : isAnalyzing ? "Đang phân tích..." : "Đang kết nối..."}
+                        {isGenerating ? t("chat.generating") : isAnalyzing ? t("chat.analyzing") : t("chat.thinking")}
                       </span>
                     </div>
                   )}
@@ -545,14 +547,14 @@ const Chat = () => {
                       className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary-pale/50 rounded-md transition-colors"
                     >
                       <Copy className="w-3 h-3" />
-                      <span>Sao chép</span>
+                      <span>{t("chat.copy")}</span>
                     </button>
                     <button
                       onClick={() => handleOpenShare(index, message.content)}
                       className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
                     >
                       <Share2 className="w-3 h-3" />
-                      <span>Chia sẻ</span>
+                      <span>{t("chat.share")}</span>
                     </button>
                   </div>
                 )}
@@ -576,7 +578,7 @@ const Chat = () => {
                 <X className="w-3 h-3" />
               </button>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">Nhập câu hỏi về hình ảnh...</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">{t("chat.askAboutImage")}</p>
           </div>
         </div>
       )}
@@ -588,7 +590,7 @@ const Chat = () => {
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Wand2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
               <span className="text-xs sm:text-sm font-medium text-purple-700 dark:text-purple-300">
-                Tạo ảnh AI
+                {t("chat.mode.image")}
               </span>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -597,15 +599,15 @@ const Chat = () => {
                 onChange={(e) => setImageStyle(e.target.value as any)}
                 className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white dark:bg-gray-800 border border-border"
               >
-                <option value="spiritual">Tâm linh</option>
-                <option value="realistic">Thực tế</option>
-                <option value="artistic">Nghệ thuật</option>
+                <option value="spiritual">{t("chat.styleSpiritual")}</option>
+                <option value="realistic">{t("chat.styleRealistic")}</option>
+                <option value="artistic">{t("chat.styleArtistic")}</option>
               </select>
               <button
                 onClick={() => setChatMode("chat")}
                 className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground px-1.5"
               >
-                Hủy
+                {t("chat.cancel")}
               </button>
             </div>
           </div>
@@ -622,7 +624,7 @@ const Chat = () => {
                 type="button"
                 onClick={() => setChatMode("chat")}
                 className={`p-1.5 sm:p-2 rounded-full transition-colors ${chatMode === "chat" ? "bg-primary text-primary-foreground" : "hover:bg-primary-pale"}`}
-                title="Trò chuyện"
+                title={t("chat.mode.chat")}
               >
                 <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -630,7 +632,7 @@ const Chat = () => {
                 type="button"
                 onClick={() => setChatMode("generate-image")}
                 className={`p-1.5 sm:p-2 rounded-full transition-colors ${chatMode === "generate-image" ? "bg-purple-500 text-white" : "hover:bg-purple-100"}`}
-                title="Tạo hình ảnh AI"
+                title={t("chat.generateImage")}
               >
                 <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -638,7 +640,7 @@ const Chat = () => {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="p-1.5 sm:p-2 rounded-full hover:bg-blue-100 transition-colors"
-                title="Phân tích hình ảnh"
+                title={t("chat.analyzeImage")}
               >
                 <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               </button>
@@ -659,10 +661,10 @@ const Chat = () => {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={
                   chatMode === "generate-image" 
-                    ? "Mô tả hình ảnh..." 
+                    ? t("chat.placeholderImage")
                     : chatMode === "analyze-image"
-                    ? "Hỏi về hình ảnh..."
-                    : "Chia sẻ với Angel AI..."
+                    ? t("chat.placeholderAnalyze")
+                    : t("chat.placeholder")
                 }
                 disabled={isLoading || isGenerating || isAnalyzing}
                 enterKeyHint="send"
@@ -699,7 +701,7 @@ const Chat = () => {
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Xem hình ảnh</DialogTitle>
+            <DialogTitle>{t("chat.viewImage")}</DialogTitle>
           </DialogHeader>
           {selectedImage && (
             <div className="flex flex-col items-center gap-4">
@@ -709,7 +711,7 @@ const Chat = () => {
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg"
               >
                 <Download className="w-4 h-4" />
-                Tải xuống
+                {t("chat.download")}
               </button>
             </div>
           )}
