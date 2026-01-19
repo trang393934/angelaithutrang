@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check } from "lucide-react";
+import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,6 +10,7 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import { CommunityPost, CommunityComment } from "@/hooks/useCommunityPosts";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,7 +60,12 @@ export function PostCard({
   // Edit state
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
+  const [editImageUrl, setEditImageUrl] = useState<string | null>(post.image_url);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
   
   // Delete state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -106,22 +112,92 @@ export function PostCard({
 
   const handleStartEdit = () => {
     setEditContent(post.content);
+    setEditImageUrl(post.image_url);
+    setEditImageFile(null);
+    setEditImagePreview(null);
     setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     setEditContent(post.content);
+    setEditImageUrl(post.image_url);
+    setEditImageFile(null);
+    setEditImagePreview(null);
     setIsEditing(false);
+  };
+
+  const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ảnh không được vượt quá 5MB");
+        return;
+      }
+      setEditImageFile(file);
+      const reader = new FileReader();
+      reader.onload = () => setEditImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+      // Clear the existing image URL since we're uploading a new one
+      setEditImageUrl(null);
+    }
+  };
+
+  const handleRemoveEditImage = () => {
+    setEditImageUrl(null);
+    setEditImageFile(null);
+    setEditImagePreview(null);
+    if (editFileInputRef.current) {
+      editFileInputRef.current.value = "";
+    }
+  };
+
+  const uploadEditImage = async (file: File): Promise<string | null> => {
+    setIsUploadingImage(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `posts/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("community")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("community")
+        .getPublicUrl(filePath);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      return null;
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   const handleSubmitEdit = async () => {
     if (!editContent.trim() || !onEdit) return;
 
     setIsSubmittingEdit(true);
-    const result = await onEdit(post.id, editContent.trim(), post.image_url || undefined);
+    
+    let finalImageUrl: string | undefined = editImageUrl || undefined;
+    
+    // Upload new image if selected
+    if (editImageFile) {
+      const uploadedUrl = await uploadEditImage(editImageFile);
+      if (uploadedUrl) {
+        finalImageUrl = uploadedUrl;
+      }
+    }
+    
+    const result = await onEdit(post.id, editContent.trim(), finalImageUrl);
     
     if (result.success) {
       setIsEditing(false);
+      setEditImageFile(null);
+      setEditImagePreview(null);
     }
     setIsSubmittingEdit(false);
   };
@@ -199,19 +275,82 @@ export function PostCard({
 
           {/* Content - Normal or Edit Mode */}
           {isEditing ? (
-            <div className="mb-4">
+            <div className="mb-4 space-y-3">
               <Textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
                 className="min-h-[100px] resize-none"
                 placeholder="Nội dung bài viết..."
               />
-              <div className="flex justify-end gap-2 mt-3">
+              
+              {/* Edit Image Section */}
+              <div className="space-y-2">
+                {/* Show current/new image preview */}
+                {(editImageUrl || editImagePreview) && (
+                  <div className="relative inline-block">
+                    <img
+                      src={editImagePreview || editImageUrl || ""}
+                      alt="Preview"
+                      className="max-h-48 rounded-lg object-cover"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-6 w-6"
+                      onClick={handleRemoveEditImage}
+                      disabled={isSubmittingEdit || isUploadingImage}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Image upload input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEditImageSelect}
+                  ref={editFileInputRef}
+                  className="hidden"
+                />
+                
+                {/* Image action buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => editFileInputRef.current?.click()}
+                    disabled={isSubmittingEdit || isUploadingImage}
+                  >
+                    {isUploadingImage ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : (
+                      <Image className="w-4 h-4 mr-1" />
+                    )}
+                    {editImageUrl || editImagePreview ? "Đổi ảnh" : "Thêm ảnh"}
+                  </Button>
+                  
+                  {(editImageUrl || editImagePreview) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRemoveEditImage}
+                      disabled={isSubmittingEdit || isUploadingImage}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <ImageOff className="w-4 h-4 mr-1" />
+                      Xóa ảnh
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2">
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={handleCancelEdit}
-                  disabled={isSubmittingEdit}
+                  disabled={isSubmittingEdit || isUploadingImage}
                 >
                   <X className="w-4 h-4 mr-1" />
                   Hủy
@@ -219,10 +358,10 @@ export function PostCard({
                 <Button 
                   size="sm" 
                   onClick={handleSubmitEdit}
-                  disabled={!editContent.trim() || isSubmittingEdit}
+                  disabled={!editContent.trim() || isSubmittingEdit || isUploadingImage}
                   className="bg-sapphire-gradient"
                 >
-                  {isSubmittingEdit ? (
+                  {isSubmittingEdit || isUploadingImage ? (
                     <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                   ) : (
                     <Check className="w-4 h-4 mr-1" />
@@ -237,8 +376,8 @@ export function PostCard({
             </p>
           )}
 
-          {/* Image */}
-          {post.image_url && (
+          {/* Image - only show in non-edit mode */}
+          {!isEditing && post.image_url && (
             <div className="mb-4 rounded-xl overflow-hidden">
               <img
                 src={post.image_url}
