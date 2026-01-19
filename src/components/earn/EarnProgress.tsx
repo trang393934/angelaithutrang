@@ -166,12 +166,12 @@ export function EarnProgress() {
   ];
 
   return (
-    <Card className="border-amber-200/50 dark:border-amber-800/50">
+    <Card className="border-amber-200/50 dark:border-amber-800/50 mt-6">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Coins className="h-5 w-5 text-amber-600" />
-            <span>Tiến độ kiếm Camly Coin hôm nay</span>
+            <span>Tích lũy ánh sáng hôm nay</span>
           </div>
           <div className="flex items-center gap-2">
             <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />

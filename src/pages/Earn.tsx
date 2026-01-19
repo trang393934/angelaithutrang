@@ -35,7 +35,7 @@ export default function Earn() {
             <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
               <img src={camlyCoinLogo} alt="Camly Coin" className="w-16 h-16" />
             </div>
-            <h1 className="text-3xl font-bold">Kiếm Camly Coin</h1>
+            <h1 className="text-3xl font-bold">Tích Lũy Ánh Sáng</h1>
             <p className="text-muted-foreground">
               Đăng nhập để bắt đầu kiếm Camly Coin thông qua các hoạt động hữu ích
             </p>
@@ -64,7 +64,7 @@ export default function Earn() {
           {/* Header */}
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-              Kiếm Camly Coin
+              Tích Lũy Ánh Sáng
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Tham gia các hoạt động để kiếm Camly Coin - đồng tiền của sự biết ơn và tích cực
