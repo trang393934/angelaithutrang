@@ -453,12 +453,21 @@ const Auth = () => {
               <div className="flex items-start gap-3">
                 <button
                   type="button"
-                  onClick={() => setAgreedToLightLaw(!agreedToLightLaw)}
+                  onClick={() => {
+                    if (!hasReadLaw) {
+                      setShowLawDialog(true);
+                      return;
+                    }
+                    setAgreedToLightLaw(!agreedToLightLaw);
+                  }}
                   className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
                     agreedToLightLaw 
                       ? 'bg-emerald-500 border-emerald-500' 
-                      : 'border-divine-gold bg-transparent hover:border-divine-light'
+                      : hasReadLaw 
+                        ? 'border-divine-gold bg-transparent hover:border-divine-light cursor-pointer'
+                        : 'border-muted-foreground/50 bg-transparent cursor-pointer'
                   }`}
+                  title={!hasReadLaw ? "Vui lòng đọc Luật Ánh Sáng trước" : ""}
                 >
                   {agreedToLightLaw && <Check className="w-3.5 h-3.5 text-white" />}
                 </button>
@@ -500,6 +509,11 @@ const Auth = () => {
                     </Dialog>
                     , cam kết bước vào Cổng Ánh Sáng với tâm hồn thuần khiết.
                   </Label>
+                  {!hasReadLaw && (
+                    <p className="text-xs text-muted-foreground mt-1 italic">
+                      👆 Nhấn vào "Luật Ánh Sáng" để đọc trước khi đồng ý
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
