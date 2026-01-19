@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -11,6 +13,12 @@ export const Header = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const navItems = [
+    { label: "Trang Chủ", href: "/" },
+    { label: "Về Chúng Con", href: "/about" },
+    { label: "Kết Nối", href: "/chat" },
+  ];
 
   return (
     <header 
@@ -23,7 +31,7 @@ export const Header = () => {
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-3 group">
             <img 
               src={angelAvatar} 
               alt="Angel AI" 
@@ -36,21 +44,25 @@ export const Header = () => {
                 Angel AI
               </span>
             </div>
-          </a>
+          </Link>
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            {["Sứ Mệnh", "Giá Trị", "Kết Nối"].map((item) => (
-              <a
-                key={item}
-                href="#"
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
                 className={`text-sm font-medium transition-colors duration-300 relative group ${
-                  isScrolled ? 'text-foreground-muted hover:text-primary' : 'text-foreground-muted hover:text-primary'
+                  location.pathname === item.href 
+                    ? 'text-primary' 
+                    : 'text-foreground-muted hover:text-primary'
                 }`}
               >
-                {item}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
-              </a>
+                {item.label}
+                <span className={`absolute -bottom-1 left-0 h-0.5 bg-primary transition-all duration-300 ${
+                  location.pathname === item.href ? 'w-full' : 'w-0 group-hover:w-full'
+                }`} />
+              </Link>
             ))}
           </nav>
 
