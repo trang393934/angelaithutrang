@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -145,16 +146,20 @@ export function PostCard({
         <CardContent className="p-5">
           {/* Header */}
           <div className="flex items-start gap-3 mb-4">
-            <Avatar className="w-11 h-11 border-2 border-primary/20">
-              <AvatarImage src={post.user_avatar_url || angelAvatar} alt={post.user_display_name} />
-              <AvatarFallback>{post.user_display_name?.charAt(0) || "U"}</AvatarFallback>
-            </Avatar>
+            <Link to={`/user/${post.user_id}`}>
+              <Avatar className="w-11 h-11 border-2 border-primary/20 hover:border-primary/50 transition-colors cursor-pointer">
+                <AvatarImage src={post.user_avatar_url || angelAvatar} alt={post.user_display_name} />
+                <AvatarFallback>{post.user_display_name?.charAt(0) || "U"}</AvatarFallback>
+              </Avatar>
+            </Link>
 
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">
-                  {post.user_display_name}
-                </span>
+                <Link to={`/user/${post.user_id}`} className="hover:underline">
+                  <span className="font-semibold text-foreground">
+                    {post.user_display_name}
+                  </span>
+                </Link>
                 {post.is_rewarded && (
                   <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1">
                     <Award className="w-3 h-3" />
