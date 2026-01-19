@@ -186,13 +186,42 @@ export function useWeb3Wallet() {
       return;
     }
 
+    // Prevent multiple connection attempts
+    if (state.isConnecting) {
+      console.log("Connection already in progress, skipping...");
+      return;
+    }
+
     setState(prev => ({ ...prev, isConnecting: true, error: null }));
 
     try {
       const ethereum = (window as any).ethereum;
       
-      // Request account access
-      const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+      // First check if we already have accounts (user previously authorized)
+      let accounts: string[] = [];
+      try {
+        accounts = await ethereum.request({ method: "eth_accounts" });
+      } catch (e) {
+        console.log("eth_accounts failed, will request access");
+      }
+      
+      // Only request accounts if none are available
+      if (accounts.length === 0) {
+        try {
+          accounts = await ethereum.request({ method: "eth_requestAccounts" });
+        } catch (requestError: any) {
+          // Handle "already processing" error gracefully
+          if (requestError.code === -32002) {
+            setState(prev => ({
+              ...prev,
+              isConnecting: false,
+              error: "MetaMask đang chờ xác nhận. Vui lòng mở MetaMask và xác nhận yêu cầu.",
+            }));
+            return;
+          }
+          throw requestError;
+        }
+      }
       
       if (accounts.length === 0) {
         throw new Error("Không có tài khoản nào được chọn");
@@ -234,13 +263,24 @@ export function useWeb3Wallet() {
       localStorage.setItem("wallet_connected", "true");
     } catch (error: any) {
       console.error("Connection error:", error);
+      
+      // Don't show error for user rejection
+      if (error.code === 4001) {
+        setState(prev => ({
+          ...prev,
+          isConnecting: false,
+          error: null,
+        }));
+        return;
+      }
+      
       setState(prev => ({
         ...prev,
         isConnecting: false,
         error: error.message || "Không thể kết nối ví",
       }));
     }
-  }, [hasWallet, fetchBalances]);
+  }, [hasWallet, fetchBalances, state.isConnecting]);
 
   // Disconnect wallet
   const disconnect = useCallback(() => {
