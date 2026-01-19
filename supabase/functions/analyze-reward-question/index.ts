@@ -199,7 +199,10 @@ serve(async (req) => {
           reason: "duplicate",
           message: "Câu hỏi này đã được thưởng trước đó.",
           coins: 0,
-          questionId: questionRecord?.id
+          questionId: questionRecord?.id,
+          isGreeting: false,
+          isSpam: false,
+          isDuplicate: true
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -212,7 +215,10 @@ serve(async (req) => {
           reason: "greeting",
           message: "Lời chào không được tính điểm thưởng.",
           coins: 0,
-          questionId: questionRecord?.id
+          questionId: questionRecord?.id,
+          isGreeting: true,
+          isSpam: false,
+          isDuplicate: false
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -225,7 +231,10 @@ serve(async (req) => {
           reason: "low_quality",
           message: "Câu hỏi chưa đủ chất lượng để nhận thưởng.",
           coins: 0,
-          questionId: questionRecord?.id
+          questionId: questionRecord?.id,
+          isGreeting: false,
+          isSpam: true,
+          isDuplicate: false
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -366,7 +375,10 @@ Trả về CHÍNH XÁC JSON format: {"purity_score": 0.X, "reasoning": "..."}`
         newBalance,
         questionsRemaining: questionsRemaining - 1,
         message: `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% ✨`,
-        questionId: questionRecord?.id
+        questionId: questionRecord?.id,
+        isGreeting: false,
+        isSpam: false,
+        isDuplicate: false
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

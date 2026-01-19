@@ -403,6 +403,17 @@ const translations: Record<string, string> = {
   "knowledge.filterAll": "All",
   "knowledge.filterProcessed": "Processed",
   "knowledge.filterPending": "Pending",
+
+  // Early Adopter Rewards
+  "earlyAdopter.congratulations": "Congratulations Early Adopter!",
+  "earlyAdopter.rank": "Rank",
+  "earlyAdopter.description": "You are one of the first 100 users of Angel AI who asked 10 valid questions! This is a special reward just for you.",
+  "earlyAdopter.thankYou": "Thank you for being with Angel AI from the very beginning!",
+  "earlyAdopter.awesome": "Awesome! ✨",
+  "earlyAdopter.progress": "Early Adopter Progress",
+  "earlyAdopter.questionsNeeded": "questions to claim reward",
+  "earlyAdopter.claimed": "Reward claimed!",
+  "earlyAdopter.notEligible": "Not eligible yet",
 };
 
 export default translations;
