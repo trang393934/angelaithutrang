@@ -1,4 +1,21 @@
 const translations: Record<string, string> = {
+  // Early Adopter
+  "earlyAdopter.title": "얼리 어답터 보상",
+  "earlyAdopter.description": "처음 100명의 사용자를 위한 특별 보상을 받으려면 10개의 유효한 질문을 완료하세요!",
+  "earlyAdopter.questionsProgress": "질문 진행률",
+  "earlyAdopter.questionsRemaining": "{count}개 질문 남음",
+  "earlyAdopter.reward": "보상",
+  "earlyAdopter.askNow": "지금 Angel AI에게 질문하기",
+  "earlyAdopter.yourRank": "당신의 순위",
+  "earlyAdopter.completed": "🎉 얼리 어답터 보상 획득!",
+  "earlyAdopter.rewardReceived": "보상 수령 완료",
+  "earlyAdopter.notEligible": "얼리 어답터 프로그램은 처음 100명의 사용자로 종료되었습니다.",
+  "earlyAdopter.congratsTitle": "축하합니다, 얼리 어답터!",
+  "earlyAdopter.congratsMessage": "당신은 10개의 유효한 질문을 완료한 처음 100명의 사용자 중 한 명입니다!",
+  "earlyAdopter.rankMessage": "당신의 순위",
+  "earlyAdopter.coinsAwarded": "Camly Coins가 계정에 추가되었습니다",
+  "earlyAdopter.claimReward": "보상 받기",
+
   // Navigation
   "nav.home": "홈",
   "nav.about": "Angel AI 소개",
