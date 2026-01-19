@@ -82,7 +82,7 @@ serve(async (req) => {
         await supabase.rpc("add_camly_coins", {
           _user_id: userId,
           _amount: POST_CREATION_REWARD,
-          _transaction_type: "engagement_reward",
+          _transaction_type: "community_support",
           _description: "Đăng bài viết mới",
         });
         
