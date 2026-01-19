@@ -123,8 +123,8 @@ export function EarnProgress() {
       title: "Chia sẻ nội dung",
       description: "Chia sẻ lên mạng xã hội",
       rewarded: status.sharesRewarded,
-      max: 3,
-      rewardPerAction: "1000 coin/lần",
+      max: 5,
+      rewardPerAction: "500 coin/lần",
       color: "bg-pink-100 dark:bg-pink-900/30",
     },
     {
