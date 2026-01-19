@@ -40,14 +40,14 @@ export function CamlyCoinDisplay() {
             <p className="text-sm text-amber-700/70">Số dư hiện tại</p>
             <p className="text-2xl font-bold text-amber-900 flex items-center gap-1">
               <Coins className="w-5 h-5 text-amber-600" />
-              {balance.toLocaleString()}
+              {Math.floor(balance).toLocaleString()}
             </p>
           </div>
           <div className="text-right">
             <p className="text-xs text-amber-600/60">Tổng tích lũy</p>
             <p className="text-sm font-medium text-amber-700 flex items-center gap-1 justify-end">
               <TrendingUp className="w-4 h-4" />
-              {lifetimeEarned.toLocaleString()}
+              {Math.floor(lifetimeEarned).toLocaleString()}
             </p>
           </div>
         </div>
@@ -114,7 +114,7 @@ export function CamlyCoinDisplay() {
                     </p>
                   </div>
                   <span className={`font-medium ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                    {tx.amount > 0 ? '+' : ''}{Math.floor(tx.amount).toLocaleString()}
                   </span>
                 </div>
               ))}

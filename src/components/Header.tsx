@@ -144,7 +144,7 @@ export const Header = () => {
                     >
                       <img src={camlyCoinLogo} alt="Camly Coin" className="w-5 h-5" />
                       <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                        {balance.toLocaleString()}
+                        {Math.floor(balance).toLocaleString()}
                       </span>
                     </Link>
                     
