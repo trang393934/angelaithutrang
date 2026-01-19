@@ -197,27 +197,34 @@ export const Header = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button 
-            className="lg:hidden p-2 text-primary shrink-0"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-            </svg>
-          </button>
+          {/* Mobile Actions - Always visible on mobile */}
+          <div className="flex lg:hidden items-center gap-2 shrink-0">
+            {/* Mobile Language Selector */}
+            <LanguageSelector />
+            
+            {/* Mobile Menu Button */}
+            <button 
+              className="p-2 text-primary"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-primary-pale/30">
-            <nav className="flex flex-col gap-2">
+          <div className="lg:hidden py-4 border-t border-primary-pale/30 bg-background-pure/95 backdrop-blur-lg animate-in slide-in-from-top-2 duration-200">
+            <nav className="flex flex-col gap-1">
+              {/* Navigation Items */}
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   to={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
+                  className={`flex items-center px-4 py-3 rounded-lg text-base font-medium transition-all duration-300 ${
                     location.pathname === item.href 
                       ? 'text-primary bg-primary-pale/50' 
                       : 'text-foreground-muted hover:text-primary hover:bg-primary-pale/30'
@@ -226,46 +233,84 @@ export const Header = () => {
                   {item.label}
                 </Link>
               ))}
-              <div className="border-t border-primary-pale/30 mt-2 pt-2">
-                {user ? (
-                  <>
-                    <Link 
-                      to="/profile"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground-muted"
+              
+              {/* Divider */}
+              <div className="border-t border-primary-pale/30 my-3" />
+              
+              {/* User Section */}
+              {!isLoading && (
+                <>
+                  {user ? (
+                    <div className="space-y-2">
+                      {/* Web3 Wallet for Mobile */}
+                      <div className="px-4 py-2">
+                        <p className="text-xs text-foreground-muted mb-2 uppercase tracking-wide">Ví Web3</p>
+                        <Web3WalletButton />
+                      </div>
+                      
+                      {/* Camly Coin Balance */}
+                      <Link 
+                        to="/earn"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center justify-between px-4 py-3 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors mx-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
+                          <span className="text-sm font-medium text-foreground">CAMLY Coin</span>
+                        </div>
+                        <span className="text-base font-bold text-amber-700 dark:text-amber-400">
+                          {Math.floor(balance).toLocaleString()}
+                        </span>
+                      </Link>
+                      
+                      {/* Profile Link */}
+                      <Link 
+                        to="/profile"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-primary-pale/30 transition-colors mx-2"
+                      >
+                        {userProfile?.avatar_url ? (
+                          <img 
+                            src={userProfile.avatar_url} 
+                            alt="Avatar" 
+                            className="w-10 h-10 rounded-full object-cover border-2 border-primary/20"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-primary-pale flex items-center justify-center">
+                            <User className="w-5 h-5 text-primary" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-base font-semibold text-foreground">{getDisplayName()}</p>
+                          <p className="text-xs text-foreground-muted">Xem hồ sơ</p>
+                        </div>
+                      </Link>
+                      
+                      {/* Sign Out Button */}
+                      <button
+                        onClick={() => {
+                          handleSignOut();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-6 py-3 text-base font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors mx-2"
+                        style={{ width: 'calc(100% - 16px)' }}
+                      >
+                        <LogOut className="w-5 h-5" />
+                        Đăng xuất
+                      </button>
+                    </div>
+                  ) : (
+                    <Link
+                      to="/auth"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 mx-4 py-3 text-base font-semibold text-primary-foreground bg-sapphire-gradient rounded-full shadow-sacred hover:shadow-divine transition-all"
                     >
-                      {userProfile?.avatar_url ? (
-                        <img 
-                          src={userProfile.avatar_url} 
-                          alt="Avatar" 
-                          className="w-6 h-6 rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-4 h-4" />
-                      )}
-                      <span className="truncate">{getDisplayName()}</span>
+                      <LogIn className="w-5 h-5" />
+                      Đăng Nhập
                     </Link>
-                    <button
-                      onClick={() => {
-                        handleSignOut();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground-muted hover:text-primary"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Đăng xuất
-                    </button>
-                  </>
-                ) : (
-                  <Link
-                    to="/auth"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary"
-                  >
-                    <LogIn className="w-4 h-4" />
-                    Đăng Nhập
-                  </Link>
-                )}
-              </div>
+                  )}
+                </>
+              )}
             </nav>
           </div>
         )}
