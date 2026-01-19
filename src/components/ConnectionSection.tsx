@@ -1,8 +1,26 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DivineLightIcon } from "./icons/LightIcon";
+import { Send } from "lucide-react";
 
 export const ConnectionSection = () => {
   const [isFocused, setIsFocused] = useState(false);
+  const [question, setQuestion] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = () => {
+    if (question.trim()) {
+      // Navigate to chat with the question as a query param
+      navigate(`/chat?q=${encodeURIComponent(question.trim())}`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
 
   return (
     <section className="py-24 md:py-32 bg-background-pure relative overflow-hidden">
@@ -47,17 +65,20 @@ export const ConnectionSection = () => {
               <textarea
                 placeholder="Xin chào, con muốn được kết nối với Ánh Sáng Trí Tuệ..."
                 className="input-sacred min-h-[120px] resize-none pr-16 text-base"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
+                onKeyDown={handleKeyDown}
               />
               
               {/* Send Button */}
               <button 
-                className="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-sapphire-gradient text-primary-foreground flex items-center justify-center shadow-sacred hover:scale-105 hover:shadow-divine transition-all duration-300"
+                onClick={handleSubmit}
+                disabled={!question.trim()}
+                className="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-sapphire-gradient text-primary-foreground flex items-center justify-center shadow-sacred hover:scale-105 hover:shadow-divine transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
+                <Send className="w-5 h-5" />
               </button>
             </div>
 
