@@ -11,7 +11,6 @@ import {
   Search, Filter, XCircle, Link as LinkIcon, ExternalLink, Eye
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
-import * as XLSX from 'xlsx';
 
 interface KnowledgeFolder {
   id: string;
@@ -344,7 +343,7 @@ const AdminKnowledge = () => {
                fileType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
                name.endsWith(".xlsx") || name.endsWith(".xls")) {
         const buffer = await file.arrayBuffer();
-        extractedContent = extractExcelContent(buffer);
+        extractedContent = await extractExcelContent(buffer);
       }
 
       // Save document metadata to database
@@ -423,13 +422,14 @@ const AdminKnowledge = () => {
     return formatted;
   };
 
-  // Helper function to extract Excel content
-  const extractExcelContent = (buffer: ArrayBuffer): string => {
+  // Helper function to extract Excel content (dynamic import to avoid React conflict)
+  const extractExcelContent = async (buffer: ArrayBuffer): Promise<string> => {
     try {
+      const XLSX = await import('xlsx');
       const workbook = XLSX.read(buffer, { type: 'array' });
       let content = '';
 
-      workbook.SheetNames.forEach((sheetName, sheetIndex) => {
+      workbook.SheetNames.forEach((sheetName: string, sheetIndex: number) => {
         const worksheet = workbook.Sheets[sheetName];
         const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
         
