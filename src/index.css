@@ -130,6 +130,8 @@
 
   html {
     scroll-behavior: smooth;
+    /* Prevent iOS bounce on chat page */
+    overscroll-behavior: none;
   }
 
   body {
@@ -382,4 +384,20 @@
 
 .animate-glow-breathe {
   animation: glow-breathe 4s ease-in-out infinite;
+}
+
+/* Safe area padding for mobile devices with notch/gesture bars */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* iOS keyboard handling - prevent zoom on input focus */
+@media screen and (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 }

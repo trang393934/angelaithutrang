@@ -436,50 +436,50 @@ const Chat = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col">
+    <div className="h-[100dvh] bg-gradient-to-b from-primary-pale via-background to-background flex flex-col overflow-hidden">
       <ChatRewardNotification 
         reward={currentReward} 
         onDismiss={() => setCurrentReward(null)} 
       />
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft">
-        <div className="container mx-auto px-4 py-4">
+      {/* Header - Compact for mobile */}
+      <header className="flex-shrink-0 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft safe-area-top">
+        <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/" className="p-2 rounded-full hover:bg-primary-pale transition-colors duration-300">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Link to="/" className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale transition-colors duration-300">
                 <ArrowLeft className="w-5 h-5 text-primary" />
               </Link>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="relative">
-                  <img src={angelAvatar} alt="Angel AI" className="w-10 h-10 rounded-full object-cover shadow-soft" />
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+                  <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shadow-soft" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-400 border-2 border-white rounded-full"></span>
                 </div>
                 <div>
-                  <h1 className="font-serif text-lg font-semibold text-primary-deep">Angel AI</h1>
-                  <p className="text-xs text-foreground-muted">Chat • Tạo ảnh • Phân tích</p>
+                  <h1 className="font-serif text-base sm:text-lg font-semibold text-primary-deep">Angel AI</h1>
+                  <p className="text-[10px] sm:text-xs text-foreground-muted">Chat • Tạo ảnh • Phân tích</p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {dailyStatus && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
-                  <Coins className="w-4 h-4 text-amber-600" />
-                  <span className="text-xs text-amber-700 font-medium">{dailyStatus.questionsRemaining}/10</span>
+                <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
+                  <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
+                  <span className="text-[10px] sm:text-xs text-amber-700 font-medium">{dailyStatus.questionsRemaining}/10</span>
                 </div>
               )}
-              <Link to="/community" className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 rounded-full border border-pink-200/50 hover:bg-pink-100 transition-colors">
-                <Heart className="w-4 h-4 text-pink-500" />
-                <span className="text-xs text-pink-700 font-medium hidden sm:inline">Cộng đồng</span>
+              <Link to="/community" className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-pink-50 rounded-full border border-pink-200/50 hover:bg-pink-100 transition-colors">
+                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-500" />
+                <span className="text-[10px] sm:text-xs text-pink-700 font-medium hidden sm:inline">Cộng đồng</span>
               </Link>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="container mx-auto max-w-3xl space-y-6">
+      {/* Messages - Scrollable area with proper mobile padding */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-3 sm:px-4 py-4 sm:py-6">
+        <div className="container mx-auto max-w-3xl space-y-4 sm:space-y-6">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -500,19 +500,19 @@ const Chat = () => {
                 )}
                 
                 <div
-                  className={`rounded-2xl px-5 py-4 ${
+                  className={`rounded-2xl px-3 sm:px-5 py-3 sm:py-4 max-w-[85vw] sm:max-w-none ${
                     message.role === "user"
                       ? "bg-sapphire-gradient text-white rounded-br-md shadow-sacred"
                       : "bg-white border border-primary-pale/50 text-foreground rounded-bl-md shadow-soft"
                   }`}
                 >
-                  <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                     {message.content || (isLoading && index === messages.length - 1 ? "" : message.content)}
                   </p>
                   {(isLoading || isGenerating || isAnalyzing) && message.role === "assistant" && !message.content && (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                      <span className="text-sm text-foreground-muted">
+                      <span className="text-xs sm:text-sm text-foreground-muted">
                         {isGenerating ? "Đang tạo hình ảnh..." : isAnalyzing ? "Đang phân tích..." : "Đang kết nối..."}
                       </span>
                     </div>
@@ -565,37 +565,37 @@ const Chat = () => {
 
       {/* Uploaded Image Preview */}
       {uploadedImage && (
-        <div className="px-4 py-2 bg-muted/50 border-t border-border">
-          <div className="container mx-auto max-w-3xl flex items-center gap-3">
-            <div className="relative">
-              <img src={uploadedImage} alt="To analyze" className="w-16 h-16 rounded-lg object-cover" />
+        <div className="flex-shrink-0 px-3 sm:px-4 py-2 bg-muted/50 border-t border-border">
+          <div className="container mx-auto max-w-3xl flex items-center gap-2 sm:gap-3">
+            <div className="relative flex-shrink-0">
+              <img src={uploadedImage} alt="To analyze" className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover" />
               <button
                 onClick={() => { setUploadedImage(null); setChatMode("chat"); }}
-                className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full"
+                className="absolute -top-1.5 -right-1.5 p-0.5 sm:p-1 bg-destructive text-destructive-foreground rounded-full"
               >
                 <X className="w-3 h-3" />
               </button>
             </div>
-            <p className="text-sm text-muted-foreground">Nhập câu hỏi về hình ảnh này...</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Nhập câu hỏi về hình ảnh...</p>
           </div>
         </div>
       )}
 
       {/* Mode Indicator */}
       {chatMode !== "chat" && !uploadedImage && (
-        <div className="px-4 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-t border-border">
-          <div className="container mx-auto max-w-3xl flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Wand2 className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                Chế độ tạo ảnh AI
+        <div className="flex-shrink-0 px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-t border-border">
+          <div className="container mx-auto max-w-3xl flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Wand2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium text-purple-700 dark:text-purple-300">
+                Tạo ảnh AI
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <select
                 value={imageStyle}
                 onChange={(e) => setImageStyle(e.target.value as any)}
-                className="text-xs px-2 py-1 rounded bg-white dark:bg-gray-800 border border-border"
+                className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white dark:bg-gray-800 border border-border"
               >
                 <option value="spiritual">Tâm linh</option>
                 <option value="realistic">Thực tế</option>
@@ -603,7 +603,7 @@ const Chat = () => {
               </select>
               <button
                 onClick={() => setChatMode("chat")}
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground px-1.5"
               >
                 Hủy
               </button>
@@ -612,40 +612,41 @@ const Chat = () => {
         </div>
       )}
 
-      {/* Input */}
-      <div className="sticky bottom-0 bg-background-pure/95 backdrop-blur-lg border-t border-primary-pale p-4">
+      {/* Input - Fixed at bottom with safe area padding */}
+      <div className="flex-shrink-0 bg-background-pure/95 backdrop-blur-lg border-t border-primary-pale px-3 sm:px-4 py-2 sm:py-3 safe-area-bottom">
         <form onSubmit={handleSubmit} className="container mx-auto max-w-3xl">
-          <div className="flex items-center gap-2">
-            {/* Mode buttons */}
-            <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Mode buttons - Compact on mobile */}
+            <div className="flex items-center">
               <button
                 type="button"
                 onClick={() => setChatMode("chat")}
-                className={`p-2 rounded-full transition-colors ${chatMode === "chat" ? "bg-primary text-primary-foreground" : "hover:bg-primary-pale"}`}
+                className={`p-1.5 sm:p-2 rounded-full transition-colors ${chatMode === "chat" ? "bg-primary text-primary-foreground" : "hover:bg-primary-pale"}`}
                 title="Trò chuyện"
               >
-                <MessageSquare className="w-5 h-5" />
+                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <button
                 type="button"
                 onClick={() => setChatMode("generate-image")}
-                className={`p-2 rounded-full transition-colors ${chatMode === "generate-image" ? "bg-purple-500 text-white" : "hover:bg-purple-100"}`}
+                className={`p-1.5 sm:p-2 rounded-full transition-colors ${chatMode === "generate-image" ? "bg-purple-500 text-white" : "hover:bg-purple-100"}`}
                 title="Tạo hình ảnh AI"
               >
-                <Wand2 className="w-5 h-5" />
+                <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="p-2 rounded-full hover:bg-blue-100 transition-colors"
+                className="p-1.5 sm:p-2 rounded-full hover:bg-blue-100 transition-colors"
                 title="Phân tích hình ảnh"
               >
-                <Camera className="w-5 h-5 text-blue-600" />
+                <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               </button>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                capture="environment"
                 onChange={handleImageUpload}
                 className="hidden"
               />
@@ -658,18 +659,21 @@ const Chat = () => {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={
                   chatMode === "generate-image" 
-                    ? "Mô tả hình ảnh bạn muốn tạo..." 
+                    ? "Mô tả hình ảnh..." 
                     : chatMode === "analyze-image"
                     ? "Hỏi về hình ảnh..."
-                    : "Chia sẻ với Trí Tuệ Vũ Trụ..."
+                    : "Chia sẻ với Angel AI..."
                 }
                 disabled={isLoading || isGenerating || isAnalyzing}
-                className="w-full px-5 py-3 pr-12 rounded-full border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-300 disabled:opacity-50"
+                enterKeyHint="send"
+                autoComplete="off"
+                autoCorrect="off"
+                className="w-full px-3 sm:px-5 py-2.5 sm:py-3 pr-10 sm:pr-12 rounded-full border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-300 disabled:opacity-50 text-sm sm:text-base"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading || isGenerating || isAnalyzing}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-sapphire-gradient text-white hover:shadow-sacred transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full bg-sapphire-gradient text-white hover:shadow-sacred transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading || isGenerating || isAnalyzing ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
