@@ -322,6 +322,47 @@ export type Database = {
         }
         Relationships: []
       }
+      community_comments: {
+        Row: {
+          content: string
+          content_length: number
+          created_at: string
+          id: string
+          is_rewarded: boolean | null
+          post_id: string
+          reward_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          content_length: number
+          created_at?: string
+          id?: string
+          is_rewarded?: boolean | null
+          post_id: string
+          reward_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          content_length?: number
+          created_at?: string
+          id?: string
+          is_rewarded?: boolean | null
+          post_id?: string
+          reward_amount?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_helps: {
         Row: {
           coins_earned: number | null
@@ -371,6 +412,112 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "chat_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts: {
+        Row: {
+          comments_count: number | null
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_rewarded: boolean | null
+          likes_count: number | null
+          reward_amount: number | null
+          shares_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_count?: number | null
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_rewarded?: boolean | null
+          likes_count?: number | null
+          reward_amount?: number | null
+          shares_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_count?: number | null
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_rewarded?: boolean | null
+          likes_count?: number | null
+          reward_amount?: number | null
+          shares_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      community_shares: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          post_owner_rewarded: boolean | null
+          sharer_id: string
+          sharer_rewarded: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          post_owner_rewarded?: boolean | null
+          sharer_id: string
+          sharer_rewarded?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          post_owner_rewarded?: boolean | null
+          sharer_id?: string
+          sharer_rewarded?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_shares_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
             referencedColumns: ["id"]
           },
         ]
@@ -470,6 +617,7 @@ export type Database = {
       }
       daily_reward_tracking: {
         Row: {
+          comments_rewarded: number | null
           community_helps_rewarded: number
           created_at: string
           feedbacks_rewarded: number
@@ -478,6 +626,7 @@ export type Database = {
           journals_rewarded: number
           knowledge_uploads: number
           logins_rewarded: number
+          posts_rewarded: number | null
           question_hashes: string[] | null
           questions_rewarded: number
           reward_date: string
@@ -487,6 +636,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comments_rewarded?: number | null
           community_helps_rewarded?: number
           created_at?: string
           feedbacks_rewarded?: number
@@ -495,6 +645,7 @@ export type Database = {
           journals_rewarded?: number
           knowledge_uploads?: number
           logins_rewarded?: number
+          posts_rewarded?: number | null
           question_hashes?: string[] | null
           questions_rewarded?: number
           reward_date?: string
@@ -504,6 +655,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comments_rewarded?: number | null
           community_helps_rewarded?: number
           created_at?: string
           feedbacks_rewarded?: number
@@ -512,6 +664,7 @@ export type Database = {
           journals_rewarded?: number
           knowledge_uploads?: number
           logins_rewarded?: number
+          posts_rewarded?: number | null
           question_hashes?: string[] | null
           questions_rewarded?: number
           reward_date?: string
