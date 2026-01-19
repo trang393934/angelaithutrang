@@ -34,7 +34,7 @@ interface KnowledgeDocument {
 type ProcessedFilter = "all" | "processed" | "pending";
 
 const AdminKnowledge = () => {
-  const { user, isAdmin, isLoading: authLoading, signOut } = useAuth();
+  const { user, isAdmin, isLoading: authLoading, isAdminChecked, signOut } = useAuth();
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<KnowledgeDocument[]>([]);
   const [folders, setFolders] = useState<KnowledgeFolder[]>([]);
@@ -107,7 +107,7 @@ const AdminKnowledge = () => {
   };
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && isAdminChecked) {
       if (!user) {
         navigate("/admin/login");
       } else if (!isAdmin) {
@@ -117,7 +117,7 @@ const AdminKnowledge = () => {
         fetchData();
       }
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, isAdminChecked, navigate]);
 
   const fetchData = async () => {
     setIsLoading(true);

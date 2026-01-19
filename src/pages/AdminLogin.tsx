@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Lock, Mail, ArrowLeft, Sparkles, UserPlus } from "lucide-react";
+import { Lock, Mail, ArrowLeft, Sparkles, UserPlus, Loader2 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 const AdminLogin = () => {
@@ -10,8 +10,17 @@ const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { user, isAdmin, isAdminChecked, isLoading: authLoading, signIn, signUp } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in as admin
+  useEffect(() => {
+    if (!authLoading && isAdminChecked && user) {
+      if (isAdmin) {
+        navigate("/admin/dashboard");
+      }
+    }
+  }, [user, isAdmin, isAdminChecked, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,17 +52,17 @@ const AdminLogin = () => {
       }
     } else {
       const { error } = await signIn(email, password);
-      setIsLoading(false);
-
+      
       if (error) {
+        setIsLoading(false);
         if (error.message.includes("Invalid login credentials")) {
           toast.error("Email hoặc mật khẩu không đúng");
         } else {
           toast.error("Đăng nhập thất bại: " + error.message);
         }
       } else {
+        // Don't set isLoading to false here - let the useEffect handle redirect
         toast.success("Đăng nhập thành công! 🌟");
-        navigate("/admin/knowledge");
       }
     }
   };

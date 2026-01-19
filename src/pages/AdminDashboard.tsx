@@ -55,7 +55,7 @@ interface UserWithStatus {
 }
 
 const AdminDashboard = () => {
-  const { user, isAdmin, isLoading: authLoading, signOut } = useAuth();
+  const { user, isAdmin, isLoading: authLoading, isAdminChecked, signOut } = useAuth();
   const navigate = useNavigate();
 
   const [users, setUsers] = useState<UserWithStatus[]>([]);
@@ -75,7 +75,7 @@ const AdminDashboard = () => {
   const [userDetail, setUserDetail] = useState<UserWithStatus | null>(null);
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && isAdminChecked) {
       if (!user) {
         navigate("/admin/login");
       } else if (!isAdmin) {
@@ -85,7 +85,7 @@ const AdminDashboard = () => {
         fetchUsers();
       }
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, isAdminChecked, navigate]);
 
   const fetchUsers = async () => {
     setIsLoading(true);

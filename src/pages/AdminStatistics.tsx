@@ -105,7 +105,7 @@ const CHART_COLORS = [
 ];
 
 const AdminStatistics = () => {
-  const { user, isAdmin, isLoading: authLoading, signOut } = useAuth();
+  const { user, isAdmin, isLoading: authLoading, isAdminChecked, signOut } = useAuth();
   const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -125,7 +125,7 @@ const AdminStatistics = () => {
   });
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && isAdminChecked) {
       if (!user) {
         navigate("/admin/login");
       } else if (!isAdmin) {
@@ -135,7 +135,7 @@ const AdminStatistics = () => {
         fetchAllStats();
       }
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, isAdminChecked, navigate]);
 
   useEffect(() => {
     if (user && isAdmin) {

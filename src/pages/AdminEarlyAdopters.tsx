@@ -47,7 +47,7 @@ interface EarlyAdopterUser {
 }
 
 const AdminEarlyAdopters = () => {
-  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, isLoading: authLoading, isAdminChecked } = useAuth();
   const navigate = useNavigate();
 
   const [adopters, setAdopters] = useState<EarlyAdopterUser[]>([]);
@@ -65,14 +65,14 @@ const AdminEarlyAdopters = () => {
   });
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && isAdminChecked) {
       if (!user) {
         navigate("/admin/login");
       } else if (!isAdmin) {
         navigate("/");
       }
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, isAdminChecked, navigate]);
 
   const fetchEarlyAdopters = async () => {
     try {
