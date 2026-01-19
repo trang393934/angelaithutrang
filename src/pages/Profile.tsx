@@ -11,6 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
+import LightPointsDisplay from "@/components/LightPointsDisplay";
+import DailyGratitude from "@/components/DailyGratitude";
+import HealingMessagesPanel from "@/components/HealingMessagesPanel";
 
 interface Profile {
   id: string;
@@ -299,6 +302,14 @@ const Profile = () => {
         </div>
 
         <div className="space-y-6">
+          {/* Light Points & Spiritual Journey Section */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <LightPointsDisplay />
+            <DailyGratitude />
+          </div>
+
+          {/* Healing Messages from Angel AI */}
+          <HealingMessagesPanel />
           {/* Avatar Card */}
           <Card className="border-divine-gold/20 shadow-divine">
             <CardContent className="pt-6">
