@@ -2,3 +2,15 @@ project_id = "ssjoetiitctqzapymtzl"
 
 [functions.angel-chat]
 verify_jwt = false
+
+[functions.analyze-onboarding]
+verify_jwt = false
+
+[functions.check-user-energy]
+verify_jwt = false
+
+[functions.send-healing-message]
+verify_jwt = false
+
+[functions.suspend-user]
+verify_jwt = true

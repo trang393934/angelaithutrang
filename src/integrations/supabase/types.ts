@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_gratitude: {
+        Row: {
+          created_at: string
+          gratitude_text: string
+          id: string
+          light_points_earned: number | null
+          sentiment_score: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          gratitude_text: string
+          id?: string
+          light_points_earned?: number | null
+          sentiment_score?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          gratitude_text?: string
+          id?: string
+          light_points_earned?: number | null
+          sentiment_score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      healing_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message_type: string
+          read_at: string | null
+          title: string
+          triggered_by: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message_type: string
+          read_at?: string | null
+          title: string
+          triggered_by?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message_type?: string
+          read_at?: string | null
+          title?: string
+          triggered_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       knowledge_documents: {
         Row: {
           created_at: string
@@ -97,6 +160,69 @@ export type Database = {
         }
         Relationships: []
       }
+      light_points: {
+        Row: {
+          created_at: string
+          id: string
+          points: number
+          reason: string
+          source_type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points: number
+          reason: string
+          source_type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points?: number
+          reason?: string
+          source_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      onboarding_responses: {
+        Row: {
+          analyzed_at: string | null
+          answer: string
+          created_at: string
+          energy_keywords: string[] | null
+          id: string
+          question_key: string
+          question_text: string
+          sentiment_score: number | null
+          user_id: string
+        }
+        Insert: {
+          analyzed_at?: string | null
+          answer: string
+          created_at?: string
+          energy_keywords?: string[] | null
+          id?: string
+          question_key: string
+          question_text: string
+          sentiment_score?: number | null
+          user_id: string
+        }
+        Update: {
+          analyzed_at?: string | null
+          answer?: string
+          created_at?: string
+          energy_keywords?: string[] | null
+          id?: string
+          question_key?: string
+          question_text?: string
+          sentiment_score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -127,6 +253,111 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_log: {
+        Row: {
+          activity_type: string
+          content_preview: string | null
+          created_at: string
+          energy_impact: Database["public"]["Enums"]["energy_level"] | null
+          id: string
+          metadata: Json | null
+          sentiment_score: number | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          content_preview?: string | null
+          created_at?: string
+          energy_impact?: Database["public"]["Enums"]["energy_level"] | null
+          id?: string
+          metadata?: Json | null
+          sentiment_score?: number | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          content_preview?: string | null
+          created_at?: string
+          energy_impact?: Database["public"]["Enums"]["energy_level"] | null
+          id?: string
+          metadata?: Json | null
+          sentiment_score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_energy_status: {
+        Row: {
+          admin_notes: string | null
+          approval_status: Database["public"]["Enums"]["approval_status"]
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          current_energy_level:
+            | Database["public"]["Enums"]["energy_level"]
+            | null
+          id: string
+          last_activity_at: string | null
+          light_shared_count: number | null
+          negative_interactions_count: number | null
+          overall_sentiment_score: number | null
+          positive_interactions_count: number | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          trial_end_date: string | null
+          trial_start_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          approval_status?: Database["public"]["Enums"]["approval_status"]
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          current_energy_level?:
+            | Database["public"]["Enums"]["energy_level"]
+            | null
+          id?: string
+          last_activity_at?: string | null
+          light_shared_count?: number | null
+          negative_interactions_count?: number | null
+          overall_sentiment_score?: number | null
+          positive_interactions_count?: number | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          trial_end_date?: string | null
+          trial_start_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          approval_status?: Database["public"]["Enums"]["approval_status"]
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          current_energy_level?:
+            | Database["public"]["Enums"]["energy_level"]
+            | null
+          id?: string
+          last_activity_at?: string | null
+          light_shared_count?: number | null
+          negative_interactions_count?: number | null
+          overall_sentiment_score?: number | null
+          positive_interactions_count?: number | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          trial_end_date?: string | null
+          trial_start_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_light_agreements: {
         Row: {
           agreed_at: string
@@ -144,6 +375,33 @@ export type Database = {
           agreed_at?: string
           created_at?: string
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_light_totals: {
+        Row: {
+          current_level: number | null
+          id: string
+          lifetime_points: number | null
+          total_points: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_level?: number | null
+          id?: string
+          lifetime_points?: number | null
+          total_points?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_level?: number | null
+          id?: string
+          lifetime_points?: number | null
+          total_points?: number | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -169,11 +427,62 @@ export type Database = {
         }
         Relationships: []
       }
+      user_suspensions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          healing_message: string | null
+          id: string
+          lifted_at: string | null
+          lifted_by: string | null
+          reason: string
+          suspended_at: string
+          suspended_until: string | null
+          suspension_type: Database["public"]["Enums"]["suspension_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          healing_message?: string | null
+          id?: string
+          lifted_at?: string | null
+          lifted_by?: string | null
+          reason: string
+          suspended_at?: string
+          suspended_until?: string | null
+          suspension_type: Database["public"]["Enums"]["suspension_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          healing_message?: string | null
+          id?: string
+          lifted_at?: string | null
+          lifted_by?: string | null
+          reason?: string
+          suspended_at?: string
+          suspended_until?: string | null
+          suspension_type?: Database["public"]["Enums"]["suspension_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      add_light_points: {
+        Args: {
+          _points: number
+          _reason: string
+          _source_type: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -182,9 +491,14 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_user_approved: { Args: { _user_id: string }; Returns: boolean }
+      is_user_suspended: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
+      approval_status: "pending" | "approved" | "rejected" | "trial"
+      energy_level: "very_high" | "high" | "neutral" | "low" | "very_low"
+      suspension_type: "temporary" | "permanent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -313,6 +627,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      approval_status: ["pending", "approved", "rejected", "trial"],
+      energy_level: ["very_high", "high", "neutral", "low", "very_low"],
+      suspension_type: ["temporary", "permanent"],
     },
   },
 } as const
