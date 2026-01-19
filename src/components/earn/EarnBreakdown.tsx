@@ -16,7 +16,11 @@ import {
   Upload,
   MessageSquare,
   Users,
-  Settings
+  Settings,
+  Heart,
+  PenSquare,
+  MessageCircleHeart,
+  Sparkles
 } from "lucide-react";
 
 interface CoinBreakdown {
@@ -26,6 +30,7 @@ interface CoinBreakdown {
 }
 
 const TRANSACTION_TYPE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+  // Chat & Journaling
   chat_reward: { 
     label: "Hỏi đáp với Angel", 
     icon: <MessageCircle className="h-5 w-5" />, 
@@ -41,16 +46,32 @@ const TRANSACTION_TYPE_CONFIG: Record<string, { label: string; icon: React.React
     icon: <BookOpen className="h-5 w-5" />, 
     color: "bg-green-100 text-green-600 dark:bg-green-900/30" 
   },
+  
+  // Daily & Streak
   daily_login: { 
     label: "Đăng nhập hàng ngày", 
     icon: <Calendar className="h-5 w-5" />, 
     color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30" 
   },
+  
+  // Community Activities
   engagement_reward: { 
-    label: "Tương tác cộng đồng", 
-    icon: <Users className="h-5 w-5" />, 
+    label: "Tương tác cộng đồng (10 likes)", 
+    icon: <Heart className="h-5 w-5" />, 
     color: "bg-pink-100 text-pink-600 dark:bg-pink-900/30" 
   },
+  community_support: { 
+    label: "Đăng bài cộng đồng", 
+    icon: <PenSquare className="h-5 w-5" />, 
+    color: "bg-violet-100 text-violet-600 dark:bg-violet-900/30" 
+  },
+  content_share: { 
+    label: "Chia sẻ bài viết", 
+    icon: <Share2 className="h-5 w-5" />, 
+    color: "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30" 
+  },
+  
+  // Contributions
   bounty_reward: { 
     label: "Nhiệm vụ Bounty", 
     icon: <Trophy className="h-5 w-5" />, 
@@ -60,11 +81,6 @@ const TRANSACTION_TYPE_CONFIG: Record<string, { label: string; icon: React.React
     label: "Đóng góp ý tưởng", 
     icon: <Lightbulb className="h-5 w-5" />, 
     color: "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30" 
-  },
-  content_share: { 
-    label: "Chia sẻ nội dung", 
-    icon: <Share2 className="h-5 w-5" />, 
-    color: "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30" 
   },
   vision_reward: { 
     label: "Vision Board", 
@@ -81,11 +97,8 @@ const TRANSACTION_TYPE_CONFIG: Record<string, { label: string; icon: React.React
     icon: <MessageSquare className="h-5 w-5" />, 
     color: "bg-rose-100 text-rose-600 dark:bg-rose-900/30" 
   },
-  community_support: { 
-    label: "Hỗ trợ cộng đồng", 
-    icon: <Users className="h-5 w-5" />, 
-    color: "bg-violet-100 text-violet-600 dark:bg-violet-900/30" 
-  },
+  
+  // Referral & Challenges
   referral_bonus: { 
     label: "Giới thiệu bạn bè", 
     icon: <Users className="h-5 w-5" />, 
@@ -93,9 +106,11 @@ const TRANSACTION_TYPE_CONFIG: Record<string, { label: string; icon: React.React
   },
   challenge_reward: { 
     label: "Hoàn thành thử thách", 
-    icon: <Award className="h-5 w-5" />, 
+    icon: <Sparkles className="h-5 w-5" />, 
     color: "bg-red-100 text-red-600 dark:bg-red-900/30" 
   },
+  
+  // Admin
   admin_adjustment: { 
     label: "Điều chỉnh Admin", 
     icon: <Settings className="h-5 w-5" />, 
