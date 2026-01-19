@@ -316,6 +316,66 @@ export function useCommunityPosts() {
     });
   };
 
+  const editPost = async (postId: string, content: string, imageUrl?: string) => {
+    if (!user) {
+      return { success: false, message: "Vui lòng đăng nhập" };
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke("process-community-post", {
+        body: {
+          action: "edit_post",
+          userId: user.id,
+          postId,
+          content,
+          imageUrl,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        await fetchPosts();
+        toast.success(data.message);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error("Error editing post:", error);
+      toast.error(error.message || "Lỗi khi chỉnh sửa bài viết");
+      return { success: false, message: error.message || "Lỗi khi chỉnh sửa bài viết" };
+    }
+  };
+
+  const deletePost = async (postId: string) => {
+    if (!user) {
+      return { success: false, message: "Vui lòng đăng nhập" };
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke("process-community-post", {
+        body: {
+          action: "delete_post",
+          userId: user.id,
+          postId,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        setPosts(prev => prev.filter(p => p.id !== postId));
+        toast.success(data.message);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error("Error deleting post:", error);
+      toast.error(error.message || "Lỗi khi xóa bài viết");
+      return { success: false, message: error.message || "Lỗi khi xóa bài viết" };
+    }
+  };
+
   useEffect(() => {
     fetchPosts();
     if (user) {
@@ -356,6 +416,8 @@ export function useCommunityPosts() {
     sharePost,
     addComment,
     fetchComments,
+    editPost,
+    deletePost,
     refreshPosts: fetchPosts,
   };
 }
