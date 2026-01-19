@@ -147,26 +147,26 @@ export const Header = () => {
                     
                     <Link 
                       to="/profile"
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-pale/50 text-sm hover:bg-primary-pale transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
                     >
                       {userProfile?.avatar_url ? (
                         <img 
                           src={userProfile.avatar_url} 
                           alt="Avatar" 
-                          className="w-6 h-6 rounded-full object-cover"
+                          className="w-7 h-7 rounded-full object-cover"
                         />
                       ) : (
-                        <User className="w-4 h-4 text-primary" />
+                        <User className="w-5 h-5 text-primary" />
                       )}
-                      <span className="text-foreground-muted max-w-[120px] truncate">
+                      <span className="text-base font-semibold text-foreground max-w-[140px] truncate">
                         {getDisplayName()}
                       </span>
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-base font-semibold text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-5 h-5" />
                       <span>Đăng xuất</span>
                     </button>
                   </div>
