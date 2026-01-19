@@ -82,12 +82,15 @@ export const Header = () => {
               <>
                 {user ? (
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-pale/50 text-sm">
+                    <Link 
+                      to="/profile"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-pale/50 text-sm hover:bg-primary-pale transition-colors"
+                    >
                       <User className="w-4 h-4 text-primary" />
                       <span className="text-foreground-muted max-w-[120px] truncate">
                         {user.email}
                       </span>
-                    </div>
+                    </Link>
                     <button
                       onClick={handleSignOut}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"

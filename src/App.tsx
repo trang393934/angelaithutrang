@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Chat from "./pages/Chat";
 import About from "./pages/About";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
 import AdminLogin from "./pages/AdminLogin";
 import AdminKnowledge from "./pages/AdminKnowledge";
 import NotFound from "./pages/NotFound";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/chat" element={<Chat />} />
             <Route path="/about" element={<About />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/knowledge" element={<AdminKnowledge />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

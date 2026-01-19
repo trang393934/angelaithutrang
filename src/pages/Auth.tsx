@@ -160,6 +160,9 @@ const Auth = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const [agreedToLightLaw, setAgreedToLightLaw] = useState(false);
   const [hasReadLaw, setHasReadLaw] = useState(false);
   const [showLawDialog, setShowLawDialog] = useState(false);
@@ -319,6 +322,43 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!forgotPasswordEmail.trim()) {
+      toast({
+        title: "Vui lòng nhập email",
+        description: "Nhập email của bạn để nhận link đặt lại mật khẩu.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingReset(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email đã được gửi!",
+        description: "Vui lòng kiểm tra hộp thư để đặt lại mật khẩu ✨",
+      });
+      setShowForgotPassword(false);
+      setForgotPasswordEmail("");
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error instanceof Error ? error.message : "Không thể gửi email. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Divine background */}
@@ -373,7 +413,18 @@ const Auth = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-foreground-muted">Mật khẩu</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-foreground-muted">Mật khẩu</Label>
+                  {!isSignUp && (
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-xs text-divine-gold hover:text-divine-light transition-colors"
+                    >
+                      Quên mật khẩu?
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -530,6 +581,61 @@ const Auth = () => {
           </p>
         </CardContent>
       </Card>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="max-w-md bg-card border-divine-gold/20">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+              🔑 Quên Mật Khẩu
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleForgotPassword} className="space-y-4 pt-4">
+            <p className="text-sm text-foreground-muted text-center">
+              Nhập email của bạn để nhận link đặt lại mật khẩu
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="resetEmail">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="resetEmail"
+                  type="email"
+                  placeholder="email@example.com"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  className="pl-10 bg-background/50 border-divine-gold/20 focus:border-divine-gold"
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowForgotPassword(false)}
+                className="flex-1"
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSendingReset}
+                className="flex-1 bg-sapphire-gradient hover:opacity-90"
+              >
+                {isSendingReset ? (
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 animate-spin" />
+                    Đang gửi...
+                  </span>
+                ) : (
+                  "Gửi Email"
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
