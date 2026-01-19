@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.suspend-user]
 verify_jwt = true
+
+[functions.fetch-google-content]
+verify_jwt = false
