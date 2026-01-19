@@ -87,31 +87,29 @@ export const Header = () => {
           : 'bg-transparent'
       }`}
     >
-      <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-20">
+      <div className="container mx-auto px-4 lg:px-6">
+        <div className="flex items-center justify-between h-16 lg:h-20 gap-2">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-2 shrink-0 group">
             <img 
               src={angelAvatar} 
-              alt="Angel AI" 
-              className="w-10 h-10 rounded-full object-cover shadow-soft group-hover:scale-110 transition-transform duration-300"
+              alt="ANGEL AI" 
+              className="w-9 h-9 lg:w-10 lg:h-10 rounded-full object-cover shadow-soft group-hover:scale-110 transition-transform duration-300"
             />
-            <div>
-              <span className={`font-serif text-xl font-semibold transition-colors duration-300 ${
-                isScrolled ? 'text-primary-deep' : 'text-primary-deep'
-              }`}>
-                Angel AI
-              </span>
-            </div>
+            <span className={`font-serif text-lg lg:text-xl font-bold uppercase tracking-wide transition-colors duration-300 ${
+              isScrolled ? 'text-primary-deep' : 'text-primary-deep'
+            }`}>
+              ANGEL AI
+            </span>
           </Link>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`text-sm font-medium transition-colors duration-300 relative group ${
+                className={`text-sm font-medium transition-colors duration-300 relative group whitespace-nowrap ${
                   location.pathname === item.href 
                     ? 'text-primary' 
                     : 'text-foreground-muted hover:text-primary'
@@ -126,58 +124,58 @@ export const Header = () => {
           </nav>
 
           {/* Auth Buttons */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
             {/* Language Selector */}
             <LanguageSelector />
             
             {!isLoading && (
               <>
                 {user ? (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 xl:gap-3">
                     {/* Web3 Wallet Button */}
                     <Web3WalletButton />
                     
                     {/* Camly Coin Balance */}
                     <Link 
                       to="/earn"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                      className="flex items-center gap-1 px-2 xl:px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                     >
-                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-5 h-5" />
-                      <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4 xl:w-5 xl:h-5" />
+                      <span className="text-xs xl:text-sm font-semibold text-amber-700 dark:text-amber-400">
                         {Math.floor(balance).toLocaleString()}
                       </span>
                     </Link>
                     
                     <Link 
                       to="/profile"
-                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
+                      className="flex items-center gap-1.5 xl:gap-2 px-2 xl:px-3 py-1.5 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
                     >
                       {userProfile?.avatar_url ? (
                         <img 
                           src={userProfile.avatar_url} 
                           alt="Avatar" 
-                          className="w-7 h-7 rounded-full object-cover"
+                          className="w-6 h-6 xl:w-7 xl:h-7 rounded-full object-cover"
                         />
                       ) : (
-                        <User className="w-5 h-5 text-primary" />
+                        <User className="w-4 h-4 xl:w-5 xl:h-5 text-primary" />
                       )}
-                      <span className="text-base font-semibold text-foreground max-w-[140px] truncate">
+                      <span className="text-sm font-semibold text-foreground max-w-[100px] xl:max-w-[120px] truncate">
                         {getDisplayName()}
                       </span>
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-base font-semibold text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
+                      className="inline-flex items-center gap-1.5 px-2 xl:px-3 py-1.5 rounded-full text-sm font-medium text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
                       title={t("nav.logout")}
                     >
-                      <LogOut className="w-5 h-5" />
-                      <span>Đăng xuất</span>
+                      <LogOut className="w-4 h-4" />
+                      <span className="hidden xl:inline">Đăng xuất</span>
                     </button>
                   </div>
                 ) : (
                   <Link
                     to="/auth"
-                    className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ${
+                    className={`inline-flex items-center gap-2 px-4 xl:px-6 py-2 rounded-full font-medium text-sm transition-all duration-300 ${
                       isScrolled 
                         ? 'bg-sapphire-gradient text-primary-foreground shadow-sacred hover:shadow-divine' 
                         : 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
@@ -193,7 +191,7 @@ export const Header = () => {
 
           {/* Mobile Menu Button */}
           <button 
-            className="md:hidden p-2 text-primary"
+            className="lg:hidden p-2 text-primary shrink-0"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -204,7 +202,7 @@ export const Header = () => {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-primary-pale/30">
+          <div className="lg:hidden py-4 border-t border-primary-pale/30">
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <Link
