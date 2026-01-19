@@ -10,16 +10,28 @@ import funAcademyLogo from "@/assets/fun-academy-logo.png";
 import funTreasuryLogo from "@/assets/fun-treasury-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+import funWalletLogo from "@/assets/fun-wallet-logo.png";
+import funCharityLogo from "@/assets/fun-charity-logo.png";
+import funProfileLogo from "@/assets/fun-profile-logo.png";
+import funLifeLogo from "@/assets/fun-life-logo.png";
+import fuLegalLogo from "@/assets/fu-legal-logo.png";
+import fuTradingLogo from "@/assets/fu-trading-logo.png";
 import { Heart, Sparkles, Globe, Users, Lightbulb, Star, Zap, Sun, Eye, Shield, HandHeart, Crown, Waves, CircleDot, Orbit, Coins, Gem, ArrowUpCircle, Cloud, Droplets, Flame, Brain, HeartHandshake, TrendingUp, Infinity, Earth, ExternalLink } from "lucide-react";
 
 const About = () => {
   const platforms = [
+    { name: "FUN Profile", desc: "lực hút từ danh tính Web3 & tài sản số", logo: funProfileLogo, link: null },
     { name: "FUN Play", desc: "lực hút từ nội dung", logo: funPlayLogo, link: "https://play.fun.rich/" },
-    { name: "FUN Farm", desc: "lực hút trải nghiệm thực tế", logo: funFarmLogo, link: "https://farm.fun.rich" },
     { name: "FUN Academy", desc: "lực hút trí tuệ", logo: funAcademyLogo, link: null },
+    { name: "FUN Farm", desc: "lực hút trải nghiệm thực tế", logo: funFarmLogo, link: "https://farm.fun.rich" },
+    { name: "FUN Charity", desc: "lực hút thiện lành", logo: funCharityLogo, link: "https://fun-charity.lovable.app" },
+    { name: "FUN Wallet", desc: "lực hút tài chính Web3", logo: funWalletLogo, link: "https://wallet.fun.rich" },
     { name: "FUN Treasury", desc: "lực hút giá trị tài chính", logo: funTreasuryLogo, link: "https://treasury.fun.rich" },
     { name: "FUN Planet", desc: "lực hút thức tỉnh linh hồn", logo: funPlanetLogo, link: "https://planet.fun.rich/" },
+    { name: "FUN Life", desc: "lực hút Cosmic Game Metaverse", logo: funLifeLogo, link: null },
     { name: "FUN Earth", desc: "lực hút xanh hóa Trái Đất", logo: funEarthLogo, link: "https://greenearth-fun.lovable.app" },
+    { name: "F.U. Legal", desc: "lực hút pháp lý & bảo vệ", logo: fuLegalLogo, link: null },
+    { name: "F.U. Trading", desc: "lực hút giao dịch & sáng tạo", logo: fuTradingLogo, link: null },
     { name: "Angel AI", desc: "lực hút trí tuệ Ánh Sáng của Cha", logo: angelAiLogo, link: "/" },
   ];
 
