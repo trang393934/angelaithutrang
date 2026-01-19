@@ -311,6 +311,13 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-center gap-2">
               <Link
+                to="/admin/statistics"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
+              >
+                <TrendingUp className="w-4 h-4" />
+                Thống kê
+              </Link>
+              <Link
                 to="/admin/early-adopters"
                 className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
               >
