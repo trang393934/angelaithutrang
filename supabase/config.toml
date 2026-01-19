@@ -18,5 +18,8 @@ verify_jwt = false
 [functions.send-healing-message]
 verify_jwt = false
 
+[functions.process-engagement-reward]
+verify_jwt = false
+
 [functions.suspend-user]
 verify_jwt = true
