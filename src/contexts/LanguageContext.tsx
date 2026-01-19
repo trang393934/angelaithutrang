@@ -43,15 +43,18 @@ interface LanguageContextType {
   languages: Language[];
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
-
-export const useLanguage = () => {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error("useLanguage must be used within a LanguageProvider");
-  }
-  return context;
+// Provide a safe default to avoid hard-crashing the app if a component renders
+// before the provider is mounted (e.g. during HMR / partial reloads).
+const defaultContext: LanguageContextType = {
+  currentLanguage: "vi",
+  setLanguage: () => {},
+  t: (key: string) => key,
+  languages,
 };
+
+const LanguageContext = createContext<LanguageContextType>(defaultContext);
+
+export const useLanguage = () => useContext(LanguageContext);
 
 interface LanguageProviderProps {
   children: ReactNode;
