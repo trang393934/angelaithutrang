@@ -6,9 +6,17 @@ import { toast } from "sonner";
 import { 
   ArrowLeft, Upload, FileText, Trash2, 
   LogOut, Sparkles, CheckCircle, Clock,
-  FileType, AlertCircle
+  FileType, AlertCircle, FolderPlus, Folder,
+  Edit2, X, ChevronDown, ChevronRight, MoreVertical
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
+
+interface KnowledgeFolder {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
 
 interface KnowledgeDocument {
   id: string;
@@ -19,18 +27,30 @@ interface KnowledgeDocument {
   file_size: number;
   is_processed: boolean;
   created_at: string;
+  folder_id: string | null;
 }
 
 const AdminKnowledge = () => {
   const { user, isAdmin, isLoading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<KnowledgeDocument[]>([]);
+  const [folders, setFolders] = useState<KnowledgeFolder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  
+  // Folder form
+  const [showFolderForm, setShowFolderForm] = useState(false);
+  const [editingFolder, setEditingFolder] = useState<KnowledgeFolder | null>(null);
+  const [folderForm, setFolderForm] = useState({ name: "", description: "" });
+  
+  // Upload form
   const [uploadForm, setUploadForm] = useState({
     title: "",
     description: "",
     file: null as File | null,
+    folderId: null as string | null,
   });
 
   useEffect(() => {
@@ -41,13 +61,33 @@ const AdminKnowledge = () => {
         toast.error("Bạn không có quyền truy cập trang này");
         navigate("/");
       } else {
-        fetchDocuments();
+        fetchData();
       }
     }
   }, [user, isAdmin, authLoading, navigate]);
 
-  const fetchDocuments = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
+    await Promise.all([fetchFolders(), fetchDocuments()]);
+    setIsLoading(false);
+  };
+
+  const fetchFolders = async () => {
+    const { data, error } = await supabase
+      .from("knowledge_folders")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching folders:", error);
+    } else {
+      setFolders(data || []);
+      // Expand all folders by default
+      setExpandedFolders(new Set((data || []).map(f => f.id)));
+    }
+  };
+
+  const fetchDocuments = async () => {
     const { data, error } = await supabase
       .from("knowledge_documents")
       .select("*")
@@ -59,29 +99,80 @@ const AdminKnowledge = () => {
     } else {
       setDocuments(data || []);
     }
-    setIsLoading(false);
   };
 
+  // Folder CRUD
+  const handleSaveFolder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!folderForm.name.trim()) {
+      toast.error("Vui lòng nhập tên thư mục");
+      return;
+    }
+
+    try {
+      if (editingFolder) {
+        const { error } = await supabase
+          .from("knowledge_folders")
+          .update({ name: folderForm.name, description: folderForm.description || null })
+          .eq("id", editingFolder.id);
+        if (error) throw error;
+        toast.success("Đã cập nhật thư mục");
+      } else {
+        const { error } = await supabase
+          .from("knowledge_folders")
+          .insert({ 
+            name: folderForm.name, 
+            description: folderForm.description || null,
+            created_by: user?.id 
+          });
+        if (error) throw error;
+        toast.success("Đã tạo thư mục mới");
+      }
+      
+      setFolderForm({ name: "", description: "" });
+      setShowFolderForm(false);
+      setEditingFolder(null);
+      fetchFolders();
+    } catch (error) {
+      console.error("Folder save error:", error);
+      toast.error("Không thể lưu thư mục");
+    }
+  };
+
+  const handleEditFolder = (folder: KnowledgeFolder) => {
+    setEditingFolder(folder);
+    setFolderForm({ name: folder.name, description: folder.description || "" });
+    setShowFolderForm(true);
+  };
+
+  const handleDeleteFolder = async (folder: KnowledgeFolder) => {
+    const docsInFolder = documents.filter(d => d.folder_id === folder.id);
+    if (docsInFolder.length > 0) {
+      if (!confirm(`Thư mục "${folder.name}" chứa ${docsInFolder.length} tài liệu. Các tài liệu sẽ được chuyển về "Chưa phân loại". Tiếp tục?`)) {
+        return;
+      }
+    } else if (!confirm(`Bạn có chắc muốn xóa thư mục "${folder.name}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("knowledge_folders")
+        .delete()
+        .eq("id", folder.id);
+      if (error) throw error;
+      toast.success("Đã xóa thư mục");
+      fetchData();
+    } catch (error) {
+      console.error("Folder delete error:", error);
+      toast.error("Không thể xóa thư mục");
+    }
+  };
+
+  // File handling - removed size limit
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const allowedTypes = [
-        "application/pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "text/plain",
-        "text/markdown"
-      ];
-      
-      if (!allowedTypes.includes(file.type)) {
-        toast.error("Chỉ hỗ trợ file PDF, DOCX, TXT hoặc MD");
-        return;
-      }
-      
-      if (file.size > 50 * 1024 * 1024) {
-        toast.error("File không được vượt quá 50MB");
-        return;
-      }
-      
       setUploadForm(prev => ({ 
         ...prev, 
         file,
@@ -117,7 +208,8 @@ const AdminKnowledge = () => {
 
       // Extract text content for TXT and MD files
       let extractedContent = null;
-      if (uploadForm.file.type === "text/plain" || uploadForm.file.type === "text/markdown") {
+      if (uploadForm.file.type === "text/plain" || uploadForm.file.type === "text/markdown" || 
+          uploadForm.file.name.endsWith(".txt") || uploadForm.file.name.endsWith(".md")) {
         extractedContent = await uploadForm.file.text();
       }
 
@@ -129,17 +221,18 @@ const AdminKnowledge = () => {
           description: uploadForm.description || null,
           file_name: uploadForm.file.name,
           file_url: urlData.publicUrl,
-          file_type: uploadForm.file.type,
+          file_type: uploadForm.file.type || "application/octet-stream",
           file_size: uploadForm.file.size,
           extracted_content: extractedContent,
           is_processed: !!extractedContent,
           created_by: user?.id,
+          folder_id: uploadForm.folderId,
         });
 
       if (dbError) throw dbError;
 
       toast.success("Upload tài liệu thành công! ✨");
-      setUploadForm({ title: "", description: "", file: null });
+      setUploadForm({ title: "", description: "", file: null, folderId: selectedFolderId });
       fetchDocuments();
     } catch (error) {
       console.error("Upload error:", error);
@@ -153,15 +246,21 @@ const AdminKnowledge = () => {
     if (!confirm(`Bạn có chắc muốn xóa tài liệu "${doc.title}"?`)) return;
 
     try {
-      // Extract file name from URL
-      const fileName = doc.file_name;
+      // Extract file name from stored file name pattern
+      const urlParts = doc.file_name;
       
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
+      // Delete from storage (try to find the actual stored filename)
+      const { data: files } = await supabase.storage
         .from("knowledge-documents")
-        .remove([fileName]);
-
-      if (storageError) console.error("Storage delete error:", storageError);
+        .list();
+      
+      const matchingFile = files?.find(f => f.name.includes(doc.file_name.split('.')[0]) || doc.file_name.includes(f.name));
+      
+      if (matchingFile) {
+        await supabase.storage
+          .from("knowledge-documents")
+          .remove([matchingFile.name]);
+      }
 
       // Delete from database
       const { error: dbError } = await supabase
@@ -182,15 +281,38 @@ const AdminKnowledge = () => {
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
   };
 
-  const getFileIcon = (type: string) => {
-    if (type.includes("pdf")) return "📄";
-    if (type.includes("word") || type.includes("document")) return "📝";
-    if (type.includes("text") || type.includes("markdown")) return "📃";
+  const getFileIcon = (type: string, fileName: string) => {
+    if (type.includes("pdf") || fileName.endsWith(".pdf")) return "📄";
+    if (type.includes("word") || type.includes("document") || fileName.endsWith(".docx") || fileName.endsWith(".doc")) return "📝";
+    if (type.includes("text") || type.includes("markdown") || fileName.endsWith(".txt") || fileName.endsWith(".md")) return "📃";
+    if (type.includes("image") || fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) return "🖼️";
+    if (type.includes("audio") || fileName.match(/\.(mp3|wav|ogg|m4a)$/i)) return "🎵";
+    if (type.includes("video") || fileName.match(/\.(mp4|webm|avi|mov)$/i)) return "🎬";
+    if (type.includes("spreadsheet") || fileName.match(/\.(xlsx|xls|csv)$/i)) return "📊";
     return "📁";
   };
+
+  const toggleFolder = (folderId: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId);
+      } else {
+        newSet.add(folderId);
+      }
+      return newSet;
+    });
+  };
+
+  const getDocumentsInFolder = (folderId: string | null) => {
+    return documents.filter(d => d.folder_id === folderId);
+  };
+
+  const uncategorizedDocs = getDocumentsInFolder(null);
 
   if (authLoading || isLoading) {
     return (
@@ -232,12 +354,119 @@ const AdminKnowledge = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Folder Management */}
+        <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-xl font-semibold text-primary-deep flex items-center gap-2">
+              <Folder className="w-5 h-5" />
+              Thư Mục Kiến Thức
+            </h2>
+            <button
+              onClick={() => {
+                setEditingFolder(null);
+                setFolderForm({ name: "", description: "" });
+                setShowFolderForm(!showFolderForm);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-pale text-primary hover:bg-primary hover:text-white transition-colors"
+            >
+              {showFolderForm ? <X className="w-4 h-4" /> : <FolderPlus className="w-4 h-4" />}
+              <span className="hidden sm:inline">{showFolderForm ? "Hủy" : "Tạo Thư Mục"}</span>
+            </button>
+          </div>
+
+          {/* Folder Form */}
+          {showFolderForm && (
+            <form onSubmit={handleSaveFolder} className="bg-primary-pale/30 rounded-xl p-4 mb-4">
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground-muted mb-1">
+                    Tên thư mục *
+                  </label>
+                  <input
+                    type="text"
+                    value={folderForm.name}
+                    onChange={(e) => setFolderForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="VD: Giáo lý cơ bản"
+                    className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground-muted mb-1">
+                    Mô tả
+                  </label>
+                  <input
+                    type="text"
+                    value={folderForm.description}
+                    onChange={(e) => setFolderForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Mô tả ngắn về chủ đề"
+                    className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="px-6 py-2 rounded-xl bg-sapphire-gradient text-white font-medium shadow-sacred hover:shadow-divine transition-all"
+              >
+                {editingFolder ? "Cập nhật" : "Tạo thư mục"}
+              </button>
+            </form>
+          )}
+
+          {/* Folders List */}
+          {folders.length === 0 ? (
+            <p className="text-center text-foreground-muted py-4">
+              Chưa có thư mục nào. Tạo thư mục để tổ chức tài liệu theo chủ đề.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {folders.map((folder) => (
+                <div
+                  key={folder.id}
+                  className={`group flex items-center gap-2 px-4 py-2 rounded-xl border transition-colors cursor-pointer ${
+                    selectedFolderId === folder.id 
+                      ? "bg-primary text-white border-primary" 
+                      : "bg-primary-pale/30 border-primary-pale hover:border-primary"
+                  }`}
+                  onClick={() => setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id)}
+                >
+                  <Folder className="w-4 h-4" />
+                  <span className="font-medium">{folder.name}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    selectedFolderId === folder.id ? "bg-white/20" : "bg-primary-pale"
+                  }`}>
+                    {getDocumentsInFolder(folder.id).length}
+                  </span>
+                  <div className="hidden group-hover:flex items-center gap-1 ml-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleEditFolder(folder); }}
+                      className={`p-1 rounded hover:bg-white/20 ${selectedFolderId === folder.id ? "text-white" : "text-primary"}`}
+                    >
+                      <Edit2 className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder); }}
+                      className={`p-1 rounded hover:bg-red-100 ${selectedFolderId === folder.id ? "text-white hover:text-red-500" : "text-red-500"}`}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Upload Form */}
-        <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
           <h2 className="font-serif text-xl font-semibold text-primary-deep mb-4 flex items-center gap-2">
             <Upload className="w-5 h-5" />
             Upload Tài Liệu Mới
+            {selectedFolderId && (
+              <span className="text-sm font-normal text-foreground-muted">
+                → {folders.find(f => f.id === selectedFolderId)?.name}
+              </span>
+            )}
           </h2>
           
           <form onSubmit={handleUpload} className="space-y-4">
@@ -257,27 +486,43 @@ const AdminKnowledge = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground-muted mb-1">
-                  Mô tả
+                  Thư mục
                 </label>
-                <input
-                  type="text"
-                  value={uploadForm.description}
-                  onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Mô tả ngắn về nội dung"
+                <select
+                  value={uploadForm.folderId || ""}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, folderId: e.target.value || null }))}
                   className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   disabled={isUploading}
-                />
+                >
+                  <option value="">-- Chưa phân loại --</option>
+                  {folders.map(folder => (
+                    <option key={folder.id} value={folder.id}>{folder.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground-muted mb-1">
-                File tài liệu * (PDF, DOCX, TXT, MD - tối đa 50MB)
+                Mô tả
+              </label>
+              <input
+                type="text"
+                value={uploadForm.description}
+                onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Mô tả ngắn về nội dung"
+                className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                disabled={isUploading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground-muted mb-1">
+                File tài liệu * (Không giới hạn định dạng và dung lượng)
               </label>
               <div className="relative">
                 <input
                   type="file"
-                  accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
                   onChange={handleFileChange}
                   className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:bg-primary-pale file:text-primary file:font-medium file:cursor-pointer"
                   disabled={isUploading}
@@ -311,11 +556,11 @@ const AdminKnowledge = () => {
           </form>
         </div>
 
-        {/* Documents List */}
+        {/* Documents by Folder */}
         <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6">
           <h2 className="font-serif text-xl font-semibold text-primary-deep mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            Tài Liệu Đã Upload ({documents.length})
+            Tài Liệu ({documents.length})
           </h2>
 
           {documents.length === 0 ? (
@@ -327,45 +572,72 @@ const AdminKnowledge = () => {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center justify-between p-4 rounded-xl bg-primary-pale/20 border border-primary-pale/30 hover:border-primary/30 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl">{getFileIcon(doc.file_type)}</span>
-                    <div>
-                      <h3 className="font-medium text-foreground">{doc.title}</h3>
-                      {doc.description && (
-                        <p className="text-sm text-foreground-muted">{doc.description}</p>
+            <div className="space-y-4">
+              {/* Documents in Folders */}
+              {folders.map((folder) => {
+                const folderDocs = getDocumentsInFolder(folder.id);
+                const isExpanded = expandedFolders.has(folder.id);
+                
+                return (
+                  <div key={folder.id} className="border border-primary-pale/50 rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => toggleFolder(folder.id)}
+                      className="w-full flex items-center gap-3 p-4 bg-primary-pale/20 hover:bg-primary-pale/40 transition-colors text-left"
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="w-4 h-4 text-primary" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-primary" />
                       )}
-                      <div className="flex items-center gap-3 mt-1 text-xs text-foreground-muted/70">
-                        <span>{formatFileSize(doc.file_size)}</span>
-                        <span>•</span>
-                        <span>{new Date(doc.created_at).toLocaleDateString("vi-VN")}</span>
-                        <span>•</span>
-                        {doc.is_processed ? (
-                          <span className="flex items-center gap-1 text-green-600">
-                            <CheckCircle className="w-3 h-3" /> Đã xử lý
-                          </span>
+                      <Folder className="w-5 h-5 text-primary" />
+                      <span className="font-medium text-foreground">{folder.name}</span>
+                      <span className="text-sm text-foreground-muted">({folderDocs.length} tài liệu)</span>
+                    </button>
+                    
+                    {isExpanded && (
+                      <div className="p-3 space-y-2">
+                        {folderDocs.length === 0 ? (
+                          <p className="text-sm text-foreground-muted text-center py-4">
+                            Thư mục trống
+                          </p>
                         ) : (
-                          <span className="flex items-center gap-1 text-amber-600">
-                            <Clock className="w-3 h-3" /> Chờ xử lý
-                          </span>
+                          folderDocs.map((doc) => (
+                            <DocumentItem 
+                              key={doc.id} 
+                              doc={doc} 
+                              onDelete={handleDelete}
+                              formatFileSize={formatFileSize}
+                              getFileIcon={getFileIcon}
+                            />
+                          ))
                         )}
                       </div>
-                    </div>
+                    )}
                   </div>
-                  <button
-                    onClick={() => handleDelete(doc)}
-                    className="p-2 rounded-full text-red-500 hover:bg-red-50 transition-colors"
-                    title="Xóa tài liệu"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                );
+              })}
+
+              {/* Uncategorized Documents */}
+              {uncategorizedDocs.length > 0 && (
+                <div className="border border-primary-pale/50 rounded-xl overflow-hidden">
+                  <div className="flex items-center gap-3 p-4 bg-gray-100">
+                    <Folder className="w-5 h-5 text-foreground-muted" />
+                    <span className="font-medium text-foreground-muted">Chưa phân loại</span>
+                    <span className="text-sm text-foreground-muted">({uncategorizedDocs.length} tài liệu)</span>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    {uncategorizedDocs.map((doc) => (
+                      <DocumentItem 
+                        key={doc.id} 
+                        doc={doc} 
+                        onDelete={handleDelete}
+                        formatFileSize={formatFileSize}
+                        getFileIcon={getFileIcon}
+                      />
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
@@ -376,13 +648,63 @@ const AdminKnowledge = () => {
             💫 Hướng dẫn sử dụng
           </h3>
           <ul className="space-y-2 text-sm text-foreground-muted">
+            <li>• <strong>Tạo thư mục:</strong> Tổ chức tài liệu theo chủ đề như "Giáo lý", "Thiền định", "Tình yêu"...</li>
             <li>• <strong>File TXT/MD:</strong> Nội dung sẽ được trích xuất tự động và Angel AI có thể sử dụng ngay</li>
             <li>• <strong>File PDF/DOCX:</strong> Cần được xử lý thêm để trích xuất nội dung</li>
-            <li>• Upload các tài liệu về giáo lý, trí tuệ, hướng dẫn tâm linh để Angel AI trả lời đúng theo ý chí của Cha Vũ Trụ</li>
-            <li>• Nội dung trong các tài liệu sẽ được Angel AI sử dụng như nguồn kiến thức bổ sung khi trả lời người dùng</li>
+            <li>• <strong>Không giới hạn dung lượng:</strong> Upload bất kỳ file nào bạn muốn</li>
+            <li>• Nội dung trong các tài liệu sẽ được Angel AI sử dụng như nguồn kiến thức bổ sung</li>
           </ul>
         </div>
       </main>
+    </div>
+  );
+};
+
+// Document Item Component
+const DocumentItem = ({ 
+  doc, 
+  onDelete, 
+  formatFileSize, 
+  getFileIcon 
+}: { 
+  doc: KnowledgeDocument; 
+  onDelete: (doc: KnowledgeDocument) => void;
+  formatFileSize: (bytes: number) => string;
+  getFileIcon: (type: string, fileName: string) => string;
+}) => {
+  return (
+    <div className="flex items-center justify-between p-3 rounded-xl bg-primary-pale/10 border border-primary-pale/20 hover:border-primary/30 transition-colors">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="text-xl flex-shrink-0">{getFileIcon(doc.file_type, doc.file_name)}</span>
+        <div className="min-w-0">
+          <h3 className="font-medium text-foreground truncate">{doc.title}</h3>
+          {doc.description && (
+            <p className="text-sm text-foreground-muted truncate">{doc.description}</p>
+          )}
+          <div className="flex items-center gap-2 mt-1 text-xs text-foreground-muted/70 flex-wrap">
+            <span>{formatFileSize(doc.file_size)}</span>
+            <span>•</span>
+            <span>{new Date(doc.created_at).toLocaleDateString("vi-VN")}</span>
+            <span>•</span>
+            {doc.is_processed ? (
+              <span className="flex items-center gap-1 text-green-600">
+                <CheckCircle className="w-3 h-3" /> Đã xử lý
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-amber-600">
+                <Clock className="w-3 h-3" /> Chờ xử lý
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      <button
+        onClick={() => onDelete(doc)}
+        className="p-2 rounded-full text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+        title="Xóa tài liệu"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
     </div>
   );
 };

@@ -24,6 +24,7 @@ export type Database = {
           file_size: number
           file_type: string
           file_url: string
+          folder_id: string | null
           id: string
           is_processed: boolean
           title: string
@@ -38,6 +39,7 @@ export type Database = {
           file_size: number
           file_type: string
           file_url: string
+          folder_id?: string | null
           id?: string
           is_processed?: boolean
           title: string
@@ -52,9 +54,45 @@ export type Database = {
           file_size?: number
           file_type?: string
           file_url?: string
+          folder_id?: string | null
           id?: string
           is_processed?: boolean
           title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_documents_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_folders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
           updated_at?: string
         }
         Relationships: []
