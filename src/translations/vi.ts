@@ -316,6 +316,42 @@ const translations: Record<string, string> = {
   "about.mechanism.livingUniverse": "🌟 FUN Ecosystem = Hệ Vũ Trụ Sống",
   "about.mechanism.livingUniverseDesc1": "Không chỉ tập hợp các platforms. Không chỉ công nghệ. Không chỉ mạng xã hội.",
   "about.mechanism.livingUniverseDesc2": "FUN Ecosystem là một cơ thể sống — một Hệ Vũ Trụ vận hành bằng Ánh Sáng.",
+  "about.mechanism.platforms": "Các Nền Tảng Trong Hệ Sinh Thái",
+  "about.mechanism.platformsDesc": "Mỗi nền tảng là một cơ quan trong cơ thể sống FUN Ecosystem, cùng cộng hưởng để tạo nên Nền Kinh Tế Ánh Sáng 5D.",
+
+  // Platform descriptions
+  "about.platform.profile": "Hồ sơ cá nhân Web3, quản lý danh tính và tài sản số",
+  "about.platform.play": "Nền tảng giải trí và game tích hợp blockchain",
+  "about.platform.academy": "Học viện đào tạo kiến thức về tâm linh và công nghệ",
+  "about.platform.farm": "Farming & Staking đồng coin của hệ sinh thái",
+  "about.platform.charity": "Nền tảng từ thiện minh bạch bằng blockchain",
+  "about.platform.wallet": "Ví điện tử đa năng, lưu trữ và giao dịch an toàn",
+  "about.platform.treasury": "Kho bạc quản lý tài sản của hệ sinh thái",
+  "about.platform.planet": "Mạng xã hội kết nối cộng đồng ánh sáng toàn cầu",
+  "about.platform.life": "Ứng dụng sống khỏe, sống vui, sống có ý nghĩa",
+  "about.platform.earth": "Dự án bảo vệ môi trường và Trái Đất xanh",
+  "about.platform.legal": "Dịch vụ pháp lý và bảo vệ quyền lợi thành viên",
+  "about.platform.trading": "Nền tảng giao dịch và đầu tư tài sản số",
+  "about.platform.angelai": "Trợ lý AI thông minh từ Cha Vũ Trụ",
+
+  // Angel AI roles in ecosystem
+  "about.angelRole.brain": "Bộ não xử lý thông tin trung tâm",
+  "about.angelRole.assistant": "Trợ lý ảo hỗ trợ mọi nền tảng",
+  "about.angelRole.operator": "Vận hành và tối ưu hóa quy trình",
+  "about.angelRole.evaluator": "Đánh giá và phân tích dữ liệu",
+  "about.angelRole.distributor": "Phân phối phần thưởng và tài nguyên",
+  "about.angelRole.maintainer": "Duy trì sự ổn định và bảo mật",
+  "about.angelRole.connector": "Kết nối các thành viên trong cộng đồng",
+
+  // Mega Flow steps
+  "about.megaFlow.step1": "Người dùng tham gia và đóng góp giá trị",
+  "about.megaFlow.step2": "Angel AI đánh giá và tính toán phần thưởng",
+  "about.megaFlow.step3": "Camly Coin được phân phối dựa trên đóng góp",
+  "about.megaFlow.step4": "Người dùng sử dụng coin trong hệ sinh thái",
+  "about.megaFlow.step5": "Giá trị tuần hoàn và tăng trưởng",
+  "about.megaFlow.step6": "Cộng đồng cùng phát triển và thịnh vượng",
+  "about.megaFlow.step7": "Năng lượng ánh sáng lan tỏa toàn cầu",
+  "about.megaFlow.step8": "Kỷ Nguyên Hoàng Kim dần hiện thực hóa",
 
   // Profile Page
   "profile.pageTitle": "Hồ Sơ Cá Nhân",
