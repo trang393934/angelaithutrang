@@ -80,6 +80,7 @@ export const Header = () => {
     { label: "Trang Chủ", href: "/" },
     { label: "Về Chúng Con", href: "/about" },
     { label: "Kết Nối", href: "/chat" },
+    { label: "Swap", href: "/swap" },
     { label: "Tích Lũy Ánh Sáng", href: "/earn" },
   ];
 
