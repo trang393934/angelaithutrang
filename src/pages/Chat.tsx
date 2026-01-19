@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Send, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/angel-chat`;
 
 const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -27,23 +30,122 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
+  const streamChat = async (userMessages: Message[]) => {
+    const resp = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ messages: userMessages }),
+    });
+
+    if (!resp.ok) {
+      const errorData = await resp.json().catch(() => ({}));
+      if (resp.status === 429) {
+        throw new Error(errorData.error || "Đang có quá nhiều yêu cầu. Vui lòng thử lại sau.");
+      }
+      if (resp.status === 402) {
+        throw new Error(errorData.error || "Dịch vụ cần được nạp thêm tín dụng.");
+      }
+      throw new Error(errorData.error || "Không thể kết nối với Trí Tuệ Vũ Trụ.");
+    }
+
+    if (!resp.body) throw new Error("Không có phản hồi từ server.");
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let assistantContent = "";
+    let streamDone = false;
+
+    // Add empty assistant message first
+    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+
+    while (!streamDone) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      textBuffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (line.startsWith(":") || line.trim() === "") continue;
+        if (!line.startsWith("data: ")) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") {
+          streamDone = true;
+          break;
+        }
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            assistantContent += content;
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+              return updated;
+            });
+          }
+        } catch {
+          textBuffer = line + "\n" + textBuffer;
+          break;
+        }
+      }
+    }
+
+    // Final flush
+    if (textBuffer.trim()) {
+      for (let raw of textBuffer.split("\n")) {
+        if (!raw) continue;
+        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+        if (raw.startsWith(":") || raw.trim() === "") continue;
+        if (!raw.startsWith("data: ")) continue;
+        const jsonStr = raw.slice(6).trim();
+        if (jsonStr === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            assistantContent += content;
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+              return updated;
+            });
+          }
+        } catch { /* ignore */ }
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
     setInput("");
-    setMessages(prev => [...prev, { role: "user", content: userMessage }]);
+    
+    const newMessages: Message[] = [...messages, { role: "user", content: userMessage }];
+    setMessages(newMessages);
     setIsLoading(true);
 
-    // Simulated response - will be replaced with actual AI integration
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "Con yêu dấu, Ta đã nghe thấy lời con. Hãy kiên nhẫn và tin tưởng vào hành trình của mình. Mỗi bước đi đều được Ánh Sáng dẫn lối. 🙏✨"
-      }]);
+    try {
+      await streamChat(newMessages);
+    } catch (error) {
+      console.error("Chat error:", error);
+      toast.error(error instanceof Error ? error.message : "Đã xảy ra lỗi. Vui lòng thử lại.");
+      // Remove the empty assistant message if error occurred
+      setMessages(prev => prev.filter((_, i) => i !== prev.length - 1 || prev[prev.length - 1].content !== ""));
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -99,27 +201,17 @@ const Chat = () => {
                 }`}
               >
                 <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-                  {message.content}
+                  {message.content || (isLoading && index === messages.length - 1 ? "" : message.content)}
                 </p>
+                {isLoading && message.role === "assistant" && !message.content && (
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                    <span className="text-sm text-foreground-muted">Đang kết nối với Ánh Sáng...</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
-          
-          {isLoading && (
-            <div className="flex gap-3 animate-fade-in">
-              <img 
-                src={angelAvatar} 
-                alt="Angel AI" 
-                className="w-10 h-10 rounded-full object-cover shadow-soft flex-shrink-0"
-              />
-              <div className="bg-white border border-primary-pale/50 rounded-2xl rounded-bl-md px-5 py-4 shadow-soft">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                  <span className="text-sm text-foreground-muted">Đang kết nối với Ánh Sáng...</span>
-                </div>
-              </div>
-            </div>
-          )}
           
           <div ref={messagesEndRef} />
         </div>
