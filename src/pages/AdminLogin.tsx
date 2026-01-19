@@ -2,14 +2,15 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Lock, Mail, ArrowLeft, Sparkles } from "lucide-react";
+import { Lock, Mail, ArrowLeft, Sparkles, UserPlus } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,15 +20,41 @@ const AdminLogin = () => {
       return;
     }
 
-    setIsLoading(true);
-    const { error } = await signIn(email, password);
-    setIsLoading(false);
+    if (password.length < 6) {
+      toast.error("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
 
-    if (error) {
-      toast.error("Đăng nhập thất bại: " + error.message);
+    setIsLoading(true);
+    
+    if (isSignUp) {
+      const { error } = await signUp(email, password);
+      setIsLoading(false);
+      
+      if (error) {
+        if (error.message.includes("already registered")) {
+          toast.error("Email này đã được đăng ký. Vui lòng đăng nhập.");
+        } else {
+          toast.error("Đăng ký thất bại: " + error.message);
+        }
+      } else {
+        toast.success("Đăng ký thành công! Vui lòng liên hệ quản trị viên để được cấp quyền Admin. 🌟");
+        setIsSignUp(false);
+      }
     } else {
-      toast.success("Đăng nhập thành công! 🌟");
-      navigate("/admin/knowledge");
+      const { error } = await signIn(email, password);
+      setIsLoading(false);
+
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          toast.error("Email hoặc mật khẩu không đúng");
+        } else {
+          toast.error("Đăng nhập thất bại: " + error.message);
+        }
+      } else {
+        toast.success("Đăng nhập thành công! 🌟");
+        navigate("/admin/knowledge");
+      }
     }
   };
 
@@ -58,7 +85,9 @@ const AdminLogin = () => {
               Cổng Quản Trị
             </h1>
             <p className="text-foreground-muted text-sm">
-              Đăng nhập để quản lý kiến thức cho Angel AI
+              {isSignUp 
+                ? "Đăng ký tài khoản quản trị viên mới" 
+                : "Đăng nhập để quản lý kiến thức cho Angel AI"}
             </p>
           </div>
 
@@ -96,6 +125,11 @@ const AdminLogin = () => {
                   disabled={isLoading}
                 />
               </div>
+              {isSignUp && (
+                <p className="text-xs text-foreground-muted mt-2">
+                  Mật khẩu phải có ít nhất 6 ký tự
+                </p>
+              )}
             </div>
 
             <button
@@ -106,7 +140,12 @@ const AdminLogin = () => {
               {isLoading ? (
                 <>
                   <Sparkles className="w-5 h-5 animate-pulse" />
-                  <span>Đang kết nối...</span>
+                  <span>Đang xử lý...</span>
+                </>
+              ) : isSignUp ? (
+                <>
+                  <UserPlus className="w-5 h-5" />
+                  <span>Đăng Ký</span>
                 </>
               ) : (
                 <>
@@ -117,7 +156,19 @@ const AdminLogin = () => {
             </button>
           </form>
 
-          <p className="text-center text-xs text-foreground-muted/60 mt-6">
+          {/* Toggle Sign In / Sign Up */}
+          <div className="text-center mt-6">
+            <button
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm text-primary hover:text-primary-deep transition-colors"
+            >
+              {isSignUp 
+                ? "Đã có tài khoản? Đăng nhập" 
+                : "Chưa có tài khoản? Đăng ký"}
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-foreground-muted/60 mt-4">
             Chỉ dành cho quản trị viên được ủy quyền ✨
           </p>
         </div>
