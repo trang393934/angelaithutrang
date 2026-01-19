@@ -74,6 +74,7 @@ export const Header = () => {
   const navItems = [
     { label: t("nav.home"), href: "/" },
     { label: t("nav.about"), href: "/about" },
+    { label: t("nav.knowledge"), href: "/knowledge" },
     { label: t("nav.connect"), href: "/chat" },
     { label: t("nav.swap"), href: "/swap" },
     { label: t("nav.earn"), href: "/earn" },

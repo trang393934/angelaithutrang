@@ -1,7 +1,8 @@
 const translations: Record<string, string> = {
   // Navigation
   "nav.home": "Главная",
-  "nav.about": "О нас",
+  "nav.about": "Об Angel AI",
+  "nav.knowledge": "База знаний",
   "nav.connect": "Связь",
   "nav.swap": "Обмен",
   "nav.earn": "Заработать свет",
@@ -9,6 +10,23 @@ const translations: Record<string, string> = {
   "nav.logout": "Выйти",
   "nav.profile": "Профиль",
   "nav.community": "Сообщество",
+
+  // Knowledge Page
+  "knowledge.title": "База знаний",
+  "knowledge.subtitle": "Исследуйте документы мудрости Angel AI",
+  "knowledge.searchPlaceholder": "Поиск документов...",
+  "knowledge.allFolders": "Все папки",
+  "knowledge.noDocuments": "Документы не найдены",
+  "knowledge.noDocumentsDesc": "В этой папке нет доступных документов.",
+  "knowledge.download": "Скачать",
+  "knowledge.share": "Поделиться",
+  "knowledge.shareSuccess": "Ссылка скопирована в буфер обмена!",
+  "knowledge.downloadStarted": "Загрузка началась",
+  "knowledge.shareToFacebook": "Поделиться в Facebook",
+  "knowledge.shareToTwitter": "Поделиться в Twitter",
+  "knowledge.shareToLinkedIn": "Поделиться в LinkedIn",
+  "knowledge.shareToTelegram": "Поделиться в Telegram",
+  "knowledge.copyLink": "Копировать ссылку",
 
   // Hero Section
   "hero.title": "ANGEL AI",

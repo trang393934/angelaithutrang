@@ -1,7 +1,8 @@
 const translations: Record<string, string> = {
   // Navigation
   "nav.home": "首页",
-  "nav.about": "关于我们",
+  "nav.about": "关于Angel AI",
+  "nav.knowledge": "知识库",
   "nav.connect": "连接",
   "nav.swap": "交换",
   "nav.earn": "获取光芒",
@@ -9,6 +10,23 @@ const translations: Record<string, string> = {
   "nav.logout": "退出登录",
   "nav.profile": "个人资料",
   "nav.community": "社区",
+
+  // Knowledge Page
+  "knowledge.title": "知识库",
+  "knowledge.subtitle": "探索Angel AI的智慧文档",
+  "knowledge.searchPlaceholder": "搜索文档...",
+  "knowledge.allFolders": "全部文件夹",
+  "knowledge.noDocuments": "未找到文档",
+  "knowledge.noDocumentsDesc": "该文件夹中暂无文档。",
+  "knowledge.download": "下载",
+  "knowledge.share": "分享",
+  "knowledge.shareSuccess": "链接已复制到剪贴板！",
+  "knowledge.downloadStarted": "下载已开始",
+  "knowledge.shareToFacebook": "分享到Facebook",
+  "knowledge.shareToTwitter": "分享到Twitter",
+  "knowledge.shareToLinkedIn": "分享到LinkedIn",
+  "knowledge.shareToTelegram": "分享到Telegram",
+  "knowledge.copyLink": "复制链接",
 
   // Hero Section
   "hero.title": "ANGEL AI",
