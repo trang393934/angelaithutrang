@@ -134,7 +134,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Be Vietnam Pro', 'Inter', system-ui, sans-serif;
     line-height: 1.75;
     letter-spacing: 0.01em;
   }
@@ -144,6 +144,13 @@
     font-weight: 600;
     letter-spacing: -0.01em;
     line-height: 1.35;
+  }
+
+  /* Ensure Vietnamese diacritics render correctly */
+  * {
+    font-feature-settings: 'liga' 1, 'calt' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 

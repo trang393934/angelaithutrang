@@ -64,170 +64,129 @@ export const CamlyCoinPriceChart = () => {
   const currentPrice = priceData?.priceUsd || 0;
 
   return (
-    <section className="py-8 bg-background">
-      <div className="container mx-auto px-4 lg:px-6">
+    <section className="py-4 sm:py-6 lg:py-8 bg-background overflow-hidden">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6">
         <div className="max-w-7xl mx-auto">
           {isLoading && !priceData ? (
-            <div className="flex items-center justify-center py-20">
-              <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-12 sm:py-20">
+              <RefreshCw className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-primary" />
             </div>
           ) : error ? (
-            <div className="text-center py-20">
-              <p className="text-destructive mb-4">{error}</p>
+            <div className="text-center py-12 sm:py-20">
+              <p className="text-destructive mb-4 text-sm sm:text-base">{error}</p>
               <button
                 onClick={refetch}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm"
               >
                 Thử lại
               </button>
             </div>
           ) : priceData ? (
-            <div className="grid lg:grid-cols-[380px_1fr] gap-6">
+            <div className="flex flex-col lg:grid lg:grid-cols-[340px_1fr] gap-4 lg:gap-6">
               {/* Left Panel - Price Info */}
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Token Header */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                   <img
                     src={camlyCoinLogo}
                     alt="Camly Coin"
-                    className="w-10 h-10 rounded-full"
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0"
                   />
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-xl font-bold text-foreground">Camly Coin</h1>
-                    <span className="text-sm text-muted-foreground">CAMLY</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                    <h1 className="text-base sm:text-xl font-bold text-foreground truncate">Camly Coin</h1>
+                    <span className="text-xs sm:text-sm text-muted-foreground">CAMLY</span>
                   </div>
-                  <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded">#7103</span>
-                  <div className="flex items-center gap-2 ml-auto">
-                    <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-                      <Star className="w-4 h-4" />
-                      <span>735</span>
+                  <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 bg-muted text-muted-foreground rounded hidden sm:inline">#7103</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
+                    <button className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-foreground">
+                      <Star className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">735</span>
                     </button>
-                    <button className="p-1.5 hover:bg-muted rounded">
-                      <Share2 className="w-4 h-4 text-muted-foreground" />
+                    <button className="p-1 sm:p-1.5 hover:bg-muted rounded">
+                      <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
                     </button>
                   </div>
                 </div>
 
                 {/* Main Price */}
                 <div>
-                  <h2 className="text-4xl font-bold text-foreground tracking-tight">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
                     {formatPriceExact(priceData.priceUsd)}
                   </h2>
-                  <div className={`flex items-center gap-1 text-sm font-medium mt-1 ${
+                  <div className={`flex items-center gap-1 text-xs sm:text-sm font-medium mt-1 ${
                     isPositive ? "text-green-500" : "text-red-500"
                   }`}>
                     {isPositive ? (
-                      <TrendingUp className="w-4 h-4" />
+                      <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
                     ) : (
-                      <TrendingDown className="w-4 h-4" />
+                      <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4" />
                     )}
                     <span>
-                      {isPositive ? "" : ""}
                       {Math.abs(priceData.priceChange24h).toFixed(2)}% (24h)
                     </span>
                   </div>
                 </div>
 
-                {/* Market Stats */}
-                <div className="space-y-3 pt-2">
+                {/* Market Stats - Compact for Mobile */}
+                <div className="space-y-2 sm:space-y-3 pt-2">
                   {/* Market Cap */}
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Market cap</span>
-                      <span className="text-amber-500 text-xs">⚠</span>
-                      <Info className="w-3 h-3 text-muted-foreground" />
+                  <div className="flex items-center justify-between p-2 sm:p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <span className="text-xs sm:text-sm text-muted-foreground">Market cap</span>
+                      <Info className="w-3 h-3 text-muted-foreground hidden sm:block" />
                     </div>
                     <div className="text-right">
-                      <span className="font-semibold">{formatMarketNumber(priceData.marketCap)}</span>
-                      <span className={`text-xs ml-2 ${isPositive ? "text-green-500" : "text-red-500"}`}>
-                        {isPositive ? "▲" : "▼"} 0%
-                      </span>
+                      <span className="font-semibold text-xs sm:text-sm">{formatMarketNumber(priceData.marketCap)}</span>
                     </div>
                   </div>
 
                   {/* Volume & FDV */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-1 mb-1">
-                        <span className="text-xs text-muted-foreground">Volume (24h)</span>
-                        <Info className="w-3 h-3 text-muted-foreground" />
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-1 mb-0.5 sm:mb-1">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">Volume 24h</span>
                       </div>
-                      <div className="font-semibold text-sm">{formatMarketNumber(priceData.volume24h)}</div>
-                      <span className="text-xs text-green-500">▲ 26.96%</span>
+                      <div className="font-semibold text-xs sm:text-sm">{formatMarketNumber(priceData.volume24h)}</div>
                     </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-1 mb-1">
-                        <span className="text-xs text-muted-foreground">FDV</span>
-                        <Info className="w-3 h-3 text-muted-foreground" />
+                    <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-1 mb-0.5 sm:mb-1">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">FDV</span>
                       </div>
-                      <div className="font-semibold text-sm">{formatMarketNumber(priceData.fdv)}</div>
+                      <div className="font-semibold text-xs sm:text-sm">{formatMarketNumber(priceData.fdv)}</div>
                     </div>
                   </div>
 
-                  {/* Vol/Mkt Cap & Holders */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-1 mb-1">
-                        <span className="text-xs text-muted-foreground">Vol/Mkt Cap (24h)</span>
-                        <Info className="w-3 h-3 text-muted-foreground" />
+                  {/* Vol/Mkt Cap & Holders - Hidden on very small screens */}
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-1 mb-0.5 sm:mb-1">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">Vol/Mkt</span>
                       </div>
-                      <div className="font-semibold text-sm">
+                      <div className="font-semibold text-xs sm:text-sm">
                         {priceData.marketCap > 0 ? ((priceData.volume24h / priceData.marketCap) * 100).toFixed(2) : 0}%
                       </div>
                     </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-1 mb-1">
-                        <span className="text-xs text-muted-foreground">Holders</span>
-                        <Users className="w-3 h-3 text-muted-foreground" />
+                    <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-1 mb-0.5 sm:mb-1">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">Holders</span>
                       </div>
-                      <div className="font-semibold text-sm">105.51K</div>
+                      <div className="font-semibold text-xs sm:text-sm">105.51K</div>
                     </div>
                   </div>
 
-                  {/* Supply Info */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-1 mb-1">
-                        <span className="text-xs text-muted-foreground">Total supply</span>
-                        <Info className="w-3 h-3 text-muted-foreground" />
-                      </div>
-                      <div className="font-semibold text-sm">999.99B CAMLY</div>
-                    </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-1 mb-1">
-                        <span className="text-xs text-muted-foreground">Max. supply</span>
-                        <Info className="w-3 h-3 text-muted-foreground" />
-                      </div>
-                      <div className="font-semibold text-sm">999.99B CAMLY</div>
-                    </div>
-                  </div>
-
-                  {/* Circulating Supply */}
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-muted-foreground">Self-reported circulating supply</span>
-                      <span className="text-amber-500 text-xs">⚠</span>
-                      <Info className="w-3 h-3 text-muted-foreground" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">999.99B CAMLY</span>
-                      <span className="w-4 h-4 rounded-full border-2 border-primary"></span>
-                    </div>
-                  </div>
-
-                  {/* Contract Address */}
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Contract (BSC)</span>
+                  {/* Contract Address - Always visible */}
+                  <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">Contract (BSC)</span>
                       <button
                         onClick={copyContract}
-                        className="flex items-center gap-2 text-xs font-mono text-primary hover:text-primary/80"
+                        className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-mono text-primary hover:text-primary/80 min-w-0"
                       >
-                        <span className="truncate max-w-[180px]">{contractAddress}</span>
+                        <span className="truncate max-w-[120px] sm:max-w-[180px]">{contractAddress}</span>
                         {copied ? (
-                          <Check className="w-3.5 h-3.5 text-green-500" />
+                          <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-500 flex-shrink-0" />
                         ) : (
-                          <Copy className="w-3.5 h-3.5" />
+                          <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                         )}
                       </button>
                     </div>
@@ -237,19 +196,19 @@ export const CamlyCoinPriceChart = () => {
 
               {/* Right Panel - Chart */}
               <div className="bg-card border border-border rounded-xl overflow-hidden">
-                {/* Chart Tabs */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <div className="flex items-center gap-1">
-                    <button className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary">
+                {/* Chart Tabs - Scrollable on mobile */}
+                <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-border gap-2">
+                  <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none">
+                    <button className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg bg-primary/10 text-primary whitespace-nowrap">
                       Chart
                     </button>
-                    <button className="px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground hover:bg-muted">
+                    <button className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg text-muted-foreground hover:bg-muted whitespace-nowrap">
                       Markets
                     </button>
-                    <button className="px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground hover:bg-muted">
+                    <button className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg text-muted-foreground hover:bg-muted whitespace-nowrap">
                       News
                     </button>
-                    <button className="px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground hover:bg-muted">
+                    <button className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg text-muted-foreground hover:bg-muted whitespace-nowrap hidden sm:block">
                       Holders
                     </button>
                   </div>
@@ -257,28 +216,28 @@ export const CamlyCoinPriceChart = () => {
                     href={`https://pancakeswap.finance/swap?outputCurrency=${contractAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90"
+                    className="px-2 sm:px-4 py-1 sm:py-1.5 bg-primary text-primary-foreground text-xs sm:text-sm font-medium rounded-lg hover:bg-primary/90 whitespace-nowrap flex-shrink-0"
                   >
                     Buy CAMLY
                   </a>
                 </div>
 
                 {/* Chart Controls */}
-                <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-                  <div className="flex items-center gap-2">
-                    <button className="px-3 py-1 text-xs font-medium rounded border border-border bg-muted/50">
+                <div className="flex items-center justify-between px-2 sm:px-4 py-1.5 sm:py-2 border-b border-border">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <button className="px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded border border-border bg-muted/50">
                       Price
                     </button>
-                    <button className="px-3 py-1 text-xs font-medium rounded border border-transparent text-muted-foreground hover:border-border">
+                    <button className="px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded border border-transparent text-muted-foreground hover:border-border">
                       Mkt Cap
                     </button>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 sm:gap-1">
                     {(["24h", "1M", "All"] as const).map((tf) => (
                       <button
                         key={tf}
                         onClick={() => setActiveTimeframe(tf)}
-                        className={`px-3 py-1 text-xs font-medium rounded ${
+                        className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded ${
                           activeTimeframe === tf
                             ? "bg-primary text-primary-foreground"
                             : "text-muted-foreground hover:bg-muted"
@@ -291,8 +250,8 @@ export const CamlyCoinPriceChart = () => {
                 </div>
 
                 {/* Chart Area */}
-                <div className="p-4">
-                  <div className="h-[300px] lg:h-[400px]">
+                <div className="p-2 sm:p-4">
+                  <div className="h-[200px] sm:h-[280px] lg:h-[350px]">
                     {priceHistory.length > 1 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={priceHistory} margin={{ top: 10, right: 60, left: 0, bottom: 0 }}>
@@ -374,9 +333,9 @@ export const CamlyCoinPriceChart = () => {
 
                   {/* Current Price Label */}
                   {priceHistory.length > 1 && (
-                    <div className="flex justify-end mt-2">
-                      <span className={`px-2 py-1 text-xs font-bold rounded ${
-                        isPositive ? "bg-red-500 text-white" : "bg-red-500 text-white"
+                    <div className="flex justify-end mt-1 sm:mt-2">
+                      <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold rounded ${
+                        isPositive ? "bg-green-500 text-white" : "bg-red-500 text-white"
                       }`}>
                         {formatPriceExact(currentPrice).replace('$', '')}
                       </span>
@@ -384,41 +343,41 @@ export const CamlyCoinPriceChart = () => {
                   )}
                 </div>
 
-                {/* External Links */}
-                <div className="px-4 py-3 border-t border-border flex flex-wrap gap-2">
+                {/* External Links - Compact on mobile */}
+                <div className="px-2 sm:px-4 py-2 sm:py-3 border-t border-border flex flex-wrap gap-1.5 sm:gap-2">
                   <a
                     href={`https://dexscreener.com/bsc/${priceData.pairAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-muted hover:bg-muted/80"
+                    className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium rounded-full bg-muted hover:bg-muted/80"
                   >
-                    <img src="https://dexscreener.com/favicon.ico" alt="" className="w-3 h-3" />
+                    <img src="https://dexscreener.com/favicon.ico" alt="" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                     DEXScreener
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </a>
                   <a
                     href={`https://bscscan.com/token/${contractAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-muted hover:bg-muted/80"
+                    className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium rounded-full bg-muted hover:bg-muted/80"
                   >
                     BSCScan
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </a>
                   <a
                     href="https://coinmarketcap.com/currencies/camly-coin/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-muted hover:bg-muted/80"
+                    className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium rounded-full bg-muted hover:bg-muted/80"
                   >
                     CoinMarketCap
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </a>
                   <button
                     onClick={refetch}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20 ml-auto"
+                    className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20 ml-auto"
                   >
-                    <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin" : ""}`} />
+                    <RefreshCw className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${isLoading ? "animate-spin" : ""}`} />
                     Làm mới
                   </button>
                 </div>
