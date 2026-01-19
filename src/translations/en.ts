@@ -106,11 +106,74 @@ const translations: Record<string, string> = {
 
   // Earn Page
   "earn.title": "Earn Light",
+  "earn.subtitle": "Participate in activities to earn Camly Coin - the currency of gratitude and positivity",
   "earn.balance": "Current Balance",
   "earn.lifetime": "Lifetime Earned",
   "earn.daily": "Daily Goal",
   "earn.streak": "Login Streak",
   "earn.actions": "Quick Actions",
+  "earn.loginRequired": "Sign in to start earning Camly Coin through helpful activities",
+  "earn.signInNow": "Sign In Now",
+  "earn.progressTitle": "Today's Light Accumulation",
+  "earn.streakDays": "consecutive days",
+  "earn.completed": "Completed",
+  "earn.remaining": "remaining",
+  "earn.coinPerAction": "coin/action",
+  
+  // Earn Activities
+  "earn.activity.dailyLogin": "Daily Login",
+  "earn.activity.dailyLoginDesc": "Log in daily for rewards, 7-day streak = 1000 coin bonus",
+  "earn.activity.questions": "Quality Questions",
+  "earn.activity.questionsDesc": "Ask meaningful and insightful questions",
+  "earn.activity.journal": "Gratitude Journal",
+  "earn.activity.journalDesc": "Write journal after 8pm (>50 characters)",
+  "earn.activity.share": "Share Content",
+  "earn.activity.shareDesc": "Share on social media",
+  "earn.activity.feedback": "Helpful Feedback",
+  "earn.activity.feedbackDesc": "Send detailed feedback (>100 characters)",
+  "earn.activity.ideas": "Contribute Ideas",
+  "earn.activity.ideasDesc": "Submit app development ideas",
+  "earn.activity.upload": "Upload Knowledge",
+  "earn.activity.uploadDesc": "Contribute documents to knowledge base",
+  "earn.activity.community": "Community Support",
+  "earn.activity.communityDesc": "Help other members",
+  
+  // Quick Actions
+  "earn.action.askQuestion": "Ask Question",
+  "earn.action.writeJournal": "Write Journal",
+  "earn.action.submitIdea": "Submit Idea",
+  "earn.action.visionBoard": "Vision Board",
+  "earn.action.bountyTasks": "Bounty Tasks",
+  "earn.action.coinPerQuestion": "1000-5000 coin/question",
+  "earn.action.coinPerJournal": "5000-9000 coin/entry",
+  "earn.action.coinWhenApproved": "1000 coin when approved",
+  "earn.action.coinFirstTime": "1000 coin first time",
+  "earn.action.coinPerTask": "500-10000 coin/task",
+  
+  // Daily Login Reward
+  "earn.login.title": "Daily Login Reward",
+  "earn.login.congrats": "Congratulations! You've logged in 7 consecutive days!",
+  "earn.login.streak": "Login Streak",
+  "earn.login.days": "days",
+  "earn.login.daysUntilBonus": "days until",
+  "earn.login.bonus": "bonus!",
+  "earn.login.rewards": "Login Rewards",
+  "earn.login.perDay": "Per day:",
+  "earn.login.day7": "Day 7:",
+  "earn.login.awesome": "Awesome!",
+  
+  // Streak Calendar
+  "earn.calendar.title": "Login Calendar",
+  "earn.calendar.loggedIn": "Logged in",
+  "earn.calendar.today": "Today",
+  "earn.calendar.notLoggedIn": "Not logged in",
+  "earn.calendar.mon": "Mon",
+  "earn.calendar.tue": "Tue",
+  "earn.calendar.wed": "Wed",
+  "earn.calendar.thu": "Thu",
+  "earn.calendar.fri": "Fri",
+  "earn.calendar.sat": "Sat",
+  "earn.calendar.sun": "Sun",
 
   // Common
   "common.loading": "Loading...",
@@ -124,6 +187,8 @@ const translations: Record<string, string> = {
   "common.back": "Back",
   "common.next": "Next",
   "common.language": "Language",
+  "common.coin": "coin",
+  "common.goTo": "Go to",
 };
 
 export default translations;

@@ -1,12 +1,13 @@
 import { useDailyLogin } from "@/hooks/useDailyLogin";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Flame, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, subDays, isSameDay, parseISO } from "date-fns";
-import { vi } from "date-fns/locale";
 
 export function StreakCalendar() {
   const { streakCount, loginHistory, isLoading } = useDailyLogin();
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
@@ -34,7 +35,15 @@ export function StreakCalendar() {
     loginHistory.map(l => format(parseISO(l.login_date), "yyyy-MM-dd"))
   );
 
-  const weekDays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+  const weekDays = [
+    t("earn.calendar.mon"),
+    t("earn.calendar.tue"),
+    t("earn.calendar.wed"),
+    t("earn.calendar.thu"),
+    t("earn.calendar.fri"),
+    t("earn.calendar.sat"),
+    t("earn.calendar.sun"),
+  ];
 
   return (
     <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20">
@@ -42,12 +51,12 @@ export function StreakCalendar() {
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
             <Calendar className="h-5 w-5" />
-            <span>Lịch đăng nhập</span>
+            <span>{t("earn.calendar.title")}</span>
           </div>
           <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
             <Flame className="h-5 w-5" />
             <span className="text-xl font-bold">{streakCount}</span>
-            <span className="text-sm font-normal text-muted-foreground">ngày</span>
+            <span className="text-sm font-normal text-muted-foreground">{t("earn.login.days")}</span>
           </div>
         </CardTitle>
       </CardHeader>
@@ -79,7 +88,7 @@ export function StreakCalendar() {
                   !isLoggedIn && !isToday && !isFuture && "bg-muted/50 text-muted-foreground",
                   isFuture && "bg-muted/20 text-muted-foreground/50"
                 )}
-                title={format(day, "dd/MM/yyyy", { locale: vi })}
+                title={format(day, "dd/MM/yyyy")}
               >
                 {isLoggedIn ? (
                   <Check className="h-4 w-4" />
@@ -95,15 +104,15 @@ export function StreakCalendar() {
         <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-green-500" />
-            <span>Đã đăng nhập</span>
+            <span>{t("earn.calendar.loggedIn")}</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-amber-200 dark:bg-amber-800 ring-1 ring-amber-500" />
-            <span>Hôm nay</span>
+            <span>{t("earn.calendar.today")}</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-muted/50" />
-            <span>Chưa đăng nhập</span>
+            <span>{t("earn.calendar.notLoggedIn")}</span>
           </div>
         </div>
       </CardContent>

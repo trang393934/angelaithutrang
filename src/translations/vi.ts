@@ -106,11 +106,74 @@ const translations: Record<string, string> = {
 
   // Earn Page
   "earn.title": "Tích Lũy Ánh Sáng",
+  "earn.subtitle": "Tham gia các hoạt động để kiếm Camly Coin - đồng tiền của sự biết ơn và tích cực",
   "earn.balance": "Số dư hiện tại",
   "earn.lifetime": "Tổng đã kiếm",
   "earn.daily": "Mục tiêu hôm nay",
   "earn.streak": "Chuỗi đăng nhập",
   "earn.actions": "Hành động nhanh",
+  "earn.loginRequired": "Đăng nhập để bắt đầu kiếm Camly Coin thông qua các hoạt động hữu ích",
+  "earn.signInNow": "Đăng nhập ngay",
+  "earn.progressTitle": "Tích lũy ánh sáng hôm nay",
+  "earn.streakDays": "ngày liên tiếp",
+  "earn.completed": "Hoàn thành",
+  "earn.remaining": "lượt còn lại",
+  "earn.coinPerAction": "coin/lần",
+  
+  // Earn Activities
+  "earn.activity.dailyLogin": "Đăng nhập hàng ngày",
+  "earn.activity.dailyLoginDesc": "Đăng nhập mỗi ngày để nhận thưởng, streak 7 ngày = 1000 coin bonus",
+  "earn.activity.questions": "Câu hỏi chất lượng",
+  "earn.activity.questionsDesc": "Đặt câu hỏi có ý nghĩa và sâu sắc",
+  "earn.activity.journal": "Nhật ký biết ơn",
+  "earn.activity.journalDesc": "Viết nhật ký sau 8 giờ tối (>50 ký tự)",
+  "earn.activity.share": "Chia sẻ nội dung",
+  "earn.activity.shareDesc": "Chia sẻ lên mạng xã hội",
+  "earn.activity.feedback": "Phản hồi hữu ích",
+  "earn.activity.feedbackDesc": "Gửi phản hồi chi tiết (>100 ký tự)",
+  "earn.activity.ideas": "Đóng góp ý tưởng",
+  "earn.activity.ideasDesc": "Gửi ý tưởng xây dựng app",
+  "earn.activity.upload": "Tải lên kiến thức",
+  "earn.activity.uploadDesc": "Đóng góp tài liệu vào kho kiến thức",
+  "earn.activity.community": "Hỗ trợ cộng đồng",
+  "earn.activity.communityDesc": "Giúp đỡ thành viên khác",
+  
+  // Quick Actions
+  "earn.action.askQuestion": "Đặt câu hỏi",
+  "earn.action.writeJournal": "Viết nhật ký",
+  "earn.action.submitIdea": "Góp ý tưởng",
+  "earn.action.visionBoard": "Vision Board",
+  "earn.action.bountyTasks": "Bounty Tasks",
+  "earn.action.coinPerQuestion": "1000-5000 coin/câu",
+  "earn.action.coinPerJournal": "5000-9000 coin/bài",
+  "earn.action.coinWhenApproved": "1000 coin khi duyệt",
+  "earn.action.coinFirstTime": "1000 coin lần đầu",
+  "earn.action.coinPerTask": "500-10000 coin/task",
+  
+  // Daily Login Reward
+  "earn.login.title": "Phần thưởng đăng nhập hàng ngày",
+  "earn.login.congrats": "Chúc mừng! Bạn đã đăng nhập 7 ngày liên tiếp!",
+  "earn.login.streak": "Chuỗi đăng nhập",
+  "earn.login.days": "ngày",
+  "earn.login.daysUntilBonus": "ngày để nhận",
+  "earn.login.bonus": "bonus!",
+  "earn.login.rewards": "Phần thưởng đăng nhập",
+  "earn.login.perDay": "Mỗi ngày:",
+  "earn.login.day7": "Ngày 7:",
+  "earn.login.awesome": "Tuyệt vời!",
+  
+  // Streak Calendar
+  "earn.calendar.title": "Lịch đăng nhập",
+  "earn.calendar.loggedIn": "Đã đăng nhập",
+  "earn.calendar.today": "Hôm nay",
+  "earn.calendar.notLoggedIn": "Chưa đăng nhập",
+  "earn.calendar.mon": "T2",
+  "earn.calendar.tue": "T3",
+  "earn.calendar.wed": "T4",
+  "earn.calendar.thu": "T5",
+  "earn.calendar.fri": "T6",
+  "earn.calendar.sat": "T7",
+  "earn.calendar.sun": "CN",
 
   // Common
   "common.loading": "Đang tải...",
@@ -124,6 +187,8 @@ const translations: Record<string, string> = {
   "common.back": "Quay lại",
   "common.next": "Tiếp theo",
   "common.language": "Ngôn ngữ",
+  "common.coin": "coin",
+  "common.goTo": "Đi đến",
 };
 
 export default translations;
