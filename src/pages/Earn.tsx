@@ -30,7 +30,7 @@ export default function Earn() {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
-        <main className="flex-1 container mx-auto px-4 py-8">
+        <main className="flex-1 container mx-auto px-4 py-8 pt-28">
           <div className="max-w-2xl mx-auto text-center space-y-6">
             <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
               <img src={camlyCoinLogo} alt="Camly Coin" className="w-16 h-16" />
@@ -59,7 +59,7 @@ export default function Earn() {
       {/* Daily Login Reward Popup */}
       <DailyLoginReward />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pt-28">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
           <div className="text-center space-y-4">
