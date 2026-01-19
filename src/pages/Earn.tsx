@@ -4,6 +4,7 @@ import { DailyLoginReward } from "@/components/earn/DailyLoginReward";
 import { EarnProgress } from "@/components/earn/EarnProgress";
 import { StreakCalendar } from "@/components/earn/StreakCalendar";
 import { EarlyAdopterProgress } from "@/components/earn/EarlyAdopterProgress";
+import { EarnBreakdown } from "@/components/earn/EarnBreakdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -209,6 +210,9 @@ export default function Earn() {
               <StreakCalendar />
             </div>
           </div>
+
+          {/* Coin Breakdown */}
+          <EarnBreakdown />
 
           {/* Quick Actions */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
