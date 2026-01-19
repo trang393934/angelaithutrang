@@ -48,32 +48,53 @@ export function useLeaderboard() {
 
       if (balancesError) throw balancesError;
 
-      // Get all user IDs from balances
-      const userIdsWithBalance = balances?.map(b => b.user_id) || [];
-
-      // Fetch all profiles (including users without balance)
+      // Fetch all profiles
       const { data: allProfiles, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, display_name, avatar_url");
 
       if (profilesError) throw profilesError;
 
-      // Create a map of balances
-      const balanceMap = new Map(
-        balances?.map(b => [b.user_id, { balance: b.balance, lifetime_earned: b.lifetime_earned }]) || []
+      // Create a map of profiles
+      const profileMap = new Map(
+        allProfiles?.map(p => [p.user_id, { display_name: p.display_name, avatar_url: p.avatar_url }]) || []
       );
 
-      // Combine all users (with and without balance)
-      const combinedUsers: LeaderboardUser[] = (allProfiles || []).map((profile, index) => {
-        const balanceInfo = balanceMap.get(profile.user_id);
-        return {
-          user_id: profile.user_id,
-          display_name: profile.display_name,
-          avatar_url: profile.avatar_url,
-          balance: balanceInfo?.balance || 0,
-          lifetime_earned: balanceInfo?.lifetime_earned || 0,
-          rank: 0, // Will be set after sorting
-        };
+      // Get all user IDs from both balances and profiles
+      const allUserIds = new Set([
+        ...(balances?.map(b => b.user_id) || []),
+        ...(allProfiles?.map(p => p.user_id) || [])
+      ]);
+
+      // Combine all users - prioritize users from balances to show everyone who has earned coins
+      const combinedUsers: LeaderboardUser[] = [];
+      
+      // First add all users from balances
+      balances?.forEach(balance => {
+        const profile = profileMap.get(balance.user_id);
+        combinedUsers.push({
+          user_id: balance.user_id,
+          display_name: profile?.display_name || null,
+          avatar_url: profile?.avatar_url || null,
+          balance: balance.balance || 0,
+          lifetime_earned: balance.lifetime_earned || 0,
+          rank: 0,
+        });
+      });
+
+      // Add profiles that don't have balance records
+      allProfiles?.forEach(profile => {
+        const hasBalance = balances?.some(b => b.user_id === profile.user_id);
+        if (!hasBalance) {
+          combinedUsers.push({
+            user_id: profile.user_id,
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url,
+            balance: 0,
+            lifetime_earned: 0,
+            rank: 0,
+          });
+        }
       });
 
       // Sort by lifetime_earned
@@ -87,12 +108,12 @@ export function useLeaderboard() {
       setAllUsers(combinedUsers);
       setTopUsers(combinedUsers.slice(0, 10));
 
-      // Calculate stats
+      // Calculate stats - count unique users from both tables
       const totalCoins = combinedUsers.reduce((sum, u) => sum + u.lifetime_earned, 0);
       const activeUsers = combinedUsers.filter(u => u.lifetime_earned > 0).length;
 
       setStats({
-        total_users: combinedUsers.length,
+        total_users: allUserIds.size,
         active_users: activeUsers,
         total_coins_distributed: totalCoins,
       });
