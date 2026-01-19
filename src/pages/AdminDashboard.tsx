@@ -32,7 +32,8 @@ import {
   Calendar,
   Zap,
   Eye,
-  Loader2
+  Loader2,
+  Wallet
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 
@@ -309,6 +310,13 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Link
+                to="/admin/withdrawals"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
+              >
+                <Wallet className="w-4 h-4" />
+                Rút coin
+              </Link>
               <Link
                 to="/admin/knowledge"
                 className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"

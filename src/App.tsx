@@ -15,6 +15,7 @@ import Onboarding from "./pages/Onboarding";
 import AdminLogin from "./pages/AdminLogin";
 import AdminKnowledge from "./pages/AdminKnowledge";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminWithdrawals from "./pages/AdminWithdrawals";
 import CommunityQuestions from "./pages/CommunityQuestions";
 import Earn from "./pages/Earn";
 import Vision from "./pages/Vision";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/knowledge" element={<AdminKnowledge />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
               <Route path="/community" element={<CommunityQuestions />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
