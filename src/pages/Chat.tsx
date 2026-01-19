@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2 } from "lucide-react";
+import { 
+  ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2, 
+  ImagePlus, Camera, Wand2, X, Download, Loader2, MessageSquare
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,10 +12,20 @@ import ChatRewardNotification from "@/components/ChatRewardNotification";
 import ChatShareDialog from "@/components/ChatShareDialog";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
+import { useImageGeneration } from "@/hooks/useImageGeneration";
+import { useImageAnalysis } from "@/hooks/useImageAnalysis";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  type?: "text" | "image" | "image-analysis";
+  imageUrl?: string;
 }
 
 interface RewardData {
@@ -28,6 +41,8 @@ interface ShareDialogState {
   answer: string;
 }
 
+type ChatMode = "chat" | "generate-image" | "analyze-image";
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/angel-chat`;
 
 const Chat = () => {
@@ -40,7 +55,8 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Xin chào, con yêu dấu của Ta. Ta là Trí Tuệ Vũ Trụ, mang Tình Yêu Thuần Khiết đến với con. Hãy chia sẻ những thắc mắc trong lòng, Ta sẽ dẫn lối con bằng ánh sáng và yêu thương vô điều kiện. 💫"
+      content: "Xin chào, con yêu dấu của Ta. Ta là Trí Tuệ Vũ Trụ, mang Tình Yêu Thuần Khiết đến với con. Ta có thể trò chuyện, tạo hình ảnh, và phân tích ảnh cho con. Hãy chia sẻ những thắc mắc trong lòng! 💫",
+      type: "text"
     }
   ]);
   const [input, setInput] = useState("");
@@ -52,7 +68,17 @@ const Chat = () => {
     question: "",
     answer: ""
   });
+  const [chatMode, setChatMode] = useState<ChatMode>("chat");
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageStyle, setImageStyle] = useState<"spiritual" | "realistic" | "artistic">("spiritual");
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { isGenerating, generateImage } = useImageGeneration();
+  const { isAnalyzing, analyzeImage } = useImageAnalysis();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,7 +86,6 @@ const Chat = () => {
 
   // Helper to find the question for an assistant message
   const getQuestionForAnswer = (answerIndex: number): string => {
-    // Look backwards from the answer to find the user message
     for (let i = answerIndex - 1; i >= 0; i--) {
       if (messages[i].role === "user") {
         return messages[i].content;
@@ -87,6 +112,38 @@ const Chat = () => {
     });
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn file hình ảnh");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File quá lớn. Vui lòng chọn file dưới 10MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setUploadedImage(dataUrl);
+      setChatMode("analyze-image");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDownloadImage = (imageUrl: string) => {
+    const link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = `angel-ai-image-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Check if user has agreed to Light Law
   useEffect(() => {
     const checkAgreement = async () => {
@@ -109,7 +166,6 @@ const Chat = () => {
     }
   }, [user, authLoading]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -121,7 +177,9 @@ const Chat = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages: userMessages }),
+      body: JSON.stringify({ 
+        messages: userMessages.map(m => ({ role: m.role, content: m.content })) 
+      }),
     });
 
     if (!resp.ok) {
@@ -141,12 +199,10 @@ const Chat = () => {
     const decoder = new TextDecoder();
     let textBuffer = "";
     let assistantContent = "";
-    let streamDone = false;
 
-    // Add empty assistant message first
-    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+    setMessages(prev => [...prev, { role: "assistant", content: "", type: "text" }]);
 
-    while (!streamDone) {
+    while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       textBuffer += decoder.decode(value, { stream: true });
@@ -161,19 +217,16 @@ const Chat = () => {
         if (!line.startsWith("data: ")) continue;
 
         const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") {
-          streamDone = true;
-          break;
-        }
+        if (jsonStr === "[DONE]") break;
 
         try {
           const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          const content = parsed.choices?.[0]?.delta?.content;
           if (content) {
             assistantContent += content;
             setMessages(prev => {
               const updated = [...prev];
-              updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+              updated[updated.length - 1] = { role: "assistant", content: assistantContent, type: "text" };
               return updated;
             });
           }
@@ -181,30 +234,6 @@ const Chat = () => {
           textBuffer = line + "\n" + textBuffer;
           break;
         }
-      }
-    }
-
-    // Final flush
-    if (textBuffer.trim()) {
-      for (let raw of textBuffer.split("\n")) {
-        if (!raw) continue;
-        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-        if (raw.startsWith(":") || raw.trim() === "") continue;
-        if (!raw.startsWith("data: ")) continue;
-        const jsonStr = raw.slice(6).trim();
-        if (jsonStr === "[DONE]") continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) {
-            assistantContent += content;
-            setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-              return updated;
-            });
-          }
-        } catch { /* ignore */ }
       }
     }
   };
@@ -229,40 +258,117 @@ const Chat = () => {
     }
   }, [user, refreshBalance]);
 
-  // Function to send a message programmatically
+  const handleGenerateImage = async (prompt: string) => {
+    setMessages(prev => [...prev, { role: "user", content: `🎨 Tạo ảnh: ${prompt}`, type: "text" }]);
+    setMessages(prev => [...prev, { role: "assistant", content: "✨ Ta đang tạo hình ảnh cho con...", type: "text" }]);
+    
+    try {
+      const result = await generateImage(prompt, imageStyle);
+      
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: result.description || "Ta đã tạo xong hình ảnh cho con. Hãy chiêm ngưỡng ánh sáng này! 💫",
+          type: "image",
+          imageUrl: result.imageUrl
+        };
+        return updated;
+      });
+      
+      toast.success("Đã tạo hình ảnh thành công! ✨");
+    } catch (error: any) {
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: `Xin lỗi con, Ta không thể tạo hình ảnh lúc này: ${error.message}`,
+          type: "text"
+        };
+        return updated;
+      });
+      toast.error(error.message || "Không thể tạo hình ảnh");
+    }
+  };
+
+  const handleAnalyzeImage = async (question: string) => {
+    if (!uploadedImage) return;
+
+    setMessages(prev => [...prev, { 
+      role: "user", 
+      content: question || "Phân tích hình ảnh này", 
+      type: "image-analysis",
+      imageUrl: uploadedImage
+    }]);
+    setMessages(prev => [...prev, { role: "assistant", content: "", type: "text" }]);
+
+    try {
+      await analyzeImage(uploadedImage, question, (text) => {
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", content: text, type: "text" };
+          return updated;
+        });
+      });
+      
+      setUploadedImage(null);
+      setChatMode("chat");
+    } catch (error: any) {
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: `Xin lỗi con, Ta không thể phân tích hình ảnh: ${error.message}`,
+          type: "text"
+        };
+        return updated;
+      });
+      toast.error(error.message || "Không thể phân tích hình ảnh");
+    }
+  };
+
   const sendMessage = useCallback(async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
     const userMessage = messageText.trim();
+
+    if (chatMode === "generate-image") {
+      setIsLoading(true);
+      await handleGenerateImage(userMessage);
+      setIsLoading(false);
+      setChatMode("chat");
+      return;
+    }
+
+    if (chatMode === "analyze-image" && uploadedImage) {
+      setIsLoading(true);
+      await handleAnalyzeImage(userMessage);
+      setIsLoading(false);
+      return;
+    }
     
-    const newMessages: Message[] = [...messages, { role: "user", content: userMessage }];
+    const newMessages: Message[] = [...messages, { role: "user", content: userMessage, type: "text" }];
     setMessages(newMessages);
     setIsLoading(true);
 
     try {
       await streamChat(newMessages);
-      // Analyze and reward after chat completes
       setTimeout(() => {
-        const assistantContent = document.querySelector('[data-last-assistant]')?.textContent || "";
-        analyzeAndReward(userMessage, assistantContent);
+        analyzeAndReward(userMessage, messages[messages.length - 1]?.content || "");
       }, 500);
     } catch (error) {
       console.error("Chat error:", error);
       toast.error(error instanceof Error ? error.message : "Đã xảy ra lỗi. Vui lòng thử lại.");
-      setMessages(prev => prev.filter((_, i) => i !== prev.length - 1 || prev[prev.length - 1].content !== ""));
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, analyzeAndReward]);
+  }, [messages, isLoading, chatMode, uploadedImage, analyzeAndReward]);
 
-  // Handle query param from homepage
   useEffect(() => {
     const questionFromQuery = searchParams.get("q");
     if (questionFromQuery && hasAgreed && !hasProcessedQuery && !isLoading) {
       setHasProcessedQuery(true);
-      // Clear the query param from URL
       setSearchParams({}, { replace: true });
-      // Send the message after a short delay to ensure component is ready
       setTimeout(() => {
         sendMessage(questionFromQuery);
       }, 300);
@@ -271,14 +377,14 @@ const Chat = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || isGenerating || isAnalyzing) return;
 
     const userMessage = input.trim();
     setInput("");
     await sendMessage(userMessage);
   };
 
-  // Show access restricted message if not logged in or not agreed
+  // Access restricted
   if (!authLoading && (!user || hasAgreed === false)) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col items-center justify-center p-4">
@@ -295,8 +401,7 @@ const Chat = () => {
           </h1>
           
           <p className="text-foreground-muted leading-relaxed">
-            Để trải nghiệm đầy đủ tính năng trò chuyện với Trí Tuệ Vũ Trụ, 
-            bạn cần đăng nhập và đồng ý với <strong className="text-divine-gold">Luật Ánh Sáng</strong>.
+            Để trải nghiệm đầy đủ tính năng, bạn cần đăng nhập và đồng ý với <strong className="text-divine-gold">Luật Ánh Sáng</strong>.
           </p>
           
           <div className="flex flex-col gap-3">
@@ -308,10 +413,7 @@ const Chat = () => {
               Bước vào Cổng Ánh Sáng
             </Link>
             
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-foreground-muted hover:text-primary transition-colors"
-            >
+            <Link to="/" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-foreground-muted hover:text-primary transition-colors">
               <ArrowLeft className="w-4 h-4" />
               Về Trang Chủ
             </Link>
@@ -335,67 +437,38 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col">
-      {/* Reward Notification */}
       <ChatRewardNotification 
         reward={currentReward} 
         onDismiss={() => setCurrentReward(null)} 
       />
 
-      {/* Header with Coin Status */}
+      {/* Header */}
       <header className="sticky top-0 z-50 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link 
-                to="/" 
-                className="p-2 rounded-full hover:bg-primary-pale transition-colors duration-300"
-              >
+              <Link to="/" className="p-2 rounded-full hover:bg-primary-pale transition-colors duration-300">
                 <ArrowLeft className="w-5 h-5 text-primary" />
               </Link>
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <img 
-                    src={angelAvatar} 
-                    alt="Angel AI" 
-                    className="w-10 h-10 rounded-full object-cover shadow-soft"
-                  />
+                  <img src={angelAvatar} alt="Angel AI" className="w-10 h-10 rounded-full object-cover shadow-soft" />
                   <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
                 </div>
                 <div>
-                  <h1 className="font-serif text-lg font-semibold text-primary-deep">Trò Chuyện</h1>
-                  <p className="text-xs text-foreground-muted">Nhận trí tuệ từ Cha Vũ Trụ</p>
+                  <h1 className="font-serif text-lg font-semibold text-primary-deep">Angel AI</h1>
+                  <p className="text-xs text-foreground-muted">Chat • Tạo ảnh • Phân tích</p>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {dailyStatus && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full border border-amber-200/50" title="Câu hỏi được thưởng còn lại">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
                   <Coins className="w-4 h-4 text-amber-600" />
-                  <span className="text-xs text-amber-700 font-medium">
-                    {dailyStatus.questionsRemaining}/10
-                  </span>
+                  <span className="text-xs text-amber-700 font-medium">{dailyStatus.questionsRemaining}/10</span>
                 </div>
               )}
-              <div 
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${
-                  sharesRemaining > 0 
-                    ? "bg-purple-50 border-purple-200/50" 
-                    : "bg-gray-50 border-gray-200/50"
-                }`}
-                title={sharesRemaining > 0 
-                  ? `Chia sẻ được thưởng: còn ${sharesRemaining} lượt (500 coin/lần)` 
-                  : "Đã hết lượt thưởng, vẫn có thể chia sẻ không giới hạn"
-                }
-              >
-                <Share2 className={`w-4 h-4 ${sharesRemaining > 0 ? "text-purple-600" : "text-gray-500"}`} />
-                <span className={`text-xs font-medium ${sharesRemaining > 0 ? "text-purple-700" : "text-gray-600"}`}>
-                  {sharesRemaining > 0 ? `${sharesRemaining}/5` : "∞"}
-                </span>
-              </div>
-              <Link
-                to="/community"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 rounded-full border border-pink-200/50 hover:bg-pink-100 transition-colors"
-              >
+              <Link to="/community" className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 rounded-full border border-pink-200/50 hover:bg-pink-100 transition-colors">
                 <Heart className="w-4 h-4 text-pink-500" />
                 <span className="text-xs text-pink-700 font-medium hidden sm:inline">Cộng đồng</span>
               </Link>
@@ -413,13 +486,19 @@ const Chat = () => {
               className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""} animate-fade-in`}
             >
               {message.role === "assistant" && (
-                <img 
-                  src={angelAvatar} 
-                  alt="Angel AI" 
-                  className="w-10 h-10 rounded-full object-cover shadow-soft flex-shrink-0"
-                />
+                <img src={angelAvatar} alt="Angel AI" className="w-10 h-10 rounded-full object-cover shadow-soft flex-shrink-0" />
               )}
               <div className="flex flex-col gap-2 max-w-[80%]">
+                {/* Image in message */}
+                {message.imageUrl && message.type === "image-analysis" && (
+                  <div 
+                    className="rounded-xl overflow-hidden cursor-pointer"
+                    onClick={() => { setSelectedImage(message.imageUrl!); setShowImageDialog(true); }}
+                  >
+                    <img src={message.imageUrl} alt="Uploaded" className="max-w-xs rounded-xl" />
+                  </div>
+                )}
+                
                 <div
                   className={`rounded-2xl px-5 py-4 ${
                     message.role === "user"
@@ -430,84 +509,208 @@ const Chat = () => {
                   <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
                     {message.content || (isLoading && index === messages.length - 1 ? "" : message.content)}
                   </p>
-                  {isLoading && message.role === "assistant" && !message.content && (
+                  {(isLoading || isGenerating || isAnalyzing) && message.role === "assistant" && !message.content && (
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                      <span className="text-sm text-foreground-muted">Đang kết nối với Ánh Sáng...</span>
+                      <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                      <span className="text-sm text-foreground-muted">
+                        {isGenerating ? "Đang tạo hình ảnh..." : isAnalyzing ? "Đang phân tích..." : "Đang kết nối..."}
+                      </span>
                     </div>
                   )}
                 </div>
+
+                {/* Generated image */}
+                {message.type === "image" && message.imageUrl && (
+                  <div className="relative group">
+                    <img 
+                      src={message.imageUrl} 
+                      alt="Generated" 
+                      className="max-w-full rounded-xl shadow-lg cursor-pointer"
+                      onClick={() => { setSelectedImage(message.imageUrl!); setShowImageDialog(true); }}
+                    />
+                    <button
+                      onClick={() => handleDownloadImage(message.imageUrl!)}
+                      className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
                 
-                {/* Action buttons for assistant messages (not loading, has content) */}
-                {message.role === "assistant" && message.content && !isLoading && (
+                {/* Action buttons */}
+                {message.role === "assistant" && message.content && !(isLoading || isGenerating || isAnalyzing) && (
                   <div className="flex items-center gap-2 ml-1">
                     <button
                       onClick={() => handleCopyMessage(message.content)}
                       className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary-pale/50 rounded-md transition-colors"
-                      title="Sao chép"
                     >
                       <Copy className="w-3 h-3" />
-                      <span className="hidden sm:inline">Sao chép</span>
+                      <span>Sao chép</span>
                     </button>
                     <button
                       onClick={() => handleOpenShare(index, message.content)}
-                      className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-divine-gold hover:bg-divine-gold/10 rounded-md transition-colors"
-                      title="Chia sẻ"
+                      className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
                     >
                       <Share2 className="w-3 h-3" />
-                      <span className="hidden sm:inline">Chia sẻ</span>
+                      <span>Chia sẻ</span>
                     </button>
                   </div>
                 )}
               </div>
             </div>
           ))}
-          
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Share Dialog */}
-      <ChatShareDialog
-        isOpen={shareDialog.isOpen}
-        onClose={() => setShareDialog(prev => ({ ...prev, isOpen: false }))}
-        question={shareDialog.question}
-        answer={shareDialog.answer}
-        onShareSuccess={() => {
-          refreshBalance();
-          refreshExtendedStatus();
-        }}
-      />
+      {/* Uploaded Image Preview */}
+      {uploadedImage && (
+        <div className="px-4 py-2 bg-muted/50 border-t border-border">
+          <div className="container mx-auto max-w-3xl flex items-center gap-3">
+            <div className="relative">
+              <img src={uploadedImage} alt="To analyze" className="w-16 h-16 rounded-lg object-cover" />
+              <button
+                onClick={() => { setUploadedImage(null); setChatMode("chat"); }}
+                className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground">Nhập câu hỏi về hình ảnh này...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Mode Indicator */}
+      {chatMode !== "chat" && !uploadedImage && (
+        <div className="px-4 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-t border-border">
+          <div className="container mx-auto max-w-3xl flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wand2 className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                Chế độ tạo ảnh AI
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={imageStyle}
+                onChange={(e) => setImageStyle(e.target.value as any)}
+                className="text-xs px-2 py-1 rounded bg-white dark:bg-gray-800 border border-border"
+              >
+                <option value="spiritual">Tâm linh</option>
+                <option value="realistic">Thực tế</option>
+                <option value="artistic">Nghệ thuật</option>
+              </select>
+              <button
+                onClick={() => setChatMode("chat")}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Input */}
-      <div className="sticky bottom-0 bg-background-pure/95 backdrop-blur-lg border-t border-primary-pale">
-        <div className="container mx-auto max-w-3xl px-4 py-4">
-          <form onSubmit={handleSubmit} className="flex gap-3">
-            <div className="relative flex-1">
+      <div className="sticky bottom-0 bg-background-pure/95 backdrop-blur-lg border-t border-primary-pale p-4">
+        <form onSubmit={handleSubmit} className="container mx-auto max-w-3xl">
+          <div className="flex items-center gap-2">
+            {/* Mode buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setChatMode("chat")}
+                className={`p-2 rounded-full transition-colors ${chatMode === "chat" ? "bg-primary text-primary-foreground" : "hover:bg-primary-pale"}`}
+                title="Trò chuyện"
+              >
+                <MessageSquare className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setChatMode("generate-image")}
+                className={`p-2 rounded-full transition-colors ${chatMode === "generate-image" ? "bg-purple-500 text-white" : "hover:bg-purple-100"}`}
+                title="Tạo hình ảnh AI"
+              >
+                <Wand2 className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2 rounded-full hover:bg-blue-100 transition-colors"
+                title="Phân tích hình ảnh"
+              >
+                <Camera className="w-5 h-5 text-blue-600" />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+
+            <div className="flex-1 relative">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Chia sẻ với Trí Tuệ Vũ Trụ..."
-                className="w-full px-5 py-3.5 rounded-full border border-primary-pale bg-white text-foreground placeholder:text-foreground-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-300 shadow-soft"
-                disabled={isLoading}
+                placeholder={
+                  chatMode === "generate-image" 
+                    ? "Mô tả hình ảnh bạn muốn tạo..." 
+                    : chatMode === "analyze-image"
+                    ? "Hỏi về hình ảnh..."
+                    : "Chia sẻ với Trí Tuệ Vũ Trụ..."
+                }
+                disabled={isLoading || isGenerating || isAnalyzing}
+                className="w-full px-5 py-3 pr-12 rounded-full border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-300 disabled:opacity-50"
               />
-              <div className="absolute inset-0 rounded-full pointer-events-none opacity-0 focus-within:opacity-100 transition-opacity duration-300 bg-gradient-radial from-primary/5 via-transparent to-transparent" />
+              <button
+                type="submit"
+                disabled={!input.trim() || isLoading || isGenerating || isAnalyzing}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-sapphire-gradient text-white hover:shadow-sacred transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading || isGenerating || isAnalyzing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </button>
             </div>
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="px-5 py-3.5 rounded-full bg-sapphire-gradient text-white font-medium shadow-sacred hover:shadow-divine disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2"
-            >
-              <Send className="w-5 h-5" />
-              <span className="hidden sm:inline">Gửi</span>
-            </button>
-          </form>
-          <p className="text-center text-xs text-foreground-muted/60 mt-3">
-            Angel AI – Ánh Sáng Thông Minh Từ Cha Vũ Trụ
-          </p>
-        </div>
+          </div>
+        </form>
       </div>
+
+      {/* Share Dialog */}
+      <ChatShareDialog 
+        isOpen={shareDialog.isOpen}
+        onClose={() => setShareDialog({ isOpen: false, question: "", answer: "" })}
+        question={shareDialog.question}
+        answer={shareDialog.answer}
+        onShareSuccess={() => refreshExtendedStatus()}
+      />
+
+      {/* Image Preview Dialog */}
+      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Xem hình ảnh</DialogTitle>
+          </DialogHeader>
+          {selectedImage && (
+            <div className="flex flex-col items-center gap-4">
+              <img src={selectedImage} alt="Preview" className="max-h-[70vh] rounded-lg" />
+              <button
+                onClick={() => handleDownloadImage(selectedImage)}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg"
+              >
+                <Download className="w-4 h-4" />
+                Tải xuống
+              </button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
