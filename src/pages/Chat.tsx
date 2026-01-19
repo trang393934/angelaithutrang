@@ -8,6 +8,7 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import ChatRewardNotification from "@/components/ChatRewardNotification";
 import ChatShareDialog from "@/components/ChatShareDialog";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
+import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
 
 interface Message {
   role: "user" | "assistant";
@@ -34,6 +35,7 @@ const Chat = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
   const { dailyStatus, refreshBalance } = useCamlyCoin();
+  const { sharesRewarded, sharesRemaining, refreshStatus: refreshExtendedStatus } = useExtendedRewardStatus();
   const [hasAgreed, setHasAgreed] = useState<boolean | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -367,13 +369,29 @@ const Chat = () => {
             </div>
             <div className="flex items-center gap-2">
               {dailyStatus && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full border border-amber-200/50" title="Câu hỏi được thưởng còn lại">
                   <Coins className="w-4 h-4 text-amber-600" />
                   <span className="text-xs text-amber-700 font-medium">
                     {dailyStatus.questionsRemaining}/10
                   </span>
                 </div>
               )}
+              <div 
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${
+                  sharesRemaining > 0 
+                    ? "bg-purple-50 border-purple-200/50" 
+                    : "bg-gray-50 border-gray-200/50"
+                }`}
+                title={sharesRemaining > 0 
+                  ? `Chia sẻ được thưởng: còn ${sharesRemaining} lượt (500 coin/lần)` 
+                  : "Đã hết lượt thưởng, vẫn có thể chia sẻ không giới hạn"
+                }
+              >
+                <Share2 className={`w-4 h-4 ${sharesRemaining > 0 ? "text-purple-600" : "text-gray-500"}`} />
+                <span className={`text-xs font-medium ${sharesRemaining > 0 ? "text-purple-700" : "text-gray-600"}`}>
+                  {sharesRemaining > 0 ? `${sharesRemaining}/5` : "∞"}
+                </span>
+              </div>
               <Link
                 to="/community"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 rounded-full border border-pink-200/50 hover:bg-pink-100 transition-colors"
@@ -455,7 +473,10 @@ const Chat = () => {
         onClose={() => setShareDialog(prev => ({ ...prev, isOpen: false }))}
         question={shareDialog.question}
         answer={shareDialog.answer}
-        onShareSuccess={refreshBalance}
+        onShareSuccess={() => {
+          refreshBalance();
+          refreshExtendedStatus();
+        }}
       />
 
       {/* Input */}
