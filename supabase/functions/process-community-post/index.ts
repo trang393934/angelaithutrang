@@ -360,6 +360,100 @@ serve(async (req) => {
       );
     }
 
+    if (action === "edit_post") {
+      // Check if user owns the post
+      const { data: post } = await supabase
+        .from("community_posts")
+        .select("user_id")
+        .eq("id", postId)
+        .single();
+
+      if (!post) {
+        return new Response(
+          JSON.stringify({ success: false, message: "Không tìm thấy bài viết" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (post.user_id !== userId) {
+        return new Response(
+          JSON.stringify({ success: false, message: "Bạn không có quyền chỉnh sửa bài viết này" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Update the post
+      const { data: updatedPost, error: updateError } = await supabase
+        .from("community_posts")
+        .update({
+          content,
+          image_url: imageUrl || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", postId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      console.log(`Post edited: ${postId}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Chỉnh sửa bài viết thành công!",
+          post: updatedPost,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "delete_post") {
+      // Check if user owns the post
+      const { data: post } = await supabase
+        .from("community_posts")
+        .select("user_id")
+        .eq("id", postId)
+        .single();
+
+      if (!post) {
+        return new Response(
+          JSON.stringify({ success: false, message: "Không tìm thấy bài viết" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (post.user_id !== userId) {
+        return new Response(
+          JSON.stringify({ success: false, message: "Bạn không có quyền xóa bài viết này" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Delete related data first (comments, likes, shares)
+      await supabase.from("community_comments").delete().eq("post_id", postId);
+      await supabase.from("community_post_likes").delete().eq("post_id", postId);
+      await supabase.from("community_shares").delete().eq("post_id", postId);
+
+      // Delete the post
+      const { error: deleteError } = await supabase
+        .from("community_posts")
+        .delete()
+        .eq("id", postId);
+
+      if (deleteError) throw deleteError;
+
+      console.log(`Post deleted: ${postId}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Xóa bài viết thành công!",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ success: false, message: "Invalid action" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -25,6 +25,8 @@ const Community = () => {
     sharePost,
     addComment,
     fetchComments,
+    editPost,
+    deletePost,
   } = useCommunityPosts();
 
   const [userProfile, setUserProfile] = useState<{ display_name: string; avatar_url: string | null } | null>(null);
@@ -182,6 +184,8 @@ const Community = () => {
                       onLike={handleLike}
                       onShare={handleShare}
                       onComment={handleComment}
+                      onEdit={editPost}
+                      onDelete={deletePost}
                       fetchComments={fetchComments}
                     />
                   </motion.div>
