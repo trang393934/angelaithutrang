@@ -1,15 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Trophy, Medal, Crown, Coins, Heart, Users, TrendingUp, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Trophy, Medal, Crown, Coins, Heart, Users, TrendingUp, ChevronDown, ChevronUp, Sparkles, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 
-const getRankIcon = (rank: number) => {
+const getRankIcon = (rank: number, isCurrentUser: boolean = false) => {
+  if (isCurrentUser && rank > 3) {
+    return <Star className="w-5 h-5 text-primary fill-primary" />;
+  }
   switch (rank) {
     case 1:
       return <Crown className="w-5 h-5 text-amber-500" />;
@@ -22,7 +26,10 @@ const getRankIcon = (rank: number) => {
   }
 };
 
-const getRankStyle = (rank: number) => {
+const getRankStyle = (rank: number, isCurrentUser: boolean = false) => {
+  if (isCurrentUser) {
+    return "bg-gradient-to-r from-primary/20 via-divine-gold/20 to-primary/20 border-primary ring-2 ring-primary/30";
+  }
   switch (rank) {
     case 1:
       return "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300";
@@ -40,6 +47,18 @@ export function Leaderboard() {
   const { t } = useLanguage();
   const [showAll, setShowAll] = useState(false);
   const [activeTab, setActiveTab] = useState<"coins" | "questions">("coins");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getUser();
+  }, []);
+
+  // Find current user's rank
+  const currentUserRank = allUsers.find(u => u.user_id === currentUserId);
 
   const displayUsers = showAll ? allUsers : topUsers.slice(0, 5);
 
@@ -68,6 +87,12 @@ export function Leaderboard() {
             <span className="font-semibold text-primary-deep">{t("leaderboard.title")}</span>
           </div>
           <div className="flex items-center gap-4 text-xs">
+            {currentUserRank && (
+              <div className="flex items-center gap-1 text-primary font-medium">
+                <Star className="w-3.5 h-3.5 fill-primary" />
+                <span>#{currentUserRank.rank}</span>
+              </div>
+            )}
             <div className="flex items-center gap-1 text-foreground-muted">
               <Users className="w-3.5 h-3.5" />
               <span>{stats.total_users} {t("common.people")}</span>
@@ -102,36 +127,40 @@ export function Leaderboard() {
                   <p className="text-sm text-foreground-muted">{t("common.noData")}</p>
                 </div>
               ) : (
-                displayUsers.map((user) => (
-                  <div
-                    key={user.user_id}
-                    className={`flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 ${getRankStyle(user.rank)} border-l-2`}
-                  >
-                    <div className="flex-shrink-0 w-6">
-                      {getRankIcon(user.rank)}
+                displayUsers.map((user) => {
+                  const isCurrentUser = user.user_id === currentUserId;
+                  return (
+                    <div
+                      key={user.user_id}
+                      className={`flex items-center gap-3 px-4 py-2.5 transition-all hover:bg-gray-50 ${getRankStyle(user.rank, isCurrentUser)} border-l-2`}
+                    >
+                      <div className="flex-shrink-0 w-6">
+                        {getRankIcon(user.rank, isCurrentUser)}
+                      </div>
+                      <Avatar className="w-8 h-8 border border-primary/20">
+                        <AvatarImage src={user.avatar_url || angelAvatar} />
+                        <AvatarFallback className="text-xs">
+                          {user.display_name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${isCurrentUser ? 'text-primary font-semibold' : 'text-foreground'}`}>
+                          {user.display_name || t("common.anonymous")}
+                          {isCurrentUser && <span className="ml-1 text-xs">({t("common.you")})</span>}
+                        </p>
+                        {user.lifetime_earned === 0 && (
+                          <p className="text-xs text-foreground-muted">{t("common.noActivity")}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 text-amber-600">
+                        <Coins className="w-3.5 h-3.5" />
+                        <span className="text-sm font-semibold">
+                          {user.lifetime_earned.toLocaleString()}
+                        </span>
+                      </div>
                     </div>
-                    <Avatar className="w-8 h-8 border border-primary/20">
-                      <AvatarImage src={user.avatar_url || angelAvatar} />
-                      <AvatarFallback className="text-xs">
-                        {user.display_name?.charAt(0) || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {user.display_name || t("common.anonymous")}
-                      </p>
-                      {user.lifetime_earned === 0 && (
-                        <p className="text-xs text-foreground-muted">{t("common.noActivity")}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 text-amber-600">
-                      <Coins className="w-3.5 h-3.5" />
-                      <span className="text-sm font-semibold">
-                        {user.lifetime_earned.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
