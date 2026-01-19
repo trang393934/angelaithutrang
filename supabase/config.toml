@@ -6,6 +6,12 @@ verify_jwt = false
 [functions.analyze-onboarding]
 verify_jwt = false
 
+[functions.analyze-reward-question]
+verify_jwt = false
+
+[functions.analyze-reward-journal]
+verify_jwt = false
+
 [functions.check-user-energy]
 verify_jwt = false
 

@@ -14,6 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
+      camly_coin_balances: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          lifetime_earned: number
+          lifetime_spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          lifetime_earned?: number
+          lifetime_spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          lifetime_earned?: number
+          lifetime_spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      camly_coin_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          purity_score: number | null
+          transaction_type: Database["public"]["Enums"]["coin_transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          purity_score?: number | null
+          transaction_type: Database["public"]["Enums"]["coin_transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          purity_score?: number | null
+          transaction_type?: Database["public"]["Enums"]["coin_transaction_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_questions: {
+        Row: {
+          ai_response_preview: string | null
+          created_at: string
+          id: string
+          is_greeting: boolean | null
+          is_rewarded: boolean | null
+          is_spam: boolean | null
+          likes_count: number | null
+          purity_score: number | null
+          question_hash: string
+          question_text: string
+          replies_count: number | null
+          reward_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          ai_response_preview?: string | null
+          created_at?: string
+          id?: string
+          is_greeting?: boolean | null
+          is_rewarded?: boolean | null
+          is_spam?: boolean | null
+          likes_count?: number | null
+          purity_score?: number | null
+          question_hash: string
+          question_text: string
+          replies_count?: number | null
+          reward_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          ai_response_preview?: string | null
+          created_at?: string
+          id?: string
+          is_greeting?: boolean | null
+          is_rewarded?: boolean | null
+          is_spam?: boolean | null
+          likes_count?: number | null
+          purity_score?: number | null
+          question_hash?: string
+          question_text?: string
+          replies_count?: number | null
+          reward_amount?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_gratitude: {
         Row: {
           created_at: string
@@ -37,6 +148,78 @@ export type Database = {
           id?: string
           light_points_earned?: number | null
           sentiment_score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_reward_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          journals_rewarded: number
+          question_hashes: string[] | null
+          questions_rewarded: number
+          reward_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          journals_rewarded?: number
+          question_hashes?: string[] | null
+          questions_rewarded?: number
+          reward_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          journals_rewarded?: number
+          question_hashes?: string[] | null
+          questions_rewarded?: number
+          reward_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gratitude_journal: {
+        Row: {
+          content: string
+          content_length: number
+          created_at: string
+          id: string
+          is_rewarded: boolean | null
+          journal_date: string
+          journal_type: string
+          purity_score: number | null
+          reward_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          content_length: number
+          created_at?: string
+          id?: string
+          is_rewarded?: boolean | null
+          journal_date?: string
+          journal_type: string
+          purity_score?: number | null
+          reward_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          content_length?: number
+          created_at?: string
+          id?: string
+          is_rewarded?: boolean | null
+          journal_date?: string
+          journal_type?: string
+          purity_score?: number | null
+          reward_amount?: number | null
           user_id?: string
         }
         Relationships: []
@@ -253,6 +436,35 @@ export type Database = {
         }
         Relationships: []
       }
+      question_likes: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_likes_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "chat_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_activity_log: {
         Row: {
           activity_type: string
@@ -406,6 +618,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_rate_limits: {
+        Row: {
+          ban_reason: string | null
+          created_at: string
+          id: string
+          is_temp_banned: boolean | null
+          last_question_at: string | null
+          questions_last_hour: number | null
+          suspicious_activity_count: number | null
+          temp_ban_until: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ban_reason?: string | null
+          created_at?: string
+          id?: string
+          is_temp_banned?: boolean | null
+          last_question_at?: string | null
+          questions_last_hour?: number | null
+          suspicious_activity_count?: number | null
+          temp_ban_until?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ban_reason?: string | null
+          created_at?: string
+          id?: string
+          is_temp_banned?: boolean | null
+          last_question_at?: string | null
+          questions_last_hour?: number | null
+          suspicious_activity_count?: number | null
+          temp_ban_until?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -474,6 +725,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_camly_coins: {
+        Args: {
+          _amount: number
+          _description?: string
+          _metadata?: Json
+          _purity_score?: number
+          _transaction_type: Database["public"]["Enums"]["coin_transaction_type"]
+          _user_id: string
+        }
+        Returns: number
+      }
       add_light_points: {
         Args: {
           _points: number
@@ -482,6 +744,16 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      get_daily_reward_status: {
+        Args: { _user_id: string }
+        Returns: {
+          can_write_journal: boolean
+          journals_remaining: number
+          journals_rewarded: number
+          questions_remaining: number
+          questions_rewarded: number
+        }[]
       }
       has_role: {
         Args: {
@@ -497,6 +769,15 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       approval_status: "pending" | "approved" | "rejected" | "trial"
+      coin_transaction_type:
+        | "chat_reward"
+        | "gratitude_reward"
+        | "journal_reward"
+        | "engagement_reward"
+        | "referral_bonus"
+        | "challenge_reward"
+        | "spending"
+        | "admin_adjustment"
       energy_level: "very_high" | "high" | "neutral" | "low" | "very_low"
       suspension_type: "temporary" | "permanent"
     }
@@ -628,6 +909,16 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       approval_status: ["pending", "approved", "rejected", "trial"],
+      coin_transaction_type: [
+        "chat_reward",
+        "gratitude_reward",
+        "journal_reward",
+        "engagement_reward",
+        "referral_bonus",
+        "challenge_reward",
+        "spending",
+        "admin_adjustment",
+      ],
       energy_level: ["very_high", "high", "neutral", "low", "very_low"],
       suspension_type: ["temporary", "permanent"],
     },

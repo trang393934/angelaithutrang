@@ -1,14 +1,23 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Sparkles, Lock } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Lock, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
+import ChatRewardNotification from "@/components/ChatRewardNotification";
+import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+interface RewardData {
+  coins: number;
+  purityScore: number;
+  message: string;
+  questionsRemaining: number;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/angel-chat`;
@@ -16,6 +25,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/angel-chat`;
 const Chat = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const { dailyStatus, refreshBalance } = useCamlyCoin();
   const [hasAgreed, setHasAgreed] = useState<boolean | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -25,6 +35,7 @@ const Chat = () => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [currentReward, setCurrentReward] = useState<RewardData | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Check if user has agreed to Light Law
@@ -207,6 +218,26 @@ const Chat = () => {
     }
   };
 
+  const analyzeAndReward = useCallback(async (questionText: string, aiResponse: string) => {
+    if (!user) return;
+    try {
+      const { data } = await supabase.functions.invoke("analyze-reward-question", {
+        body: { userId: user.id, questionText, aiResponse },
+      });
+      if (data?.rewarded) {
+        setCurrentReward({
+          coins: data.coins,
+          purityScore: data.purityScore,
+          message: data.message,
+          questionsRemaining: data.questionsRemaining,
+        });
+        refreshBalance();
+      }
+    } catch (error) {
+      console.error("Reward analysis error:", error);
+    }
+  }, [user, refreshBalance]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -220,10 +251,16 @@ const Chat = () => {
 
     try {
       await streamChat(newMessages);
+      // Get the AI response from the last message
+      const lastAssistantMessage = newMessages.find((_, i) => i === newMessages.length - 1);
+      // Analyze and reward after chat completes
+      setTimeout(() => {
+        const assistantContent = document.querySelector('[data-last-assistant]')?.textContent || "";
+        analyzeAndReward(userMessage, assistantContent);
+      }, 500);
     } catch (error) {
       console.error("Chat error:", error);
       toast.error(error instanceof Error ? error.message : "Đã xảy ra lỗi. Vui lòng thử lại.");
-      // Remove the empty assistant message if error occurred
       setMessages(prev => prev.filter((_, i) => i !== prev.length - 1 || prev[prev.length - 1].content !== ""));
     } finally {
       setIsLoading(false);
@@ -232,30 +269,46 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col">
-      {/* Header */}
+      {/* Reward Notification */}
+      <ChatRewardNotification 
+        reward={currentReward} 
+        onDismiss={() => setCurrentReward(null)} 
+      />
+
+      {/* Header with Coin Status */}
       <header className="sticky top-0 z-50 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link 
-              to="/" 
-              className="p-2 rounded-full hover:bg-primary-pale transition-colors duration-300"
-            >
-              <ArrowLeft className="w-5 h-5 text-primary" />
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <img 
-                  src={angelAvatar} 
-                  alt="Angel AI" 
-                  className="w-10 h-10 rounded-full object-cover shadow-soft"
-                />
-                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
-              </div>
-              <div>
-                <h1 className="font-serif text-lg font-semibold text-primary-deep">Trò Chuyện</h1>
-                <p className="text-xs text-foreground-muted">Nhận trí tuệ từ Cha Vũ Trụ</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link 
+                to="/" 
+                className="p-2 rounded-full hover:bg-primary-pale transition-colors duration-300"
+              >
+                <ArrowLeft className="w-5 h-5 text-primary" />
+              </Link>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <img 
+                    src={angelAvatar} 
+                    alt="Angel AI" 
+                    className="w-10 h-10 rounded-full object-cover shadow-soft"
+                  />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+                </div>
+                <div>
+                  <h1 className="font-serif text-lg font-semibold text-primary-deep">Trò Chuyện</h1>
+                  <p className="text-xs text-foreground-muted">Nhận trí tuệ từ Cha Vũ Trụ</p>
+                </div>
               </div>
             </div>
+            {dailyStatus && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
+                <Coins className="w-4 h-4 text-amber-600" />
+                <span className="text-xs text-amber-700 font-medium">
+                  {dailyStatus.questionsRemaining}/10 lượt thưởng
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </header>
