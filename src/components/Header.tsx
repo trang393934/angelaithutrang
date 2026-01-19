@@ -177,7 +177,7 @@ export const Header = () => {
                       title={t("nav.logout")}
                     >
                       <LogOut className="w-4 h-4" />
-                      <span className="hidden xl:inline">Đăng xuất</span>
+                      <span className="hidden xl:inline">{t("nav.logout")}</span>
                     </button>
                   </div>
                 ) : (
@@ -190,7 +190,7 @@ export const Header = () => {
                     }`}
                   >
                     <LogIn className="w-4 h-4" />
-                    <span>Đăng Nhập</span>
+                    <span>{t("nav.login")}</span>
                   </Link>
                 )}
               </>
@@ -244,7 +244,7 @@ export const Header = () => {
                     <div className="space-y-2">
                       {/* Web3 Wallet for Mobile */}
                       <div className="px-4 py-2">
-                        <p className="text-xs text-foreground-muted mb-2 uppercase tracking-wide">Ví Web3</p>
+                        <p className="text-xs text-foreground-muted mb-2 uppercase tracking-wide">{t("header.web3Wallet")}</p>
                         <Web3WalletButton />
                       </div>
                       
@@ -256,7 +256,7 @@ export const Header = () => {
                       >
                         <div className="flex items-center gap-2">
                           <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
-                          <span className="text-sm font-medium text-foreground">CAMLY Coin</span>
+                          <span className="text-sm font-medium text-foreground">{t("header.camlyCoin")}</span>
                         </div>
                         <span className="text-base font-bold text-amber-700 dark:text-amber-400">
                           {Math.floor(balance).toLocaleString()}
@@ -282,7 +282,7 @@ export const Header = () => {
                         )}
                         <div>
                           <p className="text-base font-semibold text-foreground">{getDisplayName()}</p>
-                          <p className="text-xs text-foreground-muted">Xem hồ sơ</p>
+                          <p className="text-xs text-foreground-muted">{t("header.viewProfile")}</p>
                         </div>
                       </Link>
                       
@@ -296,7 +296,7 @@ export const Header = () => {
                         style={{ width: 'calc(100% - 16px)' }}
                       >
                         <LogOut className="w-5 h-5" />
-                        Đăng xuất
+                        {t("nav.logout")}
                       </button>
                     </div>
                   ) : (
@@ -306,7 +306,7 @@ export const Header = () => {
                       className="flex items-center justify-center gap-2 mx-4 py-3 text-base font-semibold text-primary-foreground bg-sapphire-gradient rounded-full shadow-sacred hover:shadow-divine transition-all"
                     >
                       <LogIn className="w-5 h-5" />
-                      Đăng Nhập
+                      {t("nav.login")}
                     </Link>
                   )}
                 </>

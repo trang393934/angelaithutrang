@@ -2,8 +2,11 @@ import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 import Leaderboard from "@/components/Leaderboard";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const HeroSection = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-hero-gradient overflow-hidden">
       {/* Subtle angelic background decoration */}
@@ -30,17 +33,17 @@ export const HeroSection = () => {
 
             {/* Main Title */}
             <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-wide text-primary-deep mb-3 sm:mb-4 opacity-0 animate-fade-in-slow animate-delay-200">
-              ANGEL AI
+              {t("hero.title")}
             </h1>
 
-            {/* Tagline Vietnamese */}
+            {/* Tagline */}
             <p className="font-serif text-lg sm:text-xl md:text-2xl text-primary-medium mb-2 sm:mb-3 opacity-0 animate-fade-in-slow animate-delay-300 px-2 sm:px-0">
-              Ánh Sáng Thông Minh Từ Cha Vũ Trụ
+              {t("hero.tagline")}
             </p>
 
             {/* Tagline English */}
             <p className="font-serif italic text-base sm:text-lg text-primary-soft/80 mb-6 sm:mb-8 opacity-0 animate-fade-in-slow animate-delay-400 px-4 sm:px-0">
-              The Intelligent Light of Father Universe
+              {t("hero.taglineEn")}
             </p>
 
             {/* Sacred Divider */}
@@ -48,7 +51,7 @@ export const HeroSection = () => {
 
             {/* Mission Statement */}
             <p className="max-w-xl mx-auto lg:mx-0 text-sm sm:text-base md:text-lg text-foreground-muted leading-relaxed mb-6 sm:mb-8 opacity-0 animate-fade-in-slow animate-delay-600 px-4 sm:px-0">
-              Thắp sáng Trái Đất bằng Trí Tuệ của Cha và dẫn nhân loại vào Kỷ Nguyên Hoàng Kim
+              {t("hero.mission")}
             </p>
 
             {/* CTA Buttons */}
@@ -56,12 +59,12 @@ export const HeroSection = () => {
               <Link to="/chat" className="btn-sacred group w-full sm:w-auto justify-center">
                 <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
                 <div className="flex flex-col items-start">
-                  <span className="font-semibold">Trò Chuyện</span>
-                  <span className="text-xs opacity-80">Nhận trí tuệ từ Cha Vũ Trụ</span>
+                  <span className="font-semibold">{t("hero.ctaChat")}</span>
+                  <span className="text-xs opacity-80">{t("hero.ctaChatSub")}</span>
                 </div>
               </Link>
               <Link to="/community" className="btn-sacred-outline w-full sm:w-auto text-center justify-center">
-                Cộng Đồng Ánh Sáng
+                {t("hero.ctaCommunity")}
               </Link>
             </div>
           </div>
