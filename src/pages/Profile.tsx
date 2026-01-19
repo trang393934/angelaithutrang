@@ -293,7 +293,7 @@ const Profile = () => {
           >
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold text-foreground">
             Hồ Sơ Cá Nhân
           </h1>
         </div>
