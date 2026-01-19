@@ -51,6 +51,8 @@ serve(async (req) => {
     };
 
     if (action === "create_post") {
+      console.log(`Creating post with imageUrl: ${imageUrl}`);
+      
       // Create the post
       const { data: newPost, error: postError } = await supabase
         .from("community_posts")
@@ -64,13 +66,49 @@ serve(async (req) => {
 
       if (postError) throw postError;
 
-      console.log(`Post created: ${newPost.id}`);
+      console.log(`Post created: ${newPost.id} with image_url: ${newPost.image_url}`);
+
+      // Check daily limit for post rewards
+      const tracking = await getDailyTracking(userId);
+      const postsRewarded = tracking?.posts_rewarded || 0;
+      
+      let coinsEarned = 0;
+      let rewarded = false;
+      
+      // Award immediate post creation reward (e.g., 100 coins for posting)
+      const POST_CREATION_REWARD = 100;
+      
+      if (postsRewarded < MAX_POSTS_REWARDED_PER_DAY) {
+        await supabase.rpc("add_camly_coins", {
+          _user_id: userId,
+          _amount: POST_CREATION_REWARD,
+          _transaction_type: "engagement_reward",
+          _description: "Đăng bài viết mới",
+        });
+        
+        // Update daily tracking
+        await supabase
+          .from("daily_reward_tracking")
+          .update({
+            posts_rewarded: postsRewarded + 1,
+            total_coins_today: (tracking?.total_coins_today || 0) + POST_CREATION_REWARD,
+          })
+          .eq("id", tracking.id);
+        
+        coinsEarned = POST_CREATION_REWARD;
+        rewarded = true;
+        console.log(`Post creation reward given to user ${userId}: ${POST_CREATION_REWARD} coins`);
+      }
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Đăng bài thành công!",
+          message: rewarded 
+            ? `Đăng bài thành công! Bạn nhận ${POST_CREATION_REWARD} Camly Coin` 
+            : "Đăng bài thành công! (Đã đạt giới hạn thưởng hôm nay)",
           post: newPost,
+          rewarded,
+          coinsEarned,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
