@@ -13,12 +13,10 @@ import { Link } from "react-router-dom";
 import { 
   Coins, 
   Trophy, 
-  Target, 
   Sparkles,
   MessageCircle,
   BookOpen,
   Lightbulb,
-  Gift,
   ArrowRight,
   Eye,
   Wallet
@@ -98,7 +96,7 @@ export default function Earn() {
           </div>
 
           {/* Balance Overview */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <Card className="bg-gradient-to-br from-amber-500 to-orange-500 text-white border-0">
               <div className="p-4 pb-2">
                 <div className="text-white/80 text-sm font-medium flex items-center gap-2">
@@ -146,24 +144,6 @@ export default function Earn() {
                   <span className="text-4xl font-bold">
                     {totalWithdrawn.toLocaleString()}
                   </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white border-0">
-              <div className="p-4 pb-2">
-                <div className="text-white/80 text-sm font-medium flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  {t("earn.daily")}
-                </div>
-              </div>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <Gift className="w-12 h-12" />
-                  <div>
-                    <span className="text-4xl font-bold">50K</span>
-                    <span className="text-white/80 text-sm ml-1">{t("common.coin")}</span>
-                  </div>
                 </div>
               </CardContent>
             </Card>

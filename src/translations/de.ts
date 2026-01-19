@@ -1,4 +1,21 @@
 const translations: Record<string, string> = {
+  // Early Adopter
+  "earlyAdopter.title": "Early Adopter Belohnung",
+  "earlyAdopter.description": "Stelle 10 gültige Fragen, um eine spezielle Belohnung für die ersten 100 Nutzer zu erhalten!",
+  "earlyAdopter.questionsProgress": "Fragenfortschritt",
+  "earlyAdopter.questionsRemaining": "Noch {count} Fragen",
+  "earlyAdopter.reward": "Belohnung",
+  "earlyAdopter.askNow": "Jetzt Angel AI fragen",
+  "earlyAdopter.yourRank": "Dein Rang",
+  "earlyAdopter.completed": "🎉 Early Adopter Belohnung erhalten!",
+  "earlyAdopter.rewardReceived": "Belohnung erhalten",
+  "earlyAdopter.notEligible": "Das Early Adopter Programm ist für die ersten 100 Nutzer beendet.",
+  "earlyAdopter.congratsTitle": "Herzlichen Glückwunsch, Early Adopter!",
+  "earlyAdopter.congratsMessage": "Du bist einer der ersten 100 Nutzer, die 10 gültige Fragen gestellt haben!",
+  "earlyAdopter.rankMessage": "Dein Rang",
+  "earlyAdopter.coinsAwarded": "Camly Coins wurden deinem Konto gutgeschrieben",
+  "earlyAdopter.claimReward": "Belohnung einlösen",
+
   // Navigation
   "nav.home": "Startseite",
   "nav.about": "Über Angel AI",
