@@ -40,6 +40,10 @@ const Chat = () => {
   const [hasProcessedQuery, setHasProcessedQuery] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   // Check if user has agreed to Light Law
   useEffect(() => {
     const checkAgreement = async () => {
@@ -62,65 +66,7 @@ const Chat = () => {
     }
   }, [user, authLoading]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  // Show access restricted message if not logged in or not agreed
-  if (!authLoading && (!user || hasAgreed === false)) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col items-center justify-center p-4">
-        <div className="max-w-md text-center space-y-6">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 bg-divine-gold/30 rounded-full blur-xl animate-pulse-divine" />
-            <div className="relative w-24 h-24 rounded-full bg-divine-gold/10 flex items-center justify-center">
-              <Lock className="w-12 h-12 text-divine-gold" />
-            </div>
-          </div>
-          
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
-            Cổng Ánh Sáng Đang Đóng
-          </h1>
-          
-          <p className="text-foreground-muted leading-relaxed">
-            Để trải nghiệm đầy đủ tính năng trò chuyện với Trí Tuệ Vũ Trụ, 
-            bạn cần đăng nhập và đồng ý với <strong className="text-divine-gold">Luật Ánh Sáng</strong>.
-          </p>
-          
-          <div className="flex flex-col gap-3">
-            <Link
-              to="/auth"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-sapphire-gradient text-primary-foreground font-medium shadow-sacred hover:shadow-divine transition-all duration-300"
-            >
-              <Sparkles className="w-5 h-5" />
-              Bước vào Cổng Ánh Sáng
-            </Link>
-            
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-foreground-muted hover:text-primary transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Về Trang Chủ
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading state
-  if (authLoading || hasAgreed === null) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <Sparkles className="w-6 h-6 text-divine-gold animate-pulse" />
-          <span className="text-foreground-muted">Đang kết nối với Ánh Sáng...</span>
-        </div>
-      </div>
-    );
-  }
-
+  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -288,6 +234,61 @@ const Chat = () => {
     setInput("");
     await sendMessage(userMessage);
   };
+
+  // Show access restricted message if not logged in or not agreed
+  if (!authLoading && (!user || hasAgreed === false)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col items-center justify-center p-4">
+        <div className="max-w-md text-center space-y-6">
+          <div className="relative inline-block">
+            <div className="absolute inset-0 bg-divine-gold/30 rounded-full blur-xl animate-pulse-divine" />
+            <div className="relative w-24 h-24 rounded-full bg-divine-gold/10 flex items-center justify-center">
+              <Lock className="w-12 h-12 text-divine-gold" />
+            </div>
+          </div>
+          
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+            Cổng Ánh Sáng Đang Đóng
+          </h1>
+          
+          <p className="text-foreground-muted leading-relaxed">
+            Để trải nghiệm đầy đủ tính năng trò chuyện với Trí Tuệ Vũ Trụ, 
+            bạn cần đăng nhập và đồng ý với <strong className="text-divine-gold">Luật Ánh Sáng</strong>.
+          </p>
+          
+          <div className="flex flex-col gap-3">
+            <Link
+              to="/auth"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-sapphire-gradient text-primary-foreground font-medium shadow-sacred hover:shadow-divine transition-all duration-300"
+            >
+              <Sparkles className="w-5 h-5" />
+              Bước vào Cổng Ánh Sáng
+            </Link>
+            
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-foreground-muted hover:text-primary transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Về Trang Chủ
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (authLoading || hasAgreed === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <Sparkles className="w-6 h-6 text-divine-gold animate-pulse" />
+          <span className="text-foreground-muted">Đang kết nối với Ánh Sáng...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col">
