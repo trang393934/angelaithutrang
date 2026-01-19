@@ -316,9 +316,16 @@ const Auth = () => {
 
   const handleLawDialogScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
+    // Only mark as read if user actually scrolled near the bottom
+    // and content requires scrolling (scrollHeight > clientHeight)
+    const needsScrolling = target.scrollHeight > target.clientHeight + 10;
     const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
-    if (isAtBottom) {
+    
+    if (needsScrolling && isAtBottom) {
       setHasReadLaw(true);
+    } else if (!needsScrolling) {
+      // If content doesn't need scrolling, mark as read after a short delay
+      setTimeout(() => setHasReadLaw(true), 2000);
     }
   };
 
