@@ -166,35 +166,32 @@ export function EarnProgress() {
   ];
 
   return (
-    <Card className="border-amber-200/50 dark:border-amber-800/50 mt-6">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Coins className="h-5 w-5 text-amber-600" />
-            <span>Tích lũy ánh sáng hôm nay</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
-            <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
-              {status.totalCoinsToday.toLocaleString()}
-            </span>
-          </div>
-        </CardTitle>
-        
-        {status.currentStreak > 0 && (
-          <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 mt-1">
-            <Flame className="h-4 w-4" />
-            <span>Streak: {status.currentStreak} ngày liên tiếp</span>
-          </div>
-        )}
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {activities.map((activity, index) => (
-            <EarnActivity key={index} {...activity} />
-          ))}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Coins className="h-5 w-5 text-amber-600" />
+          <h2 className="text-lg font-semibold">Tích lũy ánh sáng hôm nay</h2>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex items-center gap-2">
+          <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
+          <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
+            {status.totalCoinsToday.toLocaleString()}
+          </span>
+        </div>
+      </div>
+        
+      {status.currentStreak > 0 && (
+        <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
+          <Flame className="h-4 w-4" />
+          <span>Streak: {status.currentStreak} ngày liên tiếp</span>
+        </div>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {activities.map((activity, index) => (
+          <EarnActivity key={index} {...activity} />
+        ))}
+      </div>
+    </div>
   );
 }
