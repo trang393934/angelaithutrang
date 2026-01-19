@@ -2,6 +2,7 @@ import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
 import { 
   Coins, 
   MessageCircle, 
@@ -25,12 +26,33 @@ interface EarnActivityProps {
   max: number;
   rewardPerAction: string;
   color: string;
+  linkTo?: string;
 }
 
-function EarnActivity({ icon, title, description, rewarded, max, rewardPerAction, color }: EarnActivityProps) {
+function EarnActivity({ icon, title, description, rewarded, max, rewardPerAction, color, linkTo }: EarnActivityProps) {
   const remaining = Math.max(0, max - rewarded);
   const progress = max > 0 ? (rewarded / max) * 100 : 0;
   const isComplete = remaining === 0;
+
+  const IconWrapper = linkTo ? (
+    <Link 
+      to={linkTo}
+      className={cn(
+        "p-2 rounded-lg cursor-pointer transition-all hover:scale-110 hover:shadow-md",
+        isComplete ? "bg-green-100 dark:bg-green-900/30" : color
+      )}
+      title={`Đi đến ${title}`}
+    >
+      {icon}
+    </Link>
+  ) : (
+    <div className={cn(
+      "p-2 rounded-lg",
+      isComplete ? "bg-green-100 dark:bg-green-900/30" : color
+    )}>
+      {icon}
+    </div>
+  );
 
   return (
     <div className={cn(
@@ -40,12 +62,7 @@ function EarnActivity({ icon, title, description, rewarded, max, rewardPerAction
         : "bg-card hover:shadow-md"
     )}>
       <div className="flex items-start gap-3">
-        <div className={cn(
-          "p-2 rounded-lg",
-          isComplete ? "bg-green-100 dark:bg-green-900/30" : color
-        )}>
-          {icon}
-        </div>
+        {IconWrapper}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <h4 className="font-medium text-sm truncate">{title}</h4>
@@ -99,6 +116,7 @@ export function EarnProgress() {
       max: 1,
       rewardPerAction: "100-1000 coin",
       color: "bg-blue-100 dark:bg-blue-900/30",
+      linkTo: undefined, // Already logged in
     },
     {
       icon: <MessageCircle className="h-5 w-5 text-purple-600" />,
@@ -108,6 +126,7 @@ export function EarnProgress() {
       max: 10,
       rewardPerAction: "1000-5000 coin/câu",
       color: "bg-purple-100 dark:bg-purple-900/30",
+      linkTo: "/chat",
     },
     {
       icon: <BookOpen className="h-5 w-5 text-emerald-600" />,
@@ -117,6 +136,7 @@ export function EarnProgress() {
       max: 3,
       rewardPerAction: "5000-9000 coin/bài",
       color: "bg-emerald-100 dark:bg-emerald-900/30",
+      linkTo: "/profile",
     },
     {
       icon: <Share2 className="h-5 w-5 text-pink-600" />,
@@ -126,6 +146,7 @@ export function EarnProgress() {
       max: 5,
       rewardPerAction: "500 coin/lần",
       color: "bg-pink-100 dark:bg-pink-900/30",
+      linkTo: "/chat",
     },
     {
       icon: <MessageSquare className="h-5 w-5 text-orange-600" />,
@@ -135,6 +156,7 @@ export function EarnProgress() {
       max: 2,
       rewardPerAction: "2000 coin/lần",
       color: "bg-orange-100 dark:bg-orange-900/30",
+      linkTo: "/feedback",
     },
     {
       icon: <Lightbulb className="h-5 w-5 text-yellow-600" />,
@@ -144,6 +166,7 @@ export function EarnProgress() {
       max: 2,
       rewardPerAction: "1000 coin khi duyệt",
       color: "bg-yellow-100 dark:bg-yellow-900/30",
+      linkTo: "/ideas",
     },
     {
       icon: <Upload className="h-5 w-5 text-cyan-600" />,
@@ -153,6 +176,7 @@ export function EarnProgress() {
       max: 2,
       rewardPerAction: "2000 coin khi duyệt",
       color: "bg-cyan-100 dark:bg-cyan-900/30",
+      linkTo: "/knowledge",
     },
     {
       icon: <Users className="h-5 w-5 text-indigo-600" />,
@@ -162,6 +186,7 @@ export function EarnProgress() {
       max: 5,
       rewardPerAction: "300 coin/lần",
       color: "bg-indigo-100 dark:bg-indigo-900/30",
+      linkTo: "/community",
     },
   ];
 
