@@ -1,4 +1,4 @@
-import { useState, useEffect, DragEvent } from "react";
+import { useState, useEffect, DragEvent, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,8 @@ import {
   ArrowLeft, Upload, FileText, Trash2, 
   LogOut, Sparkles, CheckCircle, Clock,
   FileType, AlertCircle, FolderPlus, Folder,
-  Edit2, X, ChevronDown, ChevronRight, GripVertical
+  Edit2, X, ChevronDown, ChevronRight, GripVertical,
+  Search, Filter, XCircle
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 
@@ -30,6 +31,8 @@ interface KnowledgeDocument {
   folder_id: string | null;
 }
 
+type ProcessedFilter = "all" | "processed" | "pending";
+
 const AdminKnowledge = () => {
   const { user, isAdmin, isLoading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -39,6 +42,11 @@ const AdminKnowledge = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterFolder, setFilterFolder] = useState<string | null | "all" | "uncategorized">("all");
+  const [filterProcessed, setFilterProcessed] = useState<ProcessedFilter>("all");
   
   // Drag and drop state
   const [draggedDoc, setDraggedDoc] = useState<KnowledgeDocument | null>(null);
@@ -56,6 +64,37 @@ const AdminKnowledge = () => {
     file: null as File | null,
     folderId: null as string | null,
   });
+
+  // Filtered documents based on search and filters
+  const filteredDocuments = useMemo(() => {
+    return documents.filter(doc => {
+      // Search filter
+      const matchesSearch = searchQuery === "" || 
+        doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (doc.description?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        doc.file_name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Folder filter
+      const matchesFolder = filterFolder === "all" || 
+        (filterFolder === "uncategorized" && doc.folder_id === null) ||
+        doc.folder_id === filterFolder;
+      
+      // Processed filter
+      const matchesProcessed = filterProcessed === "all" ||
+        (filterProcessed === "processed" && doc.is_processed) ||
+        (filterProcessed === "pending" && !doc.is_processed);
+      
+      return matchesSearch && matchesFolder && matchesProcessed;
+    });
+  }, [documents, searchQuery, filterFolder, filterProcessed]);
+
+  const hasActiveFilters = searchQuery !== "" || filterFolder !== "all" || filterProcessed !== "all";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterFolder("all");
+    setFilterProcessed("all");
+  };
 
   useEffect(() => {
     if (!authLoading) {
@@ -620,14 +659,114 @@ const AdminKnowledge = () => {
           </form>
         </div>
 
+        {/* Search and Filter */}
+        <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Search className="w-5 h-5 text-primary" />
+            <h2 className="font-serif text-xl font-semibold text-primary-deep">
+              Tìm Kiếm & Lọc
+            </h2>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="ml-auto flex items-center gap-1 px-3 py-1 text-sm rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+              >
+                <XCircle className="w-4 h-4" />
+                Xóa bộ lọc
+              </button>
+            )}
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Search Input */}
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-foreground-muted mb-1">
+                Tìm kiếm
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm theo tiêu đề, mô tả..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Folder Filter */}
+            <div>
+              <label className="block text-sm font-medium text-foreground-muted mb-1">
+                Thư mục
+              </label>
+              <select
+                value={filterFolder || "all"}
+                onChange={(e) => setFilterFolder(e.target.value === "all" ? "all" : e.target.value === "uncategorized" ? "uncategorized" : e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              >
+                <option value="all">Tất cả thư mục</option>
+                <option value="uncategorized">Chưa phân loại</option>
+                {folders.map(folder => (
+                  <option key={folder.id} value={folder.id}>{folder.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Processed Filter */}
+            <div>
+              <label className="block text-sm font-medium text-foreground-muted mb-1">
+                Trạng thái
+              </label>
+              <select
+                value={filterProcessed}
+                onChange={(e) => setFilterProcessed(e.target.value as ProcessedFilter)}
+                className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="processed">✓ Đã xử lý</option>
+                <option value="pending">⏳ Chờ xử lý</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Filter Results Summary */}
+          {hasActiveFilters && (
+            <div className="mt-4 pt-4 border-t border-primary-pale/50">
+              <p className="text-sm text-foreground-muted">
+                Tìm thấy <span className="font-semibold text-primary">{filteredDocuments.length}</span> tài liệu
+                {searchQuery && <span> khớp với "<span className="font-medium">{searchQuery}</span>"</span>}
+                {filterFolder !== "all" && (
+                  <span> trong thư mục "<span className="font-medium">
+                    {filterFolder === "uncategorized" ? "Chưa phân loại" : folders.find(f => f.id === filterFolder)?.name}
+                  </span>"</span>
+                )}
+                {filterProcessed !== "all" && (
+                  <span> với trạng thái "<span className="font-medium">
+                    {filterProcessed === "processed" ? "Đã xử lý" : "Chờ xử lý"}
+                  </span>"</span>
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Documents by Folder */}
         <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl font-semibold text-primary-deep flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              Tài Liệu ({documents.length})
+              Tài Liệu ({hasActiveFilters ? `${filteredDocuments.length}/${documents.length}` : documents.length})
             </h2>
-            {documents.length > 0 && (
+            {documents.length > 0 && !hasActiveFilters && (
               <p className="text-xs text-foreground-muted flex items-center gap-1">
                 <GripVertical className="w-3 h-3" />
                 Kéo thả để di chuyển tài liệu
@@ -642,6 +781,37 @@ const AdminKnowledge = () => {
               <p className="text-sm text-foreground-muted/60 mt-1">
                 Upload tài liệu đầu tiên để huấn luyện Angel AI
               </p>
+            </div>
+          ) : hasActiveFilters ? (
+            // Show flat list when filtering
+            <div className="space-y-2">
+              {filteredDocuments.length === 0 ? (
+                <div className="text-center py-12">
+                  <Search className="w-12 h-12 text-primary-soft mx-auto mb-4" />
+                  <p className="text-foreground-muted">Không tìm thấy tài liệu phù hợp</p>
+                  <button
+                    onClick={clearFilters}
+                    className="mt-3 text-sm text-primary hover:text-primary-deep underline"
+                  >
+                    Xóa bộ lọc
+                  </button>
+                </div>
+              ) : (
+                filteredDocuments.map((doc) => (
+                  <DocumentItem 
+                    key={doc.id} 
+                    doc={doc} 
+                    onDelete={handleDelete}
+                    formatFileSize={formatFileSize}
+                    getFileIcon={getFileIcon}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggedDoc?.id === doc.id}
+                    showFolder
+                    folderName={doc.folder_id ? folders.find(f => f.id === doc.folder_id)?.name : "Chưa phân loại"}
+                  />
+                ))
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -789,7 +959,9 @@ const DocumentItem = ({
   getFileIcon,
   onDragStart,
   onDragEnd,
-  isDragging
+  isDragging,
+  showFolder = false,
+  folderName
 }: { 
   doc: KnowledgeDocument; 
   onDelete: (doc: KnowledgeDocument) => void;
@@ -798,6 +970,8 @@ const DocumentItem = ({
   onDragStart: (e: DragEvent<HTMLDivElement>, doc: KnowledgeDocument) => void;
   onDragEnd: () => void;
   isDragging: boolean;
+  showFolder?: boolean;
+  folderName?: string;
 }) => {
   return (
     <div 
@@ -819,6 +993,15 @@ const DocumentItem = ({
             <p className="text-sm text-foreground-muted truncate">{doc.description}</p>
           )}
           <div className="flex items-center gap-2 mt-1 text-xs text-foreground-muted/70 flex-wrap">
+            {showFolder && folderName && (
+              <>
+                <span className="flex items-center gap-1 px-1.5 py-0.5 bg-primary-pale rounded text-primary">
+                  <Folder className="w-3 h-3" />
+                  {folderName}
+                </span>
+                <span>•</span>
+              </>
+            )}
             <span>{formatFileSize(doc.file_size)}</span>
             <span>•</span>
             <span>{new Date(doc.created_at).toLocaleDateString("vi-VN")}</span>
