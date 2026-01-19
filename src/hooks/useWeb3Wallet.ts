@@ -312,10 +312,42 @@ export function useWeb3Wallet() {
   // Auto-reconnect on page load
   useEffect(() => {
     const wasConnected = localStorage.getItem("wallet_connected") === "true";
-    if (wasConnected && hasWallet) {
-      connect();
+    if (wasConnected && hasWallet && !state.isConnecting && !state.isConnected) {
+      // Use a silent reconnect that checks existing accounts without prompting
+      const silentReconnect = async () => {
+        try {
+          const ethereum = (window as any).ethereum;
+          const accounts = await ethereum.request({ method: "eth_accounts" });
+          
+          if (accounts.length > 0) {
+            const address = accounts[0];
+            const chainId = parseInt(await ethereum.request({ method: "eth_chainId" }), 16);
+            const isCorrectChain = chainId === BSC_CHAIN_ID;
+            
+            if (isCorrectChain) {
+              const balances = await fetchBalances(address);
+              setState({
+                isConnected: true,
+                isConnecting: false,
+                address,
+                shortAddress: getShortAddress(address),
+                chainId: BSC_CHAIN_ID,
+                isCorrectChain: true,
+                balances,
+                totalUsdValue: 0,
+                error: null,
+              });
+            }
+          }
+        } catch (error) {
+          console.log("Silent reconnect failed:", error);
+          localStorage.removeItem("wallet_connected");
+        }
+      };
+      
+      silentReconnect();
     }
-  }, []);
+  }, [hasWallet]);
 
   return {
     ...state,
