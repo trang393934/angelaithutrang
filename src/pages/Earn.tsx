@@ -17,7 +17,8 @@ import {
   BookOpen,
   Lightbulb,
   Gift,
-  ArrowRight
+  ArrowRight,
+  Eye
 } from "lucide-react";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
@@ -172,6 +173,18 @@ export default function Earn() {
                   </div>
                   <h3 className="font-semibold">Góp ý tưởng</h3>
                   <p className="text-xs text-muted-foreground">1000 coin khi duyệt</p>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+              <CardContent className="p-6 text-center">
+                <Link to="/vision" className="space-y-3">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Eye className="h-7 w-7 text-pink-600" />
+                  </div>
+                  <h3 className="font-semibold">Vision Board</h3>
+                  <p className="text-xs text-muted-foreground">1000 coin lần đầu</p>
                 </Link>
               </CardContent>
             </Card>

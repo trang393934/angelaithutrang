@@ -15,6 +15,7 @@ import AdminKnowledge from "./pages/AdminKnowledge";
 import AdminDashboard from "./pages/AdminDashboard";
 import CommunityQuestions from "./pages/CommunityQuestions";
 import Earn from "./pages/Earn";
+import Vision from "./pages/Vision";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/earn" element={<Earn />} />
+            <Route path="/vision" element={<Vision />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/knowledge" element={<AdminKnowledge />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
