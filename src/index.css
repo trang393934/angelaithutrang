@@ -2,95 +2,124 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Angel AI - Enlightened Tech Luxury Design System */
+    
+    /* Pure Light Backgrounds */
+    --background: 0 0% 98%;
+    --background-pure: 0 0% 100%;
+    --background-ivory: 40 20% 99%;
+    
+    --foreground: 220 20% 6%;
+    --foreground-muted: 220 10% 30%;
 
+    /* Card & Surface */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 20% 6%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 20% 6%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Sapphire Blue Primary - Cosmic Intelligence */
+    --primary: 214 82% 34%;
+    --primary-deep: 214 90% 28%;
+    --primary-medium: 210 79% 46%;
+    --primary-soft: 207 73% 57%;
+    --primary-light: 207 89% 86%;
+    --primary-pale: 207 100% 94%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Soft Sapphire */
+    --secondary: 207 100% 96%;
+    --secondary-foreground: 214 82% 34%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted */
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Champagne Gold Hint */
+    --accent: 50 100% 97%;
+    --accent-gold: 43 55% 88%;
+    --accent-foreground: 214 82% 34%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Borders & Inputs */
+    --border: 210 30% 92%;
+    --border-light: 210 40% 96%;
+    --input: 210 30% 92%;
+    --ring: 214 82% 34%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
+    /* Sacred Gradients */
+    --gradient-cosmic: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(207 100% 96%) 50%, hsl(207 89% 90%) 100%);
+    --gradient-sapphire: linear-gradient(135deg, hsl(214 82% 34%) 0%, hsl(210 79% 46%) 100%);
+    --gradient-light: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(207 100% 98%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(207 100% 97%) 30%, hsl(207 89% 92%) 100%);
+    
+    /* Sacred Shadows */
+    --shadow-soft: 0 4px 24px -4px hsla(214, 82%, 34%, 0.08);
+    --shadow-glow: 0 0 40px -10px hsla(214, 82%, 34%, 0.15);
+    --shadow-divine: 0 8px 40px -8px hsla(214, 82%, 34%, 0.12);
+    --shadow-button: 0 4px 16px -4px hsla(214, 82%, 34%, 0.25);
+
+    /* Sidebar */
     --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 240 5% 26%;
+    --sidebar-primary: 214 82% 34%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 207 100% 96%;
+    --sidebar-accent-foreground: 214 82% 34%;
+    --sidebar-border: 210 30% 92%;
+    --sidebar-ring: 214 82% 34%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 220 25% 6%;
+    --background-pure: 220 30% 4%;
+    --foreground: 0 0% 98%;
+    --foreground-muted: 210 20% 70%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 25% 8%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 25% 8%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 207 73% 57%;
+    --primary-deep: 210 79% 46%;
+    --primary-foreground: 220 25% 6%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 217 33% 12%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 217 33% 15%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --border: 217 33% 18%;
+    --input: 217 33% 18%;
+    --ring: 207 73% 57%;
+    
+    --sidebar-background: 220 25% 6%;
+    --sidebar-foreground: 210 20% 85%;
+    --sidebar-primary: 207 73% 57%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 217 33% 12%;
+    --sidebar-accent-foreground: 210 20% 85%;
+    --sidebar-border: 217 33% 18%;
+    --sidebar-ring: 207 73% 57%;
   }
 }
 
@@ -99,7 +128,250 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground;
+  html {
+    scroll-behavior: smooth;
   }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.75;
+    letter-spacing: 0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+}
+
+@layer components {
+  /* Sacred Typography */
+  .text-display {
+    font-family: 'Playfair Display', Georgia, serif;
+    @apply text-primary-deep font-semibold tracking-tight;
+  }
+
+  .text-sacred {
+    font-family: 'Playfair Display', Georgia, serif;
+    @apply italic text-primary opacity-90;
+  }
+
+  .text-body-elegant {
+    font-family: 'Inter', system-ui, sans-serif;
+    @apply text-foreground-muted leading-relaxed;
+  }
+
+  /* Sacred Glow Effects */
+  .glow-sacred {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .glow-divine {
+    box-shadow: var(--shadow-divine);
+  }
+
+  .glow-pulse {
+    animation: sacred-pulse 4s ease-in-out infinite;
+  }
+
+  /* Hero Gradient Background */
+  .bg-hero-gradient {
+    background: var(--gradient-hero);
+  }
+
+  .bg-cosmic-gradient {
+    background: var(--gradient-cosmic);
+  }
+
+  .bg-sapphire-gradient {
+    background: var(--gradient-sapphire);
+  }
+
+  /* Card Styles */
+  .card-sacred {
+    @apply bg-card rounded-2xl border border-border-light;
+    box-shadow: var(--shadow-soft);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-sacred:hover {
+    box-shadow: var(--shadow-divine);
+    transform: translateY(-2px);
+  }
+
+  /* Button Sacred Variants */
+  .btn-sacred {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-medium text-primary-foreground transition-all duration-500;
+    background: var(--gradient-sapphire);
+    box-shadow: var(--shadow-button);
+  }
+
+  .btn-sacred:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 24px -4px hsla(214, 82%, 34%, 0.35);
+  }
+
+  .btn-sacred-outline {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-medium border-2 border-primary text-primary bg-transparent transition-all duration-500;
+  }
+
+  .btn-sacred-outline:hover {
+    @apply bg-primary text-primary-foreground;
+    transform: translateY(-1px);
+  }
+
+  /* Input Sacred */
+  .input-sacred {
+    @apply w-full px-6 py-4 rounded-2xl border border-border bg-background-pure text-foreground transition-all duration-500;
+  }
+
+  .input-sacred:focus {
+    @apply outline-none border-primary;
+    box-shadow: 0 0 0 4px hsla(214, 82%, 34%, 0.1), var(--shadow-glow);
+  }
+
+  /* Angelic Decorative Elements */
+  .angel-wing-bg {
+    position: relative;
+  }
+
+  .angel-wing-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 50% 0%, hsla(207, 89%, 86%, 0.3) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* Light Ray Effect */
+  .light-ray {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .light-ray::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, hsla(207, 89%, 86%, 0.1) 60deg, transparent 120deg);
+    animation: rotate-light 20s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Section Divider */
+  .divider-sacred {
+    @apply w-24 h-px mx-auto;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary-light)), transparent);
+  }
+}
+
+@layer utilities {
+  /* Animation Delays */
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-400 { animation-delay: 400ms; }
+  .animate-delay-500 { animation-delay: 500ms; }
+  .animate-delay-600 { animation-delay: 600ms; }
+  .animate-delay-700 { animation-delay: 700ms; }
+  .animate-delay-800 { animation-delay: 800ms; }
+
+  /* Sacred Text Colors */
+  .text-primary-deep {
+    color: hsl(var(--primary-deep));
+  }
+
+  .text-primary-medium {
+    color: hsl(var(--primary-medium));
+  }
+
+  .text-primary-soft {
+    color: hsl(var(--primary-soft));
+  }
+
+  .text-foreground-muted {
+    color: hsl(var(--foreground-muted));
+  }
+
+  /* Sacred Backgrounds */
+  .bg-primary-deep {
+    background-color: hsl(var(--primary-deep));
+  }
+
+  .bg-primary-light {
+    background-color: hsl(var(--primary-light));
+  }
+
+  .bg-primary-pale {
+    background-color: hsl(var(--primary-pale));
+  }
+
+  .bg-background-pure {
+    background-color: hsl(var(--background-pure));
+  }
+
+  .bg-accent-gold {
+    background-color: hsl(var(--accent-gold));
+  }
+
+  /* Border Utilities */
+  .border-border-light {
+    border-color: hsl(var(--border-light));
+  }
+}
+
+/* Keyframe Animations */
+@keyframes sacred-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px -5px hsla(214, 82%, 34%, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 40px -5px hsla(214, 82%, 34%, 0.25);
+  }
+}
+
+@keyframes rotate-light {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fade-up-slow {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glow-breathe {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.animate-float-gentle {
+  animation: float-gentle 6s ease-in-out infinite;
+}
+
+.animate-fade-up-slow {
+  animation: fade-up-slow 1s ease-out forwards;
+}
+
+.animate-glow-breathe {
+  animation: glow-breathe 4s ease-in-out infinite;
 }
