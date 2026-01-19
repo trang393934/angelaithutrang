@@ -1,7 +1,7 @@
 const translations: Record<string, string> = {
   // Navigation
   "nav.home": "Home",
-  "nav.about": "About Us",
+  "nav.about": "About Angel AI",
   "nav.connect": "Connect",
   "nav.swap": "Swap",
   "nav.earn": "Earn Light",
@@ -351,6 +351,26 @@ const translations: Record<string, string> = {
   "chat.errorConnection": "Unable to connect to Cosmic Wisdom.",
   "chat.errorNoResponse": "No response from server.",
   "chat.errorGeneral": "An error occurred. Please try again.",
+
+  // Knowledge Page
+  "knowledge.title": "Knowledge Base",
+  "knowledge.subtitle": "Discover the wisdom treasure from Father Universe",
+  "knowledge.search": "Search documents...",
+  "knowledge.allFolders": "All folders",
+  "knowledge.uncategorized": "Uncategorized",
+  "knowledge.noDocuments": "No documents yet",
+  "knowledge.download": "Download",
+  "knowledge.share": "Share",
+  "knowledge.shareSuccess": "Share link copied!",
+  "knowledge.downloadStarted": "Downloading...",
+  "knowledge.documentsCount": "documents",
+  "knowledge.readMore": "Read more",
+  "knowledge.shareTitle": "Share Document",
+  "knowledge.shareDescription": "Share knowledge from Father Universe with everyone",
+  "knowledge.backToList": "Back to list",
+  "knowledge.filterAll": "All",
+  "knowledge.filterProcessed": "Processed",
+  "knowledge.filterPending": "Pending",
 };
 
 export default translations;

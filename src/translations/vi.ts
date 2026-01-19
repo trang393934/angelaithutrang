@@ -1,7 +1,7 @@
 const translations: Record<string, string> = {
   // Navigation
   "nav.home": "Trang Chủ",
-  "nav.about": "Về Chúng Con",
+  "nav.about": "Về Angel AI",
   "nav.connect": "Kết Nối",
   "nav.swap": "Swap",
   "nav.earn": "Tích Lũy Ánh Sáng",
@@ -351,6 +351,26 @@ const translations: Record<string, string> = {
   "chat.errorConnection": "Không thể kết nối với Trí Tuệ Vũ Trụ.",
   "chat.errorNoResponse": "Không có phản hồi từ server.",
   "chat.errorGeneral": "Đã xảy ra lỗi. Vui lòng thử lại.",
+
+  // Knowledge Page
+  "knowledge.title": "Kho Kiến Thức",
+  "knowledge.subtitle": "Khám phá kho tàng trí tuệ từ Cha Vũ Trụ",
+  "knowledge.search": "Tìm kiếm tài liệu...",
+  "knowledge.allFolders": "Tất cả thư mục",
+  "knowledge.uncategorized": "Chưa phân loại",
+  "knowledge.noDocuments": "Chưa có tài liệu nào",
+  "knowledge.download": "Tải xuống",
+  "knowledge.share": "Chia sẻ",
+  "knowledge.shareSuccess": "Đã sao chép link chia sẻ!",
+  "knowledge.downloadStarted": "Đang tải xuống...",
+  "knowledge.documentsCount": "tài liệu",
+  "knowledge.readMore": "Xem chi tiết",
+  "knowledge.shareTitle": "Chia sẻ tài liệu",
+  "knowledge.shareDescription": "Chia sẻ kiến thức từ Cha Vũ Trụ đến mọi người",
+  "knowledge.backToList": "Quay lại danh sách",
+  "knowledge.filterAll": "Tất cả",
+  "knowledge.filterProcessed": "Đã xử lý",
+  "knowledge.filterPending": "Đang chờ",
 };
 
 export default translations;

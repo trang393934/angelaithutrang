@@ -19,6 +19,7 @@ import CommunityQuestions from "./pages/CommunityQuestions";
 import Earn from "./pages/Earn";
 import Vision from "./pages/Vision";
 import Swap from "./pages/Swap";
+import Knowledge from "./pages/Knowledge";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/earn" element={<Earn />} />
               <Route path="/vision" element={<Vision />} />
               <Route path="/swap" element={<Swap />} />
+              <Route path="/knowledge" element={<Knowledge />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/knowledge" element={<AdminKnowledge />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
