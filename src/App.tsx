@@ -19,6 +19,7 @@ import AdminWithdrawals from "./pages/AdminWithdrawals";
 import AdminEarlyAdopters from "./pages/AdminEarlyAdopters";
 import AdminStatistics from "./pages/AdminStatistics";
 import CommunityQuestions from "./pages/CommunityQuestions";
+import Community from "./pages/Community";
 import Earn from "./pages/Earn";
 import Vision from "./pages/Vision";
 import Swap from "./pages/Swap";
@@ -52,7 +53,8 @@ const App = () => (
               <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
               <Route path="/admin/early-adopters" element={<AdminEarlyAdopters />} />
               <Route path="/admin/statistics" element={<AdminStatistics />} />
-              <Route path="/community" element={<CommunityQuestions />} />
+              <Route path="/community-questions" element={<CommunityQuestions />} />
+              <Route path="/community" element={<Community />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

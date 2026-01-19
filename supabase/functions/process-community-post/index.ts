@@ -1,0 +1,375 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const LIKES_THRESHOLD = 5;
+const POST_REWARD = 3000;
+const SHARE_REWARD = 500;
+const COMMENT_REWARD = 500;
+const COMMENT_MIN_LENGTH = 50;
+const MAX_POSTS_REWARDED_PER_DAY = 3;
+const MAX_COMMENTS_REWARDED_PER_DAY = 5;
+const MAX_SHARES_PER_DAY = 5;
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { action, userId, postId, content, imageUrl } = await req.json();
+
+    console.log(`Processing action: ${action} for user: ${userId}`);
+
+    // Helper function to get or create daily tracking
+    const getDailyTracking = async (uid: string) => {
+      const today = new Date().toISOString().split("T")[0];
+      const { data: existing } = await supabase
+        .from("daily_reward_tracking")
+        .select("*")
+        .eq("user_id", uid)
+        .eq("reward_date", today)
+        .maybeSingle();
+
+      if (existing) return existing;
+
+      const { data: created } = await supabase
+        .from("daily_reward_tracking")
+        .insert({ user_id: uid, reward_date: today })
+        .select()
+        .single();
+
+      return created;
+    };
+
+    if (action === "create_post") {
+      // Create the post
+      const { data: newPost, error: postError } = await supabase
+        .from("community_posts")
+        .insert({
+          user_id: userId,
+          content,
+          image_url: imageUrl || null,
+        })
+        .select()
+        .single();
+
+      if (postError) throw postError;
+
+      console.log(`Post created: ${newPost.id}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Đăng bài thành công!",
+          post: newPost,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "toggle_like") {
+      // Check if already liked
+      const { data: existingLike } = await supabase
+        .from("community_post_likes")
+        .select("id")
+        .eq("post_id", postId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      let newLikesCount = 0;
+      let liked = false;
+
+      if (existingLike) {
+        // Unlike
+        await supabase.from("community_post_likes").delete().eq("id", existingLike.id);
+        
+        const { data: post } = await supabase
+          .from("community_posts")
+          .select("likes_count")
+          .eq("id", postId)
+          .single();
+        
+        newLikesCount = post?.likes_count || 0;
+        liked = false;
+      } else {
+        // Like
+        await supabase.from("community_post_likes").insert({
+          post_id: postId,
+          user_id: userId,
+        });
+
+        const { data: post } = await supabase
+          .from("community_posts")
+          .select("likes_count, is_rewarded, user_id")
+          .eq("id", postId)
+          .single();
+
+        newLikesCount = post?.likes_count || 0;
+        liked = true;
+
+        // Check if post reaches threshold and not yet rewarded
+        if (post && newLikesCount >= LIKES_THRESHOLD && !post.is_rewarded) {
+          // Get post owner's daily tracking
+          const tracking = await getDailyTracking(post.user_id);
+          const postsRewarded = tracking?.posts_rewarded || 0;
+
+          if (postsRewarded < MAX_POSTS_REWARDED_PER_DAY) {
+            // Award post owner
+            await supabase.rpc("add_camly_coins", {
+              _user_id: post.user_id,
+              _amount: POST_REWARD,
+              _transaction_type: "engagement_reward",
+              _description: `Bài viết đạt ${LIKES_THRESHOLD}+ lượt thích`,
+            });
+
+            // Mark post as rewarded
+            await supabase
+              .from("community_posts")
+              .update({ is_rewarded: true, reward_amount: POST_REWARD })
+              .eq("id", postId);
+
+            // Update daily tracking
+            await supabase
+              .from("daily_reward_tracking")
+              .update({
+                posts_rewarded: postsRewarded + 1,
+                total_coins_today: (tracking?.total_coins_today || 0) + POST_REWARD,
+              })
+              .eq("id", tracking.id);
+
+            console.log(`Post reward given to user ${post.user_id}`);
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                liked: true,
+                newLikesCount,
+                postRewarded: true,
+                message: `Bài viết đã đạt ${LIKES_THRESHOLD} like! Tác giả nhận ${POST_REWARD} Camly Coin`,
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          liked,
+          newLikesCount,
+          message: liked ? "Đã thích bài viết" : "Đã bỏ thích",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "share_post") {
+      // Check if already shared
+      const { data: existingShare } = await supabase
+        .from("community_shares")
+        .select("id")
+        .eq("post_id", postId)
+        .eq("sharer_id", userId)
+        .maybeSingle();
+
+      if (existingShare) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: "Bạn đã chia sẻ bài viết này rồi",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get post info
+      const { data: post } = await supabase
+        .from("community_posts")
+        .select("user_id")
+        .eq("id", postId)
+        .single();
+
+      if (!post) {
+        return new Response(
+          JSON.stringify({ success: false, message: "Không tìm thấy bài viết" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Can't share own post
+      if (post.user_id === userId) {
+        return new Response(
+          JSON.stringify({ success: false, message: "Không thể chia sẻ bài viết của chính mình" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Check sharer's daily limit
+      const sharerTracking = await getDailyTracking(userId);
+      const sharesRewarded = sharerTracking?.shares_rewarded || 0;
+
+      if (sharesRewarded >= MAX_SHARES_PER_DAY) {
+        // Create share but no reward
+        await supabase.from("community_shares").insert({
+          post_id: postId,
+          sharer_id: userId,
+          sharer_rewarded: false,
+          post_owner_rewarded: false,
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Chia sẻ thành công! (Đã đạt giới hạn thưởng hôm nay)",
+            rewarded: false,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Create share with rewards
+      await supabase.from("community_shares").insert({
+        post_id: postId,
+        sharer_id: userId,
+        sharer_rewarded: true,
+        post_owner_rewarded: true,
+      });
+
+      // Award sharer
+      await supabase.rpc("add_camly_coins", {
+        _user_id: userId,
+        _amount: SHARE_REWARD,
+        _transaction_type: "content_share",
+        _description: "Chia sẻ bài viết cộng đồng",
+      });
+
+      // Award post owner
+      await supabase.rpc("add_camly_coins", {
+        _user_id: post.user_id,
+        _amount: SHARE_REWARD,
+        _transaction_type: "engagement_reward",
+        _description: "Bài viết được chia sẻ",
+      });
+
+      // Update sharer's tracking
+      await supabase
+        .from("daily_reward_tracking")
+        .update({
+          shares_rewarded: sharesRewarded + 1,
+          total_coins_today: (sharerTracking?.total_coins_today || 0) + SHARE_REWARD,
+        })
+        .eq("id", sharerTracking.id);
+
+      console.log(`Share rewards given to sharer ${userId} and post owner ${post.user_id}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Chia sẻ thành công! Bạn và tác giả mỗi người nhận ${SHARE_REWARD} Camly Coin`,
+          rewarded: true,
+          coinsEarned: SHARE_REWARD,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "add_comment") {
+      const contentLength = content?.length || 0;
+
+      if (contentLength < COMMENT_MIN_LENGTH) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: `Bình luận phải có ít nhất ${COMMENT_MIN_LENGTH} ký tự`,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Check daily limit
+      const tracking = await getDailyTracking(userId);
+      const commentsRewarded = tracking?.comments_rewarded || 0;
+      const canReward = commentsRewarded < MAX_COMMENTS_REWARDED_PER_DAY;
+
+      // Create comment
+      const { data: newComment, error: commentError } = await supabase
+        .from("community_comments")
+        .insert({
+          post_id: postId,
+          user_id: userId,
+          content,
+          content_length: contentLength,
+          is_rewarded: canReward,
+          reward_amount: canReward ? COMMENT_REWARD : 0,
+        })
+        .select()
+        .single();
+
+      if (commentError) throw commentError;
+
+      if (canReward) {
+        // Award commenter
+        await supabase.rpc("add_camly_coins", {
+          _user_id: userId,
+          _amount: COMMENT_REWARD,
+          _transaction_type: "engagement_reward",
+          _description: "Bình luận cộng đồng",
+        });
+
+        // Update tracking
+        await supabase
+          .from("daily_reward_tracking")
+          .update({
+            comments_rewarded: commentsRewarded + 1,
+            total_coins_today: (tracking?.total_coins_today || 0) + COMMENT_REWARD,
+          })
+          .eq("id", tracking.id);
+
+        console.log(`Comment reward given to user ${userId}`);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: `Bình luận thành công! Bạn nhận ${COMMENT_REWARD} Camly Coin`,
+            rewarded: true,
+            coinsEarned: COMMENT_REWARD,
+            comment: newComment,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Bình luận thành công! (Đã đạt giới hạn thưởng hôm nay)",
+          rewarded: false,
+          comment: newComment,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ success: false, message: "Invalid action" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error: unknown) {
+    console.error("Error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(
+      JSON.stringify({ success: false, message: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
