@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Send, Sparkles, Lock, Coins, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +24,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/angel-chat`;
 
 const Chat = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
   const { dailyStatus, refreshBalance } = useCamlyCoin();
   const [hasAgreed, setHasAgreed] = useState<boolean | null>(null);
@@ -36,6 +37,7 @@ const Chat = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentReward, setCurrentReward] = useState<RewardData | null>(null);
+  const [hasProcessedQuery, setHasProcessedQuery] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Check if user has agreed to Light Law
@@ -238,12 +240,11 @@ const Chat = () => {
     }
   }, [user, refreshBalance]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  // Function to send a message programmatically
+  const sendMessage = useCallback(async (messageText: string) => {
+    if (!messageText.trim() || isLoading) return;
 
-    const userMessage = input.trim();
-    setInput("");
+    const userMessage = messageText.trim();
     
     const newMessages: Message[] = [...messages, { role: "user", content: userMessage }];
     setMessages(newMessages);
@@ -251,8 +252,6 @@ const Chat = () => {
 
     try {
       await streamChat(newMessages);
-      // Get the AI response from the last message
-      const lastAssistantMessage = newMessages.find((_, i) => i === newMessages.length - 1);
       // Analyze and reward after chat completes
       setTimeout(() => {
         const assistantContent = document.querySelector('[data-last-assistant]')?.textContent || "";
@@ -265,6 +264,29 @@ const Chat = () => {
     } finally {
       setIsLoading(false);
     }
+  }, [messages, isLoading, analyzeAndReward]);
+
+  // Handle query param from homepage
+  useEffect(() => {
+    const questionFromQuery = searchParams.get("q");
+    if (questionFromQuery && hasAgreed && !hasProcessedQuery && !isLoading) {
+      setHasProcessedQuery(true);
+      // Clear the query param from URL
+      setSearchParams({}, { replace: true });
+      // Send the message after a short delay to ensure component is ready
+      setTimeout(() => {
+        sendMessage(questionFromQuery);
+      }, 300);
+    }
+  }, [searchParams, hasAgreed, hasProcessedQuery, isLoading, sendMessage, setSearchParams]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = input.trim();
+    setInput("");
+    await sendMessage(userMessage);
   };
 
   return (
