@@ -58,7 +58,7 @@ interface WithdrawalStats {
 
 const AdminWithdrawals = () => {
   const navigate = useNavigate();
-  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, isLoading: authLoading, isAdminChecked } = useAuth();
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [stats, setStats] = useState<WithdrawalStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,7 +73,7 @@ const AdminWithdrawals = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && isAdminChecked) {
       if (!user) {
         navigate("/admin/login");
       } else if (!isAdmin) {
@@ -84,7 +84,7 @@ const AdminWithdrawals = () => {
         fetchStats();
       }
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, isAdminChecked, navigate]);
 
   const fetchWithdrawals = async () => {
     try {
