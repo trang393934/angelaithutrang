@@ -47,6 +47,7 @@ interface KnowledgeDocument {
   is_processed: boolean;
   created_at: string;
   folder_id: string | null;
+  extracted_content: string | null;
 }
 
 const Knowledge = () => {
@@ -131,20 +132,36 @@ const Knowledge = () => {
     return "📁";
   };
 
-  const handleDownload = async (doc: KnowledgeDocument) => {
+  const handleDownload = async (doc: KnowledgeDocument, format: "original" | "txt" = "original") => {
     toast.info(t("knowledge.downloadStarted"));
     
     try {
-      const response = await fetch(doc.file_url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = doc.file_name;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      if (format === "txt" && doc.extracted_content) {
+        // Download as TXT using extracted content
+        const blob = new Blob([doc.extracted_content], { type: "text/plain;charset=utf-8" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        // Replace original extension with .txt
+        const txtFileName = doc.file_name.replace(/\.[^.]+$/, "") + ".txt";
+        a.download = txtFileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        // Download original file
+        const response = await fetch(doc.file_url);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = doc.file_name;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
     } catch (error) {
       console.error("Download error:", error);
       // Fallback: open in new tab
@@ -385,7 +402,7 @@ const Knowledge = () => {
 // Document Item Component
 interface DocumentItemProps {
   doc: KnowledgeDocument;
-  onDownload: (doc: KnowledgeDocument) => void;
+  onDownload: (doc: KnowledgeDocument, format?: "original" | "txt") => void;
   onShare: (doc: KnowledgeDocument, platform?: string) => void;
   formatFileSize: (bytes: number) => string;
   getFileIcon: (type: string, fileName: string) => string;
@@ -431,17 +448,33 @@ const DocumentItem = ({ doc, onDownload, onShare, formatFileSize, getFileIcon, t
           <span className="hidden sm:inline">{t("knowledge.view")}</span>
         </Button>
 
-        {/* Download Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 text-green-600 border-green-200 hover:bg-green-50 w-full sm:w-auto"
-          onClick={() => onDownload(doc)}
-          title={t("knowledge.download")}
-        >
-          <Download className="w-4 h-4" />
-          <span className="hidden sm:inline">{t("knowledge.download")}</span>
-        </Button>
+        {/* Download Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-green-600 border-green-200 hover:bg-green-50 w-full sm:w-auto"
+              title={t("knowledge.download")}
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">{t("knowledge.download")}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <div className="px-2 py-1.5 text-xs font-semibold text-foreground-muted">
+              {t("knowledge.downloadFormat")}
+            </div>
+            <DropdownMenuItem onClick={() => onDownload(doc, "original")}>
+              📄 {t("knowledge.downloadOriginal")}
+            </DropdownMenuItem>
+            {doc.extracted_content && (
+              <DropdownMenuItem onClick={() => onDownload(doc, "txt")}>
+                📝 {t("knowledge.downloadTxt")}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Share Dropdown */}
         <DropdownMenu>
