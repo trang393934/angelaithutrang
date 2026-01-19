@@ -138,6 +138,7 @@ const translations: Record<string, string> = {
   "earn.balance": "Current Balance",
   "earn.lifetime": "Lifetime Earned",
   "earn.daily": "Daily Goal",
+  "earn.totalWithdrawn": "Total Withdrawn",
   "earn.streak": "Login Streak",
   "earn.actions": "Quick Actions",
   "earn.loginRequired": "Sign in to start earning Camly Coin through helpful activities",
