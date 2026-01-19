@@ -78,9 +78,15 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
 
       if (imageFile) {
         const url = await uploadImage(imageFile);
-        if (url) imageUrl = url;
+        if (url) {
+          imageUrl = url;
+          console.log("Image uploaded successfully:", imageUrl);
+        } else {
+          console.error("Failed to upload image");
+        }
       }
 
+      console.log("Submitting post with content:", content.trim(), "imageUrl:", imageUrl);
       const result = await onSubmit(content.trim(), imageUrl);
 
       if (result.success) {
