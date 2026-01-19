@@ -127,9 +127,9 @@ export default function Earn() {
           </div>
 
           {/* Main content grid */}
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 lg:grid-cols-3 pt-4">
             {/* Earn Progress - takes 2 columns */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 p-6 bg-card rounded-xl border shadow-sm">
               <EarnProgress />
             </div>
 
