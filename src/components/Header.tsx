@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { LogIn, LogOut, User } from "lucide-react";
+import { LogIn, LogOut, User, Users, MessageCircle } from "lucide-react";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import angelAvatar from "@/assets/angel-avatar.png";
@@ -23,6 +24,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const { user, signOut, isLoading } = useAuth();
   const { balance } = useCamlyCoin();
+  const { unreadCount } = useDirectMessages();
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -76,6 +78,7 @@ export const Header = () => {
     { label: t("nav.about"), href: "/about" },
     { label: t("nav.knowledge"), href: "/knowledge" },
     { label: t("nav.connect"), href: "/chat" },
+    { label: t("nav.community") || "Cộng đồng", href: "/community" },
     { label: t("nav.swap"), href: "/swap" },
     { label: t("nav.earn"), href: "/earn" },
   ];
@@ -143,6 +146,20 @@ export const Header = () => {
                   <div className="flex items-center gap-2 xl:gap-3">
                     {/* Web3 Wallet Button */}
                     <Web3WalletButton />
+                    
+                    {/* Messages Button */}
+                    <Link 
+                      to="/messages"
+                      className="relative p-2 rounded-full hover:bg-primary-pale transition-colors"
+                      title="Tin nhắn"
+                    >
+                      <MessageCircle className="w-5 h-5 text-foreground-muted" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </Link>
                     
                     {/* Camly Coin Balance */}
                     <Link 

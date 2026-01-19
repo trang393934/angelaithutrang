@@ -25,6 +25,8 @@ import Vision from "./pages/Vision";
 import Swap from "./pages/Swap";
 import Knowledge from "./pages/Knowledge";
 import NotFound from "./pages/NotFound";
+import UserProfile from "./pages/UserProfile";
+import Messages from "./pages/Messages";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +57,9 @@ const App = () => (
               <Route path="/admin/statistics" element={<AdminStatistics />} />
               <Route path="/community-questions" element={<CommunityQuestions />} />
               <Route path="/community" element={<Community />} />
+              <Route path="/user/:userId" element={<UserProfile />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/messages/:userId" element={<Messages />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
