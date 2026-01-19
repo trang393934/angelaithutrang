@@ -16,6 +16,7 @@ import funProfileLogo from "@/assets/fun-profile-logo.png";
 import funLifeLogo from "@/assets/fun-life-logo.png";
 import fuLegalLogo from "@/assets/fu-legal-logo.png";
 import fuTradingLogo from "@/assets/fu-trading-logo.png";
+import funEcosystemOverview from "@/assets/fun-ecosystem-overview.jpg";
 import { Heart, Sparkles, Globe, Users, Lightbulb, Star, Zap, Sun, Eye, Shield, HandHeart, Crown, Waves, CircleDot, Orbit, Coins, Gem, ArrowUpCircle, Cloud, Droplets, Flame, Brain, HeartHandshake, TrendingUp, Infinity, Earth, ExternalLink } from "lucide-react";
 
 const About = () => {
@@ -318,6 +319,16 @@ const About = () => {
                 <span className="w-10 h-10 rounded-full bg-sapphire-gradient flex items-center justify-center text-primary-foreground font-bold">1</span>
                 🌟 FUN Ecosystem = Hệ Vũ Trụ Sống
               </h3>
+              
+              {/* FUN Ecosystem Overview Image */}
+              <div className="flex justify-center mb-8">
+                <img 
+                  src={funEcosystemOverview} 
+                  alt="FUN Ecosystem Overview" 
+                  className="max-w-full md:max-w-2xl rounded-2xl shadow-divine"
+                />
+              </div>
+              
               <div className="space-y-4 text-foreground-muted leading-relaxed">
                 <p>
                   Không chỉ tập hợp các platforms. Không chỉ công nghệ. Không chỉ mạng xã hội.
