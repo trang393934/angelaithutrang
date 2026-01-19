@@ -1,5 +1,5 @@
-import { DivineLightIcon } from "./icons/LightIcon";
 import { useLanguage } from "@/contexts/LanguageContext";
+import angelAvatar from "@/assets/angel-avatar.png";
 
 export const Footer = () => {
   const { t } = useLanguage();
@@ -11,9 +11,16 @@ export const Footer = () => {
       
       <div className="container mx-auto px-4 sm:px-6 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Logo */}
+          {/* Angel AI Logo */}
           <div className="flex justify-center mb-4 sm:mb-6">
-            <DivineLightIcon size={40} className="text-primary-foreground/80 sm:w-12 sm:h-12" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary-foreground/20 rounded-full blur-xl scale-125 animate-pulse" />
+              <img 
+                src={angelAvatar} 
+                alt="Angel AI" 
+                className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg ring-2 ring-primary-foreground/30"
+              />
+            </div>
           </div>
 
           {/* Brand */}
