@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, DragEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,7 @@ import {
   ArrowLeft, Upload, FileText, Trash2, 
   LogOut, Sparkles, CheckCircle, Clock,
   FileType, AlertCircle, FolderPlus, Folder,
-  Edit2, X, ChevronDown, ChevronRight, MoreVertical
+  Edit2, X, ChevronDown, ChevronRight, GripVertical
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 
@@ -39,6 +39,10 @@ const AdminKnowledge = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  
+  // Drag and drop state
+  const [draggedDoc, setDraggedDoc] = useState<KnowledgeDocument | null>(null);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null | "uncategorized">(null);
   
   // Folder form
   const [showFolderForm, setShowFolderForm] = useState(false);
@@ -99,6 +103,69 @@ const AdminKnowledge = () => {
     } else {
       setDocuments(data || []);
     }
+  };
+
+  // Drag and Drop handlers
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, doc: KnowledgeDocument) => {
+    setDraggedDoc(doc);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", doc.id);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedDoc(null);
+    setDragOverFolderId(null);
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>, folderId: string | null) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverFolderId(folderId === null ? "uncategorized" : folderId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverFolderId(null);
+  };
+
+  const handleDrop = async (e: DragEvent<HTMLDivElement>, targetFolderId: string | null) => {
+    e.preventDefault();
+    setDragOverFolderId(null);
+    
+    if (!draggedDoc) return;
+    
+    // Don't do anything if dropping on same folder
+    if (draggedDoc.folder_id === targetFolderId) {
+      setDraggedDoc(null);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("knowledge_documents")
+        .update({ folder_id: targetFolderId })
+        .eq("id", draggedDoc.id);
+
+      if (error) throw error;
+
+      // Update local state immediately for smooth UX
+      setDocuments(prev => 
+        prev.map(d => 
+          d.id === draggedDoc.id 
+            ? { ...d, folder_id: targetFolderId } 
+            : d
+        )
+      );
+
+      const folderName = targetFolderId 
+        ? folders.find(f => f.id === targetFolderId)?.name 
+        : "Chưa phân loại";
+      toast.success(`Đã chuyển "${draggedDoc.title}" sang "${folderName}"`);
+    } catch (error) {
+      console.error("Move error:", error);
+      toast.error("Không thể di chuyển tài liệu");
+    }
+
+    setDraggedDoc(null);
   };
 
   // Folder CRUD
@@ -246,9 +313,6 @@ const AdminKnowledge = () => {
     if (!confirm(`Bạn có chắc muốn xóa tài liệu "${doc.title}"?`)) return;
 
     try {
-      // Extract file name from stored file name pattern
-      const urlParts = doc.file_name;
-      
       // Delete from storage (try to find the actual stored filename)
       const { data: files } = await supabase.storage
         .from("knowledge-documents")
@@ -558,10 +622,18 @@ const AdminKnowledge = () => {
 
         {/* Documents by Folder */}
         <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6">
-          <h2 className="font-serif text-xl font-semibold text-primary-deep mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Tài Liệu ({documents.length})
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-xl font-semibold text-primary-deep flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Tài Liệu ({documents.length})
+            </h2>
+            {documents.length > 0 && (
+              <p className="text-xs text-foreground-muted flex items-center gap-1">
+                <GripVertical className="w-3 h-3" />
+                Kéo thả để di chuyển tài liệu
+              </p>
+            )}
+          </div>
 
           {documents.length === 0 ? (
             <div className="text-center py-12">
@@ -577,28 +649,48 @@ const AdminKnowledge = () => {
               {folders.map((folder) => {
                 const folderDocs = getDocumentsInFolder(folder.id);
                 const isExpanded = expandedFolders.has(folder.id);
+                const isDragOver = dragOverFolderId === folder.id;
                 
                 return (
-                  <div key={folder.id} className="border border-primary-pale/50 rounded-xl overflow-hidden">
+                  <div 
+                    key={folder.id} 
+                    className={`border rounded-xl overflow-hidden transition-all ${
+                      isDragOver 
+                        ? "border-primary border-2 bg-primary/5" 
+                        : "border-primary-pale/50"
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, folder.id)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, folder.id)}
+                  >
                     <button
                       onClick={() => toggleFolder(folder.id)}
-                      className="w-full flex items-center gap-3 p-4 bg-primary-pale/20 hover:bg-primary-pale/40 transition-colors text-left"
+                      className={`w-full flex items-center gap-3 p-4 transition-colors text-left ${
+                        isDragOver 
+                          ? "bg-primary/10" 
+                          : "bg-primary-pale/20 hover:bg-primary-pale/40"
+                      }`}
                     >
                       {isExpanded ? (
                         <ChevronDown className="w-4 h-4 text-primary" />
                       ) : (
                         <ChevronRight className="w-4 h-4 text-primary" />
                       )}
-                      <Folder className="w-5 h-5 text-primary" />
+                      <Folder className={`w-5 h-5 ${isDragOver ? "text-primary animate-bounce" : "text-primary"}`} />
                       <span className="font-medium text-foreground">{folder.name}</span>
                       <span className="text-sm text-foreground-muted">({folderDocs.length} tài liệu)</span>
+                      {isDragOver && (
+                        <span className="ml-auto text-xs text-primary font-medium">
+                          Thả vào đây
+                        </span>
+                      )}
                     </button>
                     
                     {isExpanded && (
-                      <div className="p-3 space-y-2">
+                      <div className="p-3 space-y-2 min-h-[60px]">
                         {folderDocs.length === 0 ? (
                           <p className="text-sm text-foreground-muted text-center py-4">
-                            Thư mục trống
+                            {isDragOver ? "Thả tài liệu vào đây" : "Thư mục trống - kéo tài liệu vào đây"}
                           </p>
                         ) : (
                           folderDocs.map((doc) => (
@@ -608,6 +700,9 @@ const AdminKnowledge = () => {
                               onDelete={handleDelete}
                               formatFileSize={formatFileSize}
                               getFileIcon={getFileIcon}
+                              onDragStart={handleDragStart}
+                              onDragEnd={handleDragEnd}
+                              isDragging={draggedDoc?.id === doc.id}
                             />
                           ))
                         )}
@@ -618,26 +713,51 @@ const AdminKnowledge = () => {
               })}
 
               {/* Uncategorized Documents */}
-              {uncategorizedDocs.length > 0 && (
-                <div className="border border-primary-pale/50 rounded-xl overflow-hidden">
-                  <div className="flex items-center gap-3 p-4 bg-gray-100">
-                    <Folder className="w-5 h-5 text-foreground-muted" />
-                    <span className="font-medium text-foreground-muted">Chưa phân loại</span>
-                    <span className="text-sm text-foreground-muted">({uncategorizedDocs.length} tài liệu)</span>
-                  </div>
-                  <div className="p-3 space-y-2">
-                    {uncategorizedDocs.map((doc) => (
+              <div 
+                className={`border rounded-xl overflow-hidden transition-all ${
+                  dragOverFolderId === "uncategorized" 
+                    ? "border-amber-500 border-2 bg-amber-50" 
+                    : "border-primary-pale/50"
+                }`}
+                onDragOver={(e) => handleDragOver(e, null)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, null)}
+              >
+                <div className={`flex items-center gap-3 p-4 ${
+                  dragOverFolderId === "uncategorized" ? "bg-amber-100" : "bg-gray-100"
+                }`}>
+                  <Folder className={`w-5 h-5 ${
+                    dragOverFolderId === "uncategorized" ? "text-amber-600 animate-bounce" : "text-foreground-muted"
+                  }`} />
+                  <span className="font-medium text-foreground-muted">Chưa phân loại</span>
+                  <span className="text-sm text-foreground-muted">({uncategorizedDocs.length} tài liệu)</span>
+                  {dragOverFolderId === "uncategorized" && (
+                    <span className="ml-auto text-xs text-amber-600 font-medium">
+                      Thả vào đây
+                    </span>
+                  )}
+                </div>
+                <div className="p-3 space-y-2 min-h-[60px]">
+                  {uncategorizedDocs.length === 0 ? (
+                    <p className="text-sm text-foreground-muted text-center py-4">
+                      {dragOverFolderId === "uncategorized" ? "Thả tài liệu vào đây" : "Không có tài liệu chưa phân loại"}
+                    </p>
+                  ) : (
+                    uncategorizedDocs.map((doc) => (
                       <DocumentItem 
                         key={doc.id} 
                         doc={doc} 
                         onDelete={handleDelete}
                         formatFileSize={formatFileSize}
                         getFileIcon={getFileIcon}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        isDragging={draggedDoc?.id === doc.id}
                       />
-                    ))}
-                  </div>
+                    ))
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           )}
         </div>
@@ -649,6 +769,7 @@ const AdminKnowledge = () => {
           </h3>
           <ul className="space-y-2 text-sm text-foreground-muted">
             <li>• <strong>Tạo thư mục:</strong> Tổ chức tài liệu theo chủ đề như "Giáo lý", "Thiền định", "Tình yêu"...</li>
+            <li>• <strong>Kéo thả:</strong> Giữ và kéo tài liệu để di chuyển giữa các thư mục</li>
             <li>• <strong>File TXT/MD:</strong> Nội dung sẽ được trích xuất tự động và Angel AI có thể sử dụng ngay</li>
             <li>• <strong>File PDF/DOCX:</strong> Cần được xử lý thêm để trích xuất nội dung</li>
             <li>• <strong>Không giới hạn dung lượng:</strong> Upload bất kỳ file nào bạn muốn</li>
@@ -660,21 +781,37 @@ const AdminKnowledge = () => {
   );
 };
 
-// Document Item Component
+// Document Item Component with Drag support
 const DocumentItem = ({ 
   doc, 
   onDelete, 
   formatFileSize, 
-  getFileIcon 
+  getFileIcon,
+  onDragStart,
+  onDragEnd,
+  isDragging
 }: { 
   doc: KnowledgeDocument; 
   onDelete: (doc: KnowledgeDocument) => void;
   formatFileSize: (bytes: number) => string;
   getFileIcon: (type: string, fileName: string) => string;
+  onDragStart: (e: DragEvent<HTMLDivElement>, doc: KnowledgeDocument) => void;
+  onDragEnd: () => void;
+  isDragging: boolean;
 }) => {
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-primary-pale/10 border border-primary-pale/20 hover:border-primary/30 transition-colors">
+    <div 
+      className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
+        isDragging 
+          ? "bg-primary/10 border-primary opacity-50 scale-95" 
+          : "bg-primary-pale/10 border-primary-pale/20 hover:border-primary/30"
+      }`}
+      draggable
+      onDragStart={(e) => onDragStart(e, doc)}
+      onDragEnd={onDragEnd}
+    >
       <div className="flex items-center gap-3 min-w-0">
+        <GripVertical className="w-4 h-4 text-foreground-muted/50 flex-shrink-0" />
         <span className="text-xl flex-shrink-0">{getFileIcon(doc.file_type, doc.file_name)}</span>
         <div className="min-w-0">
           <h3 className="font-medium text-foreground truncate">{doc.title}</h3>
@@ -699,7 +836,7 @@ const DocumentItem = ({
         </div>
       </div>
       <button
-        onClick={() => onDelete(doc)}
+        onClick={(e) => { e.stopPropagation(); onDelete(doc); }}
         className="p-2 rounded-full text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
         title="Xóa tài liệu"
       >
