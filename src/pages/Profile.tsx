@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2 } from "lucide-react";
+import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 interface Profile {
@@ -35,6 +36,16 @@ const Profile = () => {
   
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+
+  // Change password state
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -210,6 +221,56 @@ const Profile = () => {
     navigate("/");
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Lỗi",
+        description: "Mật khẩu mới không khớp. Vui lòng kiểm tra lại.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Lỗi",
+        description: "Mật khẩu mới phải có ít nhất 6 ký tự.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Thành công!",
+        description: "Mật khẩu đã được đổi thành công ✨",
+      });
+      
+      setShowChangePassword(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error("Error changing password:", error);
+      toast({
+        title: "Lỗi",
+        description: error instanceof Error ? error.message : "Không thể đổi mật khẩu. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex items-center justify-center">
@@ -342,18 +403,30 @@ const Profile = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between py-3 border-b border-divine-gold/10">
-                <span className="text-foreground-muted">Email</span>
-                <span className="font-medium">{user?.email}</span>
+                <span className="text-foreground">Email</span>
+                <span className="font-medium text-foreground">{user?.email}</span>
               </div>
 
               <div className="flex items-center justify-between py-3 border-b border-divine-gold/10">
-                <span className="text-foreground-muted flex items-center gap-2">
+                <span className="text-foreground flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Ngày tham gia
                 </span>
-                <span className="font-medium">
+                <span className="font-medium text-foreground">
                   {user?.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : 'N/A'}
                 </span>
+              </div>
+
+              {/* Change Password Button */}
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowChangePassword(true)}
+                  className="w-full border-divine-gold/30 hover:bg-divine-gold/5"
+                >
+                  <Key className="w-4 h-4 mr-2" />
+                  Đổi mật khẩu
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -415,6 +488,95 @@ const Profile = () => {
           </Button>
         </div>
       </div>
+
+      {/* Change Password Dialog */}
+      <Dialog open={showChangePassword} onOpenChange={setShowChangePassword}>
+        <DialogContent className="max-w-md bg-card border-divine-gold/20">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+              🔐 Đổi Mật Khẩu
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleChangePassword} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword" className="text-foreground">Mật khẩu mới</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="newPassword"
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="pl-10 pr-10 bg-background/50 border-divine-gold/20 focus:border-divine-gold"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-foreground">Xác nhận mật khẩu mới</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pl-10 pr-10 bg-background/50 border-divine-gold/20 focus:border-divine-gold"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowChangePassword(false);
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }}
+                className="flex-1"
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                disabled={isChangingPassword}
+                className="flex-1 bg-sapphire-gradient hover:opacity-90"
+              >
+                {isChangingPassword ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang đổi...
+                  </span>
+                ) : (
+                  "Đổi mật khẩu"
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
