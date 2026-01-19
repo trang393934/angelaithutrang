@@ -1,6 +1,22 @@
 const translations: Record<string, string> = {
   "common.you": "Bạn",
   
+  // Early Adopter
+  "earlyAdopter.title": "Phần Thưởng Early Adopter",
+  "earlyAdopter.description": "Hoàn thành 10 câu hỏi hợp lệ để nhận thưởng đặc biệt dành cho 100 người dùng đầu tiên!",
+  "earlyAdopter.questionsProgress": "Tiến độ câu hỏi",
+  "earlyAdopter.questionsRemaining": "Còn {count} câu hỏi nữa",
+  "earlyAdopter.reward": "Phần thưởng",
+  "earlyAdopter.askNow": "Hỏi Angel AI ngay",
+  "earlyAdopter.yourRank": "Thứ hạng của bạn",
+  "earlyAdopter.completed": "🎉 Đã nhận thưởng Early Adopter!",
+  "earlyAdopter.rewardReceived": "Phần thưởng đã nhận",
+  "earlyAdopter.notEligible": "Chương trình Early Adopter đã kết thúc cho 100 người dùng đầu tiên.",
+  "earlyAdopter.congratsTitle": "Chúc mừng Early Adopter!",
+  "earlyAdopter.congratsMessage": "Bạn là một trong 100 người dùng đầu tiên hoàn thành 10 câu hỏi hợp lệ!",
+  "earlyAdopter.rankMessage": "Thứ hạng của bạn",
+  "earlyAdopter.coinsAwarded": "Camly Coins đã được cộng vào tài khoản của bạn",
+  "earlyAdopter.claimReward": "Nhận thưởng",
   // Withdrawal translations
   "withdrawal.title": "Rút Camly Coin",
   "withdrawal.subtitle": "Chuyển về ví Web3 của bạn",
@@ -440,16 +456,14 @@ const translations: Record<string, string> = {
   "knowledge.filterProcessed": "Đã xử lý",
   "knowledge.filterPending": "Đang chờ",
 
-  // Early Adopter Rewards
+  // Early Adopter Rewards (legacy)
   "earlyAdopter.congratulations": "Chúc mừng Early Adopter!",
   "earlyAdopter.rank": "Thứ hạng",
-  "earlyAdopter.description": "Bạn là một trong 100 người dùng đầu tiên của Angel AI đã hỏi 10 câu hỏi hợp lệ! Đây là phần thưởng đặc biệt dành riêng cho bạn.",
   "earlyAdopter.thankYou": "Cảm ơn bạn đã đồng hành cùng Angel AI từ những ngày đầu tiên!",
   "earlyAdopter.awesome": "Tuyệt vời! ✨",
   "earlyAdopter.progress": "Tiến độ Early Adopter",
   "earlyAdopter.questionsNeeded": "câu hỏi để nhận thưởng",
   "earlyAdopter.claimed": "Đã nhận thưởng!",
-  "earlyAdopter.notEligible": "Chưa đủ điều kiện",
 };
 
 export default translations;

@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { DailyLoginReward } from "@/components/earn/DailyLoginReward";
 import { EarnProgress } from "@/components/earn/EarnProgress";
 import { StreakCalendar } from "@/components/earn/StreakCalendar";
+import { EarlyAdopterProgress } from "@/components/earn/EarlyAdopterProgress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -167,6 +168,9 @@ export default function Earn() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Early Adopter Progress */}
+          <EarlyAdopterProgress />
 
           {/* Main content grid */}
           <div className="grid gap-6 lg:grid-cols-3 pt-4">

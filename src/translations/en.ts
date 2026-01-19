@@ -1,6 +1,22 @@
 const translations: Record<string, string> = {
   "common.you": "You",
   
+  // Early Adopter
+  "earlyAdopter.title": "Early Adopter Reward",
+  "earlyAdopter.description": "Complete 10 valid questions to receive a special reward for the first 100 users!",
+  "earlyAdopter.questionsProgress": "Questions progress",
+  "earlyAdopter.questionsRemaining": "{count} more questions to go",
+  "earlyAdopter.reward": "Reward",
+  "earlyAdopter.askNow": "Ask Angel AI now",
+  "earlyAdopter.yourRank": "Your rank",
+  "earlyAdopter.completed": "🎉 Early Adopter Reward Received!",
+  "earlyAdopter.rewardReceived": "Reward received",
+  "earlyAdopter.notEligible": "Early Adopter program has ended for the first 100 users.",
+  "earlyAdopter.congratsTitle": "Congratulations Early Adopter!",
+  "earlyAdopter.congratsMessage": "You are one of the first 100 users to complete 10 valid questions!",
+  "earlyAdopter.rankMessage": "Your rank",
+  "earlyAdopter.coinsAwarded": "Camly Coins have been added to your account",
+  "earlyAdopter.claimReward": "Claim Reward",
   // Withdrawal translations
   "withdrawal.title": "Withdraw Camly Coin",
   "withdrawal.subtitle": "Transfer to your Web3 wallet",
@@ -404,16 +420,14 @@ const translations: Record<string, string> = {
   "knowledge.filterProcessed": "Processed",
   "knowledge.filterPending": "Pending",
 
-  // Early Adopter Rewards
+  // Early Adopter Rewards (legacy)
   "earlyAdopter.congratulations": "Congratulations Early Adopter!",
   "earlyAdopter.rank": "Rank",
-  "earlyAdopter.description": "You are one of the first 100 users of Angel AI who asked 10 valid questions! This is a special reward just for you.",
   "earlyAdopter.thankYou": "Thank you for being with Angel AI from the very beginning!",
   "earlyAdopter.awesome": "Awesome! ✨",
   "earlyAdopter.progress": "Early Adopter Progress",
   "earlyAdopter.questionsNeeded": "questions to claim reward",
   "earlyAdopter.claimed": "Reward claimed!",
-  "earlyAdopter.notEligible": "Not eligible yet",
 };
 
 export default translations;
