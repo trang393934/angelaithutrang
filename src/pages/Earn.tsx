@@ -6,6 +6,12 @@ import { StreakCalendar } from "@/components/earn/StreakCalendar";
 import { EarlyAdopterProgress } from "@/components/earn/EarlyAdopterProgress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -19,7 +25,8 @@ import {
   Lightbulb,
   ArrowRight,
   Eye,
-  Wallet
+  Wallet,
+  Info
 } from "lucide-react";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,58 +103,96 @@ export default function Earn() {
           </div>
 
           {/* Balance Overview */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="bg-gradient-to-br from-amber-500 to-orange-500 text-white border-0">
-              <div className="p-4 pb-2">
-                <div className="text-white/80 text-sm font-medium flex items-center gap-2">
-                  <Coins className="h-4 w-4" />
-                  {t("earn.balance")}
-                </div>
-              </div>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12" />
-                  <span className="text-4xl font-bold">
-                    {isLoading ? "..." : balance.toLocaleString()}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+          <TooltipProvider>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Card className="bg-gradient-to-br from-amber-500 to-orange-500 text-white border-0 cursor-help relative">
+                    <Info className="absolute top-3 right-3 h-4 w-4 text-white/60" />
+                    <div className="p-4 pb-2">
+                      <div className="text-white/80 text-sm font-medium flex items-center gap-2">
+                        <Coins className="h-4 w-4" />
+                        {t("earn.balance")}
+                      </div>
+                    </div>
+                    <CardContent>
+                      <div className="flex items-center gap-3">
+                        <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12" />
+                        <span className="text-4xl font-bold">
+                          {isLoading ? "..." : balance.toLocaleString()}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p className="font-medium">Công thức:</p>
+                  <p className="text-sm">Số dư = Tổng đã kiếm - Tổng đã rút</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Bao gồm: điểm câu hỏi hợp lệ + thưởng hoạt động + thưởng Early Adopter (nếu có)
+                  </p>
+                </TooltipContent>
+              </Tooltip>
 
-            <Card className="bg-gradient-to-br from-emerald-500 to-teal-500 text-white border-0">
-              <div className="p-4 pb-2">
-                <div className="text-white/80 text-sm font-medium flex items-center gap-2">
-                  <Trophy className="h-4 w-4" />
-                  {t("earn.lifetime")}
-                </div>
-              </div>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <Sparkles className="w-12 h-12" />
-                  <span className="text-4xl font-bold">
-                    {isLoading ? "..." : lifetimeEarned.toLocaleString()}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Card className="bg-gradient-to-br from-emerald-500 to-teal-500 text-white border-0 cursor-help relative">
+                    <Info className="absolute top-3 right-3 h-4 w-4 text-white/60" />
+                    <div className="p-4 pb-2">
+                      <div className="text-white/80 text-sm font-medium flex items-center gap-2">
+                        <Trophy className="h-4 w-4" />
+                        {t("earn.lifetime")}
+                      </div>
+                    </div>
+                    <CardContent>
+                      <div className="flex items-center gap-3">
+                        <Sparkles className="w-12 h-12" />
+                        <span className="text-4xl font-bold">
+                          {isLoading ? "..." : lifetimeEarned.toLocaleString()}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p className="font-medium">Công thức:</p>
+                  <p className="text-sm">Tổng đã kiếm = Số dư + Tổng đã rút</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Tổng tất cả coin bạn đã nhận được từ mọi hoạt động
+                  </p>
+                </TooltipContent>
+              </Tooltip>
 
-            <Card className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0">
-              <div className="p-4 pb-2">
-                <div className="text-white/80 text-sm font-medium flex items-center gap-2">
-                  <Wallet className="h-4 w-4" />
-                  {t("earn.totalWithdrawn")}
-                </div>
-              </div>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <Wallet className="w-12 h-12" />
-                  <span className="text-4xl font-bold">
-                    {totalWithdrawn.toLocaleString()}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Card className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0 cursor-help relative">
+                    <Info className="absolute top-3 right-3 h-4 w-4 text-white/60" />
+                    <div className="p-4 pb-2">
+                      <div className="text-white/80 text-sm font-medium flex items-center gap-2">
+                        <Wallet className="h-4 w-4" />
+                        {t("earn.totalWithdrawn")}
+                      </div>
+                    </div>
+                    <CardContent>
+                      <div className="flex items-center gap-3">
+                        <Wallet className="w-12 h-12" />
+                        <span className="text-4xl font-bold">
+                          {totalWithdrawn.toLocaleString()}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p className="font-medium">Công thức:</p>
+                  <p className="text-sm">Tổng đã rút = Tổng đã kiếm - Số dư</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Tổng coin đã rút thành công về ví của bạn
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
 
           {/* Early Adopter Progress */}
           <EarlyAdopterProgress />
