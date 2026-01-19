@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
-import { Mail, Lock, ArrowLeft, Sparkles, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, ArrowLeft, Sparkles, Eye, EyeOff, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import angelLogo from "@/assets/angel-ai-logo.png";
 
@@ -451,12 +451,17 @@ const Auth = () => {
             {/* Light Law Agreement */}
             <div className="space-y-3 p-4 rounded-xl bg-divine-gold/5 border border-divine-gold/20">
               <div className="flex items-start gap-3">
-                <Checkbox
-                  id="lightLaw"
-                  checked={agreedToLightLaw}
-                  onCheckedChange={(checked) => setAgreedToLightLaw(checked as boolean)}
-                  className="mt-1 border-divine-gold data-[state=checked]:bg-divine-gold data-[state=checked]:border-divine-gold"
-                />
+                <button
+                  type="button"
+                  onClick={() => setAgreedToLightLaw(!agreedToLightLaw)}
+                  className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
+                    agreedToLightLaw 
+                      ? 'bg-emerald-500 border-emerald-500' 
+                      : 'border-divine-gold bg-transparent hover:border-divine-light'
+                  }`}
+                >
+                  {agreedToLightLaw && <Check className="w-3.5 h-3.5 text-white" />}
+                </button>
                 <div className="flex-1">
                   <Label htmlFor="lightLaw" className="text-sm text-foreground-muted cursor-pointer">
                     Con đã đọc và đồng ý với{" "}
