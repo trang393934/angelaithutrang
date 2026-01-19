@@ -156,14 +156,21 @@ const Knowledge = () => {
     const shareUrl = `${window.location.origin}/knowledge?doc=${doc.id}`;
     const shareText = `${doc.title} - ${t("knowledge.shareDescription")}`;
 
-    if (platform === "facebook") {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, "_blank");
-    } else if (platform === "twitter") {
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, "_blank");
-    } else if (platform === "telegram") {
-      window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`, "_blank");
-    } else if (platform === "zalo") {
-      window.open(`https://zalo.me/share?u=${encodeURIComponent(shareUrl)}`, "_blank");
+    const shareUrls: Record<string, string> = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+      telegram: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
+      zalo: `https://zalo.me/share?u=${encodeURIComponent(shareUrl)}`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(shareText + " " + shareUrl)}`,
+      // FUN Ecosystem platforms
+      "fun-profile": `https://profile.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      "fun-academy": `https://academy.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      "fun-life": `https://life.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+    };
+
+    if (platform && shareUrls[platform]) {
+      window.open(shareUrls[platform], "_blank");
+      toast.success(t("knowledge.shareStarted"));
     } else {
       // Copy to clipboard
       try {
@@ -410,20 +417,49 @@ const DocumentItem = ({ doc, onDownload, onShare, formatFileSize, getFileIcon, t
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* Action Buttons - More prominent for users */}
+      <div className="flex flex-col sm:flex-row items-center gap-2">
+        {/* View Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 text-primary border-primary/30 hover:bg-primary/10 w-full sm:w-auto"
+          onClick={() => window.open(doc.file_url, "_blank")}
+          title={t("knowledge.readMore")}
+        >
+          <ExternalLink className="w-4 h-4" />
+          <span className="hidden sm:inline">{t("knowledge.view")}</span>
+        </Button>
+
         {/* Download Button */}
-        <Button variant="ghost" size="icon" onClick={() => onDownload(doc)} title={t("knowledge.download")}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 text-green-600 border-green-200 hover:bg-green-50 w-full sm:w-auto"
+          onClick={() => onDownload(doc)}
+          title={t("knowledge.download")}
+        >
           <Download className="w-4 h-4" />
+          <span className="hidden sm:inline">{t("knowledge.download")}</span>
         </Button>
 
         {/* Share Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" title={t("knowledge.share")}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50 w-full sm:w-auto"
+              title={t("knowledge.share")}
+            >
               <Share2 className="w-4 h-4" />
+              <span className="hidden sm:inline">{t("knowledge.share")}</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="px-2 py-1.5 text-xs font-semibold text-foreground-muted">
+              {t("knowledge.shareSocial")}
+            </div>
             <DropdownMenuItem onClick={() => onShare(doc)}>
               📋 Copy Link
             </DropdownMenuItem>
@@ -439,18 +475,24 @@ const DocumentItem = ({ doc, onDownload, onShare, formatFileSize, getFileIcon, t
             <DropdownMenuItem onClick={() => onShare(doc, "zalo")}>
               💬 Zalo
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onShare(doc, "whatsapp")}>
+              💚 WhatsApp
+            </DropdownMenuItem>
+            
+            <div className="px-2 py-1.5 text-xs font-semibold text-foreground-muted border-t mt-1 pt-2">
+              FUN Ecosystem
+            </div>
+            <DropdownMenuItem onClick={() => onShare(doc, "fun-profile")}>
+              🌟 FUN Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onShare(doc, "fun-academy")}>
+              📚 FUN Academy
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onShare(doc, "fun-life")}>
+              💫 FUN Life
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* View/Open Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => window.open(doc.file_url, "_blank")}
-          title={t("knowledge.readMore")}
-        >
-          <ExternalLink className="w-4 h-4" />
-        </Button>
       </div>
     </div>
   );
