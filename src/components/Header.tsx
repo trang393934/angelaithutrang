@@ -4,7 +4,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, LogOut, User } from "lucide-react";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import angelAvatar from "@/assets/angel-avatar.png";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
@@ -21,6 +23,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const { user, signOut, isLoading } = useAuth();
   const { balance } = useCamlyCoin();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,25 +66,17 @@ export const Header = () => {
     return "User";
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
 
   const navItems = [
-    { label: "Trang Chủ", href: "/" },
-    { label: "Về Chúng Con", href: "/about" },
-    { label: "Kết Nối", href: "/chat" },
-    { label: "Swap", href: "/swap" },
-    { label: "Tích Lũy Ánh Sáng", href: "/earn" },
+    { label: t("nav.home"), href: "/" },
+    { label: t("nav.about"), href: "/about" },
+    { label: t("nav.connect"), href: "/chat" },
+    { label: t("nav.swap"), href: "/swap" },
+    { label: t("nav.earn"), href: "/earn" },
   ];
 
   return (
@@ -132,6 +127,9 @@ export const Header = () => {
 
           {/* Auth Buttons */}
           <div className="hidden sm:flex items-center gap-3">
+            {/* Language Selector */}
+            <LanguageSelector />
+            
             {!isLoading && (
               <>
                 {user ? (
@@ -170,6 +168,7 @@ export const Header = () => {
                     <button
                       onClick={handleSignOut}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-base font-semibold text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
+                      title={t("nav.logout")}
                     >
                       <LogOut className="w-5 h-5" />
                       <span>Đăng xuất</span>
