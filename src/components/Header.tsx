@@ -1,18 +1,66 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { LogIn, LogOut, User, Coins } from "lucide-react";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import angelAvatar from "@/assets/angel-avatar.png";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
+interface UserProfile {
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut, isLoading } = useAuth();
   const { balance } = useCamlyCoin();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Fetch user profile for avatar and display name
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) {
+        setUserProfile(null);
+        return;
+      }
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setUserProfile(data);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  // Get display name to show (priority: display_name > email username)
+  const getDisplayName = () => {
+    if (userProfile?.display_name) {
+      return userProfile.display_name;
+    }
+    if (user?.email) {
+      return user.email.split("@")[0];
+    }
+    return "User";
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -101,9 +149,17 @@ export const Header = () => {
                       to="/profile"
                       className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-pale/50 text-sm hover:bg-primary-pale transition-colors"
                     >
-                      <User className="w-4 h-4 text-primary" />
+                      {userProfile?.avatar_url ? (
+                        <img 
+                          src={userProfile.avatar_url} 
+                          alt="Avatar" 
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-4 h-4 text-primary" />
+                      )}
                       <span className="text-foreground-muted max-w-[120px] truncate">
-                        {user.email}
+                        {getDisplayName()}
                       </span>
                     </Link>
                     <button
@@ -163,9 +219,21 @@ export const Header = () => {
               <div className="border-t border-primary-pale/30 mt-2 pt-2">
                 {user ? (
                   <>
-                    <div className="px-4 py-2 text-sm text-foreground-muted truncate">
-                      {user.email}
-                    </div>
+                    <Link 
+                      to="/profile"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground-muted"
+                    >
+                      {userProfile?.avatar_url ? (
+                        <img 
+                          src={userProfile.avatar_url} 
+                          alt="Avatar" 
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-4 h-4" />
+                      )}
+                      <span className="truncate">{getDisplayName()}</span>
+                    </Link>
                     <button
                       onClick={() => {
                         handleSignOut();
