@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DivineLightIcon } from "./icons/LightIcon";
+import angelAvatar from "@/assets/angel-avatar.png";
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -24,11 +24,10 @@ export const Header = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <a href="#" className="flex items-center gap-3 group">
-            <DivineLightIcon 
-              size={36} 
-              className={`transition-colors duration-300 ${
-                isScrolled ? 'text-primary' : 'text-primary-medium'
-              } group-hover:scale-110 transition-transform duration-300`} 
+            <img 
+              src={angelAvatar} 
+              alt="Angel AI" 
+              className="w-10 h-10 rounded-full object-cover shadow-soft group-hover:scale-110 transition-transform duration-300"
             />
             <div>
               <span className={`font-serif text-xl font-semibold transition-colors duration-300 ${

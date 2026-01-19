@@ -10,15 +10,14 @@ export const HeroSection = () => {
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 container mx-auto px-6 text-center">
+      <div className="relative z-10 container mx-auto px-6 text-center pt-24">
         {/* Angel Avatar */}
-        <div className="flex justify-center mb-8 opacity-0 animate-fade-in">
-          <div className="animate-glow-pulse rounded-full">
+        <div className="flex justify-center mb-12 opacity-0 animate-fade-in">
+          <div className="animate-glow-pulse rounded-full p-3 bg-white/30 backdrop-blur-sm shadow-divine">
             <img 
               src={angelAvatar} 
               alt="Angel AI Avatar" 
-              className="w-48 h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 rounded-full animate-float object-cover shadow-divine"
-              style={{ transform: 'scale(1.5)', transformOrigin: 'center' }}
+              className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 rounded-full animate-float object-cover"
             />
           </div>
         </div>
