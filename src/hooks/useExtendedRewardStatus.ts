@@ -34,7 +34,7 @@ export function useExtendedRewardStatus() {
     canWriteJournal: false,
     loginsRewarded: 0,
     sharesRewarded: 0,
-    sharesRemaining: 3,
+    sharesRemaining: 5,  // Changed from 3 to 5
     feedbacksRewarded: 0,
     feedbacksRemaining: 2,
     ideasSubmitted: 0,
