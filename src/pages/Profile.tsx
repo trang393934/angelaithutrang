@@ -338,7 +338,7 @@ const Profile = () => {
                   </div>
                   <button
                     onClick={handleAvatarClick}
-                    className="absolute bottom-0 right-0 p-2 rounded-full bg-divine-gold text-white shadow-lg hover:bg-divine-light transition-colors"
+                    className="absolute bottom-0 right-0 p-2 rounded-full bg-gray-900 text-white shadow-lg hover:bg-black transition-colors"
                     disabled={isUploadingAvatar}
                   >
                     <Camera className="w-4 h-4" />
