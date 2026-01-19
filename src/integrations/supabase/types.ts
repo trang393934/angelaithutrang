@@ -1143,6 +1143,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_wallet_addresses: {
+        Row: {
+          change_count_this_month: number
+          created_at: string
+          id: string
+          last_change_month: string | null
+          updated_at: string
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          change_count_this_month?: number
+          created_at?: string
+          id?: string
+          last_change_month?: string | null
+          updated_at?: string
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          change_count_this_month?: number
+          created_at?: string
+          id?: string
+          last_change_month?: string | null
+          updated_at?: string
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
       user_withdrawal_stats: {
         Row: {
           created_at: string

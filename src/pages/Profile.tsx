@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key } from "lucide-react";
+import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
 import DailyGratitude from "@/components/DailyGratitude";
@@ -45,6 +45,12 @@ const Profile = () => {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
 
+  // Wallet address state
+  const [walletAddress, setWalletAddress] = useState("");
+  const [walletChangeCount, setWalletChangeCount] = useState(0);
+  const [isSavingWallet, setIsSavingWallet] = useState(false);
+  const [originalWalletAddress, setOriginalWalletAddress] = useState("");
+
   // Change password state
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -64,6 +70,7 @@ const Profile = () => {
     if (user) {
       fetchProfile();
       checkLightAgreement();
+      fetchWalletAddress();
     }
   }, [user, authLoading]);
 
@@ -119,6 +126,123 @@ const Profile = () => {
     if (data) {
       setHasAgreedToLightLaw(true);
       setAgreedAt(data.agreed_at);
+    }
+  };
+
+  const fetchWalletAddress = async () => {
+    if (!user) return;
+    
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    
+    const { data } = await supabase
+      .from("user_wallet_addresses")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (data) {
+      setWalletAddress(data.wallet_address || "");
+      setOriginalWalletAddress(data.wallet_address || "");
+      
+      // Reset count if new month
+      if (data.last_change_month !== currentMonth) {
+        setWalletChangeCount(0);
+      } else {
+        setWalletChangeCount(data.change_count_this_month || 0);
+      }
+    }
+  };
+
+  const handleSaveWalletAddress = async () => {
+    if (!user) return;
+    
+    // Validate wallet address format (basic check for ETH/BSC address)
+    const walletRegex = /^0x[a-fA-F0-9]{40}$/;
+    if (walletAddress && !walletRegex.test(walletAddress)) {
+      toast({
+        title: "Lỗi",
+        description: "Địa chỉ ví không hợp lệ. Vui lòng nhập địa chỉ ví BSC/ETH đúng định dạng.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check if actually changed
+    if (walletAddress === originalWalletAddress) {
+      toast({
+        title: "Thông báo",
+        description: "Địa chỉ ví không thay đổi.",
+      });
+      return;
+    }
+    
+    // Check monthly limit
+    if (walletChangeCount >= 2) {
+      toast({
+        title: "Đã đạt giới hạn",
+        description: "Bạn chỉ được đổi địa chỉ ví tối đa 2 lần/tháng. Vui lòng thử lại vào tháng sau.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingWallet(true);
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    
+    try {
+      // Check if record exists
+      const { data: existing } = await supabase
+        .from("user_wallet_addresses")
+        .select("id, change_count_this_month, last_change_month")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existing) {
+        // Calculate new change count
+        let newChangeCount = 1;
+        if (existing.last_change_month === currentMonth) {
+          newChangeCount = (existing.change_count_this_month || 0) + 1;
+        }
+
+        const { error } = await supabase
+          .from("user_wallet_addresses")
+          .update({
+            wallet_address: walletAddress || null,
+            change_count_this_month: newChangeCount,
+            last_change_month: currentMonth,
+          })
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+        setWalletChangeCount(newChangeCount);
+      } else {
+        const { error } = await supabase
+          .from("user_wallet_addresses")
+          .insert({
+            user_id: user.id,
+            wallet_address: walletAddress || null,
+            change_count_this_month: 1,
+            last_change_month: currentMonth,
+          });
+
+        if (error) throw error;
+        setWalletChangeCount(1);
+      }
+
+      setOriginalWalletAddress(walletAddress);
+      toast({
+        title: "Thành công!",
+        description: "Địa chỉ ví đã được lưu ✨",
+      });
+    } catch (error) {
+      console.error("Error saving wallet address:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể lưu địa chỉ ví. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingWallet(false);
     }
   };
 
@@ -315,6 +439,58 @@ const Profile = () => {
 
           {/* Coin Withdrawal Section */}
           <CoinWithdrawal />
+
+          {/* Wallet Address Card */}
+          <Card className="border-blue-500/20 shadow-soft">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Wallet className="w-5 h-5 text-blue-500" />
+                Địa chỉ ví Web3
+              </CardTitle>
+              <CardDescription>
+                Nhập địa chỉ ví BSC/BNB Chain để nhận Camly Coin khi rút. Bạn chỉ được đổi tối đa 2 lần/tháng.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="walletAddress">Địa chỉ ví (BSC Network)</Label>
+                <Input
+                  id="walletAddress"
+                  value={walletAddress}
+                  onChange={(e) => setWalletAddress(e.target.value)}
+                  placeholder="0x..."
+                  className="border-blue-500/20 focus:border-blue-500 font-mono text-sm"
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Số lần đổi trong tháng: <span className="font-semibold text-foreground">{walletChangeCount}/2</span>
+                </span>
+                {walletChangeCount >= 2 && (
+                  <span className="text-red-500 text-xs">Đã đạt giới hạn</span>
+                )}
+              </div>
+
+              <Button
+                onClick={handleSaveWalletAddress}
+                disabled={isSavingWallet || walletChangeCount >= 2}
+                className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+              >
+                {isSavingWallet ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang lưu...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    Lưu địa chỉ ví
+                  </span>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* Gratitude & Journal Section */}
           <div className="grid gap-6 md:grid-cols-2">
