@@ -125,7 +125,7 @@ const Swap = () => {
           <div className="max-w-md mx-auto mt-12 p-6 bg-muted/50 rounded-xl text-center">
             <p className="text-sm text-muted-foreground mb-2">CAMLY Contract Address (BSC)</p>
             <code className="text-xs bg-background px-3 py-1.5 rounded-lg font-mono break-all">
-              0x3CE2eb776292f2e4De2b19F1FFc14bA3D77b097D
+              0x0910320181889fefde0bb1ca63962b0a8882e413
             </code>
             <p className="text-xs text-muted-foreground mt-3">
               Luôn kiểm tra địa chỉ contract trước khi giao dịch
