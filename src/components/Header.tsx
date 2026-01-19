@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { LogIn, LogOut, User } from "lucide-react";
+import { LogIn, LogOut, User, Coins } from "lucide-react";
+import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import angelAvatar from "@/assets/angel-avatar.png";
+import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -10,6 +12,7 @@ export const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut, isLoading } = useAuth();
+  const { balance } = useCamlyCoin();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,6 +31,7 @@ export const Header = () => {
     { label: "Trang Chủ", href: "/" },
     { label: "Về Chúng Con", href: "/about" },
     { label: "Kết Nối", href: "/chat" },
+    { label: "Kiếm Coin", href: "/earn" },
   ];
 
   return (
@@ -82,6 +86,17 @@ export const Header = () => {
               <>
                 {user ? (
                   <div className="flex items-center gap-3">
+                    {/* Camly Coin Balance */}
+                    <Link 
+                      to="/earn"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                    >
+                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-5 h-5" />
+                      <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                        {balance.toLocaleString()}
+                      </span>
+                    </Link>
+                    
                     <Link 
                       to="/profile"
                       className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-pale/50 text-sm hover:bg-primary-pale transition-colors"
