@@ -97,6 +97,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_light_agreements: {
+        Row: {
+          agreed_at: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          agreed_at?: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          agreed_at?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

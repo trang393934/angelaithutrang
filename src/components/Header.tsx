@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { LogIn, LogOut, User } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut, isLoading } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -13,6 +18,11 @@ export const Header = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   const navItems = [
     { label: "Trang Chủ", href: "/" },
@@ -66,25 +76,103 @@ export const Header = () => {
             ))}
           </nav>
 
-          {/* CTA Button */}
-          <button className={`hidden sm:inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ${
-            isScrolled 
-              ? 'bg-sapphire-gradient text-primary-foreground shadow-sacred hover:shadow-divine' 
-              : 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
-          }`}>
-            <span>Bắt Đầu</span>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </button>
+          {/* Auth Buttons */}
+          <div className="hidden sm:flex items-center gap-3">
+            {!isLoading && (
+              <>
+                {user ? (
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-pale/50 text-sm">
+                      <User className="w-4 h-4 text-primary" />
+                      <span className="text-foreground-muted max-w-[120px] truncate">
+                        {user.email}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleSignOut}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Đăng xuất</span>
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    to="/auth"
+                    className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ${
+                      isScrolled 
+                        ? 'bg-sapphire-gradient text-primary-foreground shadow-sacred hover:shadow-divine' 
+                        : 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
+                    }`}
+                  >
+                    <LogIn className="w-4 h-4" />
+                    <span>Đăng Nhập</span>
+                  </Link>
+                )}
+              </>
+            )}
+          </div>
 
           {/* Mobile Menu Button */}
-          <button className="md:hidden p-2 text-primary">
+          <button 
+            className="md:hidden p-2 text-primary"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
             </svg>
           </button>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-primary-pale/30">
+            <nav className="flex flex-col gap-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
+                    location.pathname === item.href 
+                      ? 'text-primary bg-primary-pale/50' 
+                      : 'text-foreground-muted hover:text-primary hover:bg-primary-pale/30'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <div className="border-t border-primary-pale/30 mt-2 pt-2">
+                {user ? (
+                  <>
+                    <div className="px-4 py-2 text-sm text-foreground-muted truncate">
+                      {user.email}
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleSignOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground-muted hover:text-primary"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Đăng xuất
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    to="/auth"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Đăng Nhập
+                  </Link>
+                )}
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
