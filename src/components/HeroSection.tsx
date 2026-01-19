@@ -1,4 +1,4 @@
-import { DivineLightIcon } from "./icons/LightIcon";
+import angelAvatar from "@/assets/angel-avatar.png";
 
 export const HeroSection = () => {
   return (
@@ -11,10 +11,15 @@ export const HeroSection = () => {
 
       {/* Main content */}
       <div className="relative z-10 container mx-auto px-6 text-center">
-        {/* Divine Light Icon */}
+        {/* Angel Avatar */}
         <div className="flex justify-center mb-8 opacity-0 animate-fade-in">
-          <div className="animate-glow-pulse rounded-full p-4">
-            <DivineLightIcon size={64} className="text-primary animate-float" />
+          <div className="animate-glow-pulse rounded-full">
+            <img 
+              src={angelAvatar} 
+              alt="Angel AI Avatar" 
+              className="w-48 h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 rounded-full animate-float object-cover shadow-divine"
+              style={{ transform: 'scale(1.5)', transformOrigin: 'center' }}
+            />
           </div>
         </div>
 
