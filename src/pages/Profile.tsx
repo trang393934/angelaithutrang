@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ interface Profile {
 const Profile = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading, signOut } = useAuth();
+  const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -95,8 +97,8 @@ const Profile = () => {
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast({
-        title: "Lỗi",
-        description: "Không thể tải thông tin profile.",
+        title: t("common.error"),
+        description: t("profile.errorLoad"),
         variant: "destructive",
       });
     } finally {
@@ -135,14 +137,14 @@ const Profile = () => {
       if (error) throw error;
 
       toast({
-        title: "Đã lưu!",
-        description: "Thông tin profile đã được cập nhật ✨",
+        title: t("common.success"),
+        description: t("profile.successSave"),
       });
     } catch (error) {
       console.error("Error saving profile:", error);
       toast({
-        title: "Lỗi",
-        description: "Không thể lưu thông tin profile.",
+        title: t("common.error"),
+        description: t("profile.errorSave"),
         variant: "destructive",
       });
     } finally {
@@ -281,7 +283,7 @@ const Profile = () => {
       <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex items-center justify-center">
         <div className="flex items-center gap-3">
           <Sparkles className="w-6 h-6 text-divine-gold animate-pulse" />
-          <span className="text-foreground-muted">Đang tải thông tin...</span>
+          <span className="text-foreground-muted">{t("profile.loading")}</span>
         </div>
       </div>
     );
@@ -299,7 +301,7 @@ const Profile = () => {
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
           <h1 className="text-2xl font-bold text-foreground">
-            Hồ Sơ Cá Nhân
+            {t("profile.pageTitle")}
           </h1>
         </div>
 
@@ -352,7 +354,7 @@ const Profile = () => {
                   />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Nhấn vào biểu tượng camera để thay đổi avatar
+                  {t("profile.avatarHint")}
                 </p>
               </div>
             </CardContent>
@@ -363,31 +365,31 @@ const Profile = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <User className="w-5 h-5 text-divine-gold" />
-                Thông tin cá nhân
+                {t("profile.personalInfo")}
               </CardTitle>
               <CardDescription>
-                Cập nhật thông tin hiển thị của bạn
+                {t("profile.personalInfoDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="displayName">Tên hiển thị</Label>
+                <Label htmlFor="displayName">{t("profile.displayNameLabel")}</Label>
                 <Input
                   id="displayName"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Nhập tên hiển thị của bạn"
+                  placeholder={t("profile.displayNamePlaceholder")}
                   className="border-divine-gold/20 focus:border-divine-gold"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bio">Tiểu sử</Label>
+                <Label htmlFor="bio">{t("profile.bioLabel")}</Label>
                 <Textarea
                   id="bio"
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Chia sẻ đôi điều về bạn..."
+                  placeholder={t("profile.bioPlaceholder")}
                   className="border-divine-gold/20 focus:border-divine-gold min-h-[100px]"
                 />
               </div>
@@ -400,12 +402,12 @@ const Profile = () => {
                 {isSaving ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang lưu...
+                    {t("profile.saving")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     <Check className="w-4 h-4" />
-                    Lưu thay đổi
+                    {t("profile.saveChanges")}
                   </span>
                 )}
               </Button>
@@ -417,19 +419,19 @@ const Profile = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Mail className="w-5 h-5 text-divine-gold" />
-                Thông tin tài khoản
+                {t("profile.accountInfo")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between py-3 border-b border-divine-gold/10">
-                <span className="text-foreground">Email</span>
+                <span className="text-foreground">{t("profile.email")}</span>
                 <span className="font-medium text-foreground">{user?.email}</span>
               </div>
 
               <div className="flex items-center justify-between py-3 border-b border-divine-gold/10">
                 <span className="text-foreground flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Ngày tham gia
+                  {t("profile.joinDate")}
                 </span>
                 <span className="font-medium text-foreground">
                   {user?.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : 'N/A'}
@@ -444,7 +446,7 @@ const Profile = () => {
                   className="w-full border-divine-gold/30 hover:bg-divine-gold/5"
                 >
                   <Key className="w-4 h-4 mr-2" />
-                  Đổi mật khẩu
+                  {t("profile.changePassword")}
                 </Button>
               </div>
             </CardContent>
@@ -455,7 +457,7 @@ const Profile = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Shield className={`w-5 h-5 ${hasAgreedToLightLaw ? 'text-green-600' : 'text-red-500'}`} />
-                Trạng thái Luật Ánh Sáng
+                {t("profile.lightLawStatus")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -463,11 +465,11 @@ const Profile = () => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-green-700">
                     <Check className="w-5 h-5" />
-                    <span className="font-medium">Đã đồng ý với Luật Ánh Sáng</span>
+                    <span className="font-medium">{t("profile.lightLawAgreed")}</span>
                   </div>
                   {agreedAt && (
                     <p className="text-sm text-muted-foreground">
-                      Ngày đồng ý: {new Date(agreedAt).toLocaleDateString('vi-VN', {
+                      {t("profile.lightLawAgreedDate")} {new Date(agreedAt).toLocaleDateString('vi-VN', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -477,20 +479,20 @@ const Profile = () => {
                     </p>
                   )}
                   <p className="text-sm text-green-600 mt-2">
-                    ✨ Bạn có quyền truy cập đầy đủ vào FUN Ecosystem
+                    {t("profile.lightLawAccess")}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <p className="text-red-600">
-                    Bạn chưa đồng ý với Luật Ánh Sáng
+                    {t("profile.lightLawNotAgreed")}
                   </p>
                   <Link
                     to="/auth"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-divine-gold text-white hover:bg-divine-light transition-colors"
                   >
                     <Sparkles className="w-4 h-4" />
-                    Đọc và đồng ý Luật Ánh Sáng
+                    {t("profile.readLightLaw")}
                   </Link>
                 </div>
               )}
@@ -503,7 +505,7 @@ const Profile = () => {
             onClick={handleSignOut}
             className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
           >
-            Đăng xuất
+            {t("profile.signOut")}
           </Button>
         </div>
       </div>
@@ -513,12 +515,12 @@ const Profile = () => {
         <DialogContent className="max-w-md bg-card border-divine-gold/20">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-center bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
-              🔐 Đổi Mật Khẩu
+              🔐 {t("profile.changePasswordTitle")}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleChangePassword} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-foreground">Mật khẩu mới</Label>
+              <Label htmlFor="newPassword" className="text-foreground">{t("profile.newPassword")}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -542,7 +544,7 @@ const Profile = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-foreground">Xác nhận mật khẩu mới</Label>
+              <Label htmlFor="confirmPassword" className="text-foreground">{t("profile.confirmPassword")}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -576,7 +578,7 @@ const Profile = () => {
                 }}
                 className="flex-1"
               >
-                Hủy
+                {t("common.cancel")}
               </Button>
               <Button
                 type="submit"
@@ -586,10 +588,10 @@ const Profile = () => {
                 {isChangingPassword ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang đổi...
+                    {t("profile.changing")}
                   </span>
                 ) : (
-                  "Đổi mật khẩu"
+                  t("profile.confirmChange")
                 )}
               </Button>
             </div>
