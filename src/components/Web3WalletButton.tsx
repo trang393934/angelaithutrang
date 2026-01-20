@@ -62,17 +62,17 @@ export const Web3WalletButton = () => {
       <button
         onClick={connect}
         disabled={isConnecting}
-        className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
+        className="flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-xs xl:text-sm hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50"
       >
         {isConnecting ? (
           <>
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            <span>Đang kết nối...</span>
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            <span className="hidden sm:inline">Kết nối...</span>
           </>
         ) : (
           <>
-            <Wallet className="w-4 h-4" />
-            <span>Kết nối ví</span>
+            <Wallet className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Kết nối ví</span>
           </>
         )}
       </button>
@@ -83,15 +83,15 @@ export const Web3WalletButton = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-medium text-sm hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-md">
-          <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+        <button className="flex items-center gap-1.5 px-2 xl:px-3 py-1 xl:py-1.5 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-medium text-xs xl:text-sm hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-sm">
+          <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
           <span>{shortAddress}</span>
           <ChevronDown className="w-3 h-3" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         align="end" 
-        className="w-72 bg-background border border-border shadow-xl rounded-xl p-2"
+        className="w-64 xl:w-72 bg-background border border-border shadow-xl rounded-xl p-2"
       >
         {/* Header */}
         <div className="px-3 py-2 border-b border-border mb-2">
