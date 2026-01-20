@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper } from "lucide-react";
+import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
 import DailyGratitude from "@/components/DailyGratitude";
@@ -26,6 +26,7 @@ interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  cover_photo_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +38,7 @@ const Profile = () => {
   const { hasAgreed, isChecking: isCheckingAgreement } = useLightAgreement();
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [hasAgreedToLightLaw, setHasAgreedToLightLaw] = useState(false);
@@ -44,6 +46,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   
   // Setup mode: Profile is incomplete
   const [isSetupMode, setIsSetupMode] = useState(false);
@@ -442,6 +445,77 @@ const Profile = () => {
       });
     } finally {
       setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleCoverClick = () => {
+    coverInputRef.current?.click();
+  };
+
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn file hình ảnh.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 10MB for cover photos)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Lỗi",
+        description: "Kích thước file tối đa là 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingCover(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/cover.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      // Update profile with cover photo URL
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ cover_photo_url: urlData.publicUrl })
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      setProfile(prev => prev ? { ...prev, cover_photo_url: urlData.publicUrl } : null);
+
+      toast({
+        title: "Thành công!",
+        description: "Ảnh bìa đã được cập nhật ✨",
+      });
+    } catch (error) {
+      console.error("Error uploading cover photo:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể tải lên ảnh bìa.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingCover(false);
     }
   };
 
@@ -886,6 +960,71 @@ const Profile = () => {
 
           {/* Healing Messages from Angel AI */}
           <HealingMessagesPanel />
+
+          {/* Cover Photo Card */}
+          <Card className="border-primary/20 shadow-soft overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <ImageIcon className="w-5 h-5 text-primary" />
+                Ảnh Bìa
+              </CardTitle>
+              <CardDescription>
+                Tùy chỉnh ảnh bìa cho trang cá nhân của bạn (tối đa 10MB)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Cover Preview */}
+              <div className="relative h-[150px] sm:h-[200px] rounded-lg overflow-hidden bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10">
+                {profile?.cover_photo_url ? (
+                  <img 
+                    src={profile.cover_photo_url} 
+                    alt="Cover photo" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <ImageIcon className="w-12 h-12 text-primary/30 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Chưa có ảnh bìa</p>
+                    </div>
+                  </div>
+                )}
+                
+                {isUploadingCover && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={handleCoverClick}
+                disabled={isUploadingCover}
+                variant="outline"
+                className="w-full border-primary/30 hover:bg-primary/5"
+              >
+                {isUploadingCover ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang tải lên...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Camera className="w-4 h-4" />
+                    {profile?.cover_photo_url ? 'Đổi ảnh bìa' : 'Tải lên ảnh bìa'}
+                  </span>
+                )}
+              </Button>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCoverChange}
+                className="hidden"
+              />
+            </CardContent>
+          </Card>
+
           {/* Avatar Card */}
           <Card className="border-divine-gold/20 shadow-divine">
             <CardContent className="pt-6">
