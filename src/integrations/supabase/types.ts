@@ -169,6 +169,36 @@ export type Database = {
         }
         Relationships: []
       }
+      cached_responses: {
+        Row: {
+          created_at: string | null
+          hit_count: number | null
+          id: string
+          last_used_at: string | null
+          question_keywords: string[]
+          question_normalized: string
+          response: string
+        }
+        Insert: {
+          created_at?: string | null
+          hit_count?: number | null
+          id?: string
+          last_used_at?: string | null
+          question_keywords: string[]
+          question_normalized: string
+          response: string
+        }
+        Update: {
+          created_at?: string | null
+          hit_count?: number | null
+          id?: string
+          last_used_at?: string | null
+          question_keywords?: string[]
+          question_normalized?: string
+          response?: string
+        }
+        Relationships: []
+      }
       camly_coin_balances: {
         Row: {
           balance: number
@@ -938,6 +968,44 @@ export type Database = {
             columns: ["idea_id"]
             isOneToOne: false
             referencedRelation: "build_ideas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_chunks: {
+        Row: {
+          category: string | null
+          chunk_order: number | null
+          chunk_text: string
+          created_at: string | null
+          document_id: string | null
+          id: string
+          keywords: string[] | null
+        }
+        Insert: {
+          category?: string | null
+          chunk_order?: number | null
+          chunk_text: string
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          keywords?: string[] | null
+        }
+        Update: {
+          category?: string | null
+          chunk_order?: number | null
+          chunk_text?: string
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          keywords?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_documents"
             referencedColumns: ["id"]
           },
         ]
