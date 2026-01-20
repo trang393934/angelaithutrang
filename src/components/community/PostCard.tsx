@@ -248,12 +248,12 @@ export function PostCard({
   return (
     <>
       <Card className={`
-        overflow-hidden transition-all duration-300
+        overflow-hidden transition-all duration-300 w-full max-w-full
         ${post.is_rewarded ? 'border-amber-300 bg-gradient-to-r from-amber-50/50 to-orange-50/30' : 'border-primary/10'}
       `}>
-        <CardContent className="p-5">
+        <CardContent className="p-4 sm:p-5 overflow-hidden">
           {/* Header */}
-          <div className="flex items-start gap-3 mb-4">
+          <div className="flex items-start gap-3 mb-4 min-w-0">
             <Link to={`/user/${post.user_id}`}>
               <Avatar className="w-11 h-11 border-2 border-primary/20 hover:border-primary/50 transition-colors cursor-pointer">
                 <AvatarImage src={post.user_avatar_url || angelAvatar} alt={post.user_display_name} />
@@ -261,21 +261,22 @@ export function PostCard({
               </Avatar>
             </Link>
 
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <Link to={`/user/${post.user_id}`} className="hover:underline">
-                  <span className="font-semibold text-foreground">
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link to={`/user/${post.user_id}`} className="hover:underline min-w-0">
+                  <span className="font-semibold text-foreground truncate block max-w-[150px] sm:max-w-[200px]">
                     {post.user_display_name}
                   </span>
                 </Link>
                 {post.is_rewarded && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1 shrink-0">
                     <Award className="w-3 h-3" />
-                    Đã thưởng
+                    <span className="hidden sm:inline">Đã thưởng</span>
+                    <span className="sm:hidden">✓</span>
                   </span>
                 )}
               </div>
-              <span className="text-xs text-foreground-muted">
+              <span className="text-xs text-foreground-muted block truncate">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: vi })}
               </span>
             </div>
@@ -403,7 +404,7 @@ export function PostCard({
               </div>
             </div>
           ) : (
-            <p className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap">
+            <p className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words overflow-hidden w-full">
               {post.content}
             </p>
           )}
@@ -428,7 +429,7 @@ export function PostCard({
           )}
 
           {/* Stats */}
-          <div className="flex items-center gap-4 text-sm text-foreground-muted mb-3 pb-3 border-b border-primary/10">
+          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-foreground-muted mb-3 pb-3 border-b border-primary/10 flex-wrap">
             <span>{post.likes_count} lượt thích</span>
             <span>{post.comments_count} bình luận</span>
             <span>{post.shares_count} chia sẻ</span>
