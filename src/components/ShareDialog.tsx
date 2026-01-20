@@ -97,7 +97,7 @@ const ShareDialog = ({
     if (shareUrl) return shareUrl;
     
     // Default to current origin with content reference
-    const baseUrl = window.location.origin;
+    const baseUrl = "https://angelaithutrang.lovable.app";
     switch (contentType) {
       case 'post':
         return `${baseUrl}/community?post=${contentId}`;
