@@ -588,41 +588,41 @@ const Profile = () => {
   // Setup Mode UI
   if (isSetupMode) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-divine-deep via-background to-background py-8 px-4">
-        <div className="container mx-auto max-w-xl">
+      <div className="min-h-screen bg-gradient-to-b from-divine-deep via-background to-background py-8 md:py-12 px-4">
+        <div className="container mx-auto max-w-xl md:max-w-2xl lg:max-w-3xl">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto mb-4 relative">
-              <div className="absolute inset-0 bg-divine-gold/30 rounded-full blur-xl animate-pulse-divine" />
-              <div className="relative z-10 w-full h-full rounded-full bg-gradient-to-r from-divine-gold to-divine-light flex items-center justify-center">
-                <Sparkles className="w-10 h-10 text-white" />
+          <div className="text-center mb-8 md:mb-12">
+            <div className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 mx-auto mb-4 md:mb-6 relative">
+              <div className="absolute inset-0 bg-divine-gold/40 rounded-full blur-xl md:blur-2xl animate-pulse-divine" />
+              <div className="relative z-10 w-full h-full rounded-full bg-gradient-to-r from-divine-gold to-divine-light flex items-center justify-center shadow-xl shadow-divine-gold/40">
+                <Sparkles className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
               Hoàn Thiện Hồ Sơ Cá Nhân
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 md:mt-3 text-base md:text-lg">
               Thiết lập hồ sơ của bạn để bắt đầu hành trình trong Cổng Ánh Sáng
             </p>
           </div>
 
           {/* Progress Steps */}
-          <div className="flex items-center justify-center mb-8 gap-2">
+          <div className="flex items-center justify-center mb-8 md:mb-12 gap-2 md:gap-3">
             {[1, 2, 3].map((step) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                  className={`w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center font-bold text-base md:text-lg transition-all duration-300 ${
                     step < setupStep
-                      ? "bg-green-500 text-white"
+                      ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/40"
                       : step === setupStep
-                      ? "bg-divine-gold text-white shadow-lg"
+                      ? "bg-gradient-to-r from-divine-gold to-divine-light text-white shadow-xl shadow-divine-gold/50"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {step < setupStep ? <Check className="w-5 h-5" /> : step}
+                  {step < setupStep ? <Check className="w-5 h-5 md:w-6 md:h-6" /> : step}
                 </div>
                 {step < 3 && (
-                  <div className={`w-12 h-1 mx-1 rounded ${step < setupStep ? "bg-green-500" : "bg-muted"}`} />
+                  <div className={`w-12 md:w-16 lg:w-20 h-1 md:h-1.5 mx-1 md:mx-2 rounded-full transition-all duration-300 ${step < setupStep ? "bg-gradient-to-r from-green-500 to-emerald-500" : "bg-muted"}`} />
                 )}
               </div>
             ))}
@@ -631,29 +631,29 @@ const Profile = () => {
           {/* Step 1: Avatar */}
           {setupStep === 1 && (
             <Card className="border-divine-gold/30 shadow-divine bg-gradient-to-b from-background to-divine-deep/20">
-              <CardHeader className="text-center pb-4">
-                <CardTitle className="text-xl flex items-center justify-center gap-2 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
-                  <Camera className="w-6 h-6 text-divine-gold" />
+              <CardHeader className="text-center pb-4 md:pb-6">
+                <CardTitle className="text-xl md:text-2xl flex items-center justify-center gap-2 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+                  <Camera className="w-6 h-6 md:w-7 md:h-7 text-divine-gold" />
                   Bước 1: Ảnh Đại Diện
                 </CardTitle>
-                <CardDescription className="text-base">
+                <CardDescription className="text-base md:text-lg mt-2">
                   Tải lên ảnh đại diện của bạn. Đây là bắt buộc để tiếp tục.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 md:space-y-8 pb-8">
                 {/* Clickable Avatar Area */}
                 <button
                   onClick={handleAvatarClick}
                   disabled={isUploadingAvatar}
-                  className="relative group w-full flex flex-col items-center gap-4 cursor-pointer"
+                  className="relative group w-full flex flex-col items-center gap-4 md:gap-6 cursor-pointer py-4 md:py-8"
                 >
                   {/* Glowing ring effect */}
                   <div className="relative">
-                    <div className="absolute -inset-3 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold rounded-full opacity-40 blur-lg group-hover:opacity-70 group-hover:blur-xl transition-all duration-500 animate-pulse-divine" />
-                    <div className="relative w-44 h-44 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-divine-gold shadow-[0_0_30px_rgba(212,175,55,0.4)] group-hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] transition-all duration-500 group-hover:scale-105">
+                    <div className="absolute -inset-4 md:-inset-6 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold rounded-full opacity-30 blur-xl md:blur-2xl group-hover:opacity-60 group-hover:blur-2xl md:group-hover:blur-3xl transition-all duration-500 animate-pulse-divine" />
+                    <div className="relative w-44 h-44 sm:w-52 sm:h-52 md:w-60 md:h-60 lg:w-64 lg:h-64 rounded-full overflow-hidden border-4 md:border-[6px] border-divine-gold shadow-[0_0_40px_rgba(212,175,55,0.5)] group-hover:shadow-[0_0_70px_rgba(212,175,55,0.7)] transition-all duration-500 group-hover:scale-105">
                       {isUploadingAvatar ? (
                         <div className="w-full h-full bg-gradient-to-br from-divine-gold/20 to-divine-deep/30 flex items-center justify-center">
-                          <Loader2 className="w-12 h-12 text-divine-gold animate-spin" />
+                          <Loader2 className="w-12 h-12 md:w-16 md:h-16 text-divine-gold animate-spin" />
                         </div>
                       ) : profile?.avatar_url ? (
                         <img 
@@ -662,23 +662,23 @@ const Profile = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-divine-gold/10 to-divine-deep/20 flex flex-col items-center justify-center gap-2">
-                          <User className="w-20 h-20 text-divine-gold/60 group-hover:text-divine-gold group-hover:scale-110 transition-all duration-300" />
+                        <div className="w-full h-full bg-gradient-to-br from-divine-gold/10 via-divine-deep/20 to-divine-gold/10 flex flex-col items-center justify-center gap-2">
+                          <User className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 text-divine-gold/50 group-hover:text-divine-gold group-hover:scale-110 transition-all duration-300" />
                         </div>
                       )}
                     </div>
                     {/* Floating camera button */}
-                    <div className="absolute -bottom-1 -right-1 p-3.5 rounded-full bg-gradient-to-r from-divine-gold to-divine-light text-white shadow-lg shadow-divine-gold/40 group-hover:shadow-divine-gold/60 group-hover:scale-110 transition-all duration-300">
-                      <Camera className="w-6 h-6" />
+                    <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 p-3.5 md:p-5 rounded-full bg-gradient-to-r from-divine-gold to-divine-light text-white shadow-xl shadow-divine-gold/50 group-hover:shadow-divine-gold/70 group-hover:scale-110 transition-all duration-300">
+                      <Camera className="w-6 h-6 md:w-7 md:h-7" />
                     </div>
                   </div>
                   
                   {/* Call to action text */}
-                  <div className="text-center space-y-1">
-                    <p className="text-lg font-semibold text-divine-gold group-hover:text-divine-light transition-colors">
-                      {profile?.avatar_url ? "Thay đổi ảnh đại diện" : "Nhấn để tải ảnh lên"}
+                  <div className="text-center space-y-2 mt-2 md:mt-4">
+                    <p className="text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
+                      {profile?.avatar_url ? "Thay đổi ảnh đại diện" : "✨ Nhấn để tải ảnh lên ✨"}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm md:text-base text-muted-foreground">
                       Chọn ảnh rõ nét, thể hiện bạn tốt nhất
                     </p>
                   </div>
@@ -695,10 +695,10 @@ const Profile = () => {
                 {profile?.avatar_url && (
                   <Button
                     onClick={() => setSetupStep(2)}
-                    className="w-full bg-gradient-to-r from-divine-gold to-divine-light hover:opacity-90 text-lg py-6 shadow-lg shadow-divine-gold/30 hover:shadow-divine-gold/50 transition-all duration-300"
+                    className="w-full max-w-md mx-auto bg-gradient-to-r from-divine-gold to-divine-light hover:opacity-90 text-lg md:text-xl py-6 md:py-7 shadow-xl shadow-divine-gold/40 hover:shadow-divine-gold/60 transition-all duration-300"
                   >
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Tiếp tục <ArrowLeft className="w-5 h-5 ml-2 rotate-180" />
+                    <Sparkles className="w-5 h-5 md:w-6 md:h-6 mr-2" />
+                    Tiếp tục <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 ml-2 rotate-180" />
                   </Button>
                 )}
               </CardContent>
