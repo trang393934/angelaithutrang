@@ -630,23 +630,30 @@ const Profile = () => {
 
           {/* Step 1: Avatar */}
           {setupStep === 1 && (
-            <Card className="border-divine-gold/30 shadow-divine">
-              <CardHeader className="text-center">
-                <CardTitle className="text-lg flex items-center justify-center gap-2">
-                  <Camera className="w-5 h-5 text-divine-gold" />
+            <Card className="border-divine-gold/30 shadow-divine bg-gradient-to-b from-background to-divine-deep/20">
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-xl flex items-center justify-center gap-2 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+                  <Camera className="w-6 h-6 text-divine-gold" />
                   Bước 1: Ảnh Đại Diện
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-base">
                   Tải lên ảnh đại diện của bạn. Đây là bắt buộc để tiếp tục.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative group">
-                    <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-divine-gold/30 shadow-divine">
+                {/* Clickable Avatar Area */}
+                <button
+                  onClick={handleAvatarClick}
+                  disabled={isUploadingAvatar}
+                  className="relative group w-full flex flex-col items-center gap-4 cursor-pointer"
+                >
+                  {/* Glowing ring effect */}
+                  <div className="relative">
+                    <div className="absolute -inset-3 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold rounded-full opacity-40 blur-lg group-hover:opacity-70 group-hover:blur-xl transition-all duration-500 animate-pulse-divine" />
+                    <div className="relative w-44 h-44 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-divine-gold shadow-[0_0_30px_rgba(212,175,55,0.4)] group-hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] transition-all duration-500 group-hover:scale-105">
                       {isUploadingAvatar ? (
-                        <div className="w-full h-full bg-divine-gold/10 flex items-center justify-center">
-                          <Loader2 className="w-10 h-10 text-divine-gold animate-spin" />
+                        <div className="w-full h-full bg-gradient-to-br from-divine-gold/20 to-divine-deep/30 flex items-center justify-center">
+                          <Loader2 className="w-12 h-12 text-divine-gold animate-spin" />
                         </div>
                       ) : profile?.avatar_url ? (
                         <img 
@@ -655,37 +662,43 @@ const Profile = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-divine-gold/10 flex items-center justify-center">
-                          <User className="w-16 h-16 text-divine-gold/50" />
+                        <div className="w-full h-full bg-gradient-to-br from-divine-gold/10 to-divine-deep/20 flex flex-col items-center justify-center gap-2">
+                          <User className="w-20 h-20 text-divine-gold/60 group-hover:text-divine-gold group-hover:scale-110 transition-all duration-300" />
                         </div>
                       )}
                     </div>
-                    <button
-                      onClick={handleAvatarClick}
-                      className="absolute bottom-2 right-2 p-3 rounded-full bg-divine-gold text-white shadow-lg hover:bg-divine-light transition-colors"
-                      disabled={isUploadingAvatar}
-                    >
-                      <Camera className="w-5 h-5" />
-                    </button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
+                    {/* Floating camera button */}
+                    <div className="absolute -bottom-1 -right-1 p-3.5 rounded-full bg-gradient-to-r from-divine-gold to-divine-light text-white shadow-lg shadow-divine-gold/40 group-hover:shadow-divine-gold/60 group-hover:scale-110 transition-all duration-300">
+                      <Camera className="w-6 h-6" />
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Nhấn vào biểu tượng camera để tải lên ảnh
-                  </p>
-                </div>
+                  
+                  {/* Call to action text */}
+                  <div className="text-center space-y-1">
+                    <p className="text-lg font-semibold text-divine-gold group-hover:text-divine-light transition-colors">
+                      {profile?.avatar_url ? "Thay đổi ảnh đại diện" : "Nhấn để tải ảnh lên"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Chọn ảnh rõ nét, thể hiện bạn tốt nhất
+                    </p>
+                  </div>
+                  
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                </button>
 
                 {profile?.avatar_url && (
                   <Button
                     onClick={() => setSetupStep(2)}
-                    className="w-full bg-gradient-to-r from-divine-gold to-divine-light hover:opacity-90"
+                    className="w-full bg-gradient-to-r from-divine-gold to-divine-light hover:opacity-90 text-lg py-6 shadow-lg shadow-divine-gold/30 hover:shadow-divine-gold/50 transition-all duration-300"
                   >
-                    Tiếp tục <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Tiếp tục <ArrowLeft className="w-5 h-5 ml-2 rotate-180" />
                   </Button>
                 )}
               </CardContent>
@@ -962,10 +975,10 @@ const Profile = () => {
           <HealingMessagesPanel />
 
           {/* Cover Photo Card */}
-          <Card className="border-primary/20 shadow-soft overflow-hidden">
+          <Card className="border-divine-gold/30 shadow-divine overflow-hidden bg-gradient-to-b from-background to-divine-deep/10">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <ImageIcon className="w-5 h-5 text-primary" />
+              <CardTitle className="flex items-center gap-2 text-lg bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+                <ImageIcon className="w-5 h-5 text-divine-gold" />
                 Ảnh Bìa
               </CardTitle>
               <CardDescription>
@@ -973,48 +986,43 @@ const Profile = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Cover Preview */}
-              <div className="relative h-[150px] sm:h-[200px] rounded-lg overflow-hidden bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10">
+              {/* Clickable Cover Preview */}
+              <button
+                onClick={handleCoverClick}
+                disabled={isUploadingCover}
+                className="relative w-full h-[150px] sm:h-[200px] rounded-xl overflow-hidden bg-gradient-to-br from-divine-gold/20 via-divine-deep/30 to-divine-gold/20 group cursor-pointer transition-all duration-500 hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]"
+              >
                 {profile?.cover_photo_url ? (
                   <img 
                     src={profile.cover_photo_url} 
                     alt="Cover photo" 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <ImageIcon className="w-12 h-12 text-primary/30 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Chưa có ảnh bìa</p>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                    <div className="p-4 rounded-full bg-gradient-to-r from-divine-gold/30 to-divine-light/30 group-hover:from-divine-gold/50 group-hover:to-divine-light/50 transition-all duration-300">
+                      <ImageIcon className="w-10 h-10 text-divine-gold group-hover:scale-110 transition-transform duration-300" />
                     </div>
+                    <p className="text-divine-gold font-medium group-hover:text-divine-light transition-colors">Nhấn để tải ảnh bìa</p>
                   </div>
                 )}
                 
                 {isUploadingCover && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <Loader2 className="w-10 h-10 text-divine-gold animate-spin" />
                   </div>
                 )}
-              </div>
-
-              <Button
-                onClick={handleCoverClick}
-                disabled={isUploadingCover}
-                variant="outline"
-                className="w-full border-primary/30 hover:bg-primary/5"
-              >
-                {isUploadingCover ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang tải lên...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    {profile?.cover_photo_url ? 'Đổi ảnh bìa' : 'Tải lên ảnh bìa'}
-                  </span>
+                
+                {/* Hover overlay for existing cover */}
+                {profile?.cover_photo_url && !isUploadingCover && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-divine-gold/90 rounded-full text-white font-medium">
+                      <Camera className="w-4 h-4" />
+                      Đổi ảnh bìa
+                    </div>
+                  </div>
                 )}
-              </Button>
+              </button>
               <input
                 ref={coverInputRef}
                 type="file"
@@ -1026,14 +1034,20 @@ const Profile = () => {
           </Card>
 
           {/* Avatar Card */}
-          <Card className="border-divine-gold/20 shadow-divine">
+          <Card className="border-divine-gold/30 shadow-divine bg-gradient-to-b from-background to-divine-deep/10">
             <CardContent className="pt-6">
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative group">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-divine-gold/30 shadow-divine">
+              <button
+                onClick={handleAvatarClick}
+                disabled={isUploadingAvatar}
+                className="w-full flex flex-col items-center gap-4 cursor-pointer group"
+              >
+                <div className="relative">
+                  {/* Glowing effect */}
+                  <div className="absolute -inset-2 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold rounded-full opacity-30 blur-lg group-hover:opacity-60 group-hover:blur-xl transition-all duration-500" />
+                  <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-divine-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] group-hover:shadow-[0_0_40px_rgba(212,175,55,0.5)] transition-all duration-500 group-hover:scale-105">
                     {isUploadingAvatar ? (
-                      <div className="w-full h-full bg-divine-gold/10 flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 text-divine-gold animate-spin" />
+                      <div className="w-full h-full bg-gradient-to-br from-divine-gold/20 to-divine-deep/30 flex items-center justify-center">
+                        <Loader2 className="w-10 h-10 text-divine-gold animate-spin" />
                       </div>
                     ) : (
                       <img 
@@ -1043,25 +1057,22 @@ const Profile = () => {
                       />
                     )}
                   </div>
-                  <button
-                    onClick={handleAvatarClick}
-                    className="absolute bottom-0 right-0 p-2 rounded-full bg-gray-900 text-white shadow-lg hover:bg-black transition-colors"
-                    disabled={isUploadingAvatar}
-                  >
-                    <Camera className="w-4 h-4" />
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                  />
+                  {/* Camera button */}
+                  <div className="absolute -bottom-1 -right-1 p-3 rounded-full bg-gradient-to-r from-divine-gold to-divine-light text-white shadow-lg shadow-divine-gold/40 group-hover:shadow-divine-gold/60 group-hover:scale-110 transition-all duration-300">
+                    <Camera className="w-5 h-5" />
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-divine-gold font-medium group-hover:text-divine-light transition-colors">
                   {t("profile.avatarHint")}
                 </p>
-              </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </button>
             </CardContent>
           </Card>
 
