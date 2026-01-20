@@ -49,8 +49,18 @@ const UserProfile = () => {
           .eq("user_id", userId)
           .maybeSingle();
 
+        // If no profile exists, create a placeholder with user_id
         if (profileData) {
           setProfile(profileData);
+        } else {
+          // Create placeholder profile for anonymous/unregistered users
+          setProfile({
+            user_id: userId,
+            display_name: null,
+            avatar_url: null,
+            bio: null,
+            created_at: new Date().toISOString(),
+          });
         }
 
         // Fetch user's posts
@@ -224,7 +234,9 @@ const UserProfile = () => {
     );
   }
 
-  if (!profile) {
+  // Profile will always exist now (either from DB or placeholder)
+  // This fallback is for edge cases only
+  if (!profile && !userId) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col items-center justify-center">
         <p className="text-lg text-foreground-muted mb-4">Không tìm thấy người dùng</p>
@@ -263,10 +275,18 @@ const UserProfile = () => {
               </Avatar>
 
               <div className="flex-1">
-                <h2 className="text-2xl font-bold text-foreground">{profile.display_name || "Người dùng"}</h2>
-                {profile.bio && <p className="text-foreground-muted mt-1">{profile.bio}</p>}
+                <h2 className="text-2xl font-bold text-foreground">
+                  {profile?.display_name || "Người dùng ẩn danh"}
+                </h2>
+                {profile?.bio && <p className="text-foreground-muted mt-1">{profile.bio}</p>}
+                
+                {/* Show User ID for admin management */}
+                <p className="text-xs text-foreground-muted/60 mt-1 font-mono break-all">
+                  ID: {userId}
+                </p>
+                
                 <p className="text-sm text-foreground-muted mt-2">
-                  Tham gia {formatDistanceToNow(new Date(profile.created_at), { addSuffix: true, locale: vi })}
+                  Tham gia {profile?.created_at ? formatDistanceToNow(new Date(profile.created_at), { addSuffix: true, locale: vi }) : "gần đây"}
                 </p>
               </div>
 
