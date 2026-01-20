@@ -22,7 +22,7 @@ export function RewardRulesCard({ dailyLimits }: RewardRulesCardProps) {
     {
       icon: Heart,
       title: "5+ Likes",
-      reward: "3,000 Coin",
+      reward: "3,000 Camly Coin",
       description: "Bài viết/ảnh đạt 5 lượt thích",
       limit: dailyLimits ? `${dailyLimits.postsRemaining}/3 bài còn lại` : "3 bài/ngày",
       color: "text-red-500",
@@ -31,7 +31,7 @@ export function RewardRulesCard({ dailyLimits }: RewardRulesCardProps) {
     {
       icon: Share2,
       title: "Chia sẻ",
-      reward: "500 Coin x2",
+      reward: "500 Camly Coin x2",
       description: "Cả tác giả và người chia sẻ đều nhận",
       limit: dailyLimits ? `${dailyLimits.sharesRemaining}/5 lượt còn lại` : "5 lượt/ngày",
       color: "text-green-500",
@@ -40,7 +40,7 @@ export function RewardRulesCard({ dailyLimits }: RewardRulesCardProps) {
     {
       icon: MessageCircle,
       title: "Bình luận",
-      reward: "500 Coin",
+      reward: "500 Camly Coin",
       description: "Tối thiểu 50 ký tự",
       limit: dailyLimits ? `${dailyLimits.commentsRemaining}/5 lượt còn lại` : "5 lượt/ngày",
       color: "text-blue-500",
