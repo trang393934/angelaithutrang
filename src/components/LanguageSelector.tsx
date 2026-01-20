@@ -30,14 +30,14 @@ export const LanguageSelector = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors text-sm font-medium"
+        className="flex items-center gap-1 xl:gap-2 px-2 xl:px-3 py-1.5 xl:py-2 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors text-xs xl:text-sm font-medium"
         aria-label="Select language"
       >
-        <Globe className="w-4 h-4 text-primary" />
-        <span className="hidden sm:inline text-foreground">{currentLang?.flag}</span>
-        <span className="hidden md:inline text-foreground">{currentLang?.nativeName}</span>
+        <Globe className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-primary" />
+        <span className="text-foreground">{currentLang?.flag}</span>
+        <span className="hidden xl:inline text-foreground">{currentLang?.nativeName}</span>
         <ChevronDown className={cn(
-          "w-4 h-4 text-foreground-muted transition-transform duration-200",
+          "w-3 h-3 xl:w-4 xl:h-4 text-foreground-muted transition-transform duration-200",
           isOpen && "rotate-180"
         )} />
       </button>

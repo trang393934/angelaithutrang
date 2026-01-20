@@ -91,15 +91,15 @@ export const Header = () => {
           : 'bg-transparent'
       }`}
     >
-      <div className="container mx-auto px-4 lg:px-6">
-        <div className="flex items-center justify-between h-16 lg:h-20 gap-2">
+      <div className="max-w-full mx-auto px-3 sm:px-4 lg:px-6 overflow-hidden">
+        <div className="flex items-center justify-between h-14 sm:h-16 lg:h-18 gap-1 sm:gap-2">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0 group">
+          <Link to="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0 group">
             <div className={`relative transition-all duration-500 ${isScrolled ? 'scale-95' : 'scale-100'}`}>
               <img 
                 src={angelAvatar} 
                 alt="ANGEL AI" 
-                className="w-9 h-9 lg:w-10 lg:h-10 rounded-full object-cover shadow-soft 
+                className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-full object-cover shadow-soft 
                   group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/20
                   transition-all duration-300 ease-out"
               />
@@ -107,7 +107,7 @@ export const Header = () => {
               <div className="absolute inset-0 rounded-full bg-primary/0 group-hover:bg-primary/10 
                 group-hover:animate-pulse transition-all duration-300" />
             </div>
-            <span className={`font-serif text-lg lg:text-xl font-bold uppercase tracking-wide 
+            <span className={`font-serif text-base sm:text-lg lg:text-xl font-bold uppercase tracking-wide 
               transition-all duration-500 ease-out
               group-hover:text-primary group-hover:tracking-wider
               ${isScrolled ? 'text-primary-deep scale-95' : 'text-primary-deep scale-100'}`}>
@@ -115,47 +115,47 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* Navigation */}
-          <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
+          {/* Navigation - responsive with smaller gaps */}
+          <nav className="hidden lg:flex items-center gap-1 xl:gap-2 2xl:gap-4 flex-1 justify-center min-w-0 px-2">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`text-sm font-medium transition-colors duration-300 relative group whitespace-nowrap ${
+                className={`text-xs xl:text-sm font-medium transition-colors duration-300 relative group whitespace-nowrap px-1.5 xl:px-2 py-1 ${
                   location.pathname === item.href 
                     ? 'text-primary' 
                     : 'text-foreground-muted hover:text-primary'
                 }`}
               >
                 {item.label}
-                <span className={`absolute -bottom-1 left-0 h-0.5 bg-primary transition-all duration-300 ${
-                  location.pathname === item.href ? 'w-full' : 'w-0 group-hover:w-full'
+                <span className={`absolute -bottom-0.5 left-1.5 right-1.5 h-0.5 bg-primary transition-all duration-300 ${
+                  location.pathname === item.href ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`} />
               </Link>
             ))}
           </nav>
 
-          {/* Auth Buttons */}
-          <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
+          {/* Auth Buttons - Compact design */}
+          <div className="hidden lg:flex items-center gap-1 xl:gap-2 shrink-0">
             {/* Language Selector */}
             <LanguageSelector />
             
             {!isLoading && (
               <>
                 {user ? (
-                  <div className="flex items-center gap-2 xl:gap-3">
+                  <div className="flex items-center gap-1 xl:gap-2">
                     {/* Web3 Wallet Button */}
                     <Web3WalletButton />
                     
                     {/* Messages Button */}
                     <Link 
                       to="/messages"
-                      className="relative p-2 rounded-full hover:bg-primary-pale transition-colors"
+                      className="relative p-1.5 xl:p-2 rounded-full hover:bg-primary-pale transition-colors"
                       title="Tin nhắn"
                     >
-                      <MessageCircle className="w-5 h-5 text-foreground-muted" />
+                      <MessageCircle className="w-4 h-4 xl:w-5 xl:h-5 text-foreground-muted" />
                       {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                        <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                           {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                       )}
@@ -164,44 +164,43 @@ export const Header = () => {
                     {/* Camly Coin Balance */}
                     <Link 
                       to="/earn"
-                      className="flex items-center gap-1 px-2 xl:px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 xl:py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                     >
-                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4 xl:w-5 xl:h-5" />
-                      <span className="text-xs xl:text-sm font-semibold text-amber-700 dark:text-amber-400">
+                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4" />
+                      <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
                         {Math.floor(balance).toLocaleString()}
                       </span>
                     </Link>
                     
                     <Link 
                       to="/profile"
-                      className="flex items-center gap-1.5 xl:gap-2 px-2 xl:px-3 py-1.5 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
+                      className="flex items-center gap-1 px-1.5 xl:px-2 py-1 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
                     >
                       {userProfile?.avatar_url ? (
                         <img 
                           src={userProfile.avatar_url} 
                           alt="Avatar" 
-                          className="w-6 h-6 xl:w-7 xl:h-7 rounded-full object-cover"
+                          className="w-5 h-5 xl:w-6 xl:h-6 rounded-full object-cover"
                         />
                       ) : (
-                        <User className="w-4 h-4 xl:w-5 xl:h-5 text-primary" />
+                        <User className="w-4 h-4 text-primary" />
                       )}
-                      <span className="text-sm font-semibold text-foreground max-w-[100px] xl:max-w-[120px] truncate">
+                      <span className="text-xs xl:text-sm font-semibold text-foreground max-w-[60px] xl:max-w-[80px] truncate hidden xl:inline">
                         {getDisplayName()}
                       </span>
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="inline-flex items-center gap-1.5 px-2 xl:px-3 py-1.5 rounded-full text-sm font-medium text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
+                      className="p-1.5 xl:p-2 rounded-full text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
                       title={t("nav.logout")}
                     >
                       <LogOut className="w-4 h-4" />
-                      <span className="hidden xl:inline">{t("nav.logout")}</span>
                     </button>
                   </div>
                 ) : (
                   <Link
                     to="/auth"
-                    className={`inline-flex items-center gap-2 px-4 xl:px-6 py-2 rounded-full font-medium text-sm transition-all duration-300 ${
+                    className={`inline-flex items-center gap-1.5 px-3 xl:px-4 py-1.5 rounded-full font-medium text-xs xl:text-sm transition-all duration-300 ${
                       isScrolled 
                         ? 'bg-sapphire-gradient text-primary-foreground shadow-sacred hover:shadow-divine' 
                         : 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
