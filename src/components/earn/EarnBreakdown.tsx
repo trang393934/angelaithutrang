@@ -56,7 +56,7 @@ const TRANSACTION_TYPE_CONFIG: Record<string, { label: string; icon: React.React
   
   // Community Activities
   engagement_reward: { 
-    label: "Tương tác cộng đồng (10 likes)", 
+    label: "Tương tác cộng đồng (5+ likes)", 
     icon: <Heart className="h-5 w-5" />, 
     color: "bg-pink-100 text-pink-600 dark:bg-pink-900/30" 
   },

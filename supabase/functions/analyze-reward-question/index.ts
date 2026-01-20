@@ -398,6 +398,12 @@ Trả về CHÍNH XÁC JSON format: {"purity_score": 0.X, "reasoning": "..."}`
       _metadata: { question_id: questionRecord?.id }
     });
 
+    // Increment early adopter question count (atomic, server-side)
+    // This ensures the count is updated even if client disconnects
+    await supabase.rpc("increment_early_adopter_questions", {
+      p_user_id: userId
+    });
+
     return new Response(
       JSON.stringify({
         rewarded: true,
