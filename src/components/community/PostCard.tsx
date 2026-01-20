@@ -12,6 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageLightbox } from "./ImageLightbox";
+import ShareDialog from "@/components/ShareDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +75,9 @@ export function PostCard({
   
   // Image lightbox state
   const [showImageLightbox, setShowImageLightbox] = useState(false);
+  
+  // Share dialog state
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   const isOwner = currentUserId === post.user_id;
 
@@ -83,10 +87,15 @@ export function PostCard({
     setIsLiking(false);
   };
 
-  const handleShare = async () => {
+  const handleShareClick = () => {
+    setShowShareDialog(true);
+  };
+
+  const handleShareSuccess = async () => {
     setIsSharing(true);
     await onShare(post.id);
     setIsSharing(false);
+    setShowShareDialog(false);
   };
 
   const handleToggleComments = async () => {
@@ -435,7 +444,7 @@ export function PostCard({
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleShare}
+              onClick={handleShareClick}
               disabled={isSharing || post.is_shared_by_me || post.user_id === currentUserId || !currentUserId}
               className={`flex-1 ${post.is_shared_by_me ? 'text-green-600' : 'text-foreground-muted'}`}
               title={!currentUserId ? 'Vui lòng đăng nhập để chia sẻ' : post.user_id === currentUserId ? 'Không thể chia sẻ bài viết của mình' : ''}
@@ -572,6 +581,19 @@ export function PostCard({
           onClose={() => setShowImageLightbox(false)}
         />
       )}
+
+      {/* Share Dialog */}
+      <ShareDialog
+        isOpen={showShareDialog}
+        onClose={() => setShowShareDialog(false)}
+        contentType="post"
+        contentId={post.id}
+        title={`Bài viết từ ${post.user_display_name}`}
+        content={post.content}
+        onShareSuccess={handleShareSuccess}
+        showRewards={!post.is_shared_by_me && post.user_id !== currentUserId}
+        rewardAmount={500}
+      />
     </>
   );
 }
