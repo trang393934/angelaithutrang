@@ -197,9 +197,10 @@ export function Leaderboard() {
                   const showRankIndicator = change && Date.now() - change.timestamp < 3000;
                   
                   return (
-                    <div
+                    <Link
                       key={user.user_id}
-                      className={`flex items-center gap-3 px-4 py-2.5 transition-all hover:bg-gray-50 ${getRankStyle(user.rank, isCurrentUser)} border-l-2 ${animationClass}`}
+                      to={`/user/${user.user_id}`}
+                      className={`flex items-center gap-3 px-4 py-2.5 transition-all hover:bg-gray-50 ${getRankStyle(user.rank, isCurrentUser)} border-l-2 ${animationClass} cursor-pointer`}
                     >
                       <div className="flex-shrink-0 w-6 relative">
                         {getRankIcon(user.rank, isCurrentUser)}
@@ -222,7 +223,7 @@ export function Leaderboard() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${isCurrentUser ? 'text-primary font-semibold' : 'text-foreground'}`}>
+                        <p className={`text-sm font-medium truncate ${isCurrentUser ? 'text-primary font-semibold' : 'text-foreground'} hover:underline`}>
                           {user.display_name || t("common.anonymous")}
                           {isCurrentUser && <span className="ml-1 text-xs">({t("common.you")})</span>}
                         </p>
@@ -241,7 +242,7 @@ export function Leaderboard() {
                           </span>
                         )}
                       </div>
-                    </div>
+                    </Link>
                   );
                 })
               )}
