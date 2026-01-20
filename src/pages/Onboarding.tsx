@@ -91,7 +91,7 @@ const Onboarding = () => {
       }));
 
       const { data, error } = await supabase.functions.invoke("analyze-onboarding", {
-        body: { responses, userId: user.id },
+        body: { responses },
       });
 
       if (error) throw error;

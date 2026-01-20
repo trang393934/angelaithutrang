@@ -83,7 +83,7 @@ export function useCommunityQuestions() {
 
     try {
       const { data, error } = await supabase.functions.invoke("process-engagement-reward", {
-        body: { questionId, likerId: user.id },
+        body: { questionId },
       });
 
       if (error) throw error;

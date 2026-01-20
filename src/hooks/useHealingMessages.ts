@@ -156,7 +156,7 @@ export function useUserEnergyStatus() {
 
     try {
       const { data, error } = await supabase.functions.invoke("check-user-energy", {
-        body: { userId: user.id },
+        body: {},
       });
 
       if (error) throw error;
@@ -187,7 +187,7 @@ export function useUserEnergyStatus() {
 
     try {
       await supabase.functions.invoke("check-user-energy", {
-        body: { userId: user.id, activityType, content },
+        body: { activityType, content },
       });
     } catch (error) {
       console.error("Error logging activity:", error);

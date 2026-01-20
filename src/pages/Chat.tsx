@@ -252,7 +252,7 @@ const Chat = () => {
     if (!user) return;
     try {
       const { data } = await supabase.functions.invoke("analyze-reward-question", {
-        body: { userId: user.id, questionText, aiResponse },
+        body: { questionText, aiResponse },
       });
       if (data?.rewarded) {
         setCurrentReward({
