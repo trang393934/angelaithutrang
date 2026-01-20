@@ -339,14 +339,18 @@ const AdminStatistics = () => {
       .gt("amount", 0)
       .gte("created_at", weekStart);
     
+    // Get total users who agreed to Law of Light for consistent count
+    const { count: totalAgreedUsers } = await supabase
+      .from("user_light_agreements")
+      .select("*", { count: "exact", head: true });
+    
     const totalCoins = totalData?.reduce((sum, tx) => sum + tx.amount, 0) || 0;
     const totalTx = totalData?.length || 0;
-    const uniqueUsers = new Set(totalData?.map(tx => tx.user_id)).size;
     
     setOverviewStats({
       totalCoinsDistributed: totalCoins,
       totalTransactions: totalTx,
-      uniqueRecipients: uniqueUsers,
+      uniqueRecipients: totalAgreedUsers || 0,
       averagePerTransaction: totalTx > 0 ? Math.floor(totalCoins / totalTx) : 0,
       todayCoins: todayData?.reduce((sum, tx) => sum + tx.amount, 0) || 0,
       weekCoins: weekData?.reduce((sum, tx) => sum + tx.amount, 0) || 0
@@ -512,7 +516,7 @@ const AdminStatistics = () => {
                 </div>
                 <div>
                   <p className="text-lg font-bold text-foreground">{formatNumber(overviewStats.uniqueRecipients)}</p>
-                  <p className="text-xs text-foreground-muted">Người nhận</p>
+                  <p className="text-xs text-foreground-muted">Tổng users</p>
                 </div>
               </div>
             </CardContent>

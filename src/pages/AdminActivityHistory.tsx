@@ -143,14 +143,14 @@ const AdminActivityHistory = () => {
 
       if (chatError) throw chatError;
       
-      // Get unique user IDs
-      const userIds = [...new Set(chatData?.map(c => c.user_id) || [])];
+      // Get unique user IDs from chat
+      const chatUserIds = [...new Set(chatData?.map(c => c.user_id) || [])];
       
       // Fetch profiles for these users
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('user_id, display_name')
-        .in('user_id', userIds);
+        .in('user_id', chatUserIds);
       
       // Create a map of user_id to profile
       const profilesMap = new Map(
@@ -174,17 +174,20 @@ const AdminActivityHistory = () => {
       
       setHistory(historyWithProfiles);
       
-      // Calculate stats
+      // Calculate stats - use user_light_agreements for consistent user count
+      const { count: totalAgreedUsers } = await supabase
+        .from('user_light_agreements')
+        .select('*', { count: 'exact', head: true });
+      
       const totalChats = historyWithProfiles.length;
       const rewardedChats = historyWithProfiles.filter(c => c.is_rewarded).length;
       const totalRewards = historyWithProfiles.reduce((sum, c) => sum + (c.reward_amount || 0), 0);
-      const uniqueUsers = userIds.length;
       
       setStats({
         totalChats,
         rewardedChats,
         totalRewards,
-        uniqueUsers,
+        uniqueUsers: totalAgreedUsers || 0,
       });
     } catch (err) {
       console.error('Error fetching chat history:', err);
@@ -464,7 +467,7 @@ const AdminActivityHistory = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-blue-600">{stats.uniqueUsers.toLocaleString()}</p>
-                  <p className="text-xs text-foreground-muted">Users tham gia</p>
+                  <p className="text-xs text-foreground-muted">Tổng users</p>
                 </div>
               </div>
             </CardContent>
