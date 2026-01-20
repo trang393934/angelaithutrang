@@ -159,7 +159,7 @@ export default function Earn() {
                   <p className="font-medium">Công thức:</p>
                   <p className="text-sm">Tổng đã kiếm = Số dư + Tổng đã rút</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Tổng tất cả coin bạn đã nhận được từ mọi hoạt động
+                    Tổng tất cả Camly Coin bạn đã nhận được từ mọi hoạt động
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -188,7 +188,7 @@ export default function Earn() {
                   <p className="font-medium">Công thức:</p>
                   <p className="text-sm">Tổng đã rút = Tổng đã kiếm - Số dư</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Tổng coin đã rút thành công về ví của bạn
+                    Tổng Camly Coin đã rút thành công về ví của bạn
                   </p>
                 </TooltipContent>
               </Tooltip>
