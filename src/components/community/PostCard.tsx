@@ -502,7 +502,7 @@ export function PostCard({
                     <Button
                       size="icon"
                       onClick={handleSubmitComment}
-                      disabled={commentText.length < 1 || isSubmittingComment}
+                      disabled={commentText.trim().length < 1 || isSubmittingComment}
                       className="bg-sapphire-gradient"
                     >
                       {isSubmittingComment ? (
@@ -516,9 +516,11 @@ export function PostCard({
 
                 <div className="text-xs text-foreground-muted mb-3">
                   {commentText.length}/50 ký tự
-                  {commentText.length >= 50 && (
-                    <span className="text-green-600 ml-2">✓ Đủ điều kiện nhận thưởng</span>
-                  )}
+                  {commentText.length >= 50 ? (
+                    <span className="text-green-600 ml-2">✓ Đủ điều kiện nhận thưởng 500 Camly Coin</span>
+                  ) : commentText.length > 0 ? (
+                    <span className="text-amber-600 ml-2">Thêm {50 - commentText.length} ký tự để nhận thưởng</span>
+                  ) : null}
                 </div>
 
                 {/* Comments List */}
