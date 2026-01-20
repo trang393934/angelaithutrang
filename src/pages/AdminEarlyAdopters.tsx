@@ -79,6 +79,15 @@ const AdminEarlyAdopters = () => {
     try {
       setIsRefreshing(true);
 
+      // Fetch users who have agreed to Law of Light (unified counting)
+      const { data: lightAgreementsData, error: lightError } = await supabase
+        .from("user_light_agreements")
+        .select("user_id");
+
+      if (lightError) throw lightError;
+
+      const agreedUserIds = new Set(lightAgreementsData?.map(a => a.user_id) || []);
+
       // Fetch early adopter rewards with user info
       const { data: earlyAdoptersData, error } = await supabase
         .from("early_adopter_rewards")
@@ -87,8 +96,13 @@ const AdminEarlyAdopters = () => {
 
       if (error) throw error;
 
+      // Filter only users who have agreed to Law of Light
+      const filteredEarlyAdopters = (earlyAdoptersData || []).filter(
+        adopter => agreedUserIds.has(adopter.user_id)
+      );
+
       // Fetch user emails and profiles
-      const userIds = earlyAdoptersData?.map(a => a.user_id) || [];
+      const userIds = filteredEarlyAdopters.map(a => a.user_id);
       
       // Get profiles
       const { data: profilesData } = await supabase
@@ -99,7 +113,7 @@ const AdminEarlyAdopters = () => {
       // Map profiles to adopters
       const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
 
-      const adoptersWithInfo: EarlyAdopterUser[] = (earlyAdoptersData || []).map((adopter, index) => {
+      const adoptersWithInfo: EarlyAdopterUser[] = filteredEarlyAdopters.map((adopter, index) => {
         const profile = profilesMap.get(adopter.user_id);
         return {
           ...adopter,
@@ -110,7 +124,7 @@ const AdminEarlyAdopters = () => {
 
       setAdopters(adoptersWithInfo);
 
-      // Calculate stats
+      // Calculate stats - totalRegistered now uses unified count from user_light_agreements
       const rewarded = adoptersWithInfo.filter(a => a.is_rewarded);
       const totalCoins = rewarded.reduce((sum, a) => sum + a.reward_amount, 0);
       const avgQuestions = adoptersWithInfo.length > 0
@@ -118,7 +132,7 @@ const AdminEarlyAdopters = () => {
         : 0;
 
       setStats({
-        totalRegistered: adoptersWithInfo.length,
+        totalRegistered: agreedUserIds.size, // Use unified count from user_light_agreements
         totalRewarded: rewarded.length,
         totalCoinsAwarded: totalCoins,
         avgQuestionsCount: Math.round(avgQuestions * 10) / 10
