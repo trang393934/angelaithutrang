@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useLightAgreement } from "@/hooks/useLightAgreement";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History } from "lucide-react";
+import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
 import DailyGratitude from "@/components/DailyGratitude";
@@ -31,7 +32,9 @@ interface Profile {
 
 const Profile = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, isLoading: authLoading, signOut } = useAuth();
+  const { hasAgreed, isChecking: isCheckingAgreement } = useLightAgreement();
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -41,6 +44,11 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  
+  // Setup mode: Profile is incomplete
+  const [isSetupMode, setIsSetupMode] = useState(false);
+  const [setupStep, setSetupStep] = useState(1); // 1: Avatar, 2: Info, 3: Wallet (optional)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
@@ -62,17 +70,23 @@ const Profile = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !isCheckingAgreement && !user) {
       navigate("/auth");
       return;
     }
     
-    if (user) {
+    // If user hasn't agreed to light law, redirect to auth
+    if (!authLoading && !isCheckingAgreement && user && hasAgreed === false) {
+      navigate("/auth");
+      return;
+    }
+    
+    if (user && hasAgreed) {
       fetchProfile();
       checkLightAgreement();
       fetchWalletAddress();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, hasAgreed, isCheckingAgreement]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -91,8 +105,23 @@ const Profile = () => {
         setProfile(data);
         setDisplayName(data.display_name || "");
         setBio(data.bio || "");
+        
+        // Check if profile is incomplete - enter setup mode
+        const isIncomplete = !data.display_name || !data.avatar_url || !data.bio;
+        setIsSetupMode(isIncomplete);
+        
+        // Determine which step to start
+        if (isIncomplete) {
+          if (!data.avatar_url) {
+            setSetupStep(1);
+          } else if (!data.display_name || !data.bio) {
+            setSetupStep(2);
+          } else {
+            setSetupStep(3);
+          }
+        }
       } else {
-        // Create profile if not exists
+        // Create profile if not exists - new user, start setup
         const { data: newProfile, error: insertError } = await supabase
           .from("profiles")
           .insert({ user_id: user.id })
@@ -101,6 +130,8 @@ const Profile = () => {
 
         if (insertError) throw insertError;
         setProfile(newProfile);
+        setIsSetupMode(true);
+        setSetupStep(1);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -249,6 +280,26 @@ const Profile = () => {
   const handleSaveProfile = async () => {
     if (!user || !profile) return;
 
+    // Validation for setup mode
+    if (isSetupMode) {
+      if (!displayName.trim()) {
+        toast({
+          title: "Vui lòng nhập tên hiển thị",
+          description: "Tên hiển thị là bắt buộc để tiếp tục.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!bio.trim()) {
+        toast({
+          title: "Vui lòng nhập giới thiệu",
+          description: "Giới thiệu bản thân là bắt buộc để tiếp tục.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
       const { error } = await supabase
@@ -261,10 +312,20 @@ const Profile = () => {
 
       if (error) throw error;
 
-      toast({
-        title: t("common.success"),
-        description: t("profile.successSave"),
-      });
+      // Update local profile state
+      setProfile(prev => prev ? { ...prev, display_name: displayName, bio } : null);
+
+      if (isSetupMode) {
+        // Move to next step or complete
+        if (setupStep === 2) {
+          setSetupStep(3); // Go to wallet step (optional)
+        }
+      } else {
+        toast({
+          title: t("common.success"),
+          description: t("profile.successSave"),
+        });
+      }
     } catch (error) {
       console.error("Error saving profile:", error);
       toast({
@@ -275,6 +336,37 @@ const Profile = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCompleteSetup = () => {
+    // Check if all required fields are filled
+    if (!profile?.avatar_url) {
+      toast({
+        title: "Thiếu ảnh đại diện",
+        description: "Vui lòng tải lên ảnh đại diện để tiếp tục.",
+        variant: "destructive",
+      });
+      setSetupStep(1);
+      return;
+    }
+    if (!displayName.trim() || !bio.trim()) {
+      toast({
+        title: "Thiếu thông tin",
+        description: "Vui lòng điền đầy đủ tên hiển thị và giới thiệu.",
+        variant: "destructive",
+      });
+      setSetupStep(2);
+      return;
+    }
+
+    // Profile complete!
+    setShowSuccessDialog(true);
+  };
+
+  const handleGoToHome = () => {
+    setShowSuccessDialog(false);
+    setIsSetupMode(false);
+    navigate("/");
   };
 
   const handleAvatarClick = () => {
@@ -336,6 +428,11 @@ const Profile = () => {
         title: "Thành công!",
         description: "Avatar đã được cập nhật ✨",
       });
+
+      // If in setup mode, move to next step
+      if (isSetupMode && setupStep === 1) {
+        setSetupStep(2);
+      }
     } catch (error) {
       console.error("Error uploading avatar:", error);
       toast({
@@ -410,6 +507,275 @@ const Profile = () => {
           <Sparkles className="w-6 h-6 text-divine-gold animate-pulse" />
           <span className="text-foreground-muted">{t("profile.loading")}</span>
         </div>
+      </div>
+    );
+  }
+
+  // Setup Mode UI
+  if (isSetupMode) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-divine-deep via-background to-background py-8 px-4">
+        <div className="container mx-auto max-w-xl">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 mx-auto mb-4 relative">
+              <div className="absolute inset-0 bg-divine-gold/30 rounded-full blur-xl animate-pulse-divine" />
+              <div className="relative z-10 w-full h-full rounded-full bg-gradient-to-r from-divine-gold to-divine-light flex items-center justify-center">
+                <Sparkles className="w-10 h-10 text-white" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+              Hoàn Thiện Hồ Sơ Cá Nhân
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Thiết lập hồ sơ của bạn để bắt đầu hành trình trong Cổng Ánh Sáng
+            </p>
+          </div>
+
+          {/* Progress Steps */}
+          <div className="flex items-center justify-center mb-8 gap-2">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                    step < setupStep
+                      ? "bg-green-500 text-white"
+                      : step === setupStep
+                      ? "bg-divine-gold text-white shadow-lg"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {step < setupStep ? <Check className="w-5 h-5" /> : step}
+                </div>
+                {step < 3 && (
+                  <div className={`w-12 h-1 mx-1 rounded ${step < setupStep ? "bg-green-500" : "bg-muted"}`} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Step 1: Avatar */}
+          {setupStep === 1 && (
+            <Card className="border-divine-gold/30 shadow-divine">
+              <CardHeader className="text-center">
+                <CardTitle className="text-lg flex items-center justify-center gap-2">
+                  <Camera className="w-5 h-5 text-divine-gold" />
+                  Bước 1: Ảnh Đại Diện
+                </CardTitle>
+                <CardDescription>
+                  Tải lên ảnh đại diện của bạn. Đây là bắt buộc để tiếp tục.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative group">
+                    <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-divine-gold/30 shadow-divine">
+                      {isUploadingAvatar ? (
+                        <div className="w-full h-full bg-divine-gold/10 flex items-center justify-center">
+                          <Loader2 className="w-10 h-10 text-divine-gold animate-spin" />
+                        </div>
+                      ) : profile?.avatar_url ? (
+                        <img 
+                          src={profile.avatar_url} 
+                          alt="Avatar" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-divine-gold/10 flex items-center justify-center">
+                          <User className="w-16 h-16 text-divine-gold/50" />
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleAvatarClick}
+                      className="absolute bottom-2 right-2 p-3 rounded-full bg-divine-gold text-white shadow-lg hover:bg-divine-light transition-colors"
+                      disabled={isUploadingAvatar}
+                    >
+                      <Camera className="w-5 h-5" />
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Nhấn vào biểu tượng camera để tải lên ảnh
+                  </p>
+                </div>
+
+                {profile?.avatar_url && (
+                  <Button
+                    onClick={() => setSetupStep(2)}
+                    className="w-full bg-gradient-to-r from-divine-gold to-divine-light hover:opacity-90"
+                  >
+                    Tiếp tục <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 2: Display Name & Bio */}
+          {setupStep === 2 && (
+            <Card className="border-divine-gold/30 shadow-divine">
+              <CardHeader className="text-center">
+                <CardTitle className="text-lg flex items-center justify-center gap-2">
+                  <User className="w-5 h-5 text-divine-gold" />
+                  Bước 2: Thông Tin Cá Nhân
+                </CardTitle>
+                <CardDescription>
+                  Điền tên hiển thị và giới thiệu về bản thân bạn. Đây là bắt buộc.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="setupDisplayName" className="flex items-center gap-1">
+                    Tên hiển thị <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="setupDisplayName"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Nhập tên hiển thị của bạn"
+                    className="border-divine-gold/20 focus:border-divine-gold"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="setupBio" className="flex items-center gap-1">
+                    Giới thiệu bản thân <span className="text-red-500">*</span>
+                  </Label>
+                  <Textarea
+                    id="setupBio"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Chia sẻ một chút về bản thân bạn..."
+                    className="border-divine-gold/20 focus:border-divine-gold min-h-[120px]"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSetupStep(1)}
+                    className="flex-1 border-divine-gold/30"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại
+                  </Button>
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={isSaving || !displayName.trim() || !bio.trim()}
+                    className="flex-1 bg-gradient-to-r from-divine-gold to-divine-light hover:opacity-90"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>Tiếp tục <ArrowLeft className="w-4 h-4 ml-2 rotate-180" /></>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 3: Wallet Address (Optional) */}
+          {setupStep === 3 && (
+            <Card className="border-divine-gold/30 shadow-divine">
+              <CardHeader className="text-center">
+                <CardTitle className="text-lg flex items-center justify-center gap-2">
+                  <Wallet className="w-5 h-5 text-blue-500" />
+                  Bước 3: Địa Chỉ Ví Web3
+                </CardTitle>
+                <CardDescription>
+                  Nhập địa chỉ ví BSC/BNB Chain để nhận Camly Coin. 
+                  <span className="block mt-1 text-green-600 font-medium">Bước này không bắt buộc, bạn có thể thêm sau.</span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="setupWallet">
+                    Địa chỉ ví (BSC Network) - Không bắt buộc
+                  </Label>
+                  <Input
+                    id="setupWallet"
+                    value={walletAddress}
+                    onChange={(e) => setWalletAddress(e.target.value)}
+                    placeholder="0x..."
+                    className="border-blue-500/20 focus:border-blue-500 font-mono text-sm"
+                  />
+                </div>
+
+                <div className="bg-muted/50 rounded-lg p-4 text-sm">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <p className="text-muted-foreground">
+                      Địa chỉ ví dùng để nhận Camly Coin khi bạn yêu cầu rút. Bạn có thể bỏ qua bước này và thêm sau trong phần Hồ sơ.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSetupStep(2)}
+                    className="flex-1 border-divine-gold/30"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      if (walletAddress.trim()) {
+                        await handleSaveWalletAddress();
+                      }
+                      handleCompleteSetup();
+                    }}
+                    disabled={isSavingWallet}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90"
+                  >
+                    {isSavingWallet ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        {walletAddress.trim() ? "Lưu & Hoàn thành" : "Bỏ qua & Hoàn thành"}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Success Dialog */}
+        <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+          <DialogContent className="max-w-md bg-card border-divine-gold/20 text-center">
+            <div className="py-6">
+              <div className="w-24 h-24 mx-auto mb-4 relative">
+                <div className="absolute inset-0 bg-green-500/30 rounded-full blur-xl animate-pulse" />
+                <div className="relative z-10 w-full h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                  <PartyPopper className="w-12 h-12 text-white" />
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent mb-2">
+                🎉 Chúc Mừng!
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Bạn đã hoàn thiện hồ sơ cá nhân thành công. Giờ bạn có thể khám phá đầy đủ các tính năng của FUN Ecosystem!
+              </p>
+              <Button
+                onClick={handleGoToHome}
+                className="w-full bg-gradient-to-r from-divine-gold to-divine-light hover:opacity-90 text-lg py-6"
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                Bắt Đầu Hành Trình
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

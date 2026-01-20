@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ProfileCompletionGate } from "@/components/ProfileCompletionGate";
 import Index from "./pages/Index";
 import Chat from "./pages/Chat";
 import About from "./pages/About";
@@ -43,16 +44,16 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/chat" element={<Chat />} />
+              <Route path="/chat" element={<ProfileCompletionGate><Chat /></ProfileCompletionGate>} />
               <Route path="/about" element={<About />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/earn" element={<Earn />} />
-              <Route path="/vision" element={<Vision />} />
+              <Route path="/earn" element={<ProfileCompletionGate><Earn /></ProfileCompletionGate>} />
+              <Route path="/vision" element={<ProfileCompletionGate><Vision /></ProfileCompletionGate>} />
               <Route path="/swap" element={<Swap />} />
               <Route path="/knowledge" element={<Knowledge />} />
-              <Route path="/activity-history" element={<ActivityHistory />} />
+              <Route path="/activity-history" element={<ProfileCompletionGate><ActivityHistory /></ProfileCompletionGate>} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/knowledge" element={<AdminKnowledge />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -60,11 +61,11 @@ const App = () => (
               <Route path="/admin/early-adopters" element={<AdminEarlyAdopters />} />
               <Route path="/admin/statistics" element={<AdminStatistics />} />
               <Route path="/admin/activity-history" element={<AdminActivityHistory />} />
-              <Route path="/community-questions" element={<CommunityQuestions />} />
-              <Route path="/community" element={<Community />} />
+              <Route path="/community-questions" element={<ProfileCompletionGate><CommunityQuestions /></ProfileCompletionGate>} />
+              <Route path="/community" element={<ProfileCompletionGate><Community /></ProfileCompletionGate>} />
               <Route path="/user/:userId" element={<UserProfile />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/messages/:userId" element={<Messages />} />
+              <Route path="/messages" element={<ProfileCompletionGate><Messages /></ProfileCompletionGate>} />
+              <Route path="/messages/:userId" element={<ProfileCompletionGate><Messages /></ProfileCompletionGate>} />
               <Route path="/docs/platform" element={<PlatformDocs />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
