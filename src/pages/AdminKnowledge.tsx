@@ -8,7 +8,8 @@ import {
   LogOut, Sparkles, CheckCircle, Clock,
   FileType, AlertCircle, FolderPlus, Folder,
   Edit2, X, ChevronDown, ChevronRight, GripVertical,
-  Search, Filter, XCircle, Link as LinkIcon, ExternalLink, Eye
+  Search, Filter, XCircle, Link as LinkIcon, ExternalLink, Eye,
+  History
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 
@@ -654,13 +655,22 @@ const AdminKnowledge = () => {
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => signOut().then(() => navigate("/"))}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Đăng xuất</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/admin/activity-history"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
+              >
+                <History className="w-4 h-4" />
+                Lịch sử chat
+              </Link>
+              <button
+                onClick={() => signOut().then(() => navigate("/"))}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Đăng xuất</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>

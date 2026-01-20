@@ -22,7 +22,8 @@ import {
   MessageCircle,
   Loader2,
   Trophy,
-  Calendar
+  Calendar,
+  History
 } from "lucide-react";
 import {
   Table,
@@ -224,19 +225,28 @@ const AdminEarlyAdopters = () => {
               <h1 className="text-xl font-semibold">Quản lý Early Adopters</h1>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchEarlyAdopters}
-            disabled={isRefreshing}
-          >
-            {isRefreshing ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Làm mới
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/admin/activity-history"
+              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-full text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              <History className="w-4 h-4" />
+              Lịch sử chat
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchEarlyAdopters}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Làm mới
+            </Button>
+          </div>
         </div>
       </header>
 
