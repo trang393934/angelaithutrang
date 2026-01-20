@@ -26,6 +26,7 @@ import Vision from "./pages/Vision";
 import Swap from "./pages/Swap";
 import Knowledge from "./pages/Knowledge";
 import NotFound from "./pages/NotFound";
+import PlatformDocs from "./pages/docs/Platform";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
 import ActivityHistory from "./pages/ActivityHistory";
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/user/:userId" element={<UserProfile />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/messages/:userId" element={<Messages />} />
+              <Route path="/docs/platform" element={<PlatformDocs />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
