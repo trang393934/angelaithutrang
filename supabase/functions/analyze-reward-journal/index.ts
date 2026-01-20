@@ -74,11 +74,26 @@ serve(async (req) => {
       );
     }
 
-    // Get daily reward status
-    const { data: dailyStatus } = await supabase
-      .rpc("get_daily_reward_status", { _user_id: userId });
+    // Get today's date in Vietnam timezone
+    const todayDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
-    const journalsRemaining = dailyStatus?.[0]?.journals_remaining ?? 3;
+    // CRITICAL: Count directly from gratitude_journal table to enforce limit
+    const { count: todayJournalCount, error: countError } = await supabase
+      .from("gratitude_journal")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("journal_date", todayDate)
+      .eq("is_rewarded", true);
+
+    if (countError) {
+      console.error("Error counting journals:", countError);
+    }
+
+    const currentJournalCount = todayJournalCount || 0;
+    const MAX_JOURNALS_PER_DAY = 3;
+    const journalsRemaining = MAX_JOURNALS_PER_DAY - currentJournalCount;
+
+    console.log(`User ${userId} has written ${currentJournalCount} journals today, remaining: ${journalsRemaining}`);
 
     if (journalsRemaining <= 0) {
       return new Response(
@@ -86,7 +101,9 @@ serve(async (req) => {
           rewarded: false, 
           reason: "daily_limit_reached",
           message: "Bạn đã viết đủ 3 bài nhật ký hôm nay. Hãy quay lại vào ngày mai! 📝",
-          coins: 0 
+          coins: 0,
+          journalsToday: currentJournalCount,
+          limit: MAX_JOURNALS_PER_DAY
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -183,7 +200,7 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
     // Cap at 9000
     rewardAmount = Math.min(9000, Math.max(5000, rewardAmount));
 
-    // Save journal entry
+    // Save journal entry - use todayDate for consistency
     const { data: journalRecord, error: insertError } = await supabase
       .from("gratitude_journal")
       .insert({
@@ -194,7 +211,7 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
         purity_score: purityScore,
         reward_amount: rewardAmount,
         is_rewarded: true,
-        journal_date: new Date().toISOString().split('T')[0],
+        journal_date: todayDate,
       })
       .select()
       .single();
@@ -204,13 +221,16 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
       throw insertError;
     }
 
-    // Update daily tracking
+    // Update daily tracking - use currentJournalCount + 1 (the new one just added)
+    const newJournalCount = currentJournalCount + 1;
     await supabase
       .from("daily_reward_tracking")
       .upsert({
         user_id: userId,
-        reward_date: new Date().toISOString().split('T')[0],
-        journals_rewarded: (dailyStatus?.[0]?.journals_rewarded || 0) + 1,
+        reward_date: todayDate,
+        journals_rewarded: newJournalCount,
+      }, {
+        onConflict: 'user_id,reward_date'
       });
 
     // Add Camly coins
@@ -223,13 +243,18 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
       _metadata: { journal_id: journalRecord?.id, content_length: contentLength }
     });
 
+    // Calculate remaining after this journal
+    const remainingAfterThis = MAX_JOURNALS_PER_DAY - newJournalCount;
+
     return new Response(
       JSON.stringify({
         rewarded: true,
         coins: rewardAmount,
         purityScore,
         newBalance,
-        journalsRemaining: journalsRemaining - 1,
+        journalsRemaining: remainingAfterThis,
+        journalsToday: newJournalCount,
+        limit: MAX_JOURNALS_PER_DAY,
         message: `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% 📝✨`,
         journalId: journalRecord?.id
       }),
