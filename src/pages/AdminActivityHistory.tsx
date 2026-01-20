@@ -762,8 +762,8 @@ const AdminActivityHistory = () => {
 
       {/* View Dialog */}
       <Dialog open={viewDialog.isOpen} onOpenChange={(open) => !open && setViewDialog({ isOpen: false, item: null })}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="shrink-0">
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0 pb-2">
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-primary" />
               Chi tiết cuộc trò chuyện
@@ -780,7 +780,7 @@ const AdminActivityHistory = () => {
           </DialogHeader>
           
           {viewDialog.item && (
-            <div className="flex-1 overflow-y-auto space-y-4 mt-4 pr-2">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
               {/* Question */}
               <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                 <div className="flex items-center justify-between mb-2">
@@ -797,7 +797,7 @@ const AdminActivityHistory = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 text-xs"
+                    className="h-7 px-2 text-xs shrink-0"
                     onClick={() => {
                       navigator.clipboard.writeText(viewDialog.item?.question_text || '');
                       setCopiedField('question');
@@ -829,7 +829,7 @@ const AdminActivityHistory = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 text-xs"
+                    className="h-7 px-2 text-xs shrink-0"
                     onClick={() => {
                       navigator.clipboard.writeText(viewDialog.item?.answer_text || '');
                       setCopiedField('answer');
