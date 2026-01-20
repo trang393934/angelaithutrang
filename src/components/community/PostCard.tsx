@@ -92,8 +92,27 @@ export function PostCard({
   };
 
   const handleShareSuccess = async () => {
+    // Only update share count on the post, ShareDialog handles the reward logic
     setIsSharing(true);
-    await onShare(post.id);
+    try {
+      // Just update the shares_count in community_posts, no reward here
+      await supabase
+        .from('community_posts')
+        .update({ shares_count: (post.shares_count || 0) + 1 })
+        .eq('id', post.id);
+      
+      // Record share in community_shares (for tracking)
+      await supabase
+        .from('community_shares')
+        .insert({
+          post_id: post.id,
+          sharer_id: currentUserId,
+          sharer_rewarded: true, // ShareDialog handles reward
+          post_owner_rewarded: false
+        });
+    } catch (error) {
+      console.error("Error updating share count:", error);
+    }
     setIsSharing(false);
     setShowShareDialog(false);
   };
