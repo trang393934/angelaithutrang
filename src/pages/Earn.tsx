@@ -32,6 +32,7 @@ import {
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
+import { LightGate } from "@/components/LightGate";
 
 export default function Earn() {
   const { user } = useAuth();
@@ -85,6 +86,7 @@ export default function Earn() {
   }
 
   return (
+    <LightGate>
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
@@ -280,5 +282,6 @@ export default function Earn() {
       </main>
       <Footer />
     </div>
+    </LightGate>
   );
 }
