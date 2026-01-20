@@ -107,15 +107,15 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
   };
 
   return (
-    <Card className="border-primary/10 bg-white/80 backdrop-blur-sm">
-      <CardContent className="p-4">
-        <div className="flex gap-3">
-          <Avatar className="w-10 h-10 border-2 border-primary/20">
+    <Card className="border-primary/10 bg-white/80 backdrop-blur-sm w-full max-w-full overflow-hidden">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex gap-2 sm:gap-3 min-w-0">
+          <Avatar className="w-9 h-9 sm:w-10 sm:h-10 border-2 border-primary/20 shrink-0">
             <AvatarImage src={userAvatar || angelAvatar} alt={userName} />
             <AvatarFallback>{userName?.charAt(0) || "U"}</AvatarFallback>
           </Avatar>
 
-          <div className="flex-1 space-y-3">
+          <div className="flex-1 space-y-3 min-w-0 overflow-hidden">
             <Textarea
               placeholder="Chia sẻ kiến thức, trải nghiệm của bạn về Angel AI, về Cha Vũ Trụ..."
               value={content}
@@ -165,14 +165,15 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
               <Button
                 onClick={handleSubmit}
                 disabled={(!content.trim() && !imageFile) || isSubmitting || isUploading}
-                className="bg-sapphire-gradient hover:opacity-90"
+                className="bg-sapphire-gradient hover:opacity-90 shrink-0"
+                size="sm"
               >
                 {isSubmitting || isUploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <Loader2 className="w-4 h-4 animate-spin sm:mr-2" />
                 ) : (
-                  <Send className="w-4 h-4 mr-2" />
+                  <Send className="w-4 h-4 sm:mr-2" />
                 )}
-                Đăng bài
+                <span className="hidden sm:inline">Đăng</span>
               </Button>
             </div>
           </div>
