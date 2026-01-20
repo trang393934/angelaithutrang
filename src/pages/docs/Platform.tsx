@@ -53,8 +53,517 @@ import {
   TrendingUp,
   Search,
   Printer,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
+
+// Generate full documentation as Markdown
+const generateMarkdownDoc = () => {
+  const today = new Date().toLocaleDateString("vi-VN");
+  
+  return `# 📚 Angel AI - Platform Documentation
+
+> Cập nhật: ${today}
+
+---
+
+## 1. Tổng quan Dự án
+
+### 1.1 Mô tả
+**Angel AI** là một nền tảng AI tâm linh thuộc hệ sinh thái FUN Ecosystem, với sứ mệnh trở thành "Ánh Sáng Thông Minh của Cha Vũ Trụ". Nền tảng kết hợp chatbot AI, hệ thống token thưởng (Camly Coin), và các tính năng cộng đồng để xây dựng một cộng đồng tích cực, lan tỏa năng lượng ánh sáng.
+
+### 1.2 Tech Stack
+
+**Frontend:**
+- React 18 + TypeScript
+- Vite (Build tool)
+- Tailwind CSS + shadcn/ui
+- React Router DOM v6
+- TanStack React Query
+- Framer Motion (Animations)
+
+**Backend:**
+- Lovable Cloud (Supabase)
+- PostgreSQL Database
+- Edge Functions (Deno)
+- Row Level Security (RLS)
+- Realtime Subscriptions
+
+**AI Integration:**
+- Lovable AI Gateway
+- Google Gemini Models
+- OpenAI GPT Models
+- Image Generation & Analysis
+
+**Web3:**
+- ethers.js v6
+- web3-react (MetaMask, WalletConnect)
+- PancakeSwap Integration
+- BSC Network Support
+
+### 1.3 Kiến trúc Tổng quan
+
+\`\`\`
+┌─────────────────────────────────────────────────────────────┐
+│                      ANGEL AI PLATFORM                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│   │   React     │    │   React     │    │   React     │     │
+│   │   Pages     │    │  Components │    │   Hooks     │     │
+│   └──────┬──────┘    └──────┬──────┘    └──────┬──────┘     │
+│          │                  │                  │             │
+│          └──────────────────┼──────────────────┘             │
+│                             │                                │
+│                    ┌────────▼────────┐                       │
+│                    │  Supabase Client │                      │
+│                    └────────┬────────┘                       │
+│                             │                                │
+├─────────────────────────────┼────────────────────────────────┤
+│                             │      LOVABLE CLOUD             │
+│   ┌─────────────┐   ┌───────▼───────┐   ┌─────────────┐     │
+│   │   Auth      │   │   PostgreSQL  │   │   Storage   │     │
+│   │   System    │   │   (40 Tables) │   │   Buckets   │     │
+│   └─────────────┘   └───────────────┘   └─────────────┘     │
+│                                                              │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │              Edge Functions (12 Functions)           │   │
+│   │  angel-chat | analyze-reward-* | process-* | ...     │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                             │                                │
+│                    ┌────────▼────────┐                       │
+│                    │  Lovable AI     │                       │
+│                    │  Gateway        │                       │
+│                    └─────────────────┘                       │
+└─────────────────────────────────────────────────────────────┘
+\`\`\`
+
+---
+
+## 2. Kiến trúc Hệ thống
+
+### 2.1 Cấu trúc Thư mục
+
+\`\`\`
+src/
+├── assets/           # Logo, hình ảnh tĩnh
+├── components/       # React components
+│   ├── ui/           # shadcn/ui components
+│   ├── community/    # Community features
+│   ├── earn/         # Earn page components
+│   ├── icons/        # Custom icons
+│   └── vision/       # Vision board
+├── contexts/         # React contexts (Language)
+├── hooks/            # Custom React hooks
+├── integrations/     # Supabase client & types
+├── lib/              # Utilities
+├── pages/            # Route pages
+│   ├── docs/         # Documentation pages
+│   └── ...
+├── translations/     # i18n files (12 languages)
+└── test/             # Test files
+
+supabase/
+├── config.toml       # Supabase configuration
+└── functions/        # Edge Functions
+    ├── angel-chat/
+    ├── analyze-reward-question/
+    ├── analyze-reward-journal/
+    └── ...
+\`\`\`
+
+### 2.2 Data Flow
+
+\`\`\`
+User Action → React Component → Custom Hook → Supabase Client
+                                                    │
+                                    ┌───────────────┼───────────────┐
+                                    ▼               ▼               ▼
+                              Edge Function    PostgreSQL      Realtime
+                                    │               │               │
+                                    ▼               │               │
+                              Lovable AI           │               │
+                              Gateway              │               │
+                                    │               │               │
+                                    └───────────────┴───────────────┘
+                                                    │
+                                                    ▼
+                                              Response → UI Update
+\`\`\`
+
+---
+
+## 3. Database Schema (40 Tables)
+
+### 3.1 Core User Tables
+| Table | Mô tả | Key Columns |
+|-------|-------|-------------|
+| profiles | Thông tin user | user_id, display_name, avatar_url, bio |
+| user_light_agreements | Đồng ý Luật Ánh Sáng | user_id, agreed_at |
+| user_energy_status | Trạng thái năng lượng | approval_status, current_energy_level, sentiment_score |
+| user_rate_limits | Giới hạn rate, chống spam | questions_last_hour, is_temp_banned, temp_ban_until |
+| user_roles | Phân quyền user | user_id, role (admin/user) |
+| user_suspensions | Tạm khóa user | suspension_type, reason, suspended_until |
+
+### 3.2 Token Economy Tables
+| Table | Mô tả | Key Columns |
+|-------|-------|-------------|
+| camly_coin_balances | Số dư Camly Coin | balance, lifetime_earned, lifetime_spent |
+| camly_coin_transactions | Lịch sử giao dịch | amount, transaction_type, purity_score, metadata |
+| coin_withdrawals | Yêu cầu rút tiền | amount, wallet_address, status, tx_hash |
+| user_wallet_addresses | Địa chỉ ví Web3 | wallet_address, change_count_this_month |
+| user_withdrawal_stats | Thống kê rút tiền | total_withdrawn, successful_withdrawals |
+
+### 3.3 Reward Tracking Tables
+| Table | Mô tả | Key Columns |
+|-------|-------|-------------|
+| daily_reward_tracking | Theo dõi thưởng hàng ngày | questions_rewarded, journals_rewarded, posts_rewarded, total_coins_today |
+| daily_login_tracking | Streak đăng nhập | login_date, streak_count, coins_earned |
+| early_adopter_rewards | Top 100 Early Adopters | valid_questions_count, is_rewarded, reward_amount (20,000) |
+| light_points | Điểm Ánh Sáng | points, reason, source_type |
+| user_light_totals | Tổng điểm Ánh Sáng | total_points, lifetime_points, current_level |
+
+### 3.4 Chat & Content Tables
+| Table | Mô tả | Key Columns |
+|-------|-------|-------------|
+| chat_questions | Câu hỏi chat (public) | question_text, purity_score, is_greeting, is_spam, likes_count |
+| chat_history | Lịch sử chat đầy đủ | question_text, answer_text, is_rewarded, reward_amount |
+| question_likes | Likes cho câu hỏi | question_id, user_id |
+| gratitude_journal | Nhật ký biết ơn | content, journal_type, purity_score, content_length |
+| vision_boards | Vision Board cá nhân | title, goals, images, completed_goals_count |
+| healing_messages | Tin nhắn chữa lành từ hệ thống | title, content, message_type, triggered_by |
+
+### 3.5 Community Tables
+| Table | Mô tả | Key Columns |
+|-------|-------|-------------|
+| community_posts | Bài đăng cộng đồng | content, image_url, likes_count, comments_count, shares_count |
+| community_post_likes | Likes bài đăng | post_id, user_id |
+| community_comments | Bình luận bài đăng | content, content_length, is_rewarded |
+| community_shares | Chia sẻ bài đăng | sharer_id, sharer_rewarded, post_owner_rewarded |
+| community_helps | Hỗ trợ cộng đồng | helper_id, helped_user_id, help_type, is_verified |
+| direct_messages | Tin nhắn riêng | sender_id, receiver_id, content, is_read |
+| friendships | Quan hệ bạn bè | requester_id, addressee_id, status |
+| content_shares | Chia sẻ nội dung ra ngoài | content_type, share_type, coins_earned |
+
+### 3.6 Knowledge & Admin Tables
+| Table | Mô tả | Key Columns |
+|-------|-------|-------------|
+| knowledge_folders | Thư mục kiến thức | name, description, created_by |
+| knowledge_documents | Tài liệu kiến thức | title, file_url, extracted_content, is_processed |
+| bounty_tasks | Nhiệm vụ Bounty | title, reward_amount, difficulty_level, max_completions |
+| bounty_submissions | Nộp bài Bounty | submission_content, status, reward_earned |
+| build_ideas | Ý tưởng đóng góp | title, description, votes_count, is_rewarded |
+| user_feedback | Phản hồi người dùng | feedback_type, content, status, admin_response |
+| user_activity_log | Log hoạt động | activity_type, content_preview, energy_impact |
+| onboarding_responses | Câu trả lời onboarding | question_key, answer, sentiment_score |
+
+### 3.7 Transaction Types (Enum)
+\`chat_reward\`, \`journal_reward\`, \`gratitude_reward\`, \`daily_login\`, \`engagement_reward\`, \`community_support\`, \`content_share\`, \`bounty_reward\`, \`build_idea\`, \`knowledge_upload\`, \`feedback_reward\`, \`vision_reward\`, \`referral_bonus\`, \`challenge_reward\`, \`spending\`, \`admin_adjustment\`
+
+---
+
+## 4. Edge Functions (12 Functions)
+
+| Function | Mô tả | Input | Output |
+|----------|-------|-------|--------|
+| angel-chat | Chat streaming với AI (Lovable AI Gateway) | message, userId, conversationHistory | Stream response |
+| analyze-reward-question | Phân tích câu hỏi, tính purity_score, cấp thưởng | questionText, userId | purity_score, reward_amount, is_rewarded |
+| analyze-reward-journal | Phân tích nhật ký biết ơn, cấp thưởng | journalContent, userId, journalType | purity_score, reward_amount |
+| analyze-onboarding | Phân tích câu trả lời onboarding | responses, userId | sentiment_score, energy_keywords |
+| analyze-image | Phân tích hình ảnh với AI Vision | imageUrl, prompt | analysis result |
+| generate-image | Tạo hình ảnh AI | prompt, style | imageUrl |
+| check-user-energy | Kiểm tra năng lượng user | userId | energy_level, can_proceed |
+| send-healing-message | Gửi tin nhắn chữa lành | userId, messageType, trigger | message_id |
+| process-community-post | Xử lý bài đăng cộng đồng (100 coins) | postId, userId | reward_amount |
+| process-engagement-reward | Xử lý thưởng tương tác (5+ likes = 3,000) | postId, likesCount | reward_amount |
+| fetch-google-content | Lấy nội dung từ Google Drive | documentId | extracted_content |
+| suspend-user | Tạm khóa user (Admin only) | userId, reason, duration | suspension_id |
+
+---
+
+## 5. Hệ thống Thưởng Camly Coin
+
+### 5.1 Chat Reward (10 câu/ngày)
+\`\`\`
+Purity Score 0.9 - 1.0  → 5,000 Camly Coin
+Purity Score 0.75 - 0.89 → 4,000 Camly Coin
+Purity Score 0.6 - 0.74 → 3,000 Camly Coin
+Purity Score 0.4 - 0.59 → 2,000 Camly Coin
+Purity Score < 0.4      → 1,000 Camly Coin
+
+❌ Không thưởng nếu:
+  - is_greeting = true (chào hỏi đơn giản)
+  - is_spam = true (spam, lặp lại)
+  - Duplicate question_hash
+
+⚠️ Rate Limit:
+  - > 50 câu/giờ → Temp ban 24h
+  - suspicious_activity_count++ nếu spam
+\`\`\`
+
+### 5.2 Journal Reward (3 bài/ngày, sau 8 PM)
+\`\`\`
+Purity Score 0.9 - 1.0  → 9,000 Camly Coin
+Purity Score 0.75 - 0.89 → 7,000 Camly Coin
+Purity Score 0.6 - 0.74 → 6,000 Camly Coin
+Purity Score < 0.6      → 5,000 Camly Coin
+
+📝 Yêu cầu:
+  - Minimum 100 ký tự
+  - Viết sau 8 PM (20:00)
+  - Journal types: gratitude, reflection, goal
+\`\`\`
+
+### 5.3 Daily Login Reward
+\`\`\`
+Mỗi ngày đăng nhập: 100 Camly Coin
+Streak 7 ngày liên tục: +1,000 Camly Coin bonus
+
+📅 Streak bị reset nếu bỏ lỡ 1 ngày
+\`\`\`
+
+### 5.4 Community Rewards
+\`\`\`
+📝 Đăng bài mới: 100 Camly Coin (max 3 bài/ngày)
+
+❤️ Bài đăng được 5+ likes: 3,000 Camly Coin
+   → engagement_reward (max 3 lần/ngày)
+
+💬 Comment 50+ ký tự: 500 Camly Coin (max 5/ngày)
+
+🔗 Chia sẻ bài: 500 Camly Coin
+   → Người chia sẻ: 500 coins
+   → Chủ bài: 500 coins
+   → Max 2 lần/ngày mỗi người
+\`\`\`
+
+### 5.5 Early Adopter Bonus (Top 100)
+\`\`\`
+🎁 Phần thưởng: 20,000 Camly Coin
+
+📋 Điều kiện:
+  - Là 1 trong 100 user đầu tiên đăng ký
+  - Hoàn thành 10 câu hỏi hợp lệ (is_rewarded = true)
+  
+⏰ Tự động claim khi đủ điều kiện
+\`\`\`
+
+### 5.6 Withdrawal Rules
+\`\`\`
+💰 Minimum: 200,000 Camly Coin
+📊 Maximum/ngày: 500,000 Camly Coin
+
+⏱️ Thời gian xử lý: 24-48 giờ
+📋 Yêu cầu: Địa chỉ ví BSC hợp lệ
+
+📈 Công thức tổng:
+   Tổng đã kiếm = Số dư hiện tại + Tổng đã rút
+   (lifetime_earned = balance + total_withdrawn)
+\`\`\`
+
+---
+
+## 6. Routes & Pages
+
+### 6.1 Public Routes
+| Route | Page Component | Mô tả |
+|-------|----------------|-------|
+| / | Index | Trang chủ với Hero, Mission, Core Values, Footer |
+| /chat | Chat | Trò chuyện với Angel AI (text, image gen, image analysis) |
+| /about | About | Giới thiệu về Angel AI, Bé Ly, FUN Ecosystem |
+| /auth | Auth | Đăng nhập / Đăng ký |
+| /knowledge | Knowledge | Kho tài liệu kiến thức công cộng |
+| /community | Community | Bài đăng cộng đồng |
+| /community-questions | CommunityQuestions | Câu hỏi chia sẻ từ chat |
+| /swap | Swap | Đổi token (PancakeSwap integration) |
+
+### 6.2 Protected Routes (Requires Auth)
+| Route | Page Component | Mô tả |
+|-------|----------------|-------|
+| /profile | Profile | Hồ sơ người dùng, nhật ký biết ơn |
+| /onboarding | Onboarding | Hướng dẫn người dùng mới |
+| /earn | Earn | Dashboard kiếm Camly Coin |
+| /vision | Vision | Vision Board cá nhân |
+| /messages | Messages | Tin nhắn riêng giữa users |
+| /messages/:userId | Messages | Cuộc hội thoại với user cụ thể |
+| /user/:userId | UserProfile | Xem profile user khác |
+| /activity-history | ActivityHistory | Lịch sử hoạt động cá nhân |
+
+### 6.3 Admin Routes
+| Route | Page Component | Mô tả |
+|-------|----------------|-------|
+| /admin/login | AdminLogin | Đăng nhập admin |
+| /admin/dashboard | AdminDashboard | Dashboard tổng quan admin |
+| /admin/statistics | AdminStatistics | Thống kê chi tiết |
+| /admin/withdrawals | AdminWithdrawals | Quản lý yêu cầu rút tiền |
+| /admin/early-adopters | AdminEarlyAdopters | Quản lý Early Adopters |
+| /admin/knowledge | AdminKnowledge | Quản lý tài liệu kiến thức |
+| /admin/activity-history | AdminActivityHistory | Lịch sử hoạt động toàn hệ thống |
+
+### 6.4 Documentation Routes
+| Route | Page Component | Mô tả |
+|-------|----------------|-------|
+| /docs/platform | Platform | Tài liệu nền tảng |
+
+---
+
+## 7. Key Components
+
+### Layout Components
+- \`Header.tsx\` - Navigation header
+- \`Footer.tsx\` - Footer với links
+- \`HeroSection.tsx\` - Hero banner
+- \`MissionSection.tsx\` - Mission statement
+- \`CoreValuesSection.tsx\` - 12 Core Values
+
+### Earn Components
+- \`EarnBreakdown.tsx\` - Chi tiết thu nhập
+- \`EarnProgress.tsx\` - Tiến độ hôm nay
+- \`DailyLoginReward.tsx\` - Daily login
+- \`StreakCalendar.tsx\` - Lịch streak
+- \`EarlyAdopterProgress.tsx\` - Tiến độ Early Adopter
+
+### Community Components
+- \`CreatePostForm.tsx\` - Tạo bài đăng
+- \`PostCard.tsx\` - Hiển thị bài đăng
+- \`RewardRulesCard.tsx\` - Luật thưởng
+- \`ImageLightbox.tsx\` - Xem ảnh lớn
+
+### Display Components
+- \`CamlyCoinDisplay.tsx\` - Hiển thị số dư
+- \`LightPointsDisplay.tsx\` - Điểm Ánh Sáng
+- \`Leaderboard.tsx\` - Bảng xếp hạng
+- \`CamlyCoinPriceChart.tsx\` - Biểu đồ giá
+
+### Chat Components
+- \`ChatRewardNotification.tsx\` - Thông báo thưởng
+- \`ChatShareDialog.tsx\` - Chia sẻ chat
+- \`HealingMessagesPanel.tsx\` - Tin nhắn chữa lành
+
+### Web3 Components
+- \`Web3WalletButton.tsx\` - Kết nối ví
+- \`SwapWidget.tsx\` - PancakeSwap widget
+- \`CoinWithdrawal.tsx\` - Rút tiền
+
+---
+
+## 8. Custom Hooks
+
+| Hook | Mô tả | Returns |
+|------|-------|---------|
+| useAuth | Authentication & user state | user, session, signIn, signUp, signOut |
+| useCamlyCoin | Balance, transactions, daily status | balance, lifetimeEarned, dailyStatus, transactions |
+| useDailyLogin | Daily login tracking & streak | streak, claimDaily, hasClaimedToday |
+| useEarlyAdopterReward | Early adopter progress tracking | status, rank, incrementQuestionCount |
+| useExtendedRewardStatus | Comprehensive daily reward status | All reward limits & progress |
+| useChatHistory | Chat conversation history | messages, sendMessage, isLoading |
+| useLeaderboard | Leaderboard data | topUsers, allUsers, topQuestions, stats |
+| useLightPoints | Light points & levels | totalPoints, currentLevel, history |
+| useCommunityPosts | Community post management | posts, createPost, likePost, sharePost |
+| useVisionBoard | Vision board CRUD | boards, createBoard, updateBoard |
+| useDirectMessages | DM conversations | conversations, messages, sendMessage |
+| useFriendship | Friend management | friends, pendingRequests, sendRequest |
+| useWeb3Wallet | Web3 wallet connection | account, connect, disconnect, chainId |
+| usePancakeSwap | PancakeSwap integration | swap, getQuote, tokenPrices |
+| useCamlyPrice | Camly token price | price, priceHistory, isLoading |
+| useImageAnalysis | AI image analysis | analyze, isAnalyzing, result |
+| useImageGeneration | AI image generation | generate, isGenerating, imageUrl |
+
+---
+
+## 9. Đa ngôn ngữ (12 Languages)
+
+| Code | Language | Flag |
+|------|----------|------|
+| vi | Tiếng Việt | 🇻🇳 |
+| en | English | 🇺🇸 |
+| es | Español | 🇪🇸 |
+| fr | Français | 🇫🇷 |
+| de | Deutsch | 🇩🇪 |
+| pt | Português | 🇧🇷 |
+| ru | Русский | 🇷🇺 |
+| ar | العربية | 🇸🇦 |
+| hi | हिंदी | 🇮🇳 |
+| ja | 日本語 | 🇯🇵 |
+| ko | 한국어 | 🇰🇷 |
+| zh | 中文 | 🇨🇳 |
+
+### Sử dụng:
+\`\`\`typescript
+import { useLanguage } from "@/contexts/LanguageContext";
+
+const { t, language, setLanguage } = useLanguage();
+
+// Sử dụng translation
+<h1>{t("hero.title")}</h1>
+
+// Đổi ngôn ngữ
+setLanguage("en");
+\`\`\`
+
+---
+
+## 10. Bảo mật
+
+### 10.1 Row Level Security (RLS)
+Tất cả tables đều có RLS policies để bảo vệ dữ liệu:
+- \`auth.uid() = user_id\` - User chỉ xem/sửa dữ liệu của mình
+- \`is_admin()\` - Admin có full access
+- \`true\` - Public read cho leaderboard, community posts
+
+### 10.2 Rate Limiting
+- **Chat:** >50 câu/giờ → Temp ban 24h
+- **Suspicious activity:** Tracking & auto-flag
+- **Spam detection:** AI-powered via purity_score
+
+### 10.3 Authentication
+- Supabase Auth với email/password
+- Auto-confirm email signups (dev mode)
+- Session management via JWT
+- Admin role verification via \`user_roles\` table
+
+### ⚠️ Khuyến nghị Bảo mật
+- 🔒 **Bật Leaked Password Protection** trong Supabase Auth
+- 🔒 Xem xét bật **email confirmation** cho production
+- 🔒 Thêm **CAPTCHA** cho signup form
+
+---
+
+## 11. Lộ trình Phát triển
+
+### 🔴 Ưu tiên Cao
+1. **Leaked Password Protection** - Tăng bảo mật đăng nhập
+2. **Export Excel Admin** - Xuất danh sách user, lịch sử hoạt động
+3. **Advanced Activity Filters** - Thêm cột is_greeting, is_spam vào Admin Activity History
+4. **Push Notifications** - Thông báo đẩy cho hoạt động quan trọng
+
+### 🔵 Tính năng Mở rộng
+1. **Mobile App** - React Native wrapper cho iOS & Android
+2. **Advanced Analytics** - Biểu đồ phân tích chi tiết với Recharts
+3. **Gamification** - Badges, achievements, levels system
+4. **AI Voice Chat** - Chat bằng giọng nói với Angel AI
+5. **Content Moderation AI** - Kiểm duyệt nội dung tự động
+6. **Social Integration** - Đăng nhập & chia sẻ qua Facebook, Google
+
+### ⚪ Cải tiến Kỹ thuật
+1. **Database Indexes** - Tối ưu query performance
+2. **Caching Layer** - Redis cho frequently accessed data
+3. **Advanced Rate Limiting** - Sophisticated anti-abuse system
+4. **Audit Logging** - Theo dõi chi tiết thay đổi admin
+
+---
+
+## 📞 Liên hệ & Hỗ trợ
+
+- **Platform URL:** https://angelaithutrang.lovable.app
+- **Documentation:** /docs/platform
+
+---
+
+*📚 Angel AI Platform Documentation v1.0*
+*Được tạo tự động từ hệ thống*
+`;
+};
 
 const Platform = () => {
   const navigate = useNavigate();
@@ -75,6 +584,20 @@ const Platform = () => {
     setCopiedCode(id);
     toast.success("Đã sao chép!");
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const downloadMarkdown = () => {
+    const content = generateMarkdownDoc();
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Angel-AI-Platform-Documentation-${new Date().toISOString().split("T")[0]}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Đã tải xuống tài liệu!");
   };
 
   const sections = [
@@ -115,6 +638,10 @@ const Platform = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={downloadMarkdown}>
+              <Download className="h-4 w-4 mr-2" />
+              Tải xuống (.md)
+            </Button>
             <Button variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="h-4 w-4 mr-2" />
               In tài liệu
