@@ -668,7 +668,7 @@ const Profile = () => {
                       )}
                     </div>
                     {/* Floating camera button */}
-                    <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 p-3.5 md:p-5 rounded-full bg-gradient-to-r from-divine-gold to-divine-light text-white shadow-xl shadow-divine-gold/50 group-hover:shadow-divine-gold/70 group-hover:scale-110 transition-all duration-300">
+                    <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 p-3.5 md:p-5 rounded-full bg-black text-white shadow-xl shadow-black/50 group-hover:shadow-black/70 group-hover:scale-110 transition-all duration-300">
                       <Camera className="w-6 h-6 md:w-7 md:h-7" />
                     </div>
                   </div>
@@ -1000,10 +1000,10 @@ const Profile = () => {
                   />
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                    <div className="p-4 rounded-full bg-gradient-to-r from-divine-gold/30 to-divine-light/30 group-hover:from-divine-gold/50 group-hover:to-divine-light/50 transition-all duration-300">
-                      <ImageIcon className="w-10 h-10 text-divine-gold group-hover:scale-110 transition-transform duration-300" />
+                    <div className="p-4 rounded-full bg-black/80 group-hover:bg-black transition-all duration-300">
+                      <ImageIcon className="w-10 h-10 text-white group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <p className="text-divine-gold font-medium group-hover:text-divine-light transition-colors">Nhấn để tải ảnh bìa</p>
+                    <p className="text-black font-medium group-hover:text-gray-700 transition-colors">Nhấn để tải ảnh bìa</p>
                   </div>
                 )}
                 
@@ -1016,7 +1016,7 @@ const Profile = () => {
                 {/* Hover overlay for existing cover */}
                 {profile?.cover_photo_url && !isUploadingCover && (
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-divine-gold/90 rounded-full text-white font-medium">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-black rounded-full text-white font-medium">
                       <Camera className="w-4 h-4" />
                       Đổi ảnh bìa
                     </div>
@@ -1058,7 +1058,7 @@ const Profile = () => {
                     )}
                   </div>
                   {/* Camera button */}
-                  <div className="absolute -bottom-1 -right-1 p-3 rounded-full bg-gradient-to-r from-divine-gold to-divine-light text-white shadow-lg shadow-divine-gold/40 group-hover:shadow-divine-gold/60 group-hover:scale-110 transition-all duration-300">
+                  <div className="absolute -bottom-1 -right-1 p-3 rounded-full bg-black text-white shadow-lg shadow-black/40 group-hover:shadow-black/60 group-hover:scale-110 transition-all duration-300">
                     <Camera className="w-5 h-5" />
                   </div>
                 </div>
