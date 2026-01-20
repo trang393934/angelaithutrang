@@ -91,38 +91,51 @@ const AdminDashboard = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      // Fetch profiles first - this is our primary source of users
+      // Fetch users who agreed to Law of Light - this is our primary source
+      const { data: agreementsData, error: agreementsError } = await supabase
+        .from("user_light_agreements")
+        .select("user_id, agreed_at")
+        .order("agreed_at", { ascending: false });
+
+      if (agreementsError) throw agreementsError;
+
+      const userIds = agreementsData?.map(a => a.user_id) || [];
+
+      // Fetch profiles for these users
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, display_name, avatar_url, created_at")
-        .order("created_at", { ascending: false });
+        .in("user_id", userIds);
 
       if (profilesError) throw profilesError;
 
       // Fetch user energy status
       const { data: energyData, error: energyError } = await supabase
         .from("user_energy_status")
-        .select("*");
+        .select("*")
+        .in("user_id", userIds);
 
       if (energyError) throw energyError;
 
       // Fetch light point totals
       const { data: lightData, error: lightError } = await supabase
         .from("user_light_totals")
-        .select("user_id, total_points");
+        .select("user_id, total_points")
+        .in("user_id", userIds);
 
       if (lightError) throw lightError;
 
-      // Combine data - use profiles as base since we can't access auth.users directly
-      const combinedUsers: UserWithStatus[] = (profilesData || []).map((profile) => {
-        const status = energyData?.find(e => e.user_id === profile.user_id);
-        const light = lightData?.find(l => l.user_id === profile.user_id);
+      // Combine data - use agreements as base (users who agreed to Law of Light)
+      const combinedUsers: UserWithStatus[] = (agreementsData || []).map((agreement) => {
+        const profile = profilesData?.find(p => p.user_id === agreement.user_id);
+        const status = energyData?.find(e => e.user_id === agreement.user_id);
+        const light = lightData?.find(l => l.user_id === agreement.user_id);
 
         return {
-          user_id: profile.user_id,
-          email: profile.user_id.substring(0, 8) + "...", // We can't access auth.users directly
-          display_name: profile.display_name || null,
-          avatar_url: profile.avatar_url || null,
+          user_id: agreement.user_id,
+          email: agreement.user_id.substring(0, 8) + "...", // We can't access auth.users directly
+          display_name: profile?.display_name || null,
+          avatar_url: profile?.avatar_url || null,
           approval_status: status?.approval_status || "pending",
           current_energy_level: status?.current_energy_level || "neutral",
           overall_sentiment_score: status?.overall_sentiment_score || null,
@@ -131,7 +144,7 @@ const AdminDashboard = () => {
           trial_start_date: status?.trial_start_date || null,
           trial_end_date: status?.trial_end_date || null,
           last_activity_at: status?.last_activity_at || null,
-          created_at: profile.created_at,
+          created_at: profile?.created_at || agreement.agreed_at,
           light_points: light?.total_points || 0,
         };
       });
