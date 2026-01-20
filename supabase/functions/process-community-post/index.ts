@@ -356,20 +356,24 @@ serve(async (req) => {
     if (action === "add_comment") {
       const contentLength = content?.length || 0;
 
-      if (contentLength < COMMENT_MIN_LENGTH) {
+      // Allow any comment length, but only reward if >= COMMENT_MIN_LENGTH
+      if (contentLength < 1) {
         return new Response(
           JSON.stringify({
             success: false,
-            message: `Bình luận phải có ít nhất ${COMMENT_MIN_LENGTH} ký tự`,
+            message: "Bình luận không được để trống",
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // Check daily limit
+      // Check if comment is eligible for reward (>= 50 characters)
+      const isEligibleForReward = contentLength >= COMMENT_MIN_LENGTH;
+
+      // Check daily limit only if eligible for reward
       const tracking = await getDailyTracking(userId);
       const commentsRewarded = tracking?.comments_rewarded || 0;
-      const canReward = commentsRewarded < MAX_COMMENTS_REWARDED_PER_DAY;
+      const canReward = isEligibleForReward && commentsRewarded < MAX_COMMENTS_REWARDED_PER_DAY;
 
       // Create comment
       const { data: newComment, error: commentError } = await supabase
@@ -419,10 +423,18 @@ serve(async (req) => {
         );
       }
 
+      // Comment posted but no reward (either under 50 chars or daily limit reached)
+      let message = "Bình luận thành công!";
+      if (!isEligibleForReward) {
+        message = "Bình luận thành công! (Bình luận từ 50 ký tự trở lên sẽ nhận thưởng)";
+      } else if (commentsRewarded >= MAX_COMMENTS_REWARDED_PER_DAY) {
+        message = "Bình luận thành công! (Đã đạt giới hạn thưởng hôm nay)";
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Bình luận thành công! (Đã đạt giới hạn thưởng hôm nay)",
+          message,
           rewarded: false,
           comment: newComment,
         }),
