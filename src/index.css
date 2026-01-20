@@ -362,6 +362,16 @@
   .border-border-light {
     border-color: hsl(var(--border-light));
   }
+
+  /* Scrollbar Hide Utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Keyframe Animations */
