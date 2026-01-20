@@ -31,6 +31,7 @@ interface UserProfileData {
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  cover_photo_url: string | null;
   created_at: string;
 }
 
@@ -169,6 +170,7 @@ const UserProfile = () => {
             display_name: null,
             avatar_url: null,
             bio: null,
+            cover_photo_url: null,
             created_at: new Date().toISOString(),
           });
         }
@@ -389,9 +391,24 @@ const UserProfile = () => {
       <div className="bg-white shadow-sm">
         <div className="max-w-[1100px] mx-auto">
           {/* Cover Image */}
-          <div className="relative h-[200px] sm:h-[300px] md:h-[350px] rounded-b-lg overflow-hidden bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10">
-            {/* Gradient overlay pattern */}
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMCAwaDQwdjQwSDB6IiBmaWxsPSJub25lIi8+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-50" />
+          <div className="relative h-[200px] sm:h-[300px] md:h-[350px] rounded-b-lg overflow-hidden">
+            {profile?.cover_photo_url ? (
+              <img 
+                src={profile.cover_photo_url} 
+                alt="Cover photo" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10" />
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMCAwaDQwdjQwSDB6IiBmaWxsPSJub25lIi8+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-50" />
+              </>
+            )}
+            
+            {/* Overlay for better text visibility on cover photo */}
+            {profile?.cover_photo_url && (
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10" />
+            )}
             
             {/* Back button */}
             <button 
@@ -407,7 +424,7 @@ const UserProfile = () => {
                 className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white rounded-lg text-sm font-medium transition-colors"
               >
                 <Camera className="w-4 h-4" />
-                Thêm ảnh bìa
+                {profile?.cover_photo_url ? 'Đổi ảnh bìa' : 'Thêm ảnh bìa'}
               </Link>
             )}
           </div>
