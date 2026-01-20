@@ -13,6 +13,7 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion } from "framer-motion";
+import { LightGate } from "@/components/LightGate";
 
 const Messages = () => {
   const { userId: conversationUserId } = useParams<{ userId: string }>();
@@ -61,6 +62,7 @@ const Messages = () => {
   // Conversation list view (no userId selected)
   if (!conversationUserId) {
     return (
+      <LightGate>
       <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
         <header className="sticky top-0 z-50 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft">
           <div className="container mx-auto px-4 py-4">
@@ -120,11 +122,13 @@ const Messages = () => {
           )}
         </div>
       </div>
+      </LightGate>
     );
   }
 
   // Conversation view
   return (
+    <LightGate>
     <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col">
       <header className="sticky top-0 z-50 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft">
         <div className="container mx-auto px-4 py-4">
@@ -213,6 +217,7 @@ const Messages = () => {
         </form>
       </div>
     </div>
+    </LightGate>
   );
 };
 

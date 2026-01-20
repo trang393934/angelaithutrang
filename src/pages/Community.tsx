@@ -12,6 +12,7 @@ import { RewardRulesCard } from "@/components/community/RewardRulesCard";
 import { Leaderboard } from "@/components/Leaderboard";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
+import { LightGate } from "@/components/LightGate";
 
 const Community = () => {
   const { user } = useAuth();
@@ -96,6 +97,7 @@ const Community = () => {
   };
 
   return (
+    <LightGate>
     <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft">
@@ -216,6 +218,7 @@ const Community = () => {
         </div>
       </div>
     </div>
+    </LightGate>
   );
 };
 
