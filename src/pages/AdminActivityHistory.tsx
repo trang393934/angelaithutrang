@@ -19,7 +19,9 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  Copy,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -117,6 +119,7 @@ const AdminActivityHistory = () => {
   }>({ isOpen: false, item: null });
   
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<'question' | 'answer' | null>(null);
   
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -777,27 +780,67 @@ const AdminActivityHistory = () => {
             <div className="flex-1 overflow-y-auto space-y-4 mt-4 pr-2">
               {/* Question */}
               <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">
-                    Câu hỏi
-                  </span>
-                  {viewDialog.item.purity_score && (
-                    <span className="text-xs text-muted-foreground">
-                      Điểm tinh khiết: {(viewDialog.item.purity_score * 100).toFixed(0)}%
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">
+                      Câu hỏi
                     </span>
-                  )}
+                    {viewDialog.item.purity_score && (
+                      <span className="text-xs text-muted-foreground">
+                        Điểm tinh khiết: {(viewDialog.item.purity_score * 100).toFixed(0)}%
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      navigator.clipboard.writeText(viewDialog.item?.question_text || '');
+                      setCopiedField('question');
+                      toast.success('Đã sao chép câu hỏi');
+                      setTimeout(() => setCopiedField(null), 2000);
+                    }}
+                  >
+                    {copiedField === 'question' ? (
+                      <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5 mr-1" />
+                    )}
+                    Copy
+                  </Button>
                 </div>
                 <p className="text-sm whitespace-pre-wrap break-words">{viewDialog.item.question_text}</p>
               </div>
 
               {/* Answer */}
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Avatar className="w-5 h-5">
-                    <AvatarImage src={angelAvatar} />
-                    <AvatarFallback>AI</AvatarFallback>
-                  </Avatar>
-                  <span className="text-xs font-medium text-foreground">Angel AI</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="w-5 h-5">
+                      <AvatarImage src={angelAvatar} />
+                      <AvatarFallback>AI</AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs font-medium text-foreground">Angel AI</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      navigator.clipboard.writeText(viewDialog.item?.answer_text || '');
+                      setCopiedField('answer');
+                      toast.success('Đã sao chép câu trả lời');
+                      setTimeout(() => setCopiedField(null), 2000);
+                    }}
+                  >
+                    {copiedField === 'answer' ? (
+                      <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5 mr-1" />
+                    )}
+                    Copy
+                  </Button>
                 </div>
                 <p className="text-sm whitespace-pre-wrap break-words">{viewDialog.item.answer_text}</p>
               </div>
