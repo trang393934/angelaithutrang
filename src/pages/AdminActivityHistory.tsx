@@ -756,8 +756,8 @@ const AdminActivityHistory = () => {
 
       {/* View Dialog */}
       <Dialog open={viewDialog.isOpen} onOpenChange={(open) => !open && setViewDialog({ isOpen: false, item: null })}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-primary" />
               Chi tiết cuộc trò chuyện
@@ -774,7 +774,7 @@ const AdminActivityHistory = () => {
           </DialogHeader>
           
           {viewDialog.item && (
-            <div className="space-y-4 mt-4">
+            <div className="flex-1 overflow-y-auto space-y-4 mt-4 pr-2">
               {/* Question */}
               <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                 <div className="flex items-center gap-2 mb-2">
@@ -787,7 +787,7 @@ const AdminActivityHistory = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{viewDialog.item.question_text}</p>
+                <p className="text-sm whitespace-pre-wrap break-words">{viewDialog.item.question_text}</p>
               </div>
 
               {/* Answer */}
@@ -799,7 +799,7 @@ const AdminActivityHistory = () => {
                   </Avatar>
                   <span className="text-xs font-medium text-foreground">Angel AI</span>
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{viewDialog.item.answer_text}</p>
+                <p className="text-sm whitespace-pre-wrap break-words">{viewDialog.item.answer_text}</p>
               </div>
 
               {/* Reward Info */}
