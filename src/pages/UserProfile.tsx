@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, UserPlus, UserCheck, UserX, MessageCircle, Loader2, Clock, Users, Award, FileText } from "lucide-react";
+import { ArrowLeft, UserPlus, UserCheck, UserX, MessageCircle, Loader2, Clock, Users, Award, FileText, ShieldAlert, Ban, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useFriendship } from "@/hooks/useFriendship";
@@ -14,6 +19,7 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 interface UserProfileData {
   user_id: string;
@@ -30,11 +36,105 @@ const UserProfile = () => {
   const [userPosts, setUserPosts] = useState<CommunityPost[]>([]);
   const [stats, setStats] = useState({ posts: 0, friends: 0, coins: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Suspension dialog state
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+  const [banDialogOpen, setBanDialogOpen] = useState(false);
+  const [suspendReason, setSuspendReason] = useState("");
+  const [suspendDuration, setSuspendDuration] = useState("7");
+  const [healingMessage, setHealingMessage] = useState("");
+  const [isSuspending, setIsSuspending] = useState(false);
 
   const { friendshipStatus, isLoading: friendshipLoading, sendFriendRequest, acceptFriendRequest, cancelFriendRequest, unfriend } = useFriendship(userId);
   const { toggleLike, sharePost, addComment, fetchComments, editPost, deletePost } = useCommunityPosts();
 
   const isOwnProfile = user?.id === userId;
+
+  // Check if current user is admin
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      
+      setIsAdmin(!!data);
+    };
+    
+    checkAdminRole();
+  }, [user]);
+
+  // Handle suspend user
+  const handleSuspendUser = async () => {
+    if (!userId || !suspendReason.trim()) {
+      toast.error("Vui lòng nhập lý do đình chỉ");
+      return;
+    }
+
+    setIsSuspending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke("suspend-user", {
+        body: {
+          targetUserId: userId,
+          suspensionType: "temporary",
+          reason: suspendReason,
+          durationDays: parseInt(suspendDuration),
+          healingMessage: healingMessage || undefined,
+        },
+      });
+
+      if (response.error) throw response.error;
+
+      toast.success(`Đã đình chỉ người dùng ${suspendDuration} ngày`);
+      setSuspendDialogOpen(false);
+      setSuspendReason("");
+      setHealingMessage("");
+    } catch (error) {
+      console.error("Error suspending user:", error);
+      toast.error("Không thể đình chỉ người dùng");
+    } finally {
+      setIsSuspending(false);
+    }
+  };
+
+  // Handle ban user (permanent)
+  const handleBanUser = async () => {
+    if (!userId || !suspendReason.trim()) {
+      toast.error("Vui lòng nhập lý do cấm");
+      return;
+    }
+
+    setIsSuspending(true);
+    try {
+      const response = await supabase.functions.invoke("suspend-user", {
+        body: {
+          targetUserId: userId,
+          suspensionType: "permanent",
+          reason: suspendReason,
+          healingMessage: healingMessage || undefined,
+        },
+      });
+
+      if (response.error) throw response.error;
+
+      toast.success("Đã cấm người dùng vĩnh viễn");
+      setBanDialogOpen(false);
+      setSuspendReason("");
+      setHealingMessage("");
+    } catch (error) {
+      console.error("Error banning user:", error);
+      toast.error("Không thể cấm người dùng");
+    } finally {
+      setIsSuspending(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -292,6 +392,148 @@ const UserProfile = () => {
 
               <div className="w-full sm:w-auto">{renderFriendButton()}</div>
             </div>
+
+            {/* Admin Actions */}
+            {isAdmin && !isOwnProfile && (
+              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-destructive/20">
+                <Dialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="text-amber-600 border-amber-600 hover:bg-amber-50">
+                      <ShieldAlert className="w-4 h-4 mr-2" />
+                      Suspend User
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-amber-600">
+                        <ShieldAlert className="w-5 h-5" />
+                        Đình chỉ tạm thời
+                      </DialogTitle>
+                      <DialogDescription>
+                        Đình chỉ người dùng này trong một khoảng thời gian nhất định.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Thời gian đình chỉ</Label>
+                        <Select value={suspendDuration} onValueChange={setSuspendDuration}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn thời gian" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 ngày</SelectItem>
+                            <SelectItem value="3">3 ngày</SelectItem>
+                            <SelectItem value="7">7 ngày</SelectItem>
+                            <SelectItem value="14">14 ngày</SelectItem>
+                            <SelectItem value="30">30 ngày</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Lý do đình chỉ *</Label>
+                        <Textarea
+                          placeholder="Nhập lý do đình chỉ người dùng..."
+                          value={suspendReason}
+                          onChange={(e) => setSuspendReason(e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Thông điệp chữa lành (tùy chọn)</Label>
+                        <Textarea
+                          placeholder="Nhập thông điệp yêu thương gửi đến người dùng..."
+                          value={healingMessage}
+                          onChange={(e) => setHealingMessage(e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setSuspendDialogOpen(false)}>
+                        Hủy
+                      </Button>
+                      <Button 
+                        onClick={handleSuspendUser} 
+                        disabled={isSuspending || !suspendReason.trim()}
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        {isSuspending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <ShieldAlert className="w-4 h-4 mr-2" />
+                        )}
+                        Xác nhận đình chỉ
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
+                      <Ban className="w-4 h-4 mr-2" />
+                      Ban User
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="w-5 h-5" />
+                        Cấm vĩnh viễn
+                      </DialogTitle>
+                      <DialogDescription className="text-destructive/80">
+                        ⚠️ Hành động này không thể hoàn tác! Người dùng sẽ bị cấm vĩnh viễn.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                        <p className="text-sm text-destructive font-medium">
+                          Bạn đang cấm: {profile?.display_name || "Người dùng ẩn danh"}
+                        </p>
+                        <p className="text-xs text-destructive/70 font-mono mt-1">
+                          ID: {userId}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Lý do cấm *</Label>
+                        <Textarea
+                          placeholder="Nhập lý do cấm người dùng..."
+                          value={suspendReason}
+                          onChange={(e) => setSuspendReason(e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Thông điệp tạm biệt (tùy chọn)</Label>
+                        <Textarea
+                          placeholder="Nhập thông điệp yêu thương gửi đến người dùng..."
+                          value={healingMessage}
+                          onChange={(e) => setHealingMessage(e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setBanDialogOpen(false)}>
+                        Hủy
+                      </Button>
+                      <Button 
+                        onClick={handleBanUser} 
+                        disabled={isSuspending || !suspendReason.trim()}
+                        variant="destructive"
+                      >
+                        {isSuspending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Ban className="w-4 h-4 mr-2" />
+                        )}
+                        Xác nhận cấm vĩnh viễn
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-primary/10">
