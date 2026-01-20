@@ -267,15 +267,16 @@ const Chat = () => {
         });
         refreshBalance();
         
-        // Increment early adopter question count for valid non-greeting questions
+        // Early adopter count is now incremented server-side in analyze-reward-question
+        // Just refresh the status to get updated count
         if (!data.isGreeting && !data.isSpam && !data.isDuplicate) {
-          incrementQuestionCount();
+          // Status will be refreshed through the hook's subscription
         }
       }
     } catch (error) {
       console.error("Reward analysis error:", error);
     }
-  }, [user, refreshBalance, incrementQuestionCount]);
+  }, [user, refreshBalance]);
 
   const handleGenerateImage = async (prompt: string) => {
     setMessages(prev => [...prev, { role: "user", content: `🎨 ${t("chat.createImage")} ${prompt}`, type: "text" }]);
