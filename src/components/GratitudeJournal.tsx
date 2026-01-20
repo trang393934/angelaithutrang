@@ -43,7 +43,6 @@ export function GratitudeJournal() {
     try {
       const { data, error } = await supabase.functions.invoke("analyze-reward-journal", {
         body: {
-          userId: user.id,
           content: content.trim(),
           journalType: activeTab,
         },

@@ -159,7 +159,6 @@ export function useCommunityPosts() {
       const { data, error } = await supabase.functions.invoke("process-community-post", {
         body: {
           action: "create_post",
-          userId: user.id,
           content,
           imageUrl,
         },
@@ -188,7 +187,6 @@ export function useCommunityPosts() {
       const { data, error } = await supabase.functions.invoke("process-community-post", {
         body: {
           action: "toggle_like",
-          userId: user.id,
           postId,
         },
       });
@@ -227,7 +225,6 @@ export function useCommunityPosts() {
       const { data, error } = await supabase.functions.invoke("process-community-post", {
         body: {
           action: "share_post",
-          userId: user.id,
           postId,
         },
       });
@@ -265,7 +262,6 @@ export function useCommunityPosts() {
       const { data, error } = await supabase.functions.invoke("process-community-post", {
         body: {
           action: "add_comment",
-          userId: user.id,
           postId,
           content,
         },
@@ -325,7 +321,6 @@ export function useCommunityPosts() {
       const { data, error } = await supabase.functions.invoke("process-community-post", {
         body: {
           action: "edit_post",
-          userId: user.id,
           postId,
           content,
           imageUrl,
@@ -356,7 +351,6 @@ export function useCommunityPosts() {
       const { data, error } = await supabase.functions.invoke("process-community-post", {
         body: {
           action: "delete_post",
-          userId: user.id,
           postId,
         },
       });
