@@ -1,5 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
+// Import all translations eagerly to avoid dynamic import issues with Vite
+import viTranslations from "@/translations/vi";
+import enTranslations from "@/translations/en";
+import zhTranslations from "@/translations/zh";
+import esTranslations from "@/translations/es";
+import arTranslations from "@/translations/ar";
+import hiTranslations from "@/translations/hi";
+import ptTranslations from "@/translations/pt";
+import ruTranslations from "@/translations/ru";
+import jaTranslations from "@/translations/ja";
+import deTranslations from "@/translations/de";
+import frTranslations from "@/translations/fr";
+import koTranslations from "@/translations/ko";
+
 export type LanguageCode = 
   | "vi" // Vietnamese
   | "en" // English
@@ -35,6 +49,22 @@ export const languages: Language[] = [
   { code: "fr", name: "French", nativeName: "Français", flag: "🇫🇷" },
   { code: "ko", name: "Korean", nativeName: "한국어", flag: "🇰🇷" },
 ];
+
+// Map of all translations for instant access
+const translationsMap: Record<LanguageCode, Record<string, string>> = {
+  vi: viTranslations,
+  en: enTranslations,
+  zh: zhTranslations,
+  es: esTranslations,
+  ar: arTranslations,
+  hi: hiTranslations,
+  pt: ptTranslations,
+  ru: ruTranslations,
+  ja: jaTranslations,
+  de: deTranslations,
+  fr: frTranslations,
+  ko: koTranslations,
+};
 
 interface LanguageContextType {
   currentLanguage: LanguageCode;
@@ -74,7 +104,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     return "vi"; // Default to Vietnamese
   });
 
-  const [translations, setTranslations] = useState<Record<string, string>>({});
+  // Get translations directly from the map - no async loading needed
+  const translations = translationsMap[currentLanguage] || translationsMap.vi;
 
   useEffect(() => {
     localStorage.setItem("preferred_language", currentLanguage);
@@ -82,17 +113,12 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     // Set the lang attribute on the html element for CSS targeting
     document.documentElement.lang = currentLanguage;
     
-    // Load translations for current language
-    import(`@/translations/${currentLanguage}.ts`)
-      .then((module) => {
-        setTranslations(module.default);
-      })
-      .catch(() => {
-        // Fallback to Vietnamese if translation file not found
-        import("@/translations/vi.ts").then((module) => {
-          setTranslations(module.default);
-        });
-      });
+    // Set RTL for Arabic
+    if (currentLanguage === "ar") {
+      document.documentElement.dir = "rtl";
+    } else {
+      document.documentElement.dir = "ltr";
+    }
   }, [currentLanguage]);
 
   const setLanguage = (code: LanguageCode) => {
