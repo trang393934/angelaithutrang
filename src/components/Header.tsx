@@ -91,15 +91,15 @@ export const Header = () => {
           : 'bg-transparent'
       }`}
     >
-      <div className="max-w-full mx-auto px-3 sm:px-4 lg:px-6 overflow-hidden">
-        <div className="flex items-center justify-between h-14 sm:h-16 lg:h-18 gap-1 sm:gap-2">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0 group">
-            <div className={`relative transition-all duration-500 ${isScrolled ? 'scale-95' : 'scale-100'}`}>
+      <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-4 xl:px-6 overflow-hidden">
+        <div className="flex items-center justify-between h-14 sm:h-16 lg:h-16 gap-1">
+          {/* Logo - Fixed width, hide text on smaller screens */}
+          <Link to="/" className="flex items-center gap-1 sm:gap-1.5 shrink-0 group min-w-0">
+            <div className={`relative transition-all duration-500 shrink-0 ${isScrolled ? 'scale-95' : 'scale-100'}`}>
               <img 
                 src={angelAvatar} 
                 alt="ANGEL AI" 
-                className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-full object-cover shadow-soft 
+                className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-full object-cover shadow-soft 
                   group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/20
                   transition-all duration-300 ease-out"
               />
@@ -107,55 +107,56 @@ export const Header = () => {
               <div className="absolute inset-0 rounded-full bg-primary/0 group-hover:bg-primary/10 
                 group-hover:animate-pulse transition-all duration-300" />
             </div>
-            <span className={`font-serif text-base sm:text-lg lg:text-xl font-bold uppercase tracking-wide 
-              transition-all duration-500 ease-out
+            {/* Hide text on lg (1024-1279px), show on xl+ */}
+            <span className={`hidden xl:inline font-serif text-base xl:text-lg font-bold uppercase tracking-wide 
+              transition-all duration-500 ease-out whitespace-nowrap
               group-hover:text-primary group-hover:tracking-wider
               ${isScrolled ? 'text-primary-deep scale-95' : 'text-primary-deep scale-100'}`}>
               ANGEL AI
             </span>
           </Link>
 
-          {/* Navigation - responsive with smaller gaps */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2 2xl:gap-4 flex-1 justify-center min-w-0 px-2">
+          {/* Navigation - Scrollable with smaller gaps on lg */}
+          <nav className="hidden lg:flex items-center gap-0.5 lg:gap-1 xl:gap-1.5 2xl:gap-3 flex-1 justify-center min-w-0 mx-1 xl:mx-3 overflow-x-auto scrollbar-hide">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`text-xs xl:text-sm font-medium transition-colors duration-300 relative group whitespace-nowrap px-1.5 xl:px-2 py-1 ${
+                className={`text-[11px] lg:text-xs xl:text-sm font-medium transition-colors duration-300 relative group whitespace-nowrap px-1 lg:px-1.5 xl:px-2 py-1 shrink-0 ${
                   location.pathname === item.href 
                     ? 'text-primary' 
                     : 'text-foreground-muted hover:text-primary'
                 }`}
               >
                 {item.label}
-                <span className={`absolute -bottom-0.5 left-1.5 right-1.5 h-0.5 bg-primary transition-all duration-300 ${
+                <span className={`absolute -bottom-0.5 left-1 right-1 h-0.5 bg-primary transition-all duration-300 ${
                   location.pathname === item.href ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`} />
               </Link>
             ))}
           </nav>
 
-          {/* Auth Buttons - Compact design */}
-          <div className="hidden lg:flex items-center gap-1 xl:gap-2 shrink-0">
-            {/* Language Selector */}
-            <LanguageSelector />
+          {/* Auth Buttons - More compact design */}
+          <div className="hidden lg:flex items-center gap-0.5 lg:gap-1 xl:gap-1.5 shrink-0">
+            {/* Language Selector - Compact on lg */}
+            <LanguageSelector compact />
             
             {!isLoading && (
               <>
                 {user ? (
-                  <div className="flex items-center gap-1 xl:gap-2">
-                    {/* Web3 Wallet Button */}
-                    <Web3WalletButton />
+                  <div className="flex items-center gap-0.5 lg:gap-1 xl:gap-1.5">
+                    {/* Web3 Wallet Button - Compact on lg */}
+                    <Web3WalletButton compact />
                     
                     {/* Messages Button */}
                     <Link 
                       to="/messages"
-                      className="relative p-1.5 xl:p-2 rounded-full hover:bg-primary-pale transition-colors"
+                      className="relative p-1 lg:p-1.5 xl:p-2 rounded-full hover:bg-primary-pale transition-colors"
                       title="Tin nhắn"
                     >
-                      <MessageCircle className="w-4 h-4 xl:w-5 xl:h-5 text-foreground-muted" />
+                      <MessageCircle className="w-3.5 h-3.5 lg:w-4 lg:h-4 xl:w-5 xl:h-5 text-foreground-muted" />
                       {unreadCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                        <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] lg:text-[10px] font-bold w-3.5 h-3.5 lg:w-4 lg:h-4 rounded-full flex items-center justify-center">
                           {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                       )}
@@ -164,50 +165,52 @@ export const Header = () => {
                     {/* Camly Coin Balance */}
                     <Link 
                       to="/earn"
-                      className="flex items-center gap-1 px-2 py-1 xl:py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                      className="flex items-center gap-0.5 lg:gap-1 px-1.5 lg:px-2 py-1 lg:py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                     >
-                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4" />
-                      <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                      <span className="text-[10px] lg:text-xs font-semibold text-amber-700 dark:text-amber-400">
                         {Math.floor(balance).toLocaleString()}
                       </span>
                     </Link>
                     
+                    {/* User Profile - Hide name on lg, show on xl+ */}
                     <Link 
                       to="/profile"
-                      className="flex items-center gap-1 px-1.5 xl:px-2 py-1 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
+                      className="flex items-center gap-0.5 lg:gap-1 px-1 lg:px-1.5 xl:px-2 py-1 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
                     >
                       {userProfile?.avatar_url ? (
                         <img 
                           src={userProfile.avatar_url} 
                           alt="Avatar" 
-                          className="w-5 h-5 xl:w-6 xl:h-6 rounded-full object-cover"
+                          className="w-5 h-5 lg:w-5 lg:h-5 xl:w-6 xl:h-6 rounded-full object-cover"
                         />
                       ) : (
-                        <User className="w-4 h-4 text-primary" />
+                        <User className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary" />
                       )}
-                      <span className="text-xs xl:text-sm font-semibold text-foreground max-w-[60px] xl:max-w-[80px] truncate hidden xl:inline">
+                      {/* Only show name on xl+ screens */}
+                      <span className="hidden xl:inline text-xs font-semibold text-foreground max-w-[70px] truncate">
                         {getDisplayName()}
                       </span>
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="p-1.5 xl:p-2 rounded-full text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
+                      className="p-1 lg:p-1.5 xl:p-2 rounded-full text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
                       title={t("nav.logout")}
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                     </button>
                   </div>
                 ) : (
                   <Link
                     to="/auth"
-                    className={`inline-flex items-center gap-1.5 px-3 xl:px-4 py-1.5 rounded-full font-medium text-xs xl:text-sm transition-all duration-300 ${
+                    className={`inline-flex items-center gap-1 px-2 lg:px-3 xl:px-4 py-1 lg:py-1.5 rounded-full font-medium text-[11px] lg:text-xs xl:text-sm transition-all duration-300 ${
                       isScrolled 
                         ? 'bg-sapphire-gradient text-primary-foreground shadow-sacred hover:shadow-divine' 
                         : 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
                     }`}
                   >
-                    <LogIn className="w-4 h-4" />
-                    <span>{t("nav.login")}</span>
+                    <LogIn className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                    <span className="hidden xl:inline">{t("nav.login")}</span>
                   </Link>
                 )}
               </>

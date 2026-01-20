@@ -11,7 +11,11 @@ import {
 import { toast } from "sonner";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
-export const Web3WalletButton = () => {
+interface Web3WalletButtonProps {
+  compact?: boolean;
+}
+
+export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => {
   const {
     isConnected,
     isConnecting,
@@ -62,17 +66,26 @@ export const Web3WalletButton = () => {
       <button
         onClick={connect}
         disabled={isConnecting}
-        className="flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-xs xl:text-sm hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50"
+        className={`flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 ${
+          compact 
+            ? "px-1.5 lg:px-2 xl:px-2.5 py-1 lg:py-1.5 text-[10px] lg:text-xs xl:text-sm" 
+            : "px-2.5 xl:px-3 py-1.5 text-xs xl:text-sm"
+        }`}
       >
         {isConnecting ? (
           <>
-            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            <span className="hidden sm:inline">Kết nối...</span>
+            <RefreshCw className={compact ? "w-3 h-3" : "w-3.5 h-3.5 animate-spin"} />
+            {!compact && <span className="hidden sm:inline">Kết nối...</span>}
           </>
         ) : (
           <>
-            <Wallet className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Kết nối ví</span>
+            <Wallet className={compact ? "w-3 h-3 lg:w-3.5 lg:h-3.5" : "w-3.5 h-3.5"} />
+            {/* Hide text on lg when compact, show icon only */}
+            {compact ? (
+              <span className="hidden xl:inline">Ví</span>
+            ) : (
+              <span className="hidden sm:inline">Kết nối ví</span>
+            )}
           </>
         )}
       </button>
