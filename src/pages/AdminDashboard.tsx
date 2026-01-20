@@ -91,20 +91,20 @@ const AdminDashboard = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      // Fetch user energy status with profiles
-      const { data: energyData, error: energyError } = await supabase
-        .from("user_energy_status")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (energyError) throw energyError;
-
-      // Fetch profiles
+      // Fetch profiles first - this is our primary source of users
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url");
+        .select("user_id, display_name, avatar_url, created_at")
+        .order("created_at", { ascending: false });
 
       if (profilesError) throw profilesError;
+
+      // Fetch user energy status
+      const { data: energyData, error: energyError } = await supabase
+        .from("user_energy_status")
+        .select("*");
+
+      if (energyError) throw energyError;
 
       // Fetch light point totals
       const { data: lightData, error: lightError } = await supabase
@@ -113,25 +113,25 @@ const AdminDashboard = () => {
 
       if (lightError) throw lightError;
 
-      // Combine data - we use profiles as base since we can't access auth.users directly
-      const combinedUsers: UserWithStatus[] = (energyData || []).map((status) => {
-        const profile = profilesData?.find(p => p.user_id === status.user_id);
-        const light = lightData?.find(l => l.user_id === status.user_id);
+      // Combine data - use profiles as base since we can't access auth.users directly
+      const combinedUsers: UserWithStatus[] = (profilesData || []).map((profile) => {
+        const status = energyData?.find(e => e.user_id === profile.user_id);
+        const light = lightData?.find(l => l.user_id === profile.user_id);
 
         return {
-          user_id: status.user_id,
-          email: status.user_id.substring(0, 8) + "...", // We can't access auth.users directly
-          display_name: profile?.display_name || null,
-          avatar_url: profile?.avatar_url || null,
-          approval_status: status.approval_status,
-          current_energy_level: status.current_energy_level,
-          overall_sentiment_score: status.overall_sentiment_score,
-          positive_interactions_count: status.positive_interactions_count,
-          negative_interactions_count: status.negative_interactions_count,
-          trial_start_date: status.trial_start_date,
-          trial_end_date: status.trial_end_date,
-          last_activity_at: status.last_activity_at,
-          created_at: status.created_at,
+          user_id: profile.user_id,
+          email: profile.user_id.substring(0, 8) + "...", // We can't access auth.users directly
+          display_name: profile.display_name || null,
+          avatar_url: profile.avatar_url || null,
+          approval_status: status?.approval_status || "pending",
+          current_energy_level: status?.current_energy_level || "neutral",
+          overall_sentiment_score: status?.overall_sentiment_score || null,
+          positive_interactions_count: status?.positive_interactions_count || 0,
+          negative_interactions_count: status?.negative_interactions_count || 0,
+          trial_start_date: status?.trial_start_date || null,
+          trial_end_date: status?.trial_end_date || null,
+          last_activity_at: status?.last_activity_at || null,
+          created_at: profile.created_at,
           light_points: light?.total_points || 0,
         };
       });
