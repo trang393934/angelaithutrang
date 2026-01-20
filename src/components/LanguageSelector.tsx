@@ -31,9 +31,12 @@ export const LanguageSelector = ({ compact = false }: LanguageSelectorProps) => 
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-[200]" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
         className={cn(
           "flex items-center gap-0.5 lg:gap-1 xl:gap-1.5 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors font-medium",
           compact 
@@ -41,6 +44,7 @@ export const LanguageSelector = ({ compact = false }: LanguageSelectorProps) => 
             : "px-2 xl:px-3 py-1.5 xl:py-2 text-xs xl:text-sm"
         )}
         aria-label="Select language"
+        type="button"
       >
         <Globe className={cn(
           "text-primary shrink-0",
@@ -59,11 +63,18 @@ export const LanguageSelector = ({ compact = false }: LanguageSelectorProps) => 
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-56 max-h-80 overflow-y-auto rounded-xl bg-background-pure shadow-lg border border-primary-pale/30 py-2 z-[100] animate-in fade-in-0 zoom-in-95 duration-200">
+        <div 
+          className="absolute right-0 top-full mt-2 w-56 max-h-80 overflow-y-auto rounded-xl bg-background-pure shadow-lg border border-primary-pale/30 py-2 z-[300] animate-in fade-in-0 zoom-in-95 duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
           {languages.map((lang) => (
             <button
               key={lang.code}
-              onClick={() => handleSelectLanguage(lang)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSelectLanguage(lang);
+              }}
+              type="button"
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-primary-pale/30 transition-colors",
                 currentLanguage === lang.code && "bg-primary-pale/50"
