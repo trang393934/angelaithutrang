@@ -169,10 +169,37 @@ const Knowledge = () => {
     }
   };
 
-  const handleShare = async (doc: KnowledgeDocument, platform?: string) => {
+  const handleShare = async (doc: KnowledgeDocument, action: string) => {
     const shareUrl = `${window.location.origin}/knowledge?doc=${doc.id}`;
     const shareText = `${doc.title} - ${t("knowledge.shareDescription")}`;
 
+    // Copy actions
+    if (action === "copy-link") {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Đã sao chép đường link tài liệu!");
+      } catch {
+        toast.error("Không thể sao chép");
+      }
+      return;
+    }
+
+    if (action === "copy-content") {
+      if (doc.extracted_content) {
+        try {
+          const fullContent = `📚 ${doc.title}\n\n${doc.extracted_content}\n\n🔗 Xem tại: ${shareUrl}`;
+          await navigator.clipboard.writeText(fullContent);
+          toast.success("Đã sao chép toàn bộ nội dung tài liệu!");
+        } catch {
+          toast.error("Không thể sao chép");
+        }
+      } else {
+        toast.error("Tài liệu này chưa được trích xuất nội dung");
+      }
+      return;
+    }
+
+    // Social share URLs
     const shareUrls: Record<string, string> = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
@@ -185,17 +212,9 @@ const Knowledge = () => {
       "fun-life": `https://life.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
     };
 
-    if (platform && shareUrls[platform]) {
-      window.open(shareUrls[platform], "_blank");
+    if (shareUrls[action]) {
+      window.open(shareUrls[action], "_blank");
       toast.success(t("knowledge.shareStarted"));
-    } else {
-      // Copy to clipboard
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        toast.success(t("knowledge.shareSuccess"));
-      } catch {
-        toast.error("Không thể sao chép");
-      }
     }
   };
 
@@ -403,7 +422,7 @@ const Knowledge = () => {
 interface DocumentItemProps {
   doc: KnowledgeDocument;
   onDownload: (doc: KnowledgeDocument, format?: "original" | "txt") => void;
-  onShare: (doc: KnowledgeDocument, platform?: string) => void;
+  onShare: (doc: KnowledgeDocument, action: string) => void;
   formatFileSize: (bytes: number) => string;
   getFileIcon: (type: string, fileName: string) => string;
   t: (key: string) => string;
@@ -490,12 +509,26 @@ const DocumentItem = ({ doc, onDownload, onShare, formatFileSize, getFileIcon, t
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
+            {/* Copy Options */}
             <div className="px-2 py-1.5 text-xs font-semibold text-foreground-muted">
-              {t("knowledge.shareSocial")}
+              Sao chép
             </div>
-            <DropdownMenuItem onClick={() => onShare(doc)}>
-              📋 Copy Link
+            <DropdownMenuItem onClick={() => onShare(doc, "copy-link")}>
+              🔗 Copy đường link tài liệu
             </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => onShare(doc, "copy-content")}
+              disabled={!doc.extracted_content}
+              className={!doc.extracted_content ? "opacity-50 cursor-not-allowed" : ""}
+            >
+              📄 Copy toàn bộ nội dung
+              {!doc.extracted_content && <span className="text-xs ml-1">(chưa có)</span>}
+            </DropdownMenuItem>
+
+            {/* Social Share */}
+            <div className="px-2 py-1.5 text-xs font-semibold text-foreground-muted border-t mt-1 pt-2">
+              Chia sẻ mạng xã hội
+            </div>
             <DropdownMenuItem onClick={() => onShare(doc, "facebook")}>
               📘 Facebook
             </DropdownMenuItem>
@@ -512,6 +545,7 @@ const DocumentItem = ({ doc, onDownload, onShare, formatFileSize, getFileIcon, t
               💚 WhatsApp
             </DropdownMenuItem>
             
+            {/* FUN Ecosystem */}
             <div className="px-2 py-1.5 text-xs font-semibold text-foreground-muted border-t mt-1 pt-2">
               FUN Ecosystem
             </div>
