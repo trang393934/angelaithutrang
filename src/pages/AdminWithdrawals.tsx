@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -313,15 +313,24 @@ const AdminWithdrawals = () => {
               </div>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => { fetchWithdrawals(); fetchStats(); }}
-            className="gap-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Làm mới
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/admin/activity-history"
+              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              <History className="w-4 h-4" />
+              Lịch sử chat
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { fetchWithdrawals(); fetchStats(); }}
+              className="gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Làm mới
+            </Button>
+          </div>
         </div>
       </header>
 

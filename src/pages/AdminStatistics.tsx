@@ -22,7 +22,8 @@ import {
   MessageSquare,
   BookOpen,
   Share2,
-  Clock
+  Clock,
+  History
 } from "lucide-react";
 import {
   BarChart,
@@ -425,6 +426,13 @@ const AdminStatistics = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Link
+                to="/admin/activity-history"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
+              >
+                <History className="w-4 h-4" />
+                Lịch sử chat
+              </Link>
               <button
                 onClick={() => fetchAllStats()}
                 disabled={isRefreshing}
