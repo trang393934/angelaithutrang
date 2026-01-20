@@ -11,6 +11,12 @@ export interface DirectMessage {
   is_read: boolean;
   read_at: string | null;
   created_at: string;
+  image_url?: string | null;
+  message_type?: string;
+  reply_to_id?: string | null;
+  reactions?: string[];
+  is_deleted?: boolean;
+  deleted_at?: string | null;
   sender_display_name?: string;
   sender_avatar_url?: string | null;
 }
@@ -22,6 +28,7 @@ export interface Conversation {
   last_message: string;
   last_message_at: string;
   unread_count: number;
+  last_message_type?: string;
 }
 
 export function useDirectMessages(conversationUserId?: string) {
@@ -54,10 +61,12 @@ export function useDirectMessages(conversationUserId?: string) {
         .select("user_id, display_name, avatar_url")
         .in("user_id", senderIds);
 
-      const enrichedMessages = (messagesData || []).map((msg) => {
+      const enrichedMessages: DirectMessage[] = (messagesData || []).map((msg) => {
         const profile = profiles?.find((p) => p.user_id === msg.sender_id);
+        const reactions = Array.isArray(msg.reactions) ? msg.reactions as string[] : [];
         return {
           ...msg,
+          reactions,
           sender_display_name: profile?.display_name || "Người dùng",
           sender_avatar_url: profile?.avatar_url || null,
         };
@@ -86,37 +95,119 @@ export function useDirectMessages(conversationUserId?: string) {
   }, [user, conversationUserId]);
 
   // Send a message
-  const sendMessage = async (receiverId: string, content: string) => {
+  const sendMessage = async (
+    receiverId: string,
+    content: string,
+    imageUrl?: string,
+    replyToId?: string
+  ) => {
     if (!user) {
       toast.error("Vui lòng đăng nhập");
       return { success: false };
     }
 
-    if (!content.trim()) {
+    if (!content.trim() && !imageUrl) {
       return { success: false };
     }
 
     try {
+      const messageData: any = {
+        sender_id: user.id,
+        receiver_id: receiverId,
+        content: content.trim() || "",
+        message_type: imageUrl ? "image" : "text",
+      };
+
+      if (imageUrl) {
+        messageData.image_url = imageUrl;
+      }
+
+      if (replyToId) {
+        messageData.reply_to_id = replyToId;
+      }
+
       const { data, error } = await supabase
         .from("direct_messages")
-        .insert({
-          sender_id: user.id,
-          receiver_id: receiverId,
-          content: content.trim(),
-        })
+        .insert(messageData)
         .select()
         .single();
 
       if (error) throw error;
 
       // Add to local messages
-      setMessages((prev) => [...prev, { ...data, sender_display_name: "Bạn" }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          ...data,
+          reactions: [],
+          sender_display_name: "Bạn",
+          sender_avatar_url: null,
+        },
+      ]);
 
       return { success: true, message: data };
     } catch (error: any) {
       console.error("Error sending message:", error);
       toast.error("Lỗi khi gửi tin nhắn");
       return { success: false };
+    }
+  };
+
+  // Add reaction to message
+  const addReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
+
+    const message = messages.find((m) => m.id === messageId);
+    if (!message) return;
+
+    const currentReactions = message.reactions || [];
+    const newReactions = currentReactions.includes(emoji)
+      ? currentReactions.filter((r) => r !== emoji)
+      : [...currentReactions, emoji];
+
+    try {
+      await supabase
+        .from("direct_messages")
+        .update({ reactions: newReactions })
+        .eq("id", messageId);
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, reactions: newReactions } : m
+        )
+      );
+    } catch (error) {
+      console.error("Error adding reaction:", error);
+    }
+  };
+
+  // Delete message (soft delete)
+  const deleteMessage = async (messageId: string) => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from("direct_messages")
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+          content: "",
+        })
+        .eq("id", messageId)
+        .eq("sender_id", user.id);
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? { ...m, is_deleted: true, content: "" }
+            : m
+        )
+      );
+
+      toast.success("Đã xóa tin nhắn");
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast.error("Lỗi khi xóa tin nhắn");
     }
   };
 
@@ -138,10 +229,14 @@ export function useDirectMessages(conversationUserId?: string) {
       }
 
       // Group by conversation partner
-      const conversationMap = new Map<string, { messages: typeof allMessages; unread: number }>();
+      const conversationMap = new Map<
+        string,
+        { messages: typeof allMessages; unread: number }
+      >();
 
       allMessages.forEach((msg) => {
-        const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+        const partnerId =
+          msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
         if (!conversationMap.has(partnerId)) {
           conversationMap.set(partnerId, { messages: [], unread: 0 });
         }
@@ -163,25 +258,38 @@ export function useDirectMessages(conversationUserId?: string) {
         const lastMsg = data.messages[0];
         const profile = profiles?.find((p) => p.user_id === partnerId);
 
+        let lastMessageText = lastMsg.content;
+        if (lastMsg.is_deleted) {
+          lastMessageText = "Tin nhắn đã bị xóa";
+        } else if (lastMsg.message_type === "image" && !lastMsg.content) {
+          lastMessageText = "📷 Hình ảnh";
+        }
+
         return {
           user_id: partnerId,
           display_name: profile?.display_name || "Người dùng",
           avatar_url: profile?.avatar_url || null,
-          last_message: lastMsg.content,
+          last_message: lastMessageText,
           last_message_at: lastMsg.created_at,
           unread_count: data.unread,
+          last_message_type: lastMsg.message_type,
         };
       });
 
       // Sort by last message time
       conversationsList.sort(
-        (a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
+        (a, b) =>
+          new Date(b.last_message_at).getTime() -
+          new Date(a.last_message_at).getTime()
       );
 
       setConversations(conversationsList);
 
       // Calculate total unread
-      const totalUnread = conversationsList.reduce((sum, c) => sum + c.unread_count, 0);
+      const totalUnread = conversationsList.reduce(
+        (sum, c) => sum + c.unread_count,
+        0
+      );
       setUnreadCount(totalUnread);
     } catch (error) {
       console.error("Error fetching conversations:", error);
@@ -226,12 +334,57 @@ export function useDirectMessages(conversationUserId?: string) {
           table: "direct_messages",
           filter: `receiver_id=eq.${user.id}`,
         },
-        (payload) => {
-          if (conversationUserId && payload.new.sender_id === conversationUserId) {
-            fetchMessages();
+        async (payload) => {
+          const newMessage = payload.new as DirectMessage;
+
+          // Fetch sender profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, avatar_url")
+            .eq("user_id", newMessage.sender_id)
+            .maybeSingle();
+
+          if (
+            conversationUserId &&
+            newMessage.sender_id === conversationUserId
+          ) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                ...newMessage,
+                reactions: [],
+                sender_display_name: profile?.display_name || "Người dùng",
+                sender_avatar_url: profile?.avatar_url || null,
+              },
+            ]);
+
+            // Mark as read immediately
+            await supabase
+              .from("direct_messages")
+              .update({ is_read: true, read_at: new Date().toISOString() })
+              .eq("id", newMessage.id);
           }
+
           fetchConversations();
           fetchUnreadCount();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "direct_messages",
+        },
+        (payload) => {
+          const updatedMessage = payload.new as DirectMessage;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === updatedMessage.id
+                ? { ...m, ...updatedMessage }
+                : m
+            )
+          );
         }
       )
       .subscribe();
@@ -239,7 +392,12 @@ export function useDirectMessages(conversationUserId?: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, conversationUserId, fetchMessages, fetchConversations, fetchUnreadCount]);
+  }, [
+    user,
+    conversationUserId,
+    fetchConversations,
+    fetchUnreadCount,
+  ]);
 
   return {
     messages,
@@ -247,6 +405,8 @@ export function useDirectMessages(conversationUserId?: string) {
     unreadCount,
     isLoading,
     sendMessage,
+    addReaction,
+    deleteMessage,
     fetchMessages,
     fetchConversations,
     refreshUnreadCount: fetchUnreadCount,
