@@ -27,6 +27,7 @@ import Knowledge from "./pages/Knowledge";
 import NotFound from "./pages/NotFound";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
+import ActivityHistory from "./pages/ActivityHistory";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/vision" element={<Vision />} />
               <Route path="/swap" element={<Swap />} />
               <Route path="/knowledge" element={<Knowledge />} />
+              <Route path="/activity-history" element={<ActivityHistory />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/knowledge" element={<AdminKnowledge />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />

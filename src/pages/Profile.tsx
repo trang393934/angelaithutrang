@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet } from "lucide-react";
+import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
 import DailyGratitude from "@/components/DailyGratitude";
@@ -431,6 +431,26 @@ const Profile = () => {
         </div>
 
         <div className="space-y-6">
+          {/* Activity History Link */}
+          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-divine-gold/5 hover:shadow-md transition-shadow cursor-pointer">
+            <Link to="/activity-history">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      <History className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-foreground">Lịch Sử Hoạt Động</h3>
+                      <p className="text-sm text-foreground-muted">Xem lại các cuộc trò chuyện với Angel AI</p>
+                    </div>
+                  </div>
+                  <ArrowLeft className="w-5 h-5 text-foreground-muted rotate-180" />
+                </div>
+              </CardContent>
+            </Link>
+          </Card>
+
           {/* Camly Coin & Light Points Section */}
           <div className="grid gap-6 md:grid-cols-2">
             <CamlyCoinDisplay />

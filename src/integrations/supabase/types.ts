@@ -232,6 +232,50 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_history: {
+        Row: {
+          answer_text: string
+          created_at: string
+          id: string
+          is_rewarded: boolean | null
+          purity_score: number | null
+          question_id: string | null
+          question_text: string
+          reward_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          answer_text: string
+          created_at?: string
+          id?: string
+          is_rewarded?: boolean | null
+          purity_score?: number | null
+          question_id?: string | null
+          question_text: string
+          reward_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          answer_text?: string
+          created_at?: string
+          id?: string
+          is_rewarded?: boolean | null
+          purity_score?: number | null
+          question_id?: string | null
+          question_text?: string
+          reward_amount?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_history_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "chat_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_questions: {
         Row: {
           ai_response_preview: string | null
