@@ -435,9 +435,6 @@ const DocumentItem = ({ doc, onDownload, onShare, formatFileSize, getFileIcon, t
 
       <div className="flex-1 min-w-0">
         <h3 className="font-medium text-foreground truncate">{doc.title}</h3>
-        {doc.description && (
-          <p className="text-sm text-foreground-muted line-clamp-1">{doc.description}</p>
-        )}
         <div className="flex items-center gap-2 mt-1 text-xs text-foreground-muted">
           <span>{formatFileSize(doc.file_size)}</span>
           <span>•</span>
