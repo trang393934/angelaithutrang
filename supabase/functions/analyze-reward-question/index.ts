@@ -277,6 +277,7 @@ serve(async (req) => {
 
     if (LOVABLE_API_KEY) {
       try {
+        // Use gemini-2.5-flash-lite for simple analysis (cost optimization)
         const analysisResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -284,30 +285,24 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
+            model: "google/gemini-2.5-flash-lite", // Optimized: use lighter model for analysis
             messages: [
               {
                 role: "system",
-                content: `Bạn là hệ thống đánh giá "Tâm Thuần Khiết" của Angel AI. 
-Phân tích câu hỏi của người dùng và trả về JSON với:
-- purity_score: điểm từ 0.0 đến 1.0 (1.0 = tâm rất thuần khiết, sâu sắc, chân thành)
-- reasoning: lý do ngắn gọn (1 câu)
-
-Tiêu chí đánh giá:
-- 0.8-1.0: Câu hỏi sâu sắc về tâm linh, tình yêu vô điều kiện, giác ngộ, giúp đỡ người khác
-- 0.6-0.8: Câu hỏi chân thành về cuộc sống, mối quan hệ, phát triển bản thân
-- 0.4-0.6: Câu hỏi thông thường, tò mò, tìm hiểu
-- 0.2-0.4: Câu hỏi có tính ích kỷ, tiêu cực nhẹ
-- 0.0-0.2: Câu hỏi tiêu cực, hận thù, bạo lực
-
-Trả về CHÍNH XÁC JSON format: {"purity_score": 0.X, "reasoning": "..."}`
+                content: `Đánh giá tâm thuần khiết. Trả về JSON: {"purity_score": 0.X}
+- 0.8-1.0: Tâm linh sâu sắc, yêu thương, giúp đỡ
+- 0.6-0.8: Chân thành, phát triển bản thân
+- 0.4-0.6: Thông thường, tò mò
+- 0.2-0.4: Ích kỷ nhẹ
+- 0.0-0.2: Tiêu cực`
               },
               {
                 role: "user",
-                content: questionText
+                content: questionText.substring(0, 500) // Limit input for cost
               }
             ],
-            temperature: 0.3,
+            temperature: 0.1,
+            max_tokens: 50, // Only need JSON response
           }),
         });
 
