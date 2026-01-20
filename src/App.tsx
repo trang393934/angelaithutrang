@@ -18,6 +18,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
 import AdminEarlyAdopters from "./pages/AdminEarlyAdopters";
 import AdminStatistics from "./pages/AdminStatistics";
+import AdminActivityHistory from "./pages/AdminActivityHistory";
 import CommunityQuestions from "./pages/CommunityQuestions";
 import Community from "./pages/Community";
 import Earn from "./pages/Earn";
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
               <Route path="/admin/early-adopters" element={<AdminEarlyAdopters />} />
               <Route path="/admin/statistics" element={<AdminStatistics />} />
+              <Route path="/admin/activity-history" element={<AdminActivityHistory />} />
               <Route path="/community-questions" element={<CommunityQuestions />} />
               <Route path="/community" element={<Community />} />
               <Route path="/user/:userId" element={<UserProfile />} />
