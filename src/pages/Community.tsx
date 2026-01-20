@@ -9,6 +9,7 @@ import { useCommunityPosts } from "@/hooks/useCommunityPosts";
 import { CreatePostForm } from "@/components/community/CreatePostForm";
 import { PostCard } from "@/components/community/PostCard";
 import { RewardRulesCard } from "@/components/community/RewardRulesCard";
+import { Leaderboard } from "@/components/Leaderboard";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 
@@ -196,6 +197,10 @@ const Community = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Bảng Xếp Hạng */}
+            <Leaderboard />
+            
+            {/* Quy tắc thưởng */}
             <RewardRulesCard dailyLimits={dailyLimits} />
 
             {/* About Section */}
