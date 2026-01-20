@@ -17,6 +17,7 @@ import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
 import { useImageGeneration } from "@/hooks/useImageGeneration";
 import { useImageAnalysis } from "@/hooks/useImageAnalysis";
 import { useEarlyAdopterReward } from "@/hooks/useEarlyAdopterReward";
+import { useChatHistory } from "@/hooks/useChatHistory";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +62,7 @@ const Chat = () => {
     incrementQuestionCount, 
     dismissRewardPopup: dismissEarlyAdopterPopup 
   } = useEarlyAdopterReward();
+  const { saveToHistory: saveToChatHistory } = useChatHistory();
   const [hasAgreed, setHasAgreed] = useState<boolean | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -180,7 +182,7 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
-  const streamChat = async (userMessages: Message[]) => {
+  const streamChat = async (userMessages: Message[]): Promise<string> => {
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
@@ -246,6 +248,8 @@ const Chat = () => {
         }
       }
     }
+    
+    return assistantContent;
   };
 
   const analyzeAndReward = useCallback(async (questionText: string, aiResponse: string) => {
@@ -367,9 +371,16 @@ const Chat = () => {
     setIsLoading(true);
 
     try {
-      await streamChat(newMessages);
+      const assistantResponse = await streamChat(newMessages);
+      
+      // Save to chat history
+      if (user && assistantResponse) {
+        saveToChatHistory(userMessage, assistantResponse);
+      }
+      
+      // Analyze and reward
       setTimeout(() => {
-        analyzeAndReward(userMessage, messages[messages.length - 1]?.content || "");
+        analyzeAndReward(userMessage, assistantResponse);
       }, 500);
     } catch (error) {
       console.error("Chat error:", error);
@@ -377,7 +388,7 @@ const Chat = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, chatMode, uploadedImage, analyzeAndReward, t]);
+  }, [messages, isLoading, chatMode, uploadedImage, analyzeAndReward, t, user]);
 
   useEffect(() => {
     const questionFromQuery = searchParams.get("q");
