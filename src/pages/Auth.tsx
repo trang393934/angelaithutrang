@@ -184,14 +184,16 @@ const Auth = () => {
       .maybeSingle();
     
     if (data) {
-      navigate("/chat");
+      // Already agreed - check if profile is complete then redirect
+      navigate("/profile");
     } else {
       // User logged in via Google but hasn't agreed yet - save agreement now
       if (agreedToLightLaw) {
         await supabase.from("user_light_agreements").insert({
           user_id: user.id
         });
-        navigate("/chat");
+        // Redirect to profile to complete setup
+        navigate("/profile");
       }
     }
   };
@@ -300,7 +302,8 @@ const Auth = () => {
             title: "Đăng nhập thành công!",
             description: "Chào mừng trở lại Cổng Ánh Sáng ✨",
           });
-          navigate("/chat");
+          // Redirect to profile to ensure profile is complete
+          navigate("/profile");
         }
       }
     } catch (error) {
