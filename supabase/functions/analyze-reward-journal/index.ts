@@ -6,6 +6,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Normalize content for comparison: lowercase, remove extra whitespace, remove punctuation
+function normalizeContent(content: string): string {
+  return content
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, '') // Remove punctuation, keep letters/numbers/spaces
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Simple hash function for content
+async function hashContent(content: string): Promise<string> {
+  const normalized = normalizeContent(content);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(normalized);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Calculate similarity between two strings (Jaccard similarity on words)
+function calculateSimilarity(content1: string, content2: string): number {
+  const words1 = new Set(normalizeContent(content1).split(' ').filter(w => w.length > 2));
+  const words2 = new Set(normalizeContent(content2).split(' ').filter(w => w.length > 2));
+  
+  if (words1.size === 0 || words2.size === 0) return 0;
+  
+  const intersection = new Set([...words1].filter(w => words2.has(w)));
+  const union = new Set([...words1, ...words2]);
+  
+  return intersection.size / union.size;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -122,6 +154,64 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // ===== DUPLICATE CONTENT DETECTION =====
+    const contentHash = await hashContent(content);
+    console.log(`Content hash for duplicate check: ${contentHash.substring(0, 16)}...`);
+
+    // Get user's recent journal entries (last 7 days) for duplicate check
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+
+    const { data: recentJournals, error: recentError } = await supabase
+      .from("gratitude_journal")
+      .select("id, content, journal_date")
+      .eq("user_id", userId)
+      .gte("journal_date", sevenDaysAgoStr)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (recentError) {
+      console.error("Error fetching recent journals:", recentError);
+    }
+
+    // Check for duplicates
+    if (recentJournals && recentJournals.length > 0) {
+      for (const oldJournal of recentJournals) {
+        // Check exact hash match
+        const oldHash = await hashContent(oldJournal.content);
+        if (oldHash === contentHash) {
+          console.log(`Exact duplicate detected for user ${userId}, matching journal ${oldJournal.id}`);
+          return new Response(
+            JSON.stringify({ 
+              rewarded: false, 
+              reason: "duplicate_content",
+              message: "Bạn đã viết nội dung này trước đó. Hãy chia sẻ những suy nghĩ mới mẻ! 🌱",
+              coins: 0 
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Check high similarity (>80% similar words)
+        const similarity = calculateSimilarity(content, oldJournal.content);
+        if (similarity > 0.8) {
+          console.log(`High similarity (${(similarity * 100).toFixed(1)}%) detected for user ${userId}, matching journal ${oldJournal.id}`);
+          return new Response(
+            JSON.stringify({ 
+              rewarded: false, 
+              reason: "similar_content",
+              message: "Nội dung này tương tự với bài viết trước đó. Hãy chia sẻ những trải nghiệm và suy nghĩ khác! 🌟",
+              coins: 0,
+              similarity: Math.round(similarity * 100)
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+    // ===== END DUPLICATE DETECTION =====
 
     // Use AI to analyze purity score
     let purityScore = 0.5;
