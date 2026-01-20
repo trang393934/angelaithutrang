@@ -572,7 +572,7 @@ const AdminStatistics = () => {
                     <XAxis type="number" tickFormatter={formatNumber} />
                     <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
                     <Tooltip
-                      formatter={(value: number) => [formatNumber(value) + " coins", "Số coin"]}
+                      formatter={(value: number) => [formatNumber(value) + " Camly Coin", "Số Camly Coin"]}
                       contentStyle={{
                         backgroundColor: "hsl(var(--background))",
                         border: "1px solid hsl(var(--border))",
@@ -591,9 +591,9 @@ const AdminStatistics = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <PieChart className="w-5 h-5 text-primary" />
-                Tỷ lệ phân bổ coin
+                Tỷ lệ phân bổ Camly Coin
               </CardTitle>
-              <CardDescription>Tỷ lệ phần trăm coin giữa các chương trình</CardDescription>
+              <CardDescription>Tỷ lệ phần trăm Camly Coin giữa các chương trình</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[350px]">
@@ -615,7 +615,7 @@ const AdminStatistics = () => {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number) => [formatNumber(value) + " coins", "Số coin"]}
+                      formatter={(value: number) => [formatNumber(value) + " Camly Coin", "Số Camly Coin"]}
                       contentStyle={{
                         backgroundColor: "hsl(var(--background))",
                         border: "1px solid hsl(var(--border))",
@@ -636,7 +636,7 @@ const AdminStatistics = () => {
               <TrendingUp className="w-5 h-5 text-primary" />
               Xu hướng phát thưởng theo ngày
             </CardTitle>
-            <CardDescription>Biểu đồ số coin phát ra mỗi ngày trong khoảng thời gian đã chọn</CardDescription>
+            <CardDescription>Biểu đồ số Camly Coin phát ra mỗi ngày trong khoảng thời gian đã chọn</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -669,7 +669,7 @@ const AdminStatistics = () => {
                     }}
                     formatter={(value: number, name: string) => [
                       formatNumber(value),
-                      name === "total_coins" ? "Số coin" : "Giao dịch"
+                      name === "total_coins" ? "Số Camly Coin" : "Giao dịch"
                     ]}
                     contentStyle={{
                       backgroundColor: "hsl(var(--background))",

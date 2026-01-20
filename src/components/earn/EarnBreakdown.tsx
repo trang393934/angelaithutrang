@@ -206,7 +206,7 @@ export function EarnBreakdown() {
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <Trophy className="h-5 w-5 text-amber-500" />
-          Chi tiết nguồn coin đã kiếm
+          Chi tiết nguồn Camly Coin đã kiếm
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -239,7 +239,7 @@ export function EarnBreakdown() {
           <div className="text-center py-8 text-muted-foreground">
             <Trophy className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p>Chưa có hoạt động nào</p>
-            <p className="text-sm">Bắt đầu tham gia để kiếm coin!</p>
+            <p className="text-sm">Bắt đầu tham gia để kiếm Camly Coin!</p>
           </div>
         ) : (
           breakdown.map((item) => {
