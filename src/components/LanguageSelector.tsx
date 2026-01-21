@@ -64,7 +64,11 @@ export const LanguageSelector = ({ compact = false }: LanguageSelectorProps) => 
 
       {isOpen && (
         <div 
-          className="absolute right-0 top-full mt-2 w-56 max-h-80 overflow-y-auto rounded-xl bg-background-pure shadow-lg border border-primary-pale/30 py-2 z-[300] animate-in fade-in-0 zoom-in-95 duration-200"
+          className="fixed w-56 max-h-80 overflow-y-auto rounded-xl bg-background-pure shadow-lg border border-primary-pale/30 py-2 z-[9999] animate-in fade-in-0 zoom-in-95 duration-200"
+          style={{
+            top: (dropdownRef.current?.getBoundingClientRect().bottom ?? 0) + 8,
+            right: window.innerWidth - (dropdownRef.current?.getBoundingClientRect().right ?? 0),
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           {languages.map((lang) => (
