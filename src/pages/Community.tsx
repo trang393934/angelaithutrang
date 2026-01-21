@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Users, TrendingUp, Clock, Sparkles, Loader2 } from "lucide-react";
+import { Users, TrendingUp, Clock, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { useCommunityPosts } from "@/hooks/useCommunityPosts";
 import { CreatePostForm } from "@/components/community/CreatePostForm";
 import { PostCard } from "@/components/community/PostCard";
 import { RewardRulesCard } from "@/components/community/RewardRulesCard";
+import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { Leaderboard } from "@/components/Leaderboard";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
@@ -99,30 +100,8 @@ const Community = () => {
   return (
     <LightGate>
     <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                to="/"
-                className="p-2 rounded-full hover:bg-primary-pale transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-primary" />
-              </Link>
-              <div>
-                <h1 className="font-serif text-xl font-semibold text-primary-deep flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Cộng Đồng Angel AI
-                </h1>
-                <p className="text-xs text-foreground-muted">
-                  Chia sẻ kiến thức, học hỏi và kết nối
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Fun.rich Style Header */}
+      <CommunityHeader />
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-full overflow-hidden">
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
