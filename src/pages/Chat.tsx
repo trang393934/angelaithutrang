@@ -572,7 +572,20 @@ const Chat = () => {
                   </div>
                 )}
                 
-                {/* Action buttons */}
+                {/* Action buttons for user messages */}
+                {message.role === "user" && message.content && (
+                  <div className="flex items-center gap-2 mr-1 justify-end">
+                    <button
+                      onClick={() => handleCopyMessage(message.content)}
+                      className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary-pale/50 rounded-md transition-colors"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>{t("chat.copy")}</span>
+                    </button>
+                  </div>
+                )}
+                
+                {/* Action buttons for assistant messages */}
                 {message.role === "assistant" && message.content && !(isLoading || isGenerating || isAnalyzing) && (
                   <div className="flex items-center gap-2 ml-1">
                     <button
