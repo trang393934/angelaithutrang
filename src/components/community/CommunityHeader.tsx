@@ -10,7 +10,7 @@ import { StoryViewer } from "./StoryViewer";
 import { CreateStoryModal } from "./CreateStoryModal";
 import { motion, AnimatePresence } from "framer-motion";
 import angelAvatar from "@/assets/angel-avatar.png";
-import funProfileLogo from "@/assets/fun-profile-logo.png";
+import angelAiLogo from "@/assets/angel-ai-logo.png";
 
 export function CommunityHeader() {
   const { user } = useAuth();
@@ -68,7 +68,7 @@ export function CommunityHeader() {
               <div className="flex items-center gap-3 flex-1">
                 <Link to="/" className="flex-shrink-0">
                   <img 
-                    src={funProfileLogo} 
+                    src={angelAiLogo} 
                     alt="Angel AI" 
                     className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg object-contain"
                   />
