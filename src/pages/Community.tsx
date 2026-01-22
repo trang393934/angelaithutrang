@@ -10,6 +10,7 @@ import { CreatePostForm } from "@/components/community/CreatePostForm";
 import { PostCard } from "@/components/community/PostCard";
 import { RewardRulesCard } from "@/components/community/RewardRulesCard";
 import { CommunityHeader } from "@/components/community/CommunityHeader";
+import { FunEcosystemSidebar } from "@/components/community/FunEcosystemSidebar";
 import { Leaderboard } from "@/components/Leaderboard";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
@@ -104,7 +105,14 @@ const Community = () => {
       <CommunityHeader />
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-full overflow-hidden">
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="flex gap-4 sm:gap-6">
+          {/* Left Sidebar - FUN Ecosystem */}
+          <div className="hidden xl:block flex-shrink-0">
+            <FunEcosystemSidebar />
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 min-w-0 grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6 min-w-0 overflow-hidden">
             {/* Create Post */}
@@ -193,10 +201,11 @@ const Community = () => {
                 nhau phát triển tâm linh và trí tuệ.
               </p>
             </div>
+            </div>
+          </div>
           </div>
         </div>
       </div>
-    </div>
     </LightGate>
   );
 };
