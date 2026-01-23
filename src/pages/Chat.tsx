@@ -258,6 +258,30 @@ const Chat = () => {
       const { data } = await supabase.functions.invoke("analyze-reward-question", {
         body: { questionText, aiResponse },
       });
+      
+      // Handle response recycling detection
+      if (data?.isResponseRecycled) {
+        toast.info(data.message, {
+          duration: 8000,
+          icon: "💫",
+          style: {
+            background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
+            border: "1px solid #f59e0b",
+            color: "#92400e",
+          }
+        });
+        // Still update remaining questions count
+        if (data.questionsRemaining !== undefined) {
+          setCurrentReward({
+            coins: 0,
+            purityScore: 0,
+            message: data.message,
+            questionsRemaining: data.questionsRemaining,
+          });
+        }
+        return;
+      }
+      
       if (data?.rewarded) {
         setCurrentReward({
           coins: data.coins,

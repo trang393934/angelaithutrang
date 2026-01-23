@@ -312,12 +312,14 @@ export type Database = {
           created_at: string
           id: string
           is_greeting: boolean | null
+          is_response_recycled: boolean | null
           is_rewarded: boolean | null
           is_spam: boolean | null
           likes_count: number | null
           purity_score: number | null
           question_hash: string
           question_text: string
+          recycling_similarity_score: number | null
           replies_count: number | null
           reward_amount: number | null
           user_id: string
@@ -327,12 +329,14 @@ export type Database = {
           created_at?: string
           id?: string
           is_greeting?: boolean | null
+          is_response_recycled?: boolean | null
           is_rewarded?: boolean | null
           is_spam?: boolean | null
           likes_count?: number | null
           purity_score?: number | null
           question_hash: string
           question_text: string
+          recycling_similarity_score?: number | null
           replies_count?: number | null
           reward_amount?: number | null
           user_id: string
@@ -342,12 +346,14 @@ export type Database = {
           created_at?: string
           id?: string
           is_greeting?: boolean | null
+          is_response_recycled?: boolean | null
           is_rewarded?: boolean | null
           is_spam?: boolean | null
           likes_count?: number | null
           purity_score?: number | null
           question_hash?: string
           question_text?: string
+          recycling_similarity_score?: number | null
           replies_count?: number | null
           reward_amount?: number | null
           user_id?: string
