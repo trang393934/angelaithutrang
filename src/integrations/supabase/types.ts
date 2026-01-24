@@ -262,46 +262,99 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_folders: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_history: {
         Row: {
           answer_text: string
           created_at: string
+          folder_id: string | null
           id: string
           is_rewarded: boolean | null
           purity_score: number | null
           question_id: string | null
           question_text: string
           reward_amount: number | null
+          session_id: string | null
           user_id: string
         }
         Insert: {
           answer_text: string
           created_at?: string
+          folder_id?: string | null
           id?: string
           is_rewarded?: boolean | null
           purity_score?: number | null
           question_id?: string | null
           question_text: string
           reward_amount?: number | null
+          session_id?: string | null
           user_id: string
         }
         Update: {
           answer_text?: string
           created_at?: string
+          folder_id?: string | null
           id?: string
           is_rewarded?: boolean | null
           purity_score?: number | null
           question_id?: string | null
           question_text?: string
           reward_amount?: number | null
+          session_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_history_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "chat_folders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chat_history_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "chat_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_history_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -356,6 +409,39 @@ export type Database = {
           recycling_similarity_score?: number | null
           replies_count?: number | null
           reward_amount?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_sessions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          last_message_at: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_message_at?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_message_at?: string | null
+          title?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

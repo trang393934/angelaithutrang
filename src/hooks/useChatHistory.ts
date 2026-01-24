@@ -10,6 +10,8 @@ export interface ChatHistoryItem {
   reward_amount: number;
   is_rewarded: boolean;
   created_at: string;
+  session_id?: string | null;
+  folder_id?: string | null;
 }
 
 export function useChatHistory() {
@@ -18,7 +20,7 @@ export function useChatHistory() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHistory = useCallback(async () => {
+  const fetchHistory = useCallback(async (sessionId?: string) => {
     if (!user) {
       setHistory([]);
       setIsLoading(false);
@@ -29,10 +31,16 @@ export function useChatHistory() {
       setIsLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('chat_history')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id);
+
+      if (sessionId) {
+        query = query.eq('session_id', sessionId);
+      }
+
+      const { data, error: fetchError } = await query
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -52,10 +60,14 @@ export function useChatHistory() {
   const saveToHistory = useCallback(async (
     questionText: string, 
     answerText: string,
-    questionId?: string,
-    purityScore?: number,
-    rewardAmount?: number,
-    isRewarded?: boolean
+    options?: {
+      questionId?: string;
+      purityScore?: number;
+      rewardAmount?: number;
+      isRewarded?: boolean;
+      sessionId?: string;
+      folderId?: string;
+    }
   ) => {
     if (!user) return null;
 
@@ -66,10 +78,12 @@ export function useChatHistory() {
           user_id: user.id,
           question_text: questionText,
           answer_text: answerText,
-          question_id: questionId,
-          purity_score: purityScore,
-          reward_amount: rewardAmount || 0,
-          is_rewarded: isRewarded || false,
+          question_id: options?.questionId,
+          purity_score: options?.purityScore,
+          reward_amount: options?.rewardAmount || 0,
+          is_rewarded: options?.isRewarded || false,
+          session_id: options?.sessionId,
+          folder_id: options?.folderId,
         })
         .select()
         .single();
