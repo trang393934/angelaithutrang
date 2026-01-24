@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2, 
-  ImagePlus, Camera, Wand2, X, Download, Loader2, MessageSquare
+  ImagePlus, Camera, Wand2, X, Download, Loader2, MessageSquare,
+  History, FolderOpen, Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,12 +13,16 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import ChatRewardNotification from "@/components/ChatRewardNotification";
 import ChatShareDialog from "@/components/ChatShareDialog";
 import EarlyAdopterRewardPopup from "@/components/EarlyAdopterRewardPopup";
+import { ChatSessionsSidebar } from "@/components/chat/ChatSessionsSidebar";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
 import { useImageGeneration } from "@/hooks/useImageGeneration";
 import { useImageAnalysis } from "@/hooks/useImageAnalysis";
 import { useEarlyAdopterReward } from "@/hooks/useEarlyAdopterReward";
 import { useChatHistory } from "@/hooks/useChatHistory";
+import { useChatSessions } from "@/hooks/useChatSessions";
+import { useChatFolders } from "@/hooks/useChatFolders";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +68,28 @@ const Chat = () => {
     dismissRewardPopup: dismissEarlyAdopterPopup 
   } = useEarlyAdopterReward();
   const { saveToHistory: saveToChatHistory } = useChatHistory();
+  
+  // Chat sessions & folders
+  const {
+    sessions,
+    currentSession,
+    sessionMessages,
+    createSession,
+    updateSession,
+    deleteSession,
+    selectSession,
+    endCurrentSession,
+    fetchSessionMessages,
+  } = useChatSessions();
+  
+  const {
+    folders,
+    createFolder,
+    updateFolder,
+    deleteFolder,
+  } = useChatFolders();
+
+  const [showSidebar, setShowSidebar] = useState(false);
   const [hasAgreed, setHasAgreed] = useState<boolean | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -181,6 +208,32 @@ const Chat = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load session messages when session changes
+  useEffect(() => {
+    if (currentSession && sessionMessages.length > 0) {
+      const loadedMessages: Message[] = [
+        { role: "assistant", content: t("chat.welcome"), type: "text" }
+      ];
+      
+      sessionMessages.forEach(msg => {
+        loadedMessages.push({ role: "user", content: msg.question_text, type: "text" });
+        loadedMessages.push({ role: "assistant", content: msg.answer_text, type: "text" });
+      });
+      
+      setMessages(loadedMessages);
+    } else if (!currentSession) {
+      // Reset to welcome message when no session
+      setMessages([{ role: "assistant", content: t("chat.welcome"), type: "text" }]);
+    }
+  }, [currentSession, sessionMessages, t]);
+
+  // Handle new session creation
+  const handleNewSession = async () => {
+    await endCurrentSession();
+    setMessages([{ role: "assistant", content: t("chat.welcome"), type: "text" }]);
+    toast.success("Bắt đầu cuộc trò chuyện mới");
+  };
 
   const streamChat = async (userMessages: Message[]): Promise<string> => {
     const resp = await fetch(CHAT_URL, {
@@ -398,9 +451,18 @@ const Chat = () => {
     try {
       const assistantResponse = await streamChat(newMessages);
       
-      // Save to chat history
+      // Create session if first message in new conversation
+      let activeSessionId = currentSession?.id;
+      if (!activeSessionId && user) {
+        const newSession = await createSession(userMessage.slice(0, 50) + (userMessage.length > 50 ? "..." : ""));
+        activeSessionId = newSession?.id;
+      }
+      
+      // Save to chat history with session
       if (user && assistantResponse) {
-        saveToChatHistory(userMessage, assistantResponse);
+        saveToChatHistory(userMessage, assistantResponse, {
+          sessionId: activeSessionId,
+        });
       }
       
       // Analyze and reward
@@ -413,7 +475,7 @@ const Chat = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, chatMode, uploadedImage, analyzeAndReward, t, user]);
+  }, [messages, isLoading, chatMode, uploadedImage, analyzeAndReward, t, user, currentSession, createSession, saveToChatHistory]);
 
   useEffect(() => {
     const questionFromQuery = searchParams.get("q");
@@ -493,6 +555,22 @@ const Chat = () => {
         onDismiss={() => setCurrentReward(null)} 
       />
 
+      {/* Chat Sessions Sidebar */}
+      <ChatSessionsSidebar
+        isOpen={showSidebar}
+        onClose={() => setShowSidebar(false)}
+        sessions={sessions}
+        folders={folders}
+        currentSession={currentSession}
+        onSelectSession={selectSession}
+        onCreateSession={createSession}
+        onDeleteSession={deleteSession}
+        onUpdateSession={updateSession}
+        onCreateFolder={createFolder}
+        onDeleteFolder={deleteFolder}
+        onUpdateFolder={updateFolder}
+      />
+
       {/* Early Adopter Reward Popup */}
       <EarlyAdopterRewardPopup
         isOpen={showEarlyAdopterPopup}
@@ -506,21 +584,36 @@ const Chat = () => {
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
-              <Link to="/" className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale transition-colors duration-300">
-                <ArrowLeft className="w-5 h-5 text-primary" />
-              </Link>
+              <button 
+                onClick={() => setShowSidebar(true)}
+                className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale transition-colors duration-300"
+              >
+                <History className="w-5 h-5 text-primary" />
+              </button>
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="relative">
                   <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shadow-soft" />
                   <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-400 border-2 border-white rounded-full"></span>
                 </div>
                 <div>
-                  <h1 className="font-serif text-base sm:text-lg font-semibold text-primary-deep">Angel AI</h1>
-                  <p className="text-[10px] sm:text-xs text-foreground-muted">{t("chat.subtitle")}</p>
+                  <h1 className="font-serif text-base sm:text-lg font-semibold text-primary-deep">
+                    {currentSession ? currentSession.title : "Angel AI"}
+                  </h1>
+                  <p className="text-[10px] sm:text-xs text-foreground-muted">
+                    {currentSession ? "Đang tiếp tục chủ đề" : t("chat.subtitle")}
+                  </p>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* New chat button */}
+              <button
+                onClick={handleNewSession}
+                className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale transition-colors"
+                title="Cuộc trò chuyện mới"
+              >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              </button>
               {dailyStatus && (
                 <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
                   <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
@@ -535,6 +628,7 @@ const Chat = () => {
           </div>
         </div>
       </header>
+
 
       {/* Messages - Scrollable area with proper mobile padding */}
       <div className="flex-1 overflow-y-auto overscroll-contain px-3 sm:px-4 py-4 sm:py-6">
