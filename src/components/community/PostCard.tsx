@@ -465,9 +465,9 @@ export function PostCard({
               variant="ghost"
               size="sm"
               onClick={handleShareClick}
-              disabled={isSharing || post.is_shared_by_me || post.user_id === currentUserId || !currentUserId}
+              disabled={isSharing || !currentUserId}
               className={`flex-1 ${post.is_shared_by_me ? 'text-green-600' : 'text-foreground-muted'}`}
-              title={!currentUserId ? 'Vui lòng đăng nhập để chia sẻ' : post.user_id === currentUserId ? 'Không thể chia sẻ bài viết của mình' : ''}
+              title={!currentUserId ? 'Vui lòng đăng nhập để chia sẻ' : ''}
             >
               {isSharing ? (
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
