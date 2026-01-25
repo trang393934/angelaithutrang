@@ -48,8 +48,8 @@ const Community = () => {
     fetchProfile();
   }, [user]);
 
-  const handleCreatePost = async (content: string, imageUrl?: string) => {
-    const result = await createPost(content, imageUrl);
+  const handleCreatePost = async (content: string, imageUrls?: string[]) => {
+    const result = await createPost(content, imageUrls);
     if (result.success) {
       toast.success(result.message);
     } else {

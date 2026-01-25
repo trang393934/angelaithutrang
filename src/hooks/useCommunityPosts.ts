@@ -8,6 +8,7 @@ export interface CommunityPost {
   user_id: string;
   content: string;
   image_url: string | null;
+  image_urls: string[];
   likes_count: number;
   comments_count: number;
   shares_count: number;
@@ -150,7 +151,7 @@ export function useCommunityPosts() {
     }
   }, [user, sortBy]);
 
-  const createPost = async (content: string, imageUrl?: string) => {
+  const createPost = async (content: string, imageUrls?: string[]) => {
     if (!user) {
       return { success: false, message: "Vui lòng đăng nhập" };
     }
@@ -160,7 +161,9 @@ export function useCommunityPosts() {
         body: {
           action: "create_post",
           content,
-          imageUrl,
+          imageUrls,
+          // Keep backward compatibility
+          imageUrl: imageUrls && imageUrls.length > 0 ? imageUrls[0] : undefined,
         },
       });
 
