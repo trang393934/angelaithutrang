@@ -57,7 +57,7 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Get action and other params from body (NOT userId)
-    const { action, postId, content, imageUrl } = await req.json();
+    const { action, postId, content, imageUrl, imageUrls } = await req.json();
 
     console.log(`Processing action: ${action} for user: ${userId}`);
 
@@ -83,7 +83,11 @@ serve(async (req) => {
     };
 
     if (action === "create_post") {
-      console.log(`Creating post with imageUrl: ${imageUrl}`);
+      // Support both single imageUrl (legacy) and imageUrls array
+      const finalImageUrls = imageUrls || (imageUrl ? [imageUrl] : []);
+      const primaryImageUrl = finalImageUrls.length > 0 ? finalImageUrls[0] : null;
+      
+      console.log(`Creating post with ${finalImageUrls.length} images`);
       
       // Create the post
       const { data: newPost, error: postError } = await supabase
@@ -91,14 +95,15 @@ serve(async (req) => {
         .insert({
           user_id: userId,
           content,
-          image_url: imageUrl || null,
+          image_url: primaryImageUrl, // Keep for backward compatibility
+          image_urls: finalImageUrls, // New array field
         })
         .select()
         .single();
 
       if (postError) throw postError;
 
-      console.log(`Post created: ${newPost.id} with image_url: ${newPost.image_url}`);
+      console.log(`Post created: ${newPost.id} with ${finalImageUrls.length} images`);
 
       // Check daily limit for post rewards
       const tracking = await getDailyTracking(userId);

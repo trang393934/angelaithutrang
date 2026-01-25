@@ -618,6 +618,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          image_urls: string[] | null
           is_rewarded: boolean | null
           likes_count: number | null
           reward_amount: number | null
@@ -631,6 +632,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           is_rewarded?: boolean | null
           likes_count?: number | null
           reward_amount?: number | null
@@ -644,6 +646,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           is_rewarded?: boolean | null
           likes_count?: number | null
           reward_amount?: number | null

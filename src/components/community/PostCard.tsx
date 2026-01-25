@@ -11,7 +11,7 @@ import { CommunityPost, CommunityComment } from "@/hooks/useCommunityPosts";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { ImageLightbox } from "./ImageLightbox";
+import { PostImageGrid } from "./PostImageGrid";
 import ShareDialog from "@/components/ShareDialog";
 import {
   DropdownMenu,
@@ -73,13 +73,15 @@ export function PostCard({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // Image lightbox state
-  const [showImageLightbox, setShowImageLightbox] = useState(false);
-  
   // Share dialog state
   const [showShareDialog, setShowShareDialog] = useState(false);
 
   const isOwner = currentUserId === post.user_id;
+  
+  // Get images - prefer image_urls array, fallback to single image_url
+  const postImages = post.image_urls && post.image_urls.length > 0 
+    ? post.image_urls 
+    : (post.image_url ? [post.image_url] : []);
 
   const handleLike = async () => {
     setIsLiking(true);
@@ -409,23 +411,9 @@ export function PostCard({
             </p>
           )}
 
-          {/* Image - only show in non-edit mode */}
-          {!isEditing && post.image_url && (
-            <div 
-              className="mb-4 rounded-xl overflow-hidden cursor-pointer group relative"
-              onClick={() => setShowImageLightbox(true)}
-            >
-              <img
-                src={post.image_url}
-                alt="Post image"
-                className="w-full max-h-96 object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-sm bg-black/50 px-3 py-1.5 rounded-full">
-                  Nhấn để xem
-                </span>
-              </div>
-            </div>
+          {/* Images Grid - only show in non-edit mode */}
+          {!isEditing && postImages.length > 0 && (
+            <PostImageGrid images={postImages} />
           )}
 
           {/* Stats */}
@@ -593,16 +581,6 @@ export function PostCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Image Lightbox */}
-      {post.image_url && (
-        <ImageLightbox
-          imageUrl={post.image_url}
-          alt="Post image"
-          isOpen={showImageLightbox}
-          onClose={() => setShowImageLightbox(false)}
-        />
-      )}
 
       {/* Share Dialog */}
       <ShareDialog

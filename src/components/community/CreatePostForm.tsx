@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Image, Send, X, Loader2 } from "lucide-react";
+import { Image, Send, X, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,99 +7,128 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 
+const MAX_IMAGES = 30;
+
 interface CreatePostFormProps {
   userAvatar?: string | null;
   userName?: string;
-  onSubmit: (content: string, imageUrl?: string) => Promise<{ success: boolean; message: string }>;
+  onSubmit: (content: string, imageUrls?: string[]) => Promise<{ success: boolean; message: string }>;
 }
 
 export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFormProps) {
   const [content, setContent] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const remainingSlots = MAX_IMAGES - imageFiles.length;
+    if (files.length > remainingSlots) {
+      alert(`Bạn chỉ có thể tải thêm ${remainingSlots} ảnh nữa (tối đa ${MAX_IMAGES} ảnh)`);
+      return;
+    }
+
+    const validFiles: File[] = [];
+    const newPreviews: string[] = [];
+
+    files.forEach((file) => {
       if (file.size > 5 * 1024 * 1024) {
-        alert("Ảnh không được vượt quá 5MB");
+        alert(`Ảnh "${file.name}" vượt quá 5MB`);
         return;
       }
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
+      validFiles.push(file);
+    });
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
+    if (validFiles.length === 0) return;
+
+    // Create previews
+    validFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        newPreviews.push(reader.result as string);
+        if (newPreviews.length === validFiles.length) {
+          setImagePreviews((prev) => [...prev, ...newPreviews]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    setImageFiles((prev) => [...prev, ...validFiles]);
+    
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const uploadImage = async (file: File): Promise<string | null> => {
+  const removeImage = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImages = async (files: File[]): Promise<string[]> => {
     setIsUploading(true);
+    const uploadedUrls: string[] = [];
+    
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `posts/${fileName}`;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `posts/${fileName}`;
 
-      console.log("Uploading to community bucket:", filePath);
+        const { error: uploadError } = await supabase.storage
+          .from("community")
+          .upload(filePath, file);
 
-      const { error: uploadError, data: uploadData } = await supabase.storage
-        .from("community")
-        .upload(filePath, file);
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          continue;
+        }
 
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw uploadError;
+        const { data: urlData } = supabase.storage
+          .from("community")
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(urlData.publicUrl);
+        setUploadProgress(Math.round(((i + 1) / files.length) * 100));
       }
 
-      console.log("Upload success:", uploadData);
-
-      const { data: urlData } = supabase.storage
-        .from("community")
-        .getPublicUrl(filePath);
-
-      console.log("Public URL:", urlData.publicUrl);
-      return urlData.publicUrl;
+      return uploadedUrls;
     } catch (error) {
-      console.error("Error uploading image:", error);
-      return null;
+      console.error("Error uploading images:", error);
+      return uploadedUrls;
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && !imageFile) return;
+    if (!content.trim() && imageFiles.length === 0) return;
 
     setIsSubmitting(true);
     try {
-      let imageUrl: string | undefined;
+      let imageUrls: string[] | undefined;
 
-      if (imageFile) {
-        const url = await uploadImage(imageFile);
-        if (url) {
-          imageUrl = url;
-          console.log("Image uploaded successfully:", imageUrl);
-        } else {
-          console.error("Failed to upload image");
+      if (imageFiles.length > 0) {
+        imageUrls = await uploadImages(imageFiles);
+        if (imageUrls.length === 0) {
+          console.error("Failed to upload images");
         }
       }
 
-      console.log("Submitting post with content:", content.trim(), "imageUrl:", imageUrl);
-      const result = await onSubmit(content.trim(), imageUrl);
+      const result = await onSubmit(content.trim(), imageUrls);
 
       if (result.success) {
         setContent("");
-        removeImage();
+        setImageFiles([]);
+        setImagePreviews([]);
       }
     } finally {
       setIsSubmitting(false);
@@ -123,21 +152,56 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
               className="min-h-[80px] resize-none border-primary/20 focus:border-primary/40"
             />
 
-            {imagePreview && (
-              <div className="relative inline-block">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="max-h-48 rounded-lg object-cover"
-                />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2 h-6 w-6"
-                  onClick={removeImage}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+            {/* Image Previews Grid */}
+            {imagePreviews.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative group aspect-square">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeImage(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                    <span className="absolute bottom-1 left-1 text-xs bg-black/60 text-white px-1.5 py-0.5 rounded">
+                      {index + 1}
+                    </span>
+                  </div>
+                ))}
+                
+                {/* Add more button */}
+                {imageFiles.length < MAX_IMAGES && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-square rounded-lg border-2 border-dashed border-primary/30 hover:border-primary/50 flex flex-col items-center justify-center text-primary/60 hover:text-primary/80 transition-colors"
+                  >
+                    <Plus className="w-6 h-6" />
+                    <span className="text-xs mt-1">{imageFiles.length}/{MAX_IMAGES}</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Upload Progress */}
+            {isUploading && (
+              <div className="bg-primary/10 rounded-lg p-2">
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Đang tải ảnh... {uploadProgress}%</span>
+                </div>
+                <div className="mt-1 h-1.5 bg-primary/20 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
               </div>
             )}
 
@@ -146,6 +210,7 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleImageSelect}
                   ref={fileInputRef}
                   className="hidden"
@@ -154,17 +219,17 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
                   variant="ghost"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isSubmitting || isUploading}
+                  disabled={isSubmitting || isUploading || imageFiles.length >= MAX_IMAGES}
                   className="text-primary/70 hover:text-primary hover:bg-primary/10"
                 >
                   <Image className="w-5 h-5 mr-1" />
-                  Ảnh
+                  Ảnh ({imageFiles.length}/{MAX_IMAGES})
                 </Button>
               </div>
 
               <Button
                 onClick={handleSubmit}
-                disabled={(!content.trim() && !imageFile) || isSubmitting || isUploading}
+                disabled={(!content.trim() && imageFiles.length === 0) || isSubmitting || isUploading}
                 className="bg-sapphire-gradient hover:opacity-90 shrink-0"
                 size="sm"
               >
