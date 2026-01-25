@@ -65,11 +65,11 @@ export function ChatSessionsSidebar({
   const [movingSession, setMovingSession] = useState<string | null>(null);
 
   const handleNewSession = async () => {
-    const session = await onCreateSession();
-    if (session) {
-      toast.success("Đã tạo cuộc trò chuyện mới");
-      onClose();
-    }
+    // Don't create session immediately - just close sidebar
+    // Session will be created when user sends first message
+    onSelectSession(null);
+    toast.success("Bắt đầu cuộc trò chuyện mới");
+    onClose();
   };
 
   const handleCreateFolder = async () => {
@@ -446,49 +446,62 @@ function SessionItem({
       </div>
 
       {!isEditing && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 opacity-0 group-hover:opacity-100"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStartEdit(); }}>
-              <Edit2 className="w-4 h-4 mr-2" />
-              Đổi tên
-            </DropdownMenuItem>
-            
-            {folders.length > 0 && (
-              <>
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMoveToFolder(null); }}>
-                  <FolderOpen className="w-4 h-4 mr-2" />
-                  Bỏ khỏi thư mục
-                </DropdownMenuItem>
-                {folders.map((folder) => (
-                  <DropdownMenuItem
-                    key={folder.id}
-                    onClick={(e) => { e.stopPropagation(); onMoveToFolder(folder.id); }}
-                  >
-                    <FolderOpen className="w-4 h-4 mr-2" style={{ color: folder.color }} />
-                    {folder.name}
+        <div className="flex items-center gap-1">
+          {/* Direct delete button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+          
+          {/* More options dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStartEdit(); }}>
+                <Edit2 className="w-4 h-4 mr-2" />
+                Đổi tên
+              </DropdownMenuItem>
+              
+              {folders.length > 0 && (
+                <>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMoveToFolder(null); }}>
+                    <FolderOpen className="w-4 h-4 mr-2" />
+                    Bỏ khỏi thư mục
                   </DropdownMenuItem>
-                ))}
-              </>
-            )}
-            
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Xóa
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                  {folders.map((folder) => (
+                    <DropdownMenuItem
+                      key={folder.id}
+                      onClick={(e) => { e.stopPropagation(); onMoveToFolder(folder.id); }}
+                    >
+                      <FolderOpen className="w-4 h-4 mr-2" style={{ color: folder.color }} />
+                      {folder.name}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+              
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Xóa
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )}
     </div>
   );
