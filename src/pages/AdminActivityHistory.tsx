@@ -134,17 +134,17 @@ const AdminActivityHistory = () => {
     try {
       setIsLoading(true);
       
-      // Fetch chat questions (main source of chat data)
-      const { data: chatData, error: chatError } = await supabase
-        .from('chat_questions')
+      // Fetch from chat_history table which contains FULL AI responses
+      const { data: chatHistoryData, error: historyError } = await supabase
+        .from('chat_history')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1000);
 
-      if (chatError) throw chatError;
+      if (historyError) throw historyError;
       
-      // Get unique user IDs from chat
-      const chatUserIds = [...new Set(chatData?.map(c => c.user_id) || [])];
+      // Get unique user IDs from chat history
+      const chatUserIds = [...new Set(chatHistoryData?.map(c => c.user_id) || [])];
       
       // Fetch profiles for these users
       const { data: profilesData } = await supabase
@@ -157,18 +157,18 @@ const AdminActivityHistory = () => {
         profilesData?.map(p => [p.user_id, { display_name: p.display_name }]) || []
       );
       
-      // Combine chat questions with profiles
-      const historyWithProfiles: ChatHistoryWithUser[] = (chatData || []).map(chat => ({
+      // Combine chat history with profiles
+      const historyWithProfiles: ChatHistoryWithUser[] = (chatHistoryData || []).map(chat => ({
         id: chat.id,
         user_id: chat.user_id,
         question_text: chat.question_text,
-        answer_text: chat.ai_response_preview || '',
+        answer_text: chat.answer_text || '', // Full AI response from chat_history
         purity_score: chat.purity_score,
         reward_amount: Number(chat.reward_amount) || 0,
         is_rewarded: chat.is_rewarded || false,
         created_at: chat.created_at,
-        is_greeting: chat.is_greeting || false,
-        is_spam: chat.is_spam || false,
+        is_greeting: false,
+        is_spam: false,
         profiles: profilesMap.get(chat.user_id) || null
       }));
       
@@ -267,7 +267,7 @@ const AdminActivityHistory = () => {
     
     try {
       const { error } = await supabase
-        .from('chat_questions')
+        .from('chat_history')
         .delete()
         .eq('id', deleteDialog.itemId);
 
