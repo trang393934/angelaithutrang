@@ -91,6 +91,7 @@ const Chat = () => {
 
   const [showSidebar, setShowSidebar] = useState(false);
   const [hasAgreed, setHasAgreed] = useState<boolean | null>(null);
+  const [userResponseStyle, setUserResponseStyle] = useState<string>("detailed");
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -183,25 +184,38 @@ const Chat = () => {
     document.body.removeChild(link);
   };
 
-  // Check if user has agreed to Light Law
+  // Check if user has agreed to Light Law and fetch response style
   useEffect(() => {
-    const checkAgreement = async () => {
+    const checkAgreementAndProfile = async () => {
       if (!user) {
         setHasAgreed(false);
         return;
       }
       
-      const { data } = await supabase
+      // Check light agreement
+      const { data: agreementData } = await supabase
         .from("user_light_agreements")
         .select("id")
         .eq("user_id", user.id)
         .maybeSingle();
       
-      setHasAgreed(!!data);
+      setHasAgreed(!!agreementData);
+      
+      // Fetch user's response style preference
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("response_style")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (profileData?.response_style) {
+        setUserResponseStyle(profileData.response_style);
+        console.log("User response style:", profileData.response_style);
+      }
     };
 
     if (!authLoading) {
-      checkAgreement();
+      checkAgreementAndProfile();
     }
   }, [user, authLoading]);
 
@@ -235,7 +249,7 @@ const Chat = () => {
     toast.success("Bắt đầu cuộc trò chuyện mới");
   };
 
-  const streamChat = async (userMessages: Message[]): Promise<string> => {
+  const streamChat = async (userMessages: Message[], userResponseStyle?: string): Promise<string> => {
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
@@ -243,7 +257,8 @@ const Chat = () => {
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
       body: JSON.stringify({ 
-        messages: userMessages.map(m => ({ role: m.role, content: m.content })) 
+        messages: userMessages.map(m => ({ role: m.role, content: m.content })),
+        responseStyle: userResponseStyle || 'detailed'
       }),
     });
 
@@ -449,7 +464,7 @@ const Chat = () => {
     setIsLoading(true);
 
     try {
-      const assistantResponse = await streamChat(newMessages);
+      const assistantResponse = await streamChat(newMessages, userResponseStyle);
       
       // Create session if first message in new conversation
       let activeSessionId = currentSession?.id;
