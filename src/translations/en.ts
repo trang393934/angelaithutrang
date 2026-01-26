@@ -373,6 +373,8 @@ const translations: Record<string, string> = {
   "profile.successSave": "Profile information updated ✨",
   "profile.successAvatar": "Avatar updated ✨",
   "profile.successPassword": "Password changed successfully ✨",
+  "profile.responseStyle": "Angel AI Response Style",
+  "profile.responseStyleDesc": "Choose how Angel AI responds to your questions",
 
   // Chat Page Extended
   "chat.createImage": "🎨 Create image:",

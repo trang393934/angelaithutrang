@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon } from "lucide-react";
+import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon, MessageCircle } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import angelAvatar from "@/assets/angel-avatar.png";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
 import DailyGratitude from "@/components/DailyGratitude";
@@ -27,9 +28,38 @@ interface Profile {
   avatar_url: string | null;
   bio: string | null;
   cover_photo_url: string | null;
+  response_style: string | null;
   created_at: string;
   updated_at: string;
 }
+
+// Response style options for Angel AI
+const RESPONSE_STYLES = [
+  {
+    id: 'detailed',
+    name: '🌟 Sâu sắc & Chi tiết',
+    description: 'Phân tích kỹ lưỡng, trả lời dài và đầy đủ mọi khía cạnh',
+    isDefault: true,
+  },
+  {
+    id: 'balanced',
+    name: '⚖️ Cân bằng',
+    description: 'Độ dài vừa phải, đủ thông tin quan trọng',
+    isDefault: false,
+  },
+  {
+    id: 'concise',
+    name: '⚡ Ngắn gọn',
+    description: 'Súc tích, đi thẳng vào vấn đề',
+    isDefault: false,
+  },
+  {
+    id: 'creative',
+    name: '🎨 Sáng tạo',
+    description: 'Truyền cảm, giàu hình ảnh, thơ mộng',
+    isDefault: false,
+  },
+];
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -55,6 +85,8 @@ const Profile = () => {
   
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+  const [responseStyle, setResponseStyle] = useState("detailed");
+  const [isSavingStyle, setIsSavingStyle] = useState(false);
 
   // Wallet address state
   const [walletAddress, setWalletAddress] = useState("");
@@ -108,6 +140,7 @@ const Profile = () => {
         setProfile(data);
         setDisplayName(data.display_name || "");
         setBio(data.bio || "");
+        setResponseStyle(data.response_style || "detailed");
         
         // Check if profile is incomplete - enter setup mode
         const isIncomplete = !data.display_name || !data.avatar_url || !data.bio;
@@ -1127,6 +1160,87 @@ const Profile = () => {
                   </span>
                 )}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Response Style Card */}
+          <Card className="border-divine-gold/20 shadow-soft bg-gradient-to-b from-background to-divine-deep/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <MessageCircle className="w-5 h-5 text-divine-gold" />
+                {t("profile.responseStyle")}
+              </CardTitle>
+              <CardDescription>
+                {t("profile.responseStyleDesc")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <RadioGroup
+                value={responseStyle}
+                onValueChange={async (value) => {
+                  setResponseStyle(value);
+                  setIsSavingStyle(true);
+                  try {
+                    const { error } = await supabase
+                      .from("profiles")
+                      .update({ response_style: value })
+                      .eq("user_id", user?.id);
+                    
+                    if (error) throw error;
+                    
+                    toast({
+                      title: "✨ Đã lưu",
+                      description: `Phong cách trả lời: ${RESPONSE_STYLES.find(s => s.id === value)?.name}`,
+                    });
+                  } catch (error) {
+                    console.error("Error saving response style:", error);
+                    toast({
+                      title: "Lỗi",
+                      description: "Không thể lưu phong cách trả lời.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setIsSavingStyle(false);
+                  }
+                }}
+                className="space-y-3"
+              >
+                {RESPONSE_STYLES.map((style) => (
+                  <div
+                    key={style.id}
+                    className={`relative flex items-start space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all duration-300 ${
+                      responseStyle === style.id
+                        ? "border-divine-gold bg-divine-gold/10 shadow-md shadow-divine-gold/20"
+                        : "border-border hover:border-divine-gold/50 hover:bg-divine-gold/5"
+                    }`}
+                  >
+                    <RadioGroupItem
+                      value={style.id}
+                      id={style.id}
+                      className="mt-1 border-divine-gold text-divine-gold"
+                    />
+                    <div className="flex-1">
+                      <label
+                        htmlFor={style.id}
+                        className="block font-medium cursor-pointer"
+                      >
+                        {style.name}
+                        {style.isDefault && (
+                          <span className="ml-2 text-xs bg-divine-gold/20 text-divine-gold px-2 py-0.5 rounded-full">
+                            Mặc định
+                          </span>
+                        )}
+                      </label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {style.description}
+                      </p>
+                    </div>
+                    {isSavingStyle && responseStyle === style.id && (
+                      <Loader2 className="w-4 h-4 animate-spin text-divine-gold absolute top-4 right-4" />
+                    )}
+                  </div>
+                ))}
+              </RadioGroup>
             </CardContent>
           </Card>
 
