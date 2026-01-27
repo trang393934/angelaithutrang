@@ -115,13 +115,13 @@ const Community = () => {
         {/* Content area - fills remaining height */}
         <div className="flex-1 flex overflow-hidden">
           <div className="container mx-auto flex gap-4 sm:gap-6 px-3 sm:px-4 py-4 h-full">
-            {/* Left Sidebar - FIXED, no scroll on page */}
-            <aside className="hidden xl:flex flex-col w-[220px] flex-shrink-0 overflow-y-auto scrollbar-hide">
+            {/* Left Sidebar - scrollable with visible scrollbar */}
+            <aside className="hidden xl:flex flex-col w-[220px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50 pr-1">
               <FunEcosystemSidebar />
             </aside>
 
             {/* Main Content - SCROLLABLE */}
-            <main className="flex-1 min-w-0 overflow-y-auto space-y-4 sm:space-y-6 pr-2 scrollbar-hide">
+            <main className="flex-1 min-w-0 overflow-y-auto space-y-4 sm:space-y-6 pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
               {/* Create Post */}
               {user ? (
                 <CollapsibleCreatePost
@@ -201,8 +201,8 @@ const Community = () => {
                 <HonorBoard />
               </div>
 
-              {/* Phần cuộn - Các thẻ còn lại */}
-              <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6 pr-1 min-h-0">
+              {/* Phần cuộn - Các thẻ còn lại với thanh cuộn visible */}
+              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50 space-y-6 pr-2 min-h-0">
                 {/* Gợi ý kết bạn */}
                 <SuggestedFriendsCard />
 
