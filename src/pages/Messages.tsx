@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
-import { MessageCircle, Users, Search } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { MessageCircle, Users, Search, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +24,7 @@ import { Loader2 } from "lucide-react";
 
 const Messages = () => {
   const { userId: conversationUserId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [isSending, setIsSending] = useState(false);
   const [partnerProfile, setPartnerProfile] = useState<{
@@ -135,10 +136,19 @@ const Messages = () => {
         <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
           <header className="sticky top-0 z-50 bg-background-pure/95 backdrop-blur-lg border-b border-primary-pale shadow-sm">
             <div className="container mx-auto px-4 py-4">
-              <h1 className="font-serif text-xl font-semibold text-primary-deep flex items-center gap-2">
-                <MessageCircle className="w-5 h-5" />
-                Tin nhắn
-              </h1>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => navigate("/")}
+                  className="p-1.5 rounded-full hover:bg-primary-pale transition-colors"
+                  title="Về trang chủ"
+                >
+                  <ArrowLeft className="w-5 h-5 text-primary" />
+                </button>
+                <h1 className="font-serif text-xl font-semibold text-primary-deep flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5" />
+                  Tin nhắn
+                </h1>
+              </div>
             </div>
           </header>
 
