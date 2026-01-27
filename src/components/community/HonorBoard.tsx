@@ -31,14 +31,14 @@ const StatItem = ({
     transition={{ delay, duration: 0.4 }}
     className="relative group"
   >
-    {/* Metallic Gold 3D border effect - outer glow */}
-    <div className="absolute -inset-[3px] rounded-full bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600 opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+    {/* Metallic Gold 3D border effect - outer glow (brighter) */}
+    <div className="absolute -inset-[4px] rounded-full bg-gradient-to-b from-yellow-300 via-amber-400 to-yellow-500 opacity-100 shadow-[0_0_12px_rgba(255,215,0,0.6)] group-hover:shadow-[0_0_20px_rgba(255,215,0,0.8)] transition-all duration-300" />
     
-    {/* Metallic Gold 3D border - middle highlight */}
-    <div className="absolute -inset-[2px] rounded-full bg-gradient-to-b from-yellow-100 via-amber-300 to-yellow-500" />
+    {/* Metallic Gold 3D border - middle highlight (brighter) */}
+    <div className="absolute -inset-[3px] rounded-full bg-gradient-to-b from-yellow-200 via-yellow-300 to-amber-400 shadow-[0_0_8px_rgba(255,223,0,0.5)]" />
     
-    {/* Inner shadow for 3D depth */}
-    <div className="absolute -inset-[1px] rounded-full bg-gradient-to-b from-yellow-300/80 via-amber-400/60 to-yellow-600/80 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),inset_0_-1px_2px_rgba(0,0,0,0.3)]" />
+    {/* Inner bright highlight for 3D depth */}
+    <div className="absolute -inset-[2px] rounded-full bg-gradient-to-b from-yellow-100 via-amber-200 to-yellow-400 shadow-[inset_0_2px_4px_rgba(255,255,255,1),inset_0_-2px_4px_rgba(180,130,0,0.4)]" />
     
     {/* Main content */}
     <div className="relative flex items-center justify-between px-5 py-3 rounded-full bg-gradient-to-r from-primary-deep via-primary to-primary-deep text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
