@@ -1,67 +1,177 @@
 
-# Kế Hoạch Sửa Lỗi: Sidebar Phải & Bảng Danh Dự
+# Kế Hoạch Thiết Kế Lại Bảng Xếp Hạng Trang Chủ
 
-## Mục Tiêu
-1. Hiển thị đầy đủ **Bảng Danh Dự** ở vị trí trên cùng của sidebar phải
-2. Ghim **Bảng Danh Dự** cố định khi cuộn nội dung sidebar
-3. Cho phép sidebar phải **cuộn nội bộ** để xem hết các thẻ phía dưới (Gợi ý kết bạn, Bảng xếp hạng, Luật thưởng, Về cộng đồng)
+## Ý Tưởng Thiết Kế (Dựa trên mẫu)
+
+Tạo một bảng xếp hạng vinh danh sang trọng với:
+
+1. **Biểu tượng vinh danh trung tâm**: Logo Angel AI hoặc biểu tượng Trophy nằm chính giữa với hiệu ứng lấp lánh
+2. **Top 5 Avatar bao quanh**: 5 avatar xếp theo hình bán nguyệt hoặc vòng cung quanh biểu tượng trung tâm
+3. **Viền vàng kim loại 3D**: Mỗi avatar có viền 3 lớp gradient vàng tạo hiệu ứng 3D kim loại sáng
+4. **Tiêu đề "TOP RANKING"**: Màu vàng gradient lấp lánh
+5. **Danh sách xếp hạng bên dưới**: Hiển thị thông tin chi tiết (tên, điểm) với viền vàng
+6. **Nút xem đầy đủ**: Dẫn đến trang Community hoặc mở rộng danh sách
 
 ---
 
-## Giải Pháp Kỹ Thuật
+## Chi Tiết Thiết Kế
 
-### Thay đổi 1: Cập nhật bố cục trang Community.tsx
+### Khu vực Vinh Danh (Hero Zone)
 
-**Vấn đề hiện tại:**
-- Sidebar phải dùng `sticky top-[9.5rem]` nhưng parent container có `overflow-hidden`, khiến sticky không hoạt động đúng
-- Chiều cao sidebar không được tính toán chính xác với header và stories section
-
-**Giải pháp:**
-- Bỏ `sticky` trên sidebar, thay bằng cấu trúc flexbox thuần
-- Chia sidebar thành 2 phần:
-  - **Phần trên (fixed)**: Bảng Danh Dự - dùng `flex-shrink-0` để không bị nén
-  - **Phần dưới (scrollable)**: Các thẻ còn lại - dùng `flex-1 overflow-y-auto`
-
-**Code mới cho sidebar phải:**
 ```text
-<aside className="hidden lg:flex flex-col w-[320px] flex-shrink-0 h-full">
-  {/* Bảng Danh Dự - Ghim trên cùng */}
-  <div className="flex-shrink-0 pb-4">
-    <HonorBoard />
-  </div>
-  
-  {/* Phần cuộn - Các thẻ còn lại */}
-  <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6 pr-1">
-    <SuggestedFriendsCard />
-    <Leaderboard />
-    <RewardRulesCard dailyLimits={dailyLimits} />
-    <div className="bg-white/80 ...">Về Cộng Đồng</div>
-  </div>
-</aside>
+                    ┌─────────────────────────────────────┐
+                    │         🏆 ANGEL AI LOGO 🏆          │
+                    │      (Hiệu ứng phát sáng, lấp lánh)  │
+                    └─────────────────────────────────────┘
+                    
+          ┌──────┐                           ┌──────┐
+          │ #2   │                           │ #3   │
+          │Avatar│                           │Avatar│
+          │ Kim  │                           │ Hoa  │
+          │ Ngân │                           │ Nguy │
+          └──────┘                           └──────┘
+                    
+                         ┌───────────┐
+                         │   #1      │  ← Avatar lớn nhất
+                         │  Avatar   │     với vương miện
+                         │  Thiên    │
+                         │   Hạnh    │
+                         └───────────┘
+                         
+          ┌──────┐                           ┌──────┐
+          │ #4   │                           │ #5   │
+          │Avatar│                           │Avatar│
+          │ Hải  │                           │ joni │
+          │ Vũ   │                           │      │
+          └──────┘                           └──────┘
 ```
 
-### Thay đổi 2: Điều chỉnh container cha
+### Chi Tiết Avatar Vinh Danh
 
-**Vấn đề:**
-- Container `<div className="container mx-auto flex gap-4...">` cần đảm bảo chiều cao đầy đủ cho sidebar
+- **Top 1**: Avatar lớn nhất (80px), có vương miện phía trên, viền vàng dày 4px với glow mạnh
+- **Top 2-3**: Avatar vừa (64px), viền vàng 3px, nằm 2 bên phía trên
+- **Top 4-5**: Avatar nhỏ hơn (56px), viền vàng 2px, nằm 2 bên phía dưới
+- Tất cả avatar có **hiệu ứng hover** phóng to nhẹ và tăng glow
 
-**Giải pháp:**
-- Thêm `h-full` vào container chính để các cột con stretch đúng chiều cao
+### Danh Sách Chi Tiết Bên Dưới
+
+Giống mẫu tham khảo:
+- Mỗi hàng hiển thị: Thứ hạng | Avatar nhỏ | Tên | Số coin (màu vàng/xanh lá)
+- Viền vàng kim loại 3D bao quanh từng hàng
+- Hover highlight row
 
 ---
 
-## Tóm Tắt Thay Đổi File
+## Thay Đổi File
 
-| File | Thay đổi |
+| File | Thay Đổi |
 |------|----------|
-| `src/pages/Community.tsx` | Cấu trúc lại sidebar phải: tách Bảng Danh Dự thành phần cố định, phần còn lại cuộn riêng |
+| `src/components/Leaderboard.tsx` | Viết lại toàn bộ với thiết kế mới |
+
+---
+
+## Chi Tiết Kỹ Thuật
+
+### 1. Cấu Trúc Component Mới
+
+```text
+<Card>
+  {/* Header với logo trung tâm */}
+  <div className="relative">
+    {/* Logo Angel AI với hiệu ứng lấp lánh */}
+    <motion.div animate sparkle effect>
+      <img src={angelLogo} />
+    </motion.div>
+    
+    {/* Tiêu đề "TOP RANKING" vàng gradient */}
+    <h2 className="golden-gradient-text">TOP RANKING</h2>
+  </div>
+  
+  {/* Khu vực Avatar vinh danh - dạng pyramid/arc */}
+  <div className="flex flex-col items-center">
+    {/* Row 1: Top 2 và Top 3 */}
+    <div className="flex justify-center gap-8">
+      <AvatarBadge rank={2} user={top2} size="md" />
+      <AvatarBadge rank={3} user={top3} size="md" />
+    </div>
+    
+    {/* Row 2: Top 1 ở giữa (lớn nhất) */}
+    <div className="flex justify-center -mt-2">
+      <AvatarBadge rank={1} user={top1} size="lg" crown />
+    </div>
+    
+    {/* Row 3: Top 4 và Top 5 */}
+    <div className="flex justify-center gap-12 -mt-2">
+      <AvatarBadge rank={4} user={top4} size="sm" />
+      <AvatarBadge rank={5} user={top5} size="sm" />
+    </div>
+  </div>
+  
+  {/* Danh sách chi tiết */}
+  <div className="space-y-2">
+    {top5Users.map(user => (
+      <RankingRow user={user} />
+    ))}
+  </div>
+  
+  {/* Nút xem đầy đủ */}
+  <Button>Xem bảng xếp hạng đầy đủ →</Button>
+</Card>
+```
+
+### 2. AvatarBadge Component
+
+```text
+Props:
+- rank: number (1-5)
+- user: LeaderboardUser
+- size: "sm" | "md" | "lg"
+- crown?: boolean (chỉ Top 1)
+
+Features:
+- Viền vàng 3D 3 lớp (outer glow, highlight, inner shadow)
+- Badge số thứ hạng góc dưới
+- Hiệu ứng hover phóng to + tăng glow
+- Crown icon cho Top 1
+- Link đến profile user
+```
+
+### 3. RankingRow Component
+
+```text
+Layout: [Rank#] [Avatar nhỏ] [Tên] [Số coin]
+
+Features:
+- Viền vàng kim loại 3D bao quanh
+- Số coin màu vàng đậm
+- Hover highlight
+- Click vào để xem profile
+```
+
+### 4. Hiệu Ứng Animation
+
+- Logo trung tâm: pulse glow + rotating sparkles
+- Tiêu đề: shimmer effect (giống HonorBoard)
+- Avatar: subtle float animation
+- Viền vàng: glow tăng khi hover
+- Số coin: count-up animation khi load
+
+### 5. Màu Sắc
+
+- Nền: Gradient trắng-primary pale (sáng, thanh lịch)
+- Viền vàng: `yellow-200` → `amber-400` → `yellow-500`
+- Tiêu đề: Gradient vàng từ `yellow-300` → `amber-500`
+- Số coin: `text-amber-600` hoặc `text-green-600` (như mẫu)
+- Thứ hạng: `text-primary-deep` đậm
 
 ---
 
 ## Kết Quả Mong Đợi
 
-1. **Bảng Danh Dự** luôn hiển thị đầy đủ ở vị trí trên cùng sidebar phải
-2. **Bảng Danh Dự** cố định khi người dùng cuộn phần nội dung phía dưới trong sidebar
-3. **Các thẻ phía dưới** (Gợi ý kết bạn, Bảng xếp hạng, Luật thưởng, Về cộng đồng) có thể cuộn riêng trong sidebar
-4. **Bài viết ở giữa** vẫn cuộn độc lập như hiện tại
-5. Giữ nguyên giao diện màu sáng sang trọng của Bảng Danh Dự
+1. **Bảng xếp hạng nổi bật** với thiết kế sang trọng, vinh danh Top 5 users
+2. **Avatar Top 5** được hiển thị ở vị trí trung tâm theo dạng pyramid/arc
+3. **Viền vàng kim loại 3D** sáng bóng cho tất cả avatar và hàng ranking
+4. **Hiệu ứng lấp lánh** cho tiêu đề và logo trung tâm
+5. **Responsive** - hiển thị đẹp trên cả mobile và desktop
+6. **Real-time updates** - cập nhật thứ hạng tự động
+7. **Navigation** - click avatar/tên để xem profile user
