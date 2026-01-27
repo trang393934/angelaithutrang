@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff } from "lucide-react";
+import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -30,6 +30,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 interface PostCardProps {
   post: CommunityPost;
@@ -80,6 +86,9 @@ export function PostCard({
   
   // Share dialog state
   const [showShareDialog, setShowShareDialog] = useState(false);
+
+  // TTS Hook for audio playback
+  const { isLoading: ttsLoading, isPlaying: ttsPlaying, currentMessageId: ttsMessageId, playText, stopAudio } = useTextToSpeech();
 
   // Per-post reaction (UI-only for now): persist locally so it doesn't revert to ❤️
   const reactionStorageKey = `community:post-reaction:${post.id}`;
@@ -556,7 +565,7 @@ export function PostCard({
               className="flex-1 text-foreground-muted hover:bg-primary/5"
             >
               <MessageCircle className="w-5 h-5 mr-2" />
-              Bình luận
+              <span className="hidden sm:inline">Bình luận</span>
             </Button>
 
             <Button
@@ -572,8 +581,50 @@ export function PostCard({
               ) : (
                 <Share2 className={`w-5 h-5 mr-2 ${post.is_shared_by_me ? 'fill-green-200' : ''}`} />
               )}
-              {post.is_shared_by_me ? 'Đã chia sẻ' : 'Chia sẻ'}
+              <span className="hidden sm:inline">{post.is_shared_by_me ? 'Đã chia sẻ' : 'Chia sẻ'}</span>
             </Button>
+
+            {/* Audio Button - Listen to post */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const isCurrentPost = ttsMessageId === `post-${post.id}`;
+                    if (isCurrentPost && ttsPlaying) {
+                      stopAudio();
+                    } else {
+                      playText(post.content, `post-${post.id}`);
+                    }
+                  }}
+                  disabled={ttsLoading && ttsMessageId === `post-${post.id}`}
+                  className={`flex-1 hover:bg-primary/5 ${
+                    ttsMessageId === `post-${post.id}` && ttsPlaying 
+                      ? 'text-primary bg-primary/10' 
+                      : 'text-foreground-muted'
+                  }`}
+                >
+                  {ttsLoading && ttsMessageId === `post-${post.id}` ? (
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  ) : ttsMessageId === `post-${post.id}` && ttsPlaying ? (
+                    <VolumeX className="w-5 h-5 mr-2" />
+                  ) : (
+                    <Volume2 className="w-5 h-5 mr-2" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {ttsMessageId === `post-${post.id}` && ttsPlaying ? 'Dừng' : 'Nghe'}
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="bg-primary-deep text-white border-0">
+                {ttsLoading && ttsMessageId === `post-${post.id}` 
+                  ? 'Đang tạo giọng đọc...' 
+                  : ttsMessageId === `post-${post.id}` && ttsPlaying 
+                    ? 'Dừng phát' 
+                    : 'Nghe Angel AI đọc bài viết'}
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Comments Section */}
