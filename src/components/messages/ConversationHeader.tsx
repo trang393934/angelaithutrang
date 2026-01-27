@@ -42,16 +42,16 @@ export function ConversationHeader({
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/")}
-              className="p-2 -ml-2 rounded-full hover:bg-primary-pale transition-colors"
+              className="p-2 -ml-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
               title="Về trang chủ"
             >
-              <Home className="w-5 h-5 text-primary" />
+              <Home className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:rotate-[-8deg] transition-all duration-300" />
             </button>
             <Link
               to="/messages"
-              className="p-2 -ml-2 rounded-full hover:bg-primary-pale transition-colors"
+              className="p-2 -ml-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
             >
-              <ArrowLeft className="w-5 h-5 text-primary" />
+              <ArrowLeft className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:-translate-x-0.5 transition-all duration-300" />
             </Link>
 
             <Link
