@@ -208,7 +208,7 @@ const UserProfile = () => {
 
         const { data: balanceData } = await supabase
           .from("camly_coin_balances")
-          .select("balance")
+          .select("lifetime_earned")
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -223,7 +223,7 @@ const UserProfile = () => {
         setStats({
           posts: postsCount || 0,
           friends: friendsCount || 0,
-          coins: balanceData?.balance || 0,
+          coins: balanceData?.lifetime_earned || 0,
           likes: totalLikes,
         });
 
