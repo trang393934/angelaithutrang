@@ -3,10 +3,12 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { TreasuryBalanceCard } from "@/components/admin/TreasuryBalanceCard";
+import { useNewWithdrawalNotification } from "@/components/admin/NewWithdrawalNotification";
 import {
   Table,
   TableBody,
@@ -73,6 +75,17 @@ const AdminWithdrawals = () => {
   const [txHash, setTxHash] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Real-time withdrawal notifications
+  const { newWithdrawals } = useNewWithdrawalNotification();
+  
+  // Auto-refresh when new withdrawals come in
+  useEffect(() => {
+    if (newWithdrawals.length > 0) {
+      fetchWithdrawals();
+      fetchStats();
+    }
+  }, [newWithdrawals]);
 
   useEffect(() => {
     if (!authLoading && isAdminChecked) {
@@ -352,6 +365,9 @@ const AdminWithdrawals = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* Treasury Balance Card */}
+        <TreasuryBalanceCard />
+        
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
