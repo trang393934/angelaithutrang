@@ -88,6 +88,54 @@ serve(async (req) => {
       const primaryImageUrl = finalImageUrls.length > 0 ? finalImageUrls[0] : null;
       
       console.log(`Creating post with ${finalImageUrls.length} images`);
+
+      // ===== TEMPLATE/GENERIC CONTENT DETECTION =====
+      const templatePatterns = [
+        // Generic philosophical phrases (Vietnamese)
+        /cảm ơn (cha vũ trụ|vũ trụ|cuộc sống) vì tất cả/i,
+        /con biết ơn (mọi thứ|tất cả|cuộc sống)/i,
+        /mỗi ngày là một (món quà|phép màu|cơ hội)/i,
+        /cuộc sống thật (đẹp|tuyệt vời|ý nghĩa)/i,
+        /ánh sáng (của cha|vũ trụ) soi đường/i,
+        /năng lượng (tích cực|yêu thương) lan tỏa/i,
+        /tâm hồn (thanh thản|bình an|an yên)/i,
+        /tình yêu thương vô điều kiện/i,
+        /vũ trụ (ban tặng|ban cho|cho con)/i,
+        /hãy sống (tích cực|yêu thương|hạnh phúc)/i,
+        /yêu thương nhân loại/i,
+        /trái tim (thanh khiết|trong sáng)/i,
+      ];
+
+      // Count template pattern matches
+      let templateMatchCount = 0;
+      for (const pattern of templatePatterns) {
+        if (pattern.test(content)) {
+          templateMatchCount++;
+        }
+      }
+
+      // Check for generic/template content
+      const wordCount = content.split(/\s+/).filter((w: string) => w.length > 1).length;
+      const isShortGeneric = wordCount < 25 && templateMatchCount >= 2;
+      const isTemplateHeavy = templateMatchCount >= 3;
+      
+      // Low word variety indicates copy-paste
+      const normalizedContent = content.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s+/g, ' ').trim();
+      const uniqueWords = new Set(normalizedContent.split(' ').filter((w: string) => w.length > 2));
+      const lowVariety = uniqueWords.size < wordCount * 0.5;
+
+      if ((isTemplateHeavy || isShortGeneric) && lowVariety && finalImageUrls.length === 0) {
+        console.log(`Template post detected for user ${userId}: ${templateMatchCount} patterns, ${wordCount} words`);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: "Con ơi, hãy chia sẻ những suy nghĩ và trải nghiệm thực sự của con thay vì những câu triết lý chung chung nhé! Cộng đồng muốn nghe câu chuyện riêng của con 💛",
+            reason: "template_content",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      // ===== END TEMPLATE DETECTION =====
       
       // Create the post
       const { data: newPost, error: postError } = await supabase

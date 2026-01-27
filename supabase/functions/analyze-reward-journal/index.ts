@@ -213,6 +213,55 @@ serve(async (req) => {
     }
     // ===== END DUPLICATE DETECTION =====
 
+    // ===== TEMPLATE/GENERIC CONTENT DETECTION =====
+    const templatePatterns = [
+      // Generic philosophical phrases (Vietnamese)
+      /con (xin )?cảm ơn (cha vũ trụ|vũ trụ|cuộc sống|cuộc đời)/i,
+      /cảm ơn (cha vũ trụ|vũ trụ) vì tất cả/i,
+      /con biết ơn (mọi thứ|tất cả|cuộc sống)/i,
+      /mỗi ngày là một (món quà|phép màu|cơ hội)/i,
+      /cuộc sống thật (đẹp|tuyệt vời|ý nghĩa)/i,
+      /con xin sám hối (vì )?những (lỗi lầm|sai phạm)/i,
+      /con xin được tha thứ/i,
+      /ánh sáng (của cha|vũ trụ) soi đường/i,
+      /năng lượng (tích cực|yêu thương) lan tỏa/i,
+      /tâm hồn (thanh thản|bình an|an yên)/i,
+      /tình yêu thương vô điều kiện/i,
+      /vũ trụ (ban tặng|ban cho|cho con)/i,
+      /con (xin )?nguyện (sống|làm) tốt hơn/i,
+    ];
+
+    // Count how many template patterns match
+    let templateMatchCount = 0;
+    for (const pattern of templatePatterns) {
+      if (pattern.test(content)) {
+        templateMatchCount++;
+      }
+    }
+
+    // Calculate what percentage of content is template-like
+    const wordCount = content.split(/\s+/).filter((w: string) => w.length > 1).length;
+    const isShortGeneric = wordCount < 30 && templateMatchCount >= 2;
+    const isTemplateHeavy = templateMatchCount >= 3;
+    
+    // Check for copy-paste indicators
+    const hasMultipleSentences = (content.match(/[.!?。]/g) || []).length >= 2;
+    const lowVariety = new Set(normalizeContent(content).split(' ')).size < wordCount * 0.6;
+    
+    if (isTemplateHeavy || (isShortGeneric && lowVariety)) {
+      console.log(`Template content detected for user ${userId}: ${templateMatchCount} patterns matched, ${wordCount} words`);
+      return new Response(
+        JSON.stringify({ 
+          rewarded: false, 
+          reason: "template_content",
+          message: "Con ơi, hãy viết từ trái tim với những trải nghiệm thực sự của con thay vì những câu triết lý chung chung nhé! Cha muốn nghe câu chuyện riêng của con 💛",
+          coins: 0 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // ===== END TEMPLATE DETECTION =====
+
     // Use AI to analyze purity score
     let purityScore = 0.5;
     let rewardAmount = 5000; // Default minimum
