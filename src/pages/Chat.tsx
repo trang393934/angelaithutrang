@@ -29,6 +29,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Message {
   role: "user" | "assistant";
@@ -599,19 +604,32 @@ const Chat = () => {
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
-              <button 
-                onClick={() => navigate("/")}
-                className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
-                title="Về trang chủ"
-              >
-                <ArrowLeft className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:-translate-x-0.5 transition-all duration-300" />
-              </button>
-              <button 
-                onClick={() => setShowSidebar(true)}
-                className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale transition-colors duration-300"
-              >
-                <History className="w-5 h-5 text-primary" />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    onClick={() => navigate("/")}
+                    className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:-translate-x-0.5 transition-all duration-300" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-primary-deep text-white">
+                  <p>Về trang chủ</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    onClick={() => setShowSidebar(true)}
+                    className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
+                  >
+                    <History className="w-5 h-5 text-primary group-hover:text-primary-deep transition-all duration-300" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-primary-deep text-white">
+                  <p>Lịch sử hội thoại</p>
+                </TooltipContent>
+              </Tooltip>
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="relative">
                   <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shadow-soft" />
@@ -629,13 +647,19 @@ const Chat = () => {
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
               {/* New chat button */}
-              <button
-                onClick={handleNewSession}
-                className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale transition-colors"
-                title="Cuộc trò chuyện mới"
-              >
-                <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleNewSession}
+                    className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
+                  >
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-primary group-hover:text-primary-deep transition-all duration-300" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-primary-deep text-white">
+                  <p>Cuộc trò chuyện mới</p>
+                </TooltipContent>
+              </Tooltip>
               {dailyStatus && (
                 <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
                   <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
