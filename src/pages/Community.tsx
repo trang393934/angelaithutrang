@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Users, TrendingUp, Clock, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ const Community = () => {
   } = useCommunityPosts();
 
   const [userProfile, setUserProfile] = useState<{ display_name: string; avatar_url: string | null } | null>(null);
+  const rightSidebarRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -49,6 +50,11 @@ const Community = () => {
     };
     fetchProfile();
   }, [user]);
+
+  // Ensure the right sidebar starts at the top so HonorBoard is always visible
+  useEffect(() => {
+    rightSidebarRef.current?.scrollTo({ top: 0 });
+  }, []);
 
   const handleCreatePost = async (content: string, imageUrls?: string[]) => {
     const result = await createPost(content, imageUrls);
@@ -186,9 +192,14 @@ const Community = () => {
             </main>
 
             {/* Right Sidebar - FIXED, internal scroll if needed */}
-            <aside className="hidden lg:flex flex-col w-[320px] flex-shrink-0 overflow-y-auto scrollbar-hide space-y-6">
+            <aside
+              ref={rightSidebarRef}
+              className="hidden lg:flex flex-col w-[320px] flex-shrink-0 overflow-y-auto scrollbar-hide space-y-6"
+            >
               {/* Bảng Danh Dự - Honor Board */}
-              <HonorBoard />
+              <div className="sticky top-4 z-10">
+                <HonorBoard />
+              </div>
 
               {/* Gợi ý kết bạn */}
               <SuggestedFriendsCard />
