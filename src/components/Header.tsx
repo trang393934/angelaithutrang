@@ -116,22 +116,19 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* Navigation - Scrollable with smaller gaps on lg */}
-          <nav className="hidden lg:flex items-center gap-0.5 lg:gap-1 xl:gap-1.5 2xl:gap-3 flex-1 justify-center min-w-0 mx-1 xl:mx-3 overflow-x-auto scrollbar-hide">
+          {/* Navigation - Styled with blue background and golden border */}
+          <nav className="hidden lg:flex items-center gap-1 lg:gap-1.5 xl:gap-2 2xl:gap-3 flex-1 justify-center min-w-0 mx-1 xl:mx-3 overflow-x-auto scrollbar-hide">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`text-[11px] lg:text-xs xl:text-sm font-medium transition-colors duration-300 relative group whitespace-nowrap px-1 lg:px-1.5 xl:px-2 py-1 shrink-0 ${
+                className={`text-[11px] lg:text-xs xl:text-sm font-semibold transition-all duration-300 whitespace-nowrap px-2 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 shrink-0 rounded-md border ${
                   location.pathname === item.href 
-                    ? 'text-primary' 
-                    : 'text-foreground-muted hover:text-primary'
+                    ? 'bg-primary text-white border-amber-400/80 shadow-[0_0_8px_rgba(251,191,36,0.4)] ring-1 ring-amber-300/50' 
+                    : 'bg-primary-deep/90 text-white/90 border-amber-500/40 hover:bg-primary hover:border-amber-400/70 hover:shadow-[0_0_6px_rgba(251,191,36,0.3)]'
                 }`}
               >
                 {item.label}
-                <span className={`absolute -bottom-0.5 left-1 right-1 h-0.5 bg-primary transition-all duration-300 ${
-                  location.pathname === item.href ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                }`} />
               </Link>
             ))}
           </nav>
@@ -237,17 +234,17 @@ export const Header = () => {
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="lg:hidden py-4 border-t border-primary-pale/30 bg-background-pure/95 backdrop-blur-lg animate-in slide-in-from-top-2 duration-200">
-            <nav className="flex flex-col gap-1">
-              {/* Navigation Items */}
+            <nav className="flex flex-col gap-2">
+              {/* Navigation Items - Mobile with same styling */}
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   to={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center px-4 py-3 rounded-lg text-base font-medium transition-all duration-300 ${
+                  className={`flex items-center justify-center px-4 py-3 rounded-md text-base font-semibold transition-all duration-300 border mx-2 ${
                     location.pathname === item.href 
-                      ? 'text-primary bg-primary-pale/50' 
-                      : 'text-foreground-muted hover:text-primary hover:bg-primary-pale/30'
+                      ? 'bg-primary text-white border-amber-400/80 shadow-[0_0_8px_rgba(251,191,36,0.4)]' 
+                      : 'bg-primary-deep/90 text-white/90 border-amber-500/40 hover:bg-primary hover:border-amber-400/70'
                   }`}
                 >
                   {item.label}
