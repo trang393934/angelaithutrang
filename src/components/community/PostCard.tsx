@@ -520,7 +520,7 @@ export function PostCard({
               </div>
             </div>
           ) : (
-            <p className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words overflow-hidden w-full">
+            <p className="text-base sm:text-lg text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words overflow-hidden w-full post-content">
               {post.content}
             </p>
           )}
