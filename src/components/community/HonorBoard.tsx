@@ -74,7 +74,7 @@ export function HonorBoard() {
     totalImages: 0,
     totalVideos: 0,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLocalLoading, setIsLocalLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -116,7 +116,7 @@ export function HonorBoard() {
       } catch (error) {
         console.error('Error fetching honor stats:', error);
       } finally {
-        setIsLoading(false);
+        setIsLocalLoading(false);
       }
     };
 
@@ -134,7 +134,10 @@ export function HonorBoard() {
     };
   }, []);
 
-  if (isLoading && leaderboardLoading) {
+  // Show loading skeleton only when both are loading
+  const showLoading = isLocalLoading && leaderboardLoading;
+  
+  if (showLoading) {
     return (
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 animate-pulse">
         <div className="h-8 bg-slate-700 rounded w-2/3 mx-auto mb-6" />
