@@ -14,9 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        serif: ['Be Vietnam Pro', 'system-ui', 'sans-serif'],
-        sans: ['Be Vietnam Pro', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['Be Vietnam Pro', 'system-ui', 'sans-serif'],
+        serif: ['Be Vietnam Pro', 'Noto Sans', 'Roboto', 'system-ui', 'sans-serif'],
+        sans: ['Be Vietnam Pro', 'Noto Sans', 'Roboto', 'system-ui', 'sans-serif'],
+        display: ['Be Vietnam Pro', 'Noto Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -674,7 +674,7 @@ const Chat = () => {
                       : "bg-white border border-primary-pale/50 text-foreground rounded-bl-md shadow-soft"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                  <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap break-words message-content">
                     {message.content || (isLoading && index === messages.length - 1 ? "" : message.content)}
                   </p>
                   {(isLoading || isGenerating || isAnalyzing) && message.role === "assistant" && !message.content && (

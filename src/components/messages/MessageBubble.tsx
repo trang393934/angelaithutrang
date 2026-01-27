@@ -185,13 +185,13 @@ export function MessageBubble({
             {message.content && (
               <div
                 className={cn(
-                  "px-4 py-2 rounded-2xl transition-all",
+                  "px-4 py-3 rounded-2xl transition-all",
                   isOwn
                     ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-br-sm"
                     : "bg-muted rounded-bl-sm"
                 )}
               >
-                <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                <p className="text-base sm:text-lg whitespace-pre-wrap break-words leading-relaxed message-content">{message.content}</p>
               </div>
             )}
 
