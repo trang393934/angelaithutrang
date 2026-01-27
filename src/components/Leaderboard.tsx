@@ -27,7 +27,8 @@ export function Leaderboard() {
 
   // Get top 5 users for the hero zone
   const top5 = topUsers.slice(0, 5);
-  const displayUsers = showAll ? allUsers.slice(0, 20) : topUsers.slice(0, 5);
+  // Show all users when expanded, not limited to 20
+  const displayUsers = showAll ? allUsers : topUsers.slice(0, 5);
 
   if (isLoading) {
     return (
