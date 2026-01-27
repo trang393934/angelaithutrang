@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Users, TrendingUp, Clock, Sparkles, Loader2 } from "lucide-react";
+import { Users, TrendingUp, Clock, Sparkles, Loader2, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -17,9 +17,12 @@ import { HonorBoard } from "@/components/community/HonorBoard";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { LightGate } from "@/components/LightGate";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 const Community = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const {
     posts,
     isLoading,
@@ -36,6 +39,7 @@ const Community = () => {
   } = useCommunityPosts();
 
   const [userProfile, setUserProfile] = useState<{ display_name: string; avatar_url: string | null } | null>(null);
+  const [showMobileLeaderboard, setShowMobileLeaderboard] = useState(false);
   const rightSidebarRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -137,6 +141,35 @@ const Community = () => {
                     <Button className="bg-sapphire-gradient">Đăng nhập</Button>
                   </Link>
                 </div>
+              )}
+
+              {/* Mobile Leaderboard Button */}
+              {isMobile && (
+                <Sheet open={showMobileLeaderboard} onOpenChange={setShowMobileLeaderboard}>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 flex items-center gap-2"
+                    >
+                      <Trophy className="w-4 h-4" />
+                      Bảng Xếp Hạng
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle className="text-center text-amber-600 flex items-center justify-center gap-2">
+                        <Trophy className="w-5 h-5" />
+                        Bảng Xếp Hạng & Thống Kê
+                      </SheetTitle>
+                    </SheetHeader>
+                    <div className="space-y-4 mt-4 pb-6">
+                      <HonorBoard />
+                      <Leaderboard />
+                      <SuggestedFriendsCard />
+                      <RewardRulesCard dailyLimits={dailyLimits} />
+                    </div>
+                  </SheetContent>
+                </Sheet>
               )}
 
               {/* Sort Tabs */}
