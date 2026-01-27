@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Wallet, ArrowUpRight, AlertCircle, CheckCircle2, Clock, XCircle, Loader2, Info } from "lucide-react";
+import { Wallet, ArrowUpRight, AlertCircle, CheckCircle2, Clock, XCircle, Loader2, Info, UserCircle, ImageOff } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
 interface WithdrawalStatus {
@@ -32,6 +33,18 @@ interface WithdrawalHistory {
   created_at: string;
 }
 
+interface AvatarVerification {
+  eligible: boolean;
+  reason: string;
+  details?: {
+    avatar_valid: boolean;
+    cover_valid: boolean;
+    ai_verified?: boolean;
+    confidence?: number;
+    ai_reason?: string;
+  };
+}
+
 const MIN_WITHDRAWAL = 200000;
 const MAX_DAILY_WITHDRAWAL = 500000;
 
@@ -39,6 +52,7 @@ export function CoinWithdrawal() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { isConnected, address, connect, hasWallet } = useWeb3Wallet();
+  const navigate = useNavigate();
   
   const [withdrawalStatus, setWithdrawalStatus] = useState<WithdrawalStatus | null>(null);
   const [withdrawalHistory, setWithdrawalHistory] = useState<WithdrawalHistory[]>([]);
@@ -46,6 +60,8 @@ export function CoinWithdrawal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [avatarVerification, setAvatarVerification] = useState<AvatarVerification | null>(null);
+  const [isVerifyingAvatar, setIsVerifyingAvatar] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -75,6 +91,44 @@ export function CoinWithdrawal() {
       };
     }
   }, [user]);
+
+  // Verify avatar when dialog opens
+  const verifyAvatarForWithdrawal = async () => {
+    if (!user) return;
+    
+    setIsVerifyingAvatar(true);
+    setAvatarVerification(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-avatar-for-withdrawal');
+      
+      if (error) {
+        console.error('Avatar verification error:', error);
+        setAvatarVerification({
+          eligible: false,
+          reason: 'Không thể xác minh avatar. Vui lòng thử lại.',
+          details: { avatar_valid: false, cover_valid: false }
+        });
+        return;
+      }
+      
+      setAvatarVerification(data);
+    } catch (error) {
+      console.error('Avatar verification error:', error);
+      setAvatarVerification({
+        eligible: false,
+        reason: 'Lỗi khi xác minh avatar.',
+        details: { avatar_valid: false, cover_valid: false }
+      });
+    } finally {
+      setIsVerifyingAvatar(false);
+    }
+  };
+
+  const handleOpenDialog = async () => {
+    setShowDialog(true);
+    await verifyAvatarForWithdrawal();
+  };
 
   const fetchWithdrawalStatus = async () => {
     if (!user) return;
@@ -285,7 +339,14 @@ export function CoinWithdrawal() {
         )}
 
         {/* Withdraw Button */}
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <Dialog open={showDialog} onOpenChange={(open) => {
+          setShowDialog(open);
+          if (open) {
+            verifyAvatarForWithdrawal();
+          } else {
+            setAvatarVerification(null);
+          }
+        }}>
           <DialogTrigger asChild>
             <Button 
               className="w-full bg-gradient-to-r from-divine-gold to-amber-500 hover:from-divine-gold/90 hover:to-amber-500/90 text-white"
@@ -301,7 +362,7 @@ export function CoinWithdrawal() {
             </Button>
           </DialogTrigger>
 
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ArrowUpRight className="w-5 h-5 text-divine-gold" />
@@ -313,69 +374,140 @@ export function CoinWithdrawal() {
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              {!isConnected ? (
-                <Alert className="border-primary/20 bg-primary/5">
-                  <Info className="w-4 h-4 text-primary" />
-                  <AlertDescription>
-                    Vui lòng kết nối ví Web3 để tiếp tục
+              {/* Avatar Verification Status */}
+              {isVerifyingAvatar ? (
+                <Alert className="border-blue-200 bg-blue-50">
+                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                  <AlertDescription className="text-blue-700">
+                    Đang xác minh hồ sơ của bạn...
                   </AlertDescription>
                 </Alert>
-              ) : (
-                <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-                  <p className="text-xs text-green-600">Ví đã kết nối</p>
-                  <p className="font-mono text-sm">{getShortAddress(address || '')}</p>
-                </div>
-              )}
-
-              {!isConnected ? (
-                <Button onClick={connect} className="w-full" disabled={!hasWallet}>
-                  <Wallet className="w-4 h-4 mr-2" />
-                  {hasWallet ? "Kết nối ví" : "Cài đặt MetaMask"}
-                </Button>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Số lượng rút</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      placeholder={`Tối thiểu ${MIN_WITHDRAWAL.toLocaleString()}`}
-                      value={withdrawAmount}
-                      onChange={(e) => setWithdrawAmount(e.target.value)}
-                      min={MIN_WITHDRAWAL}
-                      max={Math.min(
-                        withdrawalStatus?.available_balance || 0,
-                        withdrawalStatus?.remaining_daily_limit || MAX_DAILY_WITHDRAWAL
+              ) : avatarVerification && !avatarVerification.eligible ? (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertCircle className="w-4 h-4 text-red-600" />
+                  <AlertDescription className="text-red-700">
+                    <div className="space-y-2">
+                      <p className="font-medium">{avatarVerification.reason}</p>
+                      {avatarVerification.details && (
+                        <div className="text-xs space-y-1 mt-2">
+                          <div className="flex items-center gap-2">
+                            {avatarVerification.details.cover_valid ? (
+                              <CheckCircle2 className="w-3 h-3 text-green-500" />
+                            ) : (
+                              <XCircle className="w-3 h-3 text-red-500" />
+                            )}
+                            <span>Ảnh bìa</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {avatarVerification.details.avatar_valid ? (
+                              <CheckCircle2 className="w-3 h-3 text-green-500" />
+                            ) : (
+                              <XCircle className="w-3 h-3 text-red-500" />
+                            )}
+                            <span>Avatar là ảnh người thật</span>
+                          </div>
+                        </div>
                       )}
-                    />
-                    <div className="flex justify-between text-xs text-foreground-muted">
-                      <span>Khả dụng: {withdrawalStatus?.available_balance.toLocaleString()}</span>
-                      <button 
-                        className="text-primary hover:underline"
-                        onClick={() => setWithdrawAmount(
-                          Math.min(
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2 w-full"
+                        onClick={() => {
+                          setShowDialog(false);
+                          navigate('/profile');
+                        }}
+                      >
+                        <UserCircle className="w-4 h-4 mr-2" />
+                        Cập nhật hồ sơ
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              ) : avatarVerification?.eligible ? (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <AlertDescription className="text-green-700">
+                    Hồ sơ đã được xác minh thành công
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              {/* Only show wallet connection and withdrawal form if avatar is verified */}
+              {avatarVerification?.eligible && (
+                <>
+                  {!isConnected ? (
+                    <Alert className="border-primary/20 bg-primary/5">
+                      <Info className="w-4 h-4 text-primary" />
+                      <AlertDescription>
+                        Vui lòng kết nối ví Web3 để tiếp tục
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-green-50 border border-green-200">
+                      <p className="text-xs text-green-600">Ví đã kết nối</p>
+                      <p className="font-mono text-sm">{getShortAddress(address || '')}</p>
+                    </div>
+                  )}
+
+                  {!isConnected ? (
+                    <Button onClick={connect} className="w-full" disabled={!hasWallet}>
+                      <Wallet className="w-4 h-4 mr-2" />
+                      {hasWallet ? "Kết nối ví" : "Cài đặt MetaMask"}
+                    </Button>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="amount">Số lượng rút</Label>
+                        <Input
+                          id="amount"
+                          type="number"
+                          placeholder={`Tối thiểu ${MIN_WITHDRAWAL.toLocaleString()}`}
+                          value={withdrawAmount}
+                          onChange={(e) => setWithdrawAmount(e.target.value)}
+                          min={MIN_WITHDRAWAL}
+                          max={Math.min(
                             withdrawalStatus?.available_balance || 0,
                             withdrawalStatus?.remaining_daily_limit || MAX_DAILY_WITHDRAWAL
-                          ).toString()
-                        )}
-                      >
-                        Tối đa
-                      </button>
-                    </div>
-                  </div>
+                          )}
+                        />
+                        <div className="flex justify-between text-xs text-foreground-muted">
+                          <span>Khả dụng: {withdrawalStatus?.available_balance.toLocaleString()}</span>
+                          <button 
+                            className="text-primary hover:underline"
+                            onClick={() => setWithdrawAmount(
+                              Math.min(
+                                withdrawalStatus?.available_balance || 0,
+                                withdrawalStatus?.remaining_daily_limit || MAX_DAILY_WITHDRAWAL
+                              ).toString()
+                            )}
+                          >
+                            Tối đa
+                          </button>
+                        </div>
+                      </div>
 
-                  <Alert className="border-amber-200 bg-amber-50">
-                    <AlertCircle className="w-4 h-4 text-amber-600" />
-                    <AlertDescription className="text-xs text-amber-700">
-                      Yêu cầu rút sẽ được xử lý trong vòng 24-48 giờ. 
-                      Camly Coin sẽ được chuyển về ví BSC của bạn.
-                    </AlertDescription>
-                  </Alert>
+                      <Alert className="border-amber-200 bg-amber-50">
+                        <AlertCircle className="w-4 h-4 text-amber-600" />
+                        <AlertDescription className="text-xs text-amber-700">
+                          Yêu cầu rút sẽ được xử lý trong vòng 24-48 giờ. 
+                          Camly Coin sẽ được chuyển về ví BSC của bạn.
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
                 </>
               )}
+
+              {/* Profile requirement notice */}
+              <Alert className="border-blue-200 bg-blue-50">
+                <Info className="w-4 h-4 text-blue-600" />
+                <AlertDescription className="text-xs text-blue-700">
+                  <strong>Yêu cầu:</strong> Để rút tiền, hồ sơ của bạn phải có ảnh bìa và avatar là ảnh chân dung người thật của chính bạn (không chấp nhận logo, phong cảnh, hay hình ảnh khác).
+                </AlertDescription>
+              </Alert>
             </div>
 
-            {isConnected && (
+            {avatarVerification?.eligible && isConnected && (
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowDialog(false)}>
                   Hủy
