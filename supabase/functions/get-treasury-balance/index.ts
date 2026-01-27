@@ -93,7 +93,18 @@ Deno.serve(async (req) => {
     // Get CAMLY balance
     const camlyContract = new ethers.Contract(CAMLY_CONTRACT, ERC20_ABI, provider);
     const camlyBalance = await camlyContract.balanceOf(treasuryAddress);
-    const camlyFormatted = ethers.formatUnits(camlyBalance, 18);
+    // IMPORTANT: do NOT hardcode decimals. Some tokens don't use 18.
+    let camlyDecimals = 18;
+    try {
+      camlyDecimals = Number(await camlyContract.decimals());
+      if (!Number.isFinite(camlyDecimals) || camlyDecimals < 0 || camlyDecimals > 36) {
+        camlyDecimals = 18;
+      }
+    } catch (e) {
+      console.warn('Could not fetch CAMLY decimals, falling back to 18:', e);
+      camlyDecimals = 18;
+    }
+    const camlyFormatted = ethers.formatUnits(camlyBalance, camlyDecimals);
 
     console.log(`Treasury Balance - BNB: ${bnbFormatted}, CAMLY: ${camlyFormatted}`);
 
@@ -105,6 +116,7 @@ Deno.serve(async (req) => {
         bnb_balance_wei: bnbBalance.toString(),
         camly_balance: parseFloat(camlyFormatted),
         camly_balance_wei: camlyBalance.toString(),
+        camly_decimals: camlyDecimals,
         updated_at: new Date().toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
