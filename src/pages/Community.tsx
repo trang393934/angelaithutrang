@@ -191,15 +191,13 @@ const Community = () => {
               )}
             </main>
 
-            {/* Right Sidebar - FIXED, internal scroll if needed */}
+            {/* Right Sidebar - STICKY so it stays fixed when scrolling posts */}
             <aside
               ref={rightSidebarRef}
-              className="hidden lg:flex flex-col w-[320px] flex-shrink-0 overflow-y-auto scrollbar-hide space-y-6"
+              className="hidden lg:flex flex-col w-[320px] flex-shrink-0 sticky top-4 self-start max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-hide space-y-6"
             >
               {/* Bảng Danh Dự - Honor Board */}
-              <div className="sticky top-4 z-10">
-                <HonorBoard />
-              </div>
+              <HonorBoard />
 
               {/* Gợi ý kết bạn */}
               <SuggestedFriendsCard />
