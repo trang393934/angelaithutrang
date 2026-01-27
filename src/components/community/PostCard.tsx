@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { PostImageGrid } from "./PostImageGrid";
-import { LikeButtonWithReactions } from "./PostReactionPicker";
+import { LikeButtonWithReactions, ReactionType } from "./PostReactionPicker";
 import ShareDialog from "@/components/ShareDialog";
 import {
   DropdownMenu,
@@ -81,6 +81,14 @@ export function PostCard({
   // Share dialog state
   const [showShareDialog, setShowShareDialog] = useState(false);
 
+  // Per-post reaction (UI-only for now): persist locally so it doesn't revert to ❤️
+  const reactionStorageKey = `community:post-reaction:${post.id}`;
+  const [selectedReaction, setSelectedReaction] = useState<ReactionType | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = window.localStorage.getItem(reactionStorageKey) as ReactionType | null;
+    return v;
+  });
+
   const isOwner = currentUserId === post.user_id;
   
   // Get images - prefer image_urls array, fallback to single image_url
@@ -88,10 +96,29 @@ export function PostCard({
     ? post.image_urls 
     : (post.image_url ? [post.image_url] : []);
 
-  const handleLike = async () => {
+  // Keep local reaction state consistent with liked state
+  useEffect(() => {
+    if (!post.is_liked_by_me && selectedReaction) {
+      setSelectedReaction(null);
+      if (typeof window !== "undefined") window.localStorage.removeItem(reactionStorageKey);
+    }
+  }, [post.is_liked_by_me, reactionStorageKey, selectedReaction]);
+
+  const handleLike = (reactionId?: ReactionType) => {
+    const isLiked = post.is_liked_by_me || false;
+    const nextLiked = !isLiked;
+
+    if (nextLiked) {
+      const nextReaction: ReactionType = reactionId ?? selectedReaction ?? "heart";
+      setSelectedReaction(nextReaction);
+      if (typeof window !== "undefined") window.localStorage.setItem(reactionStorageKey, nextReaction);
+    } else {
+      setSelectedReaction(null);
+      if (typeof window !== "undefined") window.localStorage.removeItem(reactionStorageKey);
+    }
+
     setIsLiking(true);
-    await onLike(post.id);
-    setIsLiking(false);
+    void onLike(post.id).finally(() => setIsLiking(false));
   };
 
   const handleShareClick = () => {
@@ -291,7 +318,10 @@ export function PostCard({
     setShowDeleteDialog(false);
   };
 
-  const isNearThreshold = post.likes_count >= 3 && post.likes_count < 5;
+  const likesCount = post.likes_count || 0;
+  const commentsCount = post.comments_count || 0;
+  const sharesCount = post.shares_count || 0;
+  const isNearThreshold = likesCount >= 3 && likesCount < 5;
 
   return (
     <>
@@ -502,20 +532,21 @@ export function PostCard({
 
           {/* Stats */}
           <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-foreground-muted mb-3 pb-3 border-b border-primary/10 flex-wrap">
-            <span>{post.likes_count} lượt thích</span>
-            <span>{post.comments_count} bình luận</span>
-            <span>{post.shares_count} chia sẻ</span>
+            <span>{likesCount} lượt thích</span>
+            <span>{commentsCount} bình luận</span>
+            <span>{sharesCount} chia sẻ</span>
           </div>
 
           {/* Actions */}
           <div className="flex items-center justify-between gap-1">
             <LikeButtonWithReactions
               isLiked={post.is_liked_by_me || false}
-              likesCount={post.likes_count}
+              likesCount={likesCount}
               isLiking={isLiking}
               onLike={handleLike}
               isNearThreshold={isNearThreshold}
               isRewarded={post.is_rewarded}
+              currentReaction={selectedReaction}
             />
 
             <Button

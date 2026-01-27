@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, ThumbsUp, Smile, Diamond, Sparkles, Star } from "lucide-react";
+import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Beautiful reaction options with icons and emojis
@@ -16,6 +16,10 @@ export const POST_REACTIONS = [
 ] as const;
 
 export type ReactionType = typeof POST_REACTIONS[number]["id"];
+
+function getReactionById(id?: ReactionType | null) {
+  return POST_REACTIONS.find((r) => r.id === id);
+}
 
 interface PostReactionPickerProps {
   isOpen: boolean;
@@ -120,10 +124,11 @@ interface LikeButtonWithReactionsProps {
   isLiked: boolean;
   likesCount: number;
   isLiking: boolean;
-  onLike: () => void;
+  onLike: (reactionId?: ReactionType) => void;
   onLongPress?: () => void;
   isNearThreshold?: boolean;
   isRewarded?: boolean;
+  currentReaction?: ReactionType | null;
 }
 
 export function LikeButtonWithReactions({
@@ -134,9 +139,15 @@ export function LikeButtonWithReactions({
   onLongPress,
   isNearThreshold,
   isRewarded,
+  currentReaction,
 }: LikeButtonWithReactionsProps) {
   const [showPicker, setShowPicker] = useState(false);
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const activeReaction = useMemo(
+    () => (isLiked ? getReactionById(currentReaction ?? "heart") : undefined),
+    [isLiked, currentReaction]
+  );
 
   const handleMouseDown = () => {
     const timer = setTimeout(() => {
@@ -169,9 +180,9 @@ export function LikeButtonWithReactions({
         isOpen={showPicker}
         onClose={() => setShowPicker(false)}
         onReactionSelect={(reaction) => {
-          onLike();
+          onLike(reaction.id);
         }}
-        currentReaction={isLiked ? "heart" : null}
+        currentReaction={isLiked ? (currentReaction ?? "heart") : null}
       />
       
       <motion.button
@@ -191,13 +202,13 @@ export function LikeButtonWithReactions({
           animate={isLiking ? { scale: [1, 1.3, 1] } : {}}
           transition={{ duration: 0.3 }}
         >
-          {isLiked ? (
-            <Heart className="w-5 h-5 fill-red-500" />
+          {isLiked && activeReaction ? (
+            <span className="text-xl leading-none">{activeReaction.emoji}</span>
           ) : (
             <Heart className="w-5 h-5" />
           )}
         </motion.span>
-        <span className="text-sm font-medium">Thích</span>
+        <span className="text-sm font-medium">{isLiked && activeReaction ? activeReaction.label : "Thích"}</span>
         {isNearThreshold && !isRewarded && (
           <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
             {5 - likesCount} nữa!
