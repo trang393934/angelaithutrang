@@ -12,6 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { PostImageGrid } from "./PostImageGrid";
+import { LikeButtonWithReactions } from "./PostReactionPicker";
 import ShareDialog from "@/components/ShareDialog";
 import {
   DropdownMenu,
@@ -507,26 +508,21 @@ export function PostCard({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLike}
-              disabled={isLiking}
-              className={`flex-1 ${post.is_liked_by_me ? 'text-red-500' : 'text-foreground-muted'}`}
-            >
-              <Heart className={`w-5 h-5 mr-2 ${post.is_liked_by_me ? 'fill-red-500' : ''} ${isLiking ? 'animate-pulse' : ''}`} />
-              Thích
-              {isNearThreshold && !post.is_rewarded && (
-                <span className="text-xs text-blue-600 ml-1">({5 - post.likes_count} nữa!)</span>
-              )}
-            </Button>
+          <div className="flex items-center justify-between gap-1">
+            <LikeButtonWithReactions
+              isLiked={post.is_liked_by_me || false}
+              likesCount={post.likes_count}
+              isLiking={isLiking}
+              onLike={handleLike}
+              isNearThreshold={isNearThreshold}
+              isRewarded={post.is_rewarded}
+            />
 
             <Button
               variant="ghost"
               size="sm"
               onClick={handleToggleComments}
-              className="flex-1 text-foreground-muted"
+              className="flex-1 text-foreground-muted hover:bg-primary/5"
             >
               <MessageCircle className="w-5 h-5 mr-2" />
               Bình luận
@@ -537,7 +533,7 @@ export function PostCard({
               size="sm"
               onClick={handleShareClick}
               disabled={isSharing || !currentUserId}
-              className={`flex-1 ${post.is_shared_by_me ? 'text-green-600' : 'text-foreground-muted'}`}
+              className={`flex-1 hover:bg-primary/5 ${post.is_shared_by_me ? 'text-green-600' : 'text-foreground-muted'}`}
               title={!currentUserId ? 'Vui lòng đăng nhập để chia sẻ' : ''}
             >
               {isSharing ? (

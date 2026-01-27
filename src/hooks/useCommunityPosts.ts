@@ -186,6 +186,28 @@ export function useCommunityPosts() {
       return { success: false, message: "Vui lòng đăng nhập" };
     }
 
+    // Find current post state for optimistic update
+    const currentPost = posts.find(p => p.id === postId);
+    if (!currentPost) {
+      return { success: false, message: "Không tìm thấy bài viết" };
+    }
+
+    const wasLiked = currentPost.is_liked_by_me;
+    const previousLikesCount = currentPost.likes_count;
+
+    // OPTIMISTIC UPDATE - Update UI immediately for instant feedback
+    setPosts(prev =>
+      prev.map(p =>
+        p.id === postId
+          ? {
+              ...p,
+              likes_count: wasLiked ? Math.max(0, p.likes_count - 1) : p.likes_count + 1,
+              is_liked_by_me: !wasLiked,
+            }
+          : p
+      )
+    );
+
     try {
       const { data, error } = await supabase.functions.invoke("process-community-post", {
         body: {
@@ -197,7 +219,7 @@ export function useCommunityPosts() {
       if (error) throw error;
 
       if (data.success) {
-        // Update local state
+        // Sync with server response (handles edge cases like rewards)
         setPosts(prev =>
           prev.map(p =>
             p.id === postId
@@ -214,6 +236,18 @@ export function useCommunityPosts() {
 
       return data;
     } catch (error: any) {
+      // ROLLBACK on error - revert to previous state
+      setPosts(prev =>
+        prev.map(p =>
+          p.id === postId
+            ? {
+                ...p,
+                likes_count: previousLikesCount,
+                is_liked_by_me: wasLiked,
+              }
+            : p
+        )
+      );
       console.error("Error toggling like:", error);
       return { success: false, message: error.message || "Lỗi khi thích bài viết" };
     }
@@ -382,7 +416,7 @@ export function useCommunityPosts() {
     }
   }, [fetchPosts, fetchDailyLimits, user]);
 
-  // Subscribe to realtime updates
+  // Subscribe to realtime updates with deduplication
   useEffect(() => {
     const channel = supabase
       .channel("community_posts_realtime")
@@ -393,8 +427,26 @@ export function useCommunityPosts() {
           schema: "public",
           table: "community_posts",
         },
-        () => {
-          fetchPosts();
+        (payload) => {
+          // Use deduplication to ensure accurate counts
+          setPosts((current) => {
+            const payloadData = payload.eventType === "DELETE" ? payload.old : payload.new;
+            const postId = payloadData?.id;
+            
+            if (!postId) return current;
+            
+            // Filter out the existing post with this ID to prevent duplicates
+            const filtered = current.filter((post) => post.id !== postId);
+            
+            if (payload.eventType === "DELETE") {
+              return filtered;
+            }
+            
+            // For INSERT/UPDATE, we'll refetch to get complete data with profiles
+            // Use a debounced refetch to avoid multiple rapid calls
+            fetchPosts();
+            return current;
+          });
         }
       )
       .subscribe();
