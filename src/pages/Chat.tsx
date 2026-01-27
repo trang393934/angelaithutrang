@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2, 
   ImagePlus, Camera, Wand2, X, Download, Loader2, MessageSquare,
-  History, FolderOpen, Plus
+  History, FolderOpen, Plus, Volume2
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ import ChatRewardNotification from "@/components/ChatRewardNotification";
 import ChatShareDialog from "@/components/ChatShareDialog";
 import EarlyAdopterRewardPopup from "@/components/EarlyAdopterRewardPopup";
 import { ChatSessionsSidebar } from "@/components/chat/ChatSessionsSidebar";
+import { AudioButton } from "@/components/chat/AudioButton";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
 import { useImageGeneration } from "@/hooks/useImageGeneration";
@@ -22,6 +23,7 @@ import { useEarlyAdopterReward } from "@/hooks/useEarlyAdopterReward";
 import { useChatHistory } from "@/hooks/useChatHistory";
 import { useChatSessions } from "@/hooks/useChatSessions";
 import { useChatFolders } from "@/hooks/useChatFolders";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -124,6 +126,7 @@ const Chat = () => {
 
   const { isGenerating, generateImage } = useImageGeneration();
   const { isAnalyzing, analyzeImage } = useImageAnalysis();
+  const { isLoading: ttsLoading, isPlaying: ttsPlaying, currentMessageId: ttsMessageId, playText, stopAudio } = useTextToSpeech();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -752,6 +755,14 @@ const Chat = () => {
                 {/* Action buttons for assistant messages */}
                 {message.role === "assistant" && message.content && !(isLoading || isGenerating || isAnalyzing) && (
                   <div className="flex items-center gap-2 ml-1">
+                    {/* Audio Button */}
+                    <AudioButton
+                      isLoading={ttsLoading}
+                      isPlaying={ttsPlaying}
+                      isCurrentMessage={ttsMessageId === `msg-${index}`}
+                      onPlay={() => playText(message.content, `msg-${index}`)}
+                      onStop={stopAudio}
+                    />
                     <button
                       onClick={() => handleCopyMessage(message.content)}
                       className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary-pale/50 rounded-md transition-colors"
