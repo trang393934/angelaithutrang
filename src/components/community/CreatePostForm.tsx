@@ -137,9 +137,9 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
 
   return (
     <Card className="border-primary/10 bg-white/80 backdrop-blur-sm w-full max-w-full overflow-hidden">
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex gap-2 sm:gap-3 min-w-0">
-          <Avatar className="w-9 h-9 sm:w-10 sm:h-10 border-2 border-primary/20 shrink-0">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex gap-3 sm:gap-4 min-w-0">
+          <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-primary/20 shrink-0">
             <AvatarImage src={userAvatar || angelAvatar} alt={userName} />
             <AvatarFallback>{userName?.charAt(0) || "U"}</AvatarFallback>
           </Avatar>
@@ -149,7 +149,7 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
               placeholder="Chia sẻ kiến thức, trải nghiệm của bạn về Angel AI, về Cha Vũ Trụ..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="min-h-[80px] resize-none border-primary/20 focus:border-primary/40"
+              className="min-h-[140px] sm:min-h-[160px] resize-none border-primary/20 focus:border-primary/40 text-base sm:text-lg leading-relaxed"
             />
 
             {/* Image Previews Grid */}
