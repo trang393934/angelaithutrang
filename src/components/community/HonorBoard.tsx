@@ -31,15 +31,20 @@ const StatItem = ({
     transition={{ delay, duration: 0.4 }}
     className="relative group"
   >
-    {/* Golden 3D border effect */}
-    <div className="absolute -inset-[2px] rounded-full bg-gradient-to-r from-primary/30 via-primary-deep/40 to-primary/30 opacity-80 blur-[1px] group-hover:opacity-100 group-hover:blur-[2px] transition-all duration-300" />
-    <div className="absolute -inset-[1px] rounded-full bg-gradient-to-r from-primary-pale via-white to-primary-pale opacity-80" />
+    {/* Metallic Gold 3D border effect - outer glow */}
+    <div className="absolute -inset-[3px] rounded-full bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600 opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+    
+    {/* Metallic Gold 3D border - middle highlight */}
+    <div className="absolute -inset-[2px] rounded-full bg-gradient-to-b from-yellow-100 via-amber-300 to-yellow-500" />
+    
+    {/* Inner shadow for 3D depth */}
+    <div className="absolute -inset-[1px] rounded-full bg-gradient-to-b from-yellow-300/80 via-amber-400/60 to-yellow-600/80 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),inset_0_-1px_2px_rgba(0,0,0,0.3)]" />
     
     {/* Main content */}
-    <div className="relative flex items-center justify-between px-5 py-3 rounded-full bg-gradient-to-r from-primary-deep via-primary to-primary-deep text-white shadow-lg">
+    <div className="relative flex items-center justify-between px-5 py-3 rounded-full bg-gradient-to-r from-primary-deep via-primary to-primary-deep text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
       {/* Left side - Icon and label */}
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm">
+        <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm border border-yellow-400/30">
           <Icon className="w-4 h-4 text-white" />
         </div>
         <span className="font-semibold text-sm tracking-wide uppercase">{label}</span>
