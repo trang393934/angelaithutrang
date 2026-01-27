@@ -12,6 +12,9 @@ const ERC20_ABI = [
   "function decimals() view returns (uint8)"
 ];
 
+// CAMLY token has 3 decimals (not 18 like standard ERC20)
+const CAMLY_DECIMALS = 3;
+
 // Camly Coin Contract Address on BSC
 const CAMLY_CONTRACT = "0x0910320181889fefde0bb1ca63962b0a8882e413";
 
@@ -202,8 +205,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Convert amount to wei (18 decimals)
-    const amountWei = BigInt(withdrawal.amount) * BigInt(10 ** 18);
+    // Convert amount to smallest unit (CAMLY has 3 decimals, not 18!)
+    const amountWei = BigInt(withdrawal.amount) * BigInt(10 ** CAMLY_DECIMALS);
     
     console.log(`Sending ${withdrawal.amount} CAMLY to ${withdrawal.wallet_address}`);
 
