@@ -44,6 +44,8 @@ interface Withdrawal {
   created_at: string;
   processed_at: string | null;
   processed_by: string | null;
+  retry_count?: number;
+  error_message?: string | null;
   user_email?: string;
 }
 
@@ -163,36 +165,42 @@ const AdminWithdrawals = () => {
   };
 
   const handleApprove = async () => {
-    if (!selectedWithdrawal || !txHash.trim()) {
-      toast.error("Vui lòng nhập Transaction Hash");
+    if (!selectedWithdrawal) {
+      toast.error("Vui lòng chọn yêu cầu rút");
       return;
     }
 
     setIsProcessing(true);
     try {
-      const { error } = await supabase
-        .from("coin_withdrawals")
-        .update({
-          status: "completed",
-          tx_hash: txHash.trim(),
-          admin_notes: adminNotes.trim() || null,
-          processed_at: new Date().toISOString(),
-          processed_by: user?.id,
-        })
-        .eq("id", selectedWithdrawal.id);
+      // Call the process-withdrawal edge function
+      const { data, error } = await supabase.functions.invoke('process-withdrawal', {
+        body: { withdrawal_id: selectedWithdrawal.id }
+      });
 
       if (error) throw error;
 
-      toast.success("Đã duyệt yêu cầu rút thành công!");
+      if (data?.success) {
+        toast.success(`Đã chuyển ${selectedWithdrawal.amount.toLocaleString()} CAMLY thành công!`, {
+          description: `TX: ${data.tx_hash?.slice(0, 20)}...`
+        });
+      } else {
+        throw new Error(data?.error || 'Unknown error');
+      }
+
       setSelectedWithdrawal(null);
       setActionType(null);
       setTxHash("");
       setAdminNotes("");
       fetchWithdrawals();
       fetchStats();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error approving withdrawal:", error);
-      toast.error("Không thể duyệt yêu cầu rút");
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error("Lỗi xử lý rút tiền", {
+        description: errorMessage
+      });
+      // Refresh to show updated status
+      fetchWithdrawals();
     } finally {
       setIsProcessing(false);
     }
@@ -250,10 +258,19 @@ const AdminWithdrawals = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, retryCount?: number) => {
     switch (status) {
       case "pending":
-        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200"><Clock className="w-3 h-3 mr-1" /> Chờ duyệt</Badge>;
+        return (
+          <div className="flex flex-col gap-1">
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+              <Clock className="w-3 h-3 mr-1" /> Chờ duyệt
+            </Badge>
+            {retryCount && retryCount > 0 && (
+              <span className="text-xs text-amber-600">Retry: {retryCount}/3</span>
+            )}
+          </div>
+        );
       case "processing":
         return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200"><RefreshCw className="w-3 h-3 mr-1 animate-spin" /> Đang xử lý</Badge>;
       case "completed":
@@ -475,7 +492,12 @@ const AdminWithdrawals = () => {
                       {withdrawal.wallet_address.slice(0, 6)}...{withdrawal.wallet_address.slice(-4)}
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(withdrawal.status)}
+                      {getStatusBadge(withdrawal.status, withdrawal.retry_count)}
+                      {withdrawal.error_message && (
+                        <p className="text-xs text-red-500 mt-1 max-w-[200px] truncate" title={withdrawal.error_message}>
+                          {withdrawal.error_message}
+                        </p>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       {withdrawal.status === "pending" && (
@@ -562,37 +584,48 @@ const AdminWithdrawals = () => {
         </div>
       </main>
 
-      {/* Approve Dialog */}
+      {/* Approve Dialog - Automated */}
       <Dialog open={actionType === "approve"} onOpenChange={() => { setActionType(null); setSelectedWithdrawal(null); setTxHash(""); setAdminNotes(""); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-green-700">
               <CheckCircle className="w-5 h-5" />
-              Duyệt yêu cầu rút
+              Phê duyệt & Chuyển tự động
             </DialogTitle>
             <DialogDescription>
-              Xác nhận đã chuyển {formatAmount(selectedWithdrawal?.amount || 0)} CAMLY về ví {selectedWithdrawal?.wallet_address.slice(0, 10)}...
+              Hệ thống sẽ tự động chuyển <span className="font-bold">{formatAmount(selectedWithdrawal?.amount || 0)} CAMLY</span> về ví:
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Transaction Hash *</label>
-              <Input
-                placeholder="0x..."
-                value={txHash}
-                onChange={(e) => setTxHash(e.target.value)}
-                className="font-mono text-sm"
-              />
+            <div className="bg-primary-pale/30 rounded-xl p-4">
+              <p className="text-xs text-foreground-muted mb-1">Địa chỉ ví nhận</p>
+              <p className="font-mono text-sm break-all">{selectedWithdrawal?.wallet_address}</p>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Ghi chú (tùy chọn)</label>
-              <Textarea
-                placeholder="Ghi chú cho admin..."
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                rows={3}
-              />
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-800">Lưu ý quan trọng</p>
+                  <p className="text-amber-700 mt-1">
+                    Sau khi bấm xác nhận, hệ thống sẽ tự động chuyển CAMLY từ ví Treasury về ví người dùng thông qua blockchain BSC.
+                  </p>
+                </div>
+              </div>
             </div>
+
+            {selectedWithdrawal?.retry_count && selectedWithdrawal.retry_count > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p className="text-sm text-red-700">
+                  ⚠️ Đây là lần thử thứ {selectedWithdrawal.retry_count + 1}/3
+                </p>
+                {selectedWithdrawal.error_message && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Lỗi trước: {selectedWithdrawal.error_message}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setActionType(null); setSelectedWithdrawal(null); }}>
@@ -600,10 +633,17 @@ const AdminWithdrawals = () => {
             </Button>
             <Button 
               onClick={handleApprove} 
-              disabled={isProcessing || !txHash.trim()}
+              disabled={isProcessing}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isProcessing ? "Đang xử lý..." : "Xác nhận duyệt"}
+              {isProcessing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Đang chuyển...
+                </>
+              ) : (
+                "Xác nhận & Chuyển tự động"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
