@@ -94,7 +94,7 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
       animate={{ width: isCollapsed ? 60 : 220 }}
       transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
       className={cn(
-        "sticky top-[120px] h-fit bg-white/90 backdrop-blur-sm rounded-xl border border-primary/10 shadow-sm overflow-hidden",
+        "h-fit bg-white/90 backdrop-blur-sm rounded-xl border border-primary/10 shadow-sm overflow-hidden",
         className
       )}
     >

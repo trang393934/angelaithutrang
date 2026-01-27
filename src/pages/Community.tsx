@@ -100,19 +100,20 @@ const Community = () => {
 
   return (
     <LightGate>
-      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
-        {/* Fun.rich Style Header */}
+      <div className="h-screen flex flex-col bg-gradient-to-b from-primary-pale via-background to-background">
+        {/* Header - fixed height */}
         <CommunityHeader />
 
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-full overflow-hidden">
-          <div className="flex gap-4 sm:gap-6 items-start">
-            {/* Left Sidebar - FUN Ecosystem - STICKY */}
-            <aside className="hidden xl:block w-[220px] flex-shrink-0 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto">
+        {/* Content area - fills remaining height */}
+        <div className="flex-1 flex overflow-hidden">
+          <div className="container mx-auto flex gap-4 sm:gap-6 px-3 sm:px-4 py-4">
+            {/* Left Sidebar - FIXED, no scroll on page */}
+            <aside className="hidden xl:flex flex-col w-[220px] flex-shrink-0 overflow-y-auto scrollbar-hide">
               <FunEcosystemSidebar />
             </aside>
 
-            {/* Main Content - Posts - SCROLLABLE */}
-            <main className="flex-1 min-w-0 space-y-4 sm:space-y-6 overflow-hidden">
+            {/* Main Content - SCROLLABLE */}
+            <main className="flex-1 min-w-0 overflow-y-auto space-y-4 sm:space-y-6 pr-2 scrollbar-hide">
               {/* Create Post */}
               {user ? (
                 <CreatePostForm
@@ -182,8 +183,8 @@ const Community = () => {
               )}
             </main>
 
-            {/* Right Sidebar - STICKY */}
-            <aside className="hidden lg:block w-[320px] flex-shrink-0 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto space-y-6">
+            {/* Right Sidebar - FIXED, internal scroll if needed */}
+            <aside className="hidden lg:flex flex-col w-[320px] flex-shrink-0 overflow-y-auto scrollbar-hide space-y-6">
               {/* Bảng Xếp Hạng */}
               <Leaderboard />
               
