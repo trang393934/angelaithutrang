@@ -139,10 +139,10 @@ const Messages = () => {
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => navigate("/")}
-                  className="p-1.5 rounded-full hover:bg-primary-pale transition-colors"
+                  className="p-1.5 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
                   title="Về trang chủ"
                 >
-                  <ArrowLeft className="w-5 h-5 text-primary" />
+                  <ArrowLeft className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:-translate-x-0.5 transition-all duration-300" />
                 </button>
                 <h1 className="font-serif text-xl font-semibold text-primary-deep flex items-center gap-2">
                   <MessageCircle className="w-5 h-5" />
