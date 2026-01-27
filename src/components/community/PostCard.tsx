@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX } from "lucide-react";
+import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -87,8 +87,8 @@ export function PostCard({
   // Share dialog state
   const [showShareDialog, setShowShareDialog] = useState(false);
 
-  // TTS Hook for audio playback
-  const { isLoading: ttsLoading, isPlaying: ttsPlaying, currentMessageId: ttsMessageId, playText, stopAudio } = useTextToSpeech();
+  // TTS Hook for audio playback and download
+  const { isLoading: ttsLoading, isPlaying: ttsPlaying, isDownloading: ttsDownloading, currentMessageId: ttsMessageId, playText, stopAudio, downloadAudio } = useTextToSpeech();
 
   // Per-post reaction (UI-only for now): persist locally so it doesn't revert to ❤️
   const reactionStorageKey = `community:post-reaction:${post.id}`;
@@ -623,6 +623,34 @@ export function PostCard({
                   : ttsMessageId === `post-${post.id}` && ttsPlaying 
                     ? 'Dừng phát' 
                     : 'Nghe Angel AI đọc bài viết'}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Download MP3 Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const authorName = post.user_display_name?.replace(/\s+/g, '-') || 'user';
+                    const postDate = new Date(post.created_at).toISOString().split('T')[0];
+                    const filename = `angel-ai-${authorName}-${postDate}.mp3`;
+                    downloadAudio(post.content, filename);
+                  }}
+                  disabled={ttsDownloading}
+                  className="hover:bg-primary/5 text-foreground-muted hover:text-primary"
+                >
+                  {ttsDownloading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Download className="w-5 h-5" />
+                  )}
+                  <span className="hidden sm:inline ml-2">MP3</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="bg-primary-deep text-white border-0">
+                {ttsDownloading ? 'Đang tạo file MP3...' : 'Tải file MP3 để chia sẻ'}
               </TooltipContent>
             </Tooltip>
           </div>
