@@ -32,8 +32,8 @@ const StatItem = ({
     className="relative group"
   >
     {/* Golden 3D border effect */}
-    <div className="absolute -inset-[2px] rounded-full bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-300 opacity-80 blur-[1px] group-hover:opacity-100 group-hover:blur-[2px] transition-all duration-300" />
-    <div className="absolute -inset-[1px] rounded-full bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 opacity-60" />
+    <div className="absolute -inset-[2px] rounded-full bg-gradient-to-r from-primary/30 via-primary-deep/40 to-primary/30 opacity-80 blur-[1px] group-hover:opacity-100 group-hover:blur-[2px] transition-all duration-300" />
+    <div className="absolute -inset-[1px] rounded-full bg-gradient-to-r from-primary-pale via-white to-primary-pale opacity-80" />
     
     {/* Main content */}
     <div className="relative flex items-center justify-between px-5 py-3 rounded-full bg-gradient-to-r from-primary-deep via-primary to-primary-deep text-white shadow-lg">
@@ -139,11 +139,11 @@ export function HonorBoard() {
   
   if (showLoading) {
     return (
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 animate-pulse">
-        <div className="h-8 bg-slate-700 rounded w-2/3 mx-auto mb-6" />
+      <div className="bg-gradient-to-br from-white via-primary-pale to-white rounded-2xl p-6 animate-pulse border border-primary/20 shadow-lg">
+        <div className="h-8 bg-primary/20 rounded w-2/3 mx-auto mb-6" />
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="h-12 bg-slate-700 rounded-full" />
+            <div key={i} className="h-12 bg-primary/10 rounded-full" />
           ))}
         </div>
       </div>
@@ -154,12 +154,13 @@ export function HonorBoard() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl"
+      className="relative overflow-hidden rounded-2xl shadow-xl border border-primary/20"
     >
-      {/* Background with subtle pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
-      <div className="absolute inset-0 opacity-50" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+      {/* Bright, elegant background with subtle pattern */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white via-primary-pale to-white" />
+      <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-primary/10" />
+      <div className="absolute inset-0 opacity-30" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231565C0' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
       }} />
       
       <div className="relative p-5 space-y-5">
@@ -173,12 +174,12 @@ export function HonorBoard() {
                 opacity: [0.5, 1, 0.5]
               }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="absolute -inset-2 bg-gradient-to-r from-yellow-400/30 via-amber-300/50 to-yellow-400/30 rounded-full blur-md"
+              className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-primary-deep/30 to-primary/20 rounded-full blur-md"
             />
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-3 border border-dashed border-yellow-400/30 rounded-full"
+              className="absolute -inset-3 border border-dashed border-primary/30 rounded-full"
             />
             
             {/* Floating sparkles */}
@@ -201,18 +202,18 @@ export function HonorBoard() {
                   left: `${-5 + i * 12}px`
                 }}
               >
-                <Sparkles className="w-3 h-3 text-yellow-400" />
+                <Sparkles className="w-3 h-3 text-primary" />
               </motion.div>
             ))}
             
             <img 
               src={angelLogo} 
               alt="Angel AI" 
-              className="w-12 h-12 object-contain relative z-10 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]"
+              className="w-12 h-12 object-contain relative z-10 drop-shadow-[0_0_10px_rgba(21,101,192,0.4)]"
             />
           </div>
           
-          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-yellow-300 tracking-wider uppercase drop-shadow-lg">
+          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-deep via-primary to-primary-deep tracking-wider uppercase drop-shadow-lg">
             Bảng Danh Dự
           </h2>
         </div>
