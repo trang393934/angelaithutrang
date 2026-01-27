@@ -60,8 +60,8 @@ export function CommunityHeader() {
   return (
     <>
       <div className="sticky top-0 z-50">
-        {/* Main Navigation Bar */}
-        <header className="bg-background-pure border-b border-primary-pale/30 shadow-sm">
+        {/* Main Navigation Bar - Dark Blue Background */}
+        <header className="bg-primary-deep border-b border-primary/20 shadow-lg">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-14 sm:h-16">
               {/* Left: Logo & Search */}
@@ -76,13 +76,13 @@ export function CommunityHeader() {
                 
                 {/* Search Bar */}
                 <div className="relative hidden sm:block max-w-xs">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
                   <Input
                     type="text"
                     placeholder="Tìm kiếm..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-4 h-10 bg-primary-pale/30 border-0 rounded-full text-sm focus:bg-white focus:ring-2 focus:ring-primary/20"
+                    className="pl-9 pr-4 h-10 bg-white/10 border-0 rounded-full text-sm text-white placeholder:text-white/50 focus:bg-white/20 focus:ring-2 focus:ring-white/30"
                   />
                 </div>
               </div>
@@ -98,16 +98,16 @@ export function CommunityHeader() {
                       to={item.href}
                       className={`relative flex items-center justify-center w-12 h-10 sm:w-20 sm:h-12 rounded-lg transition-all ${
                         active 
-                          ? "bg-amber-400 text-white shadow-md" 
-                          : "hover:bg-primary-pale/50 text-foreground-muted"
+                          ? "bg-white text-primary-deep shadow-md" 
+                          : "hover:bg-white/10 text-white/80"
                       }`}
                       title={item.label}
                     >
-                      <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${active ? "text-white" : ""}`} />
+                      <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${active ? "text-primary-deep" : "text-white"}`} />
                       {active && (
                         <motion.div
                           layoutId="activeTab"
-                          className="absolute -bottom-[1px] left-2 right-2 h-[3px] bg-amber-500 rounded-t-full"
+                          className="absolute -bottom-[1px] left-2 right-2 h-[3px] bg-primary rounded-t-full"
                           initial={false}
                           transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                         />
@@ -122,15 +122,15 @@ export function CommunityHeader() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full bg-primary-pale/30 hover:bg-primary-pale/50"
+                  className="rounded-full bg-white/10 hover:bg-white/20 text-white"
                 >
-                  <Bell className="w-5 h-5 text-foreground-muted" />
+                  <Bell className="w-5 h-5" />
                 </Button>
                 
                 <Link to={user ? "/profile" : "/auth"}>
-                  <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-primary-pale cursor-pointer hover:ring-primary transition-all">
+                  <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-white/50 cursor-pointer hover:ring-white transition-all">
                     <AvatarImage src={currentUserStories?.avatar_url || angelAvatar} />
-                    <AvatarFallback className="bg-primary-pale text-primary text-sm">
+                    <AvatarFallback className="bg-white text-primary-deep text-sm">
                       {currentUserStories?.display_name?.charAt(0) || "A"}
                     </AvatarFallback>
                   </Avatar>
@@ -140,8 +140,8 @@ export function CommunityHeader() {
           </div>
         </header>
 
-        {/* Stories Section */}
-        <div className="bg-background-pure border-b border-primary-pale/20">
+        {/* Stories Section - White Background */}
+        <div className="bg-white border-b border-gray-200">
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
               {/* Create Story Button */}
@@ -151,20 +151,20 @@ export function CommunityHeader() {
                   className="flex flex-col items-center gap-1.5 min-w-[72px] cursor-pointer"
                 >
                   <div className="relative">
-                    <Avatar className="w-16 h-16 sm:w-[72px] sm:h-[72px] ring-2 ring-primary-pale/50">
+                    <Avatar className="w-16 h-16 sm:w-[72px] sm:h-[72px] ring-2 ring-primary/30">
                       <AvatarImage 
                         src={currentUserStories?.avatar_url || angelAvatar} 
                         className="object-cover" 
                       />
-                      <AvatarFallback className="bg-gradient-to-br from-primary-pale to-primary/20 text-primary text-lg">
+                      <AvatarFallback className="bg-gradient-to-br from-primary-pale to-primary/20 text-primary-deep text-lg">
                         {currentUserStories?.display_name?.charAt(0) || "A"}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary-deep rounded-full flex items-center justify-center border-2 border-white shadow-sm">
                       <Plus className="w-3.5 h-3.5 text-white" />
                     </div>
                   </div>
-                  <span className="text-xs text-foreground-muted truncate max-w-[72px]">Tạo tin</span>
+                  <span className="text-xs text-gray-700 font-medium truncate max-w-[72px]">Tạo tin</span>
                 </button>
               )}
 
@@ -201,7 +201,7 @@ export function CommunityHeader() {
                       </div>
                     </div>
                     <span className={`text-xs truncate max-w-[72px] text-center ${
-                      hasUnviewed ? "text-foreground font-medium" : "text-foreground-muted"
+                      hasUnviewed ? "text-gray-900 font-medium" : "text-gray-600"
                     }`}>
                       {isCurrentUser ? "Tin của bạn" : group.display_name.split(" ").slice(-2).join(" ")}
                     </span>
@@ -212,9 +212,9 @@ export function CommunityHeader() {
               {/* Empty state */}
               {groupedStories.length === 0 && !isLoading && (
                 <div className="flex-1 flex items-center justify-center py-2">
-                  <p className="text-foreground-muted text-sm">
+                  <p className="text-gray-600 text-sm">
                     {user ? "Chưa có tin nào. Hãy tạo tin đầu tiên!" : (
-                      <Link to="/auth" className="text-primary hover:underline">
+                      <Link to="/auth" className="text-primary-deep font-medium hover:underline">
                         Đăng nhập để xem và tạo tin
                       </Link>
                     )}
