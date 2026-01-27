@@ -13,6 +13,8 @@ serve(async (req) => {
   try {
     const { prompt, style } = await req.json();
 
+    const containsVietnamese = /[À-ỹ]/.test(prompt);
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
@@ -31,6 +33,21 @@ serve(async (req) => {
       enhancedPrompt = `${prompt}, artistic, oil painting style, masterpiece, beautiful composition`;
     }
 
+    // Vietnamese text reliability: strongly instruct exact typography.
+    // Note: Image models can still hallucinate text; this reduces the error rate.
+    if (containsVietnamese) {
+      enhancedPrompt = `${enhancedPrompt}
+
+IMPORTANT (Vietnamese text): If the image includes any Vietnamese words provided in the prompt, you MUST render the text EXACTLY as written, preserving every diacritic (ă â ê ô ơ ư đ) and every tone mark, punctuation, spacing, and capitalization. Do NOT translate, rephrase, or correct the text. If you cannot render the text perfectly, render NO text at all.
+
+Typography: clean, high-contrast, readable Vietnamese diacritics; avoid stylized fonts that distort accents.`;
+    }
+
+    // Prefer stronger image model when Vietnamese text is involved.
+    const model = containsVietnamese
+      ? "google/gemini-3-pro-image-preview"
+      : "google/gemini-2.5-flash-image";
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -38,7 +55,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
+        model,
         messages: [
           {
             role: "user",
