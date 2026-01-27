@@ -451,9 +451,11 @@ export type Database = {
           admin_notes: string | null
           amount: number
           created_at: string
+          error_message: string | null
           id: string
           processed_at: string | null
           processed_by: string | null
+          retry_count: number | null
           status: string
           tx_hash: string | null
           updated_at: string
@@ -464,9 +466,11 @@ export type Database = {
           admin_notes?: string | null
           amount: number
           created_at?: string
+          error_message?: string | null
           id?: string
           processed_at?: string | null
           processed_by?: string | null
+          retry_count?: number | null
           status?: string
           tx_hash?: string | null
           updated_at?: string
@@ -477,9 +481,11 @@ export type Database = {
           admin_notes?: string | null
           amount?: number
           created_at?: string
+          error_message?: string | null
           id?: string
           processed_at?: string | null
           processed_by?: string | null
+          retry_count?: number | null
           status?: string
           tx_hash?: string | null
           updated_at?: string
