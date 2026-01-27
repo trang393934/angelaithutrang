@@ -600,6 +600,13 @@ const Chat = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
               <button 
+                onClick={() => navigate("/")}
+                className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale transition-colors duration-300"
+                title="Về trang chủ"
+              >
+                <ArrowLeft className="w-5 h-5 text-primary" />
+              </button>
+              <button 
                 onClick={() => setShowSidebar(true)}
                 className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale transition-colors duration-300"
               >
