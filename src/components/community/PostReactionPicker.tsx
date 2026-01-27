@@ -149,6 +149,7 @@ export function LikeButtonWithReactions({
     [isLiked, currentReaction]
   );
 
+  // Desktop: mouse down/up for long press
   const handleMouseDown = () => {
     const timer = setTimeout(() => {
       setShowPicker(true);
@@ -164,10 +165,33 @@ export function LikeButtonWithReactions({
     }
   };
 
+  // Mobile: touch start/end for long press to show picker
+  const handleTouchStart = () => {
+    const timer = setTimeout(() => {
+      setShowPicker(true);
+      onLongPress?.();
+    }, 400); // Slightly shorter for touch
+    setLongPressTimer(timer);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
   const handleClick = () => {
     if (!showPicker) {
       onLike();
     }
+  };
+
+  // Toggle picker on tap for mobile (single tap shows picker, second tap closes)
+  const handleTogglePicker = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowPicker(!showPicker);
   };
 
   return (
@@ -181,14 +205,18 @@ export function LikeButtonWithReactions({
         onClose={() => setShowPicker(false)}
         onReactionSelect={(reaction) => {
           onLike(reaction.id);
+          setShowPicker(false);
         }}
         currentReaction={isLiked ? (currentReaction ?? "heart") : null}
       />
       
+      {/* Main like button */}
       <motion.button
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         onClick={handleClick}
         disabled={isLiking}
         whileTap={{ scale: 0.95 }}
@@ -215,6 +243,15 @@ export function LikeButtonWithReactions({
           </span>
         )}
       </motion.button>
+
+      {/* Mobile: Extra tap zone to toggle picker */}
+      <button
+        className="absolute -top-1 -left-1 w-8 h-8 md:hidden flex items-center justify-center rounded-full bg-primary/10 opacity-0 active:opacity-100"
+        onClick={handleTogglePicker}
+        aria-label="Chọn biểu cảm"
+      >
+        <span className="text-xs">+</span>
+      </button>
     </div>
   );
 }
