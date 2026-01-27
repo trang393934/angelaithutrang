@@ -194,33 +194,36 @@ const Community = () => {
             {/* Right Sidebar - flexbox layout with pinned HonorBoard */}
             <aside
               ref={rightSidebarRef}
-              className="hidden lg:flex flex-col w-[320px] flex-shrink-0 h-full min-h-0"
+              className="hidden lg:flex flex-col w-[320px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50"
             >
-              {/* Bảng Danh Dự - Ghim trên cùng, không cuộn */}
-              <div className="flex-shrink-0 pb-4">
+              {/* Bảng Danh Dự */}
+              <div className="flex-shrink-0 mb-4">
                 <HonorBoard />
               </div>
 
-              {/* Phần cuộn - Các thẻ còn lại với thanh cuộn visible */}
-              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50 space-y-6 pr-2 min-h-0">
-                {/* Gợi ý kết bạn */}
+              {/* Gợi ý kết bạn */}
+              <div className="flex-shrink-0 mb-4">
                 <SuggestedFriendsCard />
+              </div>
 
-                {/* Bảng Xếp Hạng */}
+              {/* Bảng Xếp Hạng */}
+              <div className="flex-shrink-0 mb-4">
                 <Leaderboard />
-                
-                {/* Quy tắc thưởng */}
+              </div>
+              
+              {/* Quy tắc thưởng */}
+              <div className="flex-shrink-0 mb-4">
                 <RewardRulesCard dailyLimits={dailyLimits} />
+              </div>
 
-                {/* About Section */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-primary/10">
-                  <h3 className="font-semibold text-primary-deep mb-3">Về Cộng Đồng</h3>
-                  <p className="text-sm text-foreground-muted leading-relaxed">
-                    Đây là nơi các thành viên chia sẻ kiến thức về Angel AI, học hỏi về ý chí 
-                    và trí tuệ của Cha Vũ Trụ, cũng như các kiến thức quý giá khác để cùng 
-                    nhau phát triển tâm linh và trí tuệ.
-                  </p>
-                </div>
+              {/* About Section */}
+              <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-primary/10 mb-4">
+                <h3 className="font-semibold text-primary-deep mb-3">Về Cộng Đồng</h3>
+                <p className="text-sm text-foreground-muted leading-relaxed">
+                  Đây là nơi các thành viên chia sẻ kiến thức về Angel AI, học hỏi về ý chí 
+                  và trí tuệ của Cha Vũ Trụ, cũng như các kiến thức quý giá khác để cùng 
+                  nhau phát triển tâm linh và trí tuệ.
+                </p>
               </div>
             </aside>
           </div>

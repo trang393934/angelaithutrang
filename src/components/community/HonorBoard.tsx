@@ -221,8 +221,18 @@ export function HonorBoard() {
             />
           </div>
           
-          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-deep via-primary to-primary-deep tracking-wider uppercase drop-shadow-lg">
-            Bảng Danh Dự
+          <h2 className="text-2xl font-bold tracking-wider uppercase relative">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
+              Bảng Danh Dự
+            </span>
+            {/* Sparkle overlay effect */}
+            <motion.span
+              className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-white to-yellow-100 opacity-0"
+              animate={{ opacity: [0, 0.8, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              Bảng Danh Dự
+            </motion.span>
           </h2>
         </div>
 
