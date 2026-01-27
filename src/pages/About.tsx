@@ -24,18 +24,16 @@ const About = () => {
   const { t } = useLanguage();
 
   const platforms = [
-    { name: "FUN Profile", desc: t("about.platform.profile"), logo: funProfileLogo, link: null },
-    { name: "FUN Play", desc: t("about.platform.play"), logo: funPlayLogo, link: "https://play.fun.rich/" },
-    { name: "FUN Academy", desc: t("about.platform.academy"), logo: funAcademyLogo, link: null },
+    { name: "FUN Profile", desc: t("about.platform.profile"), logo: funProfileLogo, link: "https://fun.rich" },
     { name: "FUN Farm", desc: t("about.platform.farm"), logo: funFarmLogo, link: "https://farm.fun.rich" },
-    { name: "FUN Charity", desc: t("about.platform.charity"), logo: funCharityLogo, link: "https://fun-charity.lovable.app" },
+    { name: "FUN Charity", desc: t("about.platform.charity"), logo: funCharityLogo, link: "https://charity.fun.rich" },
+    { name: "FUN Academy", desc: t("about.platform.academy"), logo: funAcademyLogo, link: "https://academy.fun.rich" },
+    { name: "FUN Play", desc: t("about.platform.play"), logo: funPlayLogo, link: "https://play.fun.rich" },
+    { name: "FUN Planet", desc: t("about.platform.planet"), logo: funPlanetLogo, link: "https://planet.fun.rich" },
     { name: "FUN Wallet", desc: t("about.platform.wallet"), logo: funWalletLogo, link: "https://wallet.fun.rich" },
     { name: "FUN Treasury", desc: t("about.platform.treasury"), logo: funTreasuryLogo, link: "https://treasury.fun.rich" },
-    { name: "FUN Planet", desc: t("about.platform.planet"), logo: funPlanetLogo, link: "https://planet.fun.rich/" },
-    { name: "FUN Life", desc: t("about.platform.life"), logo: funLifeLogo, link: null },
-    { name: "FUN Earth", desc: t("about.platform.earth"), logo: funEarthLogo, link: "https://greenearth-fun.lovable.app" },
-    { name: "F.U. Legal", desc: t("about.platform.legal"), logo: fuLegalLogo, link: null },
-    { name: "F.U. Trading", desc: t("about.platform.trading"), logo: fuTradingLogo, link: null },
+    { name: "Green Earth", desc: t("about.platform.earth"), logo: funEarthLogo, link: "https://greenearth-fun.lovable.app" },
+    { name: "Camly Coin", desc: t("about.platform.camlycoin") || "Đồng tiền Ánh Sáng", logo: camlyCoinLogo, link: "https://camly.co" },
     { name: "Angel AI", desc: t("about.platform.angelai"), logo: angelAiLogo, link: "/" },
   ];
 

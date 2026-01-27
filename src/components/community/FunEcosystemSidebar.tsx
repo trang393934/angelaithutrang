@@ -22,20 +22,8 @@ const ecosystemItems = [
   { 
     name: "FUN Profile", 
     logo: funProfileLogo, 
-    url: "https://profile.fun.rich",
+    url: "https://fun.rich",
     description: "Hồ sơ cá nhân"
-  },
-  { 
-    name: "FUN Play", 
-    logo: funPlayLogo, 
-    url: "https://play.fun.rich",
-    description: "Giải trí & Game"
-  },
-  { 
-    name: "FUN Academy", 
-    logo: funAcademyLogo, 
-    url: "https://academy.fun.rich",
-    description: "Học viện tri thức"
   },
   { 
     name: "FUN Farm", 
@@ -50,16 +38,28 @@ const ecosystemItems = [
     description: "Từ thiện & Lan tỏa"
   },
   { 
+    name: "FUN Academy", 
+    logo: funAcademyLogo, 
+    url: "https://academy.fun.rich",
+    description: "Học viện tri thức"
+  },
+  { 
+    name: "FUN Play", 
+    logo: funPlayLogo, 
+    url: "https://play.fun.rich",
+    description: "Giải trí & Game"
+  },
+  { 
+    name: "FUN Planet", 
+    logo: funLifeLogo, 
+    url: "https://planet.fun.rich",
+    description: "Hành tinh FUN"
+  },
+  { 
     name: "FUN Wallet", 
     logo: funWalletLogo, 
     url: "https://wallet.fun.rich",
     description: "Ví điện tử"
-  },
-  { 
-    name: "FUN Life", 
-    logo: funLifeLogo, 
-    url: "https://life.fun.rich",
-    description: "Cuộc sống thường nhật"
   },
   { 
     name: "FUN Treasury", 
@@ -68,28 +68,16 @@ const ecosystemItems = [
     description: "Kho báu & Đầu tư"
   },
   { 
-    name: "FU Legal", 
-    logo: fuLegalLogo, 
-    url: "https://legal.fun.rich",
-    description: "Pháp lý & Bảo vệ"
-  },
-  { 
-    name: "FU Trading", 
-    logo: fuTradingLogo, 
-    url: "https://trading.fun.rich",
-    description: "Giao dịch tài chính"
-  },
-  { 
-    name: "FUN Money", 
-    logo: funMoneyLogo, 
-    url: "https://money.fun.rich",
-    description: "Tài chính cá nhân"
-  },
-  { 
-    name: "FUN Earth", 
+    name: "Green Earth", 
     logo: funEarthLogo, 
-    url: "https://earth.fun.rich",
+    url: "https://greenearth-fun.lovable.app",
     description: "Bảo vệ Trái Đất"
+  },
+  { 
+    name: "Camly Coin", 
+    logo: funMoneyLogo, 
+    url: "https://camly.co",
+    description: "Đồng tiền Ánh Sáng"
   },
 ];
 

@@ -33,12 +33,18 @@ interface ShareDialogProps {
   rewardAmount?: number;
 }
 
-// FUN Ecosystem platforms
+// FUN Ecosystem platforms - 10 official links
 const FUN_PLATFORMS = [
   { name: "FUN Profile", url: "https://fun.rich", icon: "🌟" },
-  { name: "FUN Play", url: "https://play.fun.rich", icon: "🎮" },
-  { name: "FUN Academy", url: "https://academy.fun.rich", icon: "📚" },
   { name: "FUN Farm", url: "https://farm.fun.rich", icon: "🌱" },
+  { name: "FUN Charity", url: "https://charity.fun.rich", icon: "💖" },
+  { name: "FUN Academy", url: "https://academy.fun.rich", icon: "📚" },
+  { name: "FUN Play", url: "https://play.fun.rich", icon: "🎮" },
+  { name: "FUN Planet", url: "https://planet.fun.rich", icon: "🪐" },
+  { name: "FUN Wallet", url: "https://wallet.fun.rich", icon: "💰" },
+  { name: "FUN Treasury", url: "https://treasury.fun.rich", icon: "🏦" },
+  { name: "Green Earth", url: "https://greenearth-fun.lovable.app", icon: "🌍" },
+  { name: "Camly Coin", url: "https://camly.co", icon: "💎" },
 ];
 
 // Social platforms with fixed Telegram URL format

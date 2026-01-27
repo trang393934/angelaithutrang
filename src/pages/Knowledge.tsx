@@ -206,10 +206,17 @@ const Knowledge = () => {
       telegram: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
       zalo: `https://zalo.me/share?u=${encodeURIComponent(shareUrl)}`,
       whatsapp: `https://wa.me/?text=${encodeURIComponent(shareText + " " + shareUrl)}`,
-      // FUN Ecosystem platforms
-      "fun-profile": `https://profile.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      // FUN Ecosystem platforms - 10 official links
+      "fun-profile": `https://fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      "fun-farm": `https://farm.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      "fun-charity": `https://charity.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
       "fun-academy": `https://academy.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
-      "fun-life": `https://life.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      "fun-play": `https://play.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      "fun-planet": `https://planet.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      "fun-wallet": `https://wallet.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      "fun-treasury": `https://treasury.fun.rich/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      "green-earth": `https://greenearth-fun.lovable.app/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
+      "camly-coin": `https://camly.co/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(doc.title)}`,
     };
 
     if (shareUrls[action]) {
