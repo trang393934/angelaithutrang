@@ -6,11 +6,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCommunityPosts } from "@/hooks/useCommunityPosts";
-import { CreatePostForm } from "@/components/community/CreatePostForm";
+import { CollapsibleCreatePost } from "@/components/community/CollapsibleCreatePost";
 import { PostCard } from "@/components/community/PostCard";
 import { RewardRulesCard } from "@/components/community/RewardRulesCard";
 import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { FunEcosystemSidebar } from "@/components/community/FunEcosystemSidebar";
+import { SuggestedFriendsCard } from "@/components/community/SuggestedFriendsCard";
 import { Leaderboard } from "@/components/Leaderboard";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
@@ -116,7 +117,7 @@ const Community = () => {
             <main className="flex-1 min-w-0 overflow-y-auto space-y-4 sm:space-y-6 pr-2 scrollbar-hide">
               {/* Create Post */}
               {user ? (
-                <CreatePostForm
+                <CollapsibleCreatePost
                   userAvatar={userProfile?.avatar_url}
                   userName={userProfile?.display_name || "Bạn"}
                   onSubmit={handleCreatePost}
@@ -185,6 +186,9 @@ const Community = () => {
 
             {/* Right Sidebar - FIXED, internal scroll if needed */}
             <aside className="hidden lg:flex flex-col w-[320px] flex-shrink-0 overflow-y-auto scrollbar-hide space-y-6">
+              {/* Gợi ý kết bạn */}
+              <SuggestedFriendsCard />
+
               {/* Bảng Xếp Hạng */}
               <Leaderboard />
               
