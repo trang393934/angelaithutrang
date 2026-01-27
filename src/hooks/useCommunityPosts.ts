@@ -132,10 +132,15 @@ export function useCommunityPosts() {
       }
 
       // Merge data
-      const enrichedPosts = postsData.map(post => {
+       const enrichedPosts = postsData.map(post => {
         const profile = profiles?.find(p => p.user_id === post.user_id);
         return {
           ...post,
+           // Normalize nullable counters/arrays to keep UI + optimistic updates accurate
+           likes_count: post.likes_count ?? 0,
+           comments_count: post.comments_count ?? 0,
+           shares_count: post.shares_count ?? 0,
+           image_urls: post.image_urls ?? [],
           user_display_name: profile?.display_name || "Người dùng ẩn danh",
           user_avatar_url: profile?.avatar_url || null,
           is_liked_by_me: userLikes.includes(post.id),
@@ -193,7 +198,7 @@ export function useCommunityPosts() {
     }
 
     const wasLiked = currentPost.is_liked_by_me;
-    const previousLikesCount = currentPost.likes_count;
+    const previousLikesCount = currentPost.likes_count ?? 0;
 
     // OPTIMISTIC UPDATE - Update UI immediately for instant feedback
     setPosts(prev =>
@@ -201,7 +206,9 @@ export function useCommunityPosts() {
         p.id === postId
           ? {
               ...p,
-              likes_count: wasLiked ? Math.max(0, p.likes_count - 1) : p.likes_count + 1,
+              likes_count: wasLiked
+                ? Math.max(0, (p.likes_count ?? 0) - 1)
+                : (p.likes_count ?? 0) + 1,
               is_liked_by_me: !wasLiked,
             }
           : p
@@ -274,7 +281,7 @@ export function useCommunityPosts() {
             p.id === postId
               ? {
                   ...p,
-                  shares_count: p.shares_count + 1,
+                  shares_count: (p.shares_count ?? 0) + 1,
                   is_shared_by_me: true,
                 }
               : p
@@ -310,7 +317,7 @@ export function useCommunityPosts() {
         setPosts(prev =>
           prev.map(p =>
             p.id === postId
-              ? { ...p, comments_count: p.comments_count + 1 }
+              ? { ...p, comments_count: (p.comments_count ?? 0) + 1 }
               : p
           )
         );
