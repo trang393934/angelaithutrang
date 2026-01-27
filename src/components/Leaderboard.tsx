@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Trophy, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Trophy, ChevronDown, ChevronUp, Sparkles, Coins } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
@@ -104,10 +104,16 @@ export function Leaderboard() {
           </h2>
 
           {/* Stats */}
-          <div className="flex items-center gap-3 mt-2 text-xs text-foreground-muted">
+          <div className="flex items-center justify-center gap-4 mt-2 text-xs text-foreground-muted">
             <div className="flex items-center gap-1">
               <Trophy className="w-3.5 h-3.5 text-amber-500" />
-              <span>{stats.total_users} người tham gia</span>
+              <span>{stats.total_users} người</span>
+            </div>
+            <div className="w-px h-3 bg-amber-300" />
+            <div className="flex items-center gap-1">
+              <Coins className="w-3.5 h-3.5 text-amber-500" />
+              <span className="font-medium text-amber-600">{stats.total_coins_distributed.toLocaleString()}</span>
+              <span>Camly Coin</span>
             </div>
           </div>
         </div>
