@@ -1883,6 +1883,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      check_withdrawal_eligibility: {
+        Args: { _user_id: string }
+        Returns: {
+          can_withdraw: boolean
+          has_journal_today: boolean
+          has_post_today: boolean
+          message: string
+        }[]
+      }
       cleanup_expired_stories: { Args: never; Returns: undefined }
       get_daily_reward_status: {
         Args: { _user_id: string }
