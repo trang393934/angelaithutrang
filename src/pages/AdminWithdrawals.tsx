@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History, Bell } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History, Bell, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -505,7 +505,19 @@ const AdminWithdrawals = () => {
                       {formatAmount(withdrawal.amount)}
                     </TableCell>
                     <TableCell className="font-mono text-xs">
-                      {withdrawal.wallet_address.slice(0, 6)}...{withdrawal.wallet_address.slice(-4)}
+                      <div className="flex items-center gap-1">
+                        <span>{withdrawal.wallet_address.slice(0, 6)}...{withdrawal.wallet_address.slice(-4)}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(withdrawal.wallet_address);
+                            toast.success("Đã sao chép địa chỉ ví");
+                          }}
+                          className="p-1 rounded hover:bg-primary-pale/50 transition-colors"
+                          title="Copy địa chỉ ví"
+                        >
+                          <Copy className="w-3.5 h-3.5 text-foreground-muted hover:text-primary" />
+                        </button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {getStatusBadge(withdrawal.status, withdrawal.retry_count)}
