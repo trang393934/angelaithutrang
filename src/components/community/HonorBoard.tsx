@@ -79,9 +79,9 @@ export function HonorBoard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch total members (profiles with Law of Light agreement)
+        // Fetch total members from profiles (more reliable, includes all users)
         const { count: membersCount } = await supabase
-          .from('user_light_agreements')
+          .from('profiles')
           .select('*', { count: 'exact', head: true });
 
         // Fetch total posts
@@ -96,13 +96,16 @@ export function HonorBoard() {
 
         let totalImages = 0;
         postsWithImages?.forEach(post => {
-          if (post.image_url) totalImages += 1;
+          // Only count from image_urls array to avoid duplicates
           if (post.image_urls && Array.isArray(post.image_urls)) {
             totalImages += post.image_urls.length;
+          } else if (post.image_url) {
+            // Fallback to single image_url only if no array
+            totalImages += 1;
           }
         });
 
-        // Count stories as videos (media_type = 'video' or all stories)
+        // Count stories as videos
         const { count: storiesCount } = await supabase
           .from('community_stories')
           .select('*', { count: 'exact', head: true });
