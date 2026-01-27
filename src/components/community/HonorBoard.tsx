@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Users, FileText, Image, Video, Coins, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
 import angelLogo from "@/assets/angel-ai-logo.png";
 
 interface HonorStats {
@@ -9,7 +10,6 @@ interface HonorStats {
   totalPosts: number;
   totalImages: number;
   totalVideos: number;
-  totalCoinsDistributed: number;
 }
 
 const StatItem = ({ 
@@ -65,12 +65,14 @@ const StatItem = ({
 );
 
 export function HonorBoard() {
+  // Use the same hook as Leaderboard for consistent stats
+  const { stats: leaderboardStats, isLoading: leaderboardLoading } = useLeaderboard();
+  
   const [stats, setStats] = useState<HonorStats>({
     totalMembers: 0,
     totalPosts: 0,
     totalImages: 0,
     totalVideos: 0,
-    totalCoinsDistributed: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -105,19 +107,11 @@ export function HonorBoard() {
           .from('community_stories')
           .select('*', { count: 'exact', head: true });
 
-        // Total coins distributed
-        const { data: coinsData } = await supabase
-          .from('camly_coin_balances')
-          .select('lifetime_earned');
-
-        const totalCoins = coinsData?.reduce((sum, item) => sum + (item.lifetime_earned || 0), 0) || 0;
-
         setStats({
           totalMembers: membersCount || 0,
           totalPosts: postsCount || 0,
           totalImages: totalImages,
           totalVideos: storiesCount || 0,
-          totalCoinsDistributed: totalCoins,
         });
       } catch (error) {
         console.error('Error fetching honor stats:', error);
@@ -132,7 +126,6 @@ export function HonorBoard() {
     const channel = supabase
       .channel('honor_board_updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'community_posts' }, fetchStats)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'camly_coin_balances' }, fetchStats)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_light_agreements' }, fetchStats)
       .subscribe();
 
@@ -250,7 +243,7 @@ export function HonorBoard() {
           <StatItem
             icon={Coins}
             label="Tổng Phần Thưởng"
-            value={stats.totalCoinsDistributed}
+            value={leaderboardStats.total_coins_distributed}
             delay={0.5}
             isCoin
           />
