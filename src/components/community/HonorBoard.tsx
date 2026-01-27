@@ -134,7 +134,7 @@ export function HonorBoard() {
     };
   }, []);
 
-  if (isLoading) {
+  if (isLoading && leaderboardLoading) {
     return (
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 animate-pulse">
         <div className="h-8 bg-slate-700 rounded w-2/3 mx-auto mb-6" />
