@@ -2,6 +2,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Phone, Video, Info, Home } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion } from "framer-motion";
@@ -40,19 +45,32 @@ export function ConversationHeader({
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/")}
-              className="p-2 -ml-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
-              title="Về trang chủ"
-            >
-              <Home className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:rotate-[-8deg] transition-all duration-300" />
-            </button>
-            <Link
-              to="/messages"
-              className="p-2 -ml-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
-            >
-              <ArrowLeft className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:-translate-x-0.5 transition-all duration-300" />
-            </Link>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate("/")}
+                  className="p-2 -ml-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
+                >
+                  <Home className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:rotate-[-8deg] transition-all duration-300" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-primary-deep text-white">
+                <p>Về trang chủ</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/messages"
+                  className="p-2 -ml-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
+                >
+                  <ArrowLeft className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:-translate-x-0.5 transition-all duration-300" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-primary-deep text-white">
+                <p>Quay lại tin nhắn</p>
+              </TooltipContent>
+            </Tooltip>
 
             <Link
               to={`/user/${partnerId}`}

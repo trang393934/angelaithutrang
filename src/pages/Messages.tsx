@@ -6,6 +6,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
@@ -137,13 +142,19 @@ const Messages = () => {
           <header className="sticky top-0 z-50 bg-background-pure/95 backdrop-blur-lg border-b border-primary-pale shadow-sm">
             <div className="container mx-auto px-4 py-4">
               <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => navigate("/")}
-                  className="p-1.5 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
-                  title="Về trang chủ"
-                >
-                  <ArrowLeft className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:-translate-x-0.5 transition-all duration-300" />
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button 
+                      onClick={() => navigate("/")}
+                      className="p-1.5 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:-translate-x-0.5 transition-all duration-300" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-primary-deep text-white">
+                    <p>Về trang chủ</p>
+                  </TooltipContent>
+                </Tooltip>
                 <h1 className="font-serif text-xl font-semibold text-primary-deep flex items-center gap-2">
                   <MessageCircle className="w-5 h-5" />
                   Tin nhắn
