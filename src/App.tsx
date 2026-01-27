@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ProfileCompletionGate } from "@/components/ProfileCompletionGate";
+import { WithdrawalCelebration } from "@/components/WithdrawalCelebration";
 import Index from "./pages/Index";
 import Chat from "./pages/Chat";
 import About from "./pages/About";
@@ -41,6 +42,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <WithdrawalCelebration />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
