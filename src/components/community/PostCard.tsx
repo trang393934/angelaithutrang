@@ -36,7 +36,7 @@ interface PostCardProps {
   onLike: (postId: string) => Promise<any>;
   onShare: (postId: string) => Promise<any>;
   onComment: (postId: string, content: string) => Promise<any>;
-  onEdit?: (postId: string, content: string, imageUrl?: string) => Promise<any>;
+  onEdit?: (postId: string, content: string, imageUrls?: string[]) => Promise<any>;
   onDelete?: (postId: string) => Promise<any>;
   fetchComments: (postId: string) => Promise<CommunityComment[]>;
 }
@@ -59,12 +59,16 @@ export function PostCard({
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   
-  // Edit state
+  // Edit state - support multiple images
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
-  const [editImageUrl, setEditImageUrl] = useState<string | null>(post.image_url);
-  const [editImageFile, setEditImageFile] = useState<File | null>(null);
-  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [editImageUrls, setEditImageUrls] = useState<string[]>(
+    post.image_urls && post.image_urls.length > 0 
+      ? post.image_urls 
+      : (post.image_url ? [post.image_url] : [])
+  );
+  const [editNewFiles, setEditNewFiles] = useState<File[]>([]);
+  const [editNewPreviews, setEditNewPreviews] = useState<string[]>([]);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const editFileInputRef = useRef<HTMLInputElement>(null);
@@ -146,47 +150,83 @@ export function PostCard({
 
   const handleStartEdit = () => {
     setEditContent(post.content);
-    setEditImageUrl(post.image_url);
-    setEditImageFile(null);
-    setEditImagePreview(null);
+    setEditImageUrls(
+      post.image_urls && post.image_urls.length > 0 
+        ? post.image_urls 
+        : (post.image_url ? [post.image_url] : [])
+    );
+    setEditNewFiles([]);
+    setEditNewPreviews([]);
     setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     setEditContent(post.content);
-    setEditImageUrl(post.image_url);
-    setEditImageFile(null);
-    setEditImagePreview(null);
+    setEditImageUrls(
+      post.image_urls && post.image_urls.length > 0 
+        ? post.image_urls 
+        : (post.image_url ? [post.image_url] : [])
+    );
+    setEditNewFiles([]);
+    setEditNewPreviews([]);
     setIsEditing(false);
-  };
-
-  const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Ảnh không được vượt quá 5MB");
-        return;
-      }
-      setEditImageFile(file);
-      const reader = new FileReader();
-      reader.onload = () => setEditImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
-      // Clear the existing image URL since we're uploading a new one
-      setEditImageUrl(null);
+    if (editFileInputRef.current) {
+      editFileInputRef.current.value = "";
     }
   };
 
-  const handleRemoveEditImage = () => {
-    setEditImageUrl(null);
-    setEditImageFile(null);
-    setEditImagePreview(null);
+  const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const totalImages = editImageUrls.length + editNewFiles.length + files.length;
+    
+    if (totalImages > 30) {
+      alert("Tối đa 30 ảnh cho một bài viết");
+      return;
+    }
+    
+    const validFiles: File[] = [];
+    const newPreviews: string[] = [];
+    
+    files.forEach(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`Ảnh ${file.name} vượt quá 5MB`);
+        return;
+      }
+      validFiles.push(file);
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        setEditNewPreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    setEditNewFiles(prev => [...prev, ...validFiles]);
+    
+    if (editFileInputRef.current) {
+      editFileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveExistingImage = (index: number) => {
+    setEditImageUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveNewImage = (index: number) => {
+    setEditNewFiles(prev => prev.filter((_, i) => i !== index));
+    setEditNewPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveAllImages = () => {
+    setEditImageUrls([]);
+    setEditNewFiles([]);
+    setEditNewPreviews([]);
     if (editFileInputRef.current) {
       editFileInputRef.current.value = "";
     }
   };
 
   const uploadEditImage = async (file: File): Promise<string | null> => {
-    setIsUploadingImage(true);
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -206,8 +246,6 @@ export function PostCard({
     } catch (error) {
       console.error("Error uploading image:", error);
       return null;
-    } finally {
-      setIsUploadingImage(false);
     }
   };
 
@@ -215,25 +253,32 @@ export function PostCard({
     if (!editContent.trim() || !onEdit) return;
 
     setIsSubmittingEdit(true);
+    setIsUploadingImage(true);
     
-    let finalImageUrl: string | undefined = editImageUrl || undefined;
-    
-    // Upload new image if selected
-    if (editImageFile) {
-      const uploadedUrl = await uploadEditImage(editImageFile);
-      if (uploadedUrl) {
-        finalImageUrl = uploadedUrl;
+    try {
+      // Upload all new files
+      const uploadedUrls: string[] = [];
+      for (const file of editNewFiles) {
+        const url = await uploadEditImage(file);
+        if (url) {
+          uploadedUrls.push(url);
+        }
       }
+      
+      // Combine existing URLs with newly uploaded URLs
+      const finalImageUrls = [...editImageUrls, ...uploadedUrls];
+      
+      const result = await onEdit(post.id, editContent.trim(), finalImageUrls.length > 0 ? finalImageUrls : undefined);
+      
+      if (result.success) {
+        setIsEditing(false);
+        setEditNewFiles([]);
+        setEditNewPreviews([]);
+      }
+    } finally {
+      setIsSubmittingEdit(false);
+      setIsUploadingImage(false);
     }
-    
-    const result = await onEdit(post.id, editContent.trim(), finalImageUrl);
-    
-    if (result.success) {
-      setIsEditing(false);
-      setEditImageFile(null);
-      setEditImagePreview(null);
-    }
-    setIsSubmittingEdit(false);
   };
 
   const handleDelete = async () => {
@@ -318,64 +363,102 @@ export function PostCard({
                 placeholder="Nội dung bài viết..."
               />
               
-              {/* Edit Image Section */}
-              <div className="space-y-2">
-                {/* Show current/new image preview */}
-                {(editImageUrl || editImagePreview) && (
-                  <div className="relative inline-block">
-                    <img
-                      src={editImagePreview || editImageUrl || ""}
-                      alt="Preview"
-                      className="max-h-48 rounded-lg object-cover"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2 h-6 w-6"
-                      onClick={handleRemoveEditImage}
-                      disabled={isSubmittingEdit || isUploadingImage}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+              {/* Edit Image Section - Multi-image support like Facebook */}
+              <div className="space-y-3">
+                {/* Existing images grid */}
+                {editImageUrls.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {editImageUrls.map((url, index) => (
+                      <div key={`existing-${index}`} className="relative aspect-square">
+                        <img
+                          src={url}
+                          alt={`Image ${index + 1}`}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                          onClick={() => handleRemoveExistingImage(index)}
+                          disabled={isSubmittingEdit || isUploadingImage}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 )}
                 
-                {/* Image upload input */}
+                {/* New images previews */}
+                {editNewPreviews.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {editNewPreviews.map((preview, index) => (
+                      <div key={`new-${index}`} className="relative aspect-square">
+                        <img
+                          src={preview}
+                          alt={`New ${index + 1}`}
+                          className="w-full h-full object-cover rounded-lg border-2 border-primary/30"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                          onClick={() => handleRemoveNewImage(index)}
+                          disabled={isSubmittingEdit || isUploadingImage}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                        <span className="absolute bottom-1 left-1 text-xs bg-primary text-primary-foreground px-1 rounded">
+                          Mới
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Image upload input - multiple */}
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleEditImageSelect}
                   ref={editFileInputRef}
                   className="hidden"
                 />
                 
                 {/* Image action buttons */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => editFileInputRef.current?.click()}
-                    disabled={isSubmittingEdit || isUploadingImage}
+                    disabled={isSubmittingEdit || isUploadingImage || (editImageUrls.length + editNewFiles.length) >= 30}
                   >
                     {isUploadingImage ? (
                       <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                     ) : (
                       <Image className="w-4 h-4 mr-1" />
                     )}
-                    {editImageUrl || editImagePreview ? "Đổi ảnh" : "Thêm ảnh"}
+                    Thêm ảnh
                   </Button>
                   
-                  {(editImageUrl || editImagePreview) && (
+                  {(editImageUrls.length > 0 || editNewPreviews.length > 0) && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleRemoveEditImage}
+                      onClick={handleRemoveAllImages}
                       disabled={isSubmittingEdit || isUploadingImage}
                       className="text-red-600 hover:text-red-700"
                     >
                       <ImageOff className="w-4 h-4 mr-1" />
-                      Xóa ảnh
+                      Xóa tất cả ảnh
                     </Button>
+                  )}
+                  
+                  {(editImageUrls.length + editNewFiles.length) > 0 && (
+                    <span className="text-xs text-muted-foreground self-center">
+                      {editImageUrls.length + editNewFiles.length}/30 ảnh
+                    </span>
                   )}
                 </div>
               </div>
