@@ -115,3 +115,6 @@ verify_jwt = false
 
 [functions.get-treasury-balance]
 verify_jwt = false
+
+[functions.generate-coin-sound]
+verify_jwt = false
