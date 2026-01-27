@@ -515,9 +515,9 @@ const UserProfile = () => {
 
       {/* Main Content */}
       <div className="max-w-[1100px] mx-auto px-4 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 lg:items-start">
           {/* Left Sidebar - Intro */}
-          <div className="space-y-4">
+          <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
             {/* Intro Card */}
             <Card className="rounded-lg shadow-sm">
               <CardHeader className="pb-2">
