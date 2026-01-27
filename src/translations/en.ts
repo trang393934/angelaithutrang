@@ -46,6 +46,7 @@ const translations: Record<string, string> = {
   // Navigation
   "nav.home": "Home",
   "nav.about": "About Angel AI",
+  "nav.knowledge": "Knowledge",
   "nav.connect": "Connect",
   "nav.swap": "Swap",
   "nav.earn": "Earn Light",
