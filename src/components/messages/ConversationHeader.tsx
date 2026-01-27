@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft, Phone, Video, Info } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Phone, Video, Info, Home } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
@@ -25,6 +25,7 @@ export function ConversationHeader({
   lastSeen,
   isTyping,
 }: ConversationHeaderProps) {
+  const navigate = useNavigate();
   const getStatusText = () => {
     if (isTyping) return "Đang nhập...";
     if (isOnline) return "Đang hoạt động";
@@ -39,6 +40,13 @@ export function ConversationHeader({
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/")}
+              className="p-2 -ml-2 rounded-full hover:bg-primary-pale transition-colors"
+              title="Về trang chủ"
+            >
+              <Home className="w-5 h-5 text-primary" />
+            </button>
             <Link
               to="/messages"
               className="p-2 -ml-2 rounded-full hover:bg-primary-pale transition-colors"
