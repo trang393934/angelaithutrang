@@ -13,6 +13,7 @@ import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { FunEcosystemSidebar } from "@/components/community/FunEcosystemSidebar";
 import { SuggestedFriendsCard } from "@/components/community/SuggestedFriendsCard";
 import { Leaderboard } from "@/components/Leaderboard";
+import { HonorBoard } from "@/components/community/HonorBoard";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { LightGate } from "@/components/LightGate";
@@ -186,6 +187,9 @@ const Community = () => {
 
             {/* Right Sidebar - FIXED, internal scroll if needed */}
             <aside className="hidden lg:flex flex-col w-[320px] flex-shrink-0 overflow-y-auto scrollbar-hide space-y-6">
+              {/* Bảng Danh Dự - Honor Board */}
+              <HonorBoard />
+
               {/* Gợi ý kết bạn */}
               <SuggestedFriendsCard />
 
