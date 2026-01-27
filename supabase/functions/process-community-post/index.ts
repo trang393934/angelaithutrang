@@ -469,12 +469,19 @@ serve(async (req) => {
         );
       }
 
-      // Update the post
+      // Support both single imageUrl (legacy) and imageUrls array
+      const finalImageUrls = imageUrls || (imageUrl ? [imageUrl] : []);
+      const primaryImageUrl = finalImageUrls.length > 0 ? finalImageUrls[0] : null;
+
+      console.log(`Editing post ${postId} with ${finalImageUrls.length} images`);
+
+      // Update the post with multiple images support
       const { data: updatedPost, error: updateError } = await supabase
         .from("community_posts")
         .update({
           content,
-          image_url: imageUrl || null,
+          image_url: primaryImageUrl, // Keep for backward compatibility
+          image_urls: finalImageUrls, // New array field
           updated_at: new Date().toISOString(),
         })
         .eq("id", postId)
@@ -483,7 +490,7 @@ serve(async (req) => {
 
       if (updateError) throw updateError;
 
-      console.log(`Post edited: ${postId}`);
+      console.log(`Post edited: ${postId} with ${finalImageUrls.length} images`);
 
       return new Response(
         JSON.stringify({

@@ -315,7 +315,7 @@ export function useCommunityPosts() {
     });
   };
 
-  const editPost = async (postId: string, content: string, imageUrl?: string) => {
+  const editPost = async (postId: string, content: string, imageUrls?: string[]) => {
     if (!user) {
       return { success: false, message: "Vui lòng đăng nhập" };
     }
@@ -326,7 +326,9 @@ export function useCommunityPosts() {
           action: "edit_post",
           postId,
           content,
-          imageUrl,
+          imageUrls,
+          // Keep backward compatibility
+          imageUrl: imageUrls && imageUrls.length > 0 ? imageUrls[0] : undefined,
         },
       });
 
