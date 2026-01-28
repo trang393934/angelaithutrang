@@ -124,9 +124,26 @@ export function GlobalSearch({
     navigate(result.url);
   };
 
+  // Format search keyword to proper question for Angel AI
+  const formatSearchQueryToQuestion = (searchQuery: string): string => {
+    const trimmed = searchQuery.trim();
+    
+    // If already a complete question, keep it
+    if (trimmed.endsWith('?') || 
+        /^(cho con|hãy|làm sao|là gì|như thế nào|giải thích|hướng dẫn)/i.test(trimmed)) {
+      return trimmed;
+    }
+    
+    // Format keyword into an information request
+    return `Cho con biết thông tin về "${trimmed}"`;
+  };
+
   const handleAskAngel = () => {
     setIsOpen(false);
-    navigate(`/chat?q=${encodeURIComponent(query)}`);
+    
+    // Format query and add isSearch flag for intent detection
+    const formattedQuery = formatSearchQueryToQuestion(query);
+    navigate(`/chat?q=${encodeURIComponent(formattedQuery)}&isSearch=true`);
     setQuery("");
   };
 

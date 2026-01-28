@@ -502,11 +502,19 @@ const Chat = () => {
 
   useEffect(() => {
     const questionFromQuery = searchParams.get("q");
+    const isSearchQuery = searchParams.get("isSearch") === "true";
+    
     if (questionFromQuery && hasAgreed && !hasProcessedQuery && !isLoading) {
       setHasProcessedQuery(true);
       setSearchParams({}, { replace: true });
+      
+      // Add marker for edge function to detect search intent
+      const finalMessage = isSearchQuery 
+        ? `[SEARCH_INTENT] ${questionFromQuery}`
+        : questionFromQuery;
+        
       setTimeout(() => {
-        sendMessage(questionFromQuery);
+        sendMessage(finalMessage);
       }, 300);
     }
   }, [searchParams, hasAgreed, hasProcessedQuery, isLoading, sendMessage, setSearchParams]);
