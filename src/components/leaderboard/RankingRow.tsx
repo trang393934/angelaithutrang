@@ -46,14 +46,17 @@ export function RankingRow({ user, isCurrentUser }: RankingRowProps) {
         {/* Name */}
         <div className="flex-1 min-w-0">
           <p
-            className={`text-sm font-medium truncate group-hover:text-primary transition-colors ${
+            className={`text-sm font-medium group-hover:text-primary transition-colors ${
               isCurrentUser ? "text-primary font-semibold" : "text-foreground"
             }`}
+            title={user.display_name || "Ẩn danh"}
           >
-            {user.display_name || "Ẩn danh"}
-            {isCurrentUser && (
-              <span className="ml-1 text-xs text-primary/70">(Bạn)</span>
-            )}
+            <span className="block truncate">
+              {user.display_name || "Ẩn danh"}
+              {isCurrentUser && (
+                <span className="ml-1 text-xs text-primary/70">(Bạn)</span>
+              )}
+            </span>
           </p>
         </div>
 

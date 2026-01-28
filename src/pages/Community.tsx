@@ -120,8 +120,8 @@ const Community = () => {
         <div className="flex-1 flex overflow-hidden">
           <div className="container mx-auto flex gap-4 sm:gap-6 px-3 sm:px-4 py-4 h-full">
             {/* Left Sidebar - scrollable with visible scrollbar */}
-            <aside className="hidden xl:flex flex-col w-[220px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50 pr-1">
-              <FunEcosystemSidebar />
+            <aside className="hidden xl:flex flex-col w-[280px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50 pr-1">
+              <FunEcosystemSidebar className="w-full" />
             </aside>
 
             {/* Main Content - SCROLLABLE */}
@@ -227,7 +227,7 @@ const Community = () => {
             {/* Right Sidebar - flexbox layout with pinned HonorBoard */}
             <aside
               ref={rightSidebarRef}
-              className="hidden lg:flex flex-col w-[320px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50"
+              className="hidden lg:flex flex-col w-[280px] xl:w-[320px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50"
             >
               {/* Bảng Danh Dự */}
               <div className="flex-shrink-0 mb-4">
