@@ -119,7 +119,7 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
       </div>
 
       {/* Top 4 & 5 - Third row, inside circles */}
-      <div className="absolute top-[55%] left-0 right-0 flex justify-center gap-[28%] md:gap-[32%]">
+      <div className="absolute top-[63%] left-0 right-0 flex justify-center gap-[28%] md:gap-[32%]">
         {top5[3] && (
           <TrophyAvatar user={top5[3]} rank={4} position="top4" />
         )}
