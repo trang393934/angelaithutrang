@@ -253,6 +253,12 @@ const translations: Record<string, string> = {
   "search.questions": "질문",
   "search.angelAnswer": "Angel AI 답변",
 
+  // Chart
+  "chart.loadingChart": "차트 데이터 로딩 중...",
+  "chart.refresh": "새로고침",
+  "chart.retry": "다시 시도",
+  "chart.contractCopied": "계약 주소가 복사되었습니다",
+
   // Core Values Section
   "coreValues.badge": "💎 12 빛의 층 💎",
   "coreValues.title": "핵심 가치",

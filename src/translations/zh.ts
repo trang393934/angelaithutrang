@@ -245,6 +245,12 @@ const translations: Record<string, string> = {
   "search.questions": "问题",
   "search.angelAnswer": "Angel AI回答",
 
+  // Chart
+  "chart.loadingChart": "加载图表数据中...",
+  "chart.refresh": "刷新",
+  "chart.retry": "重试",
+  "chart.contractCopied": "合约地址已复制",
+
   // Core Values Section
   "coreValues.badge": "💎 12层光芒 💎",
   "coreValues.title": "核心价值",

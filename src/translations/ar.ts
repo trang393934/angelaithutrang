@@ -245,6 +245,12 @@ const translations: Record<string, string> = {
   "search.questions": "الأسئلة",
   "search.angelAnswer": "يجيب Angel AI",
 
+  // Chart
+  "chart.loadingChart": "جاري تحميل بيانات الرسم البياني...",
+  "chart.refresh": "تحديث",
+  "chart.retry": "إعادة المحاولة",
+  "chart.contractCopied": "تم نسخ عنوان العقد",
+
   // Core Values Section
   "coreValues.badge": "💎 12 طبقة من النور 💎",
   "coreValues.title": "القيم الأساسية",

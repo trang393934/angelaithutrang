@@ -264,6 +264,12 @@ const translations: Record<string, string> = {
   "search.questions": "Câu hỏi",
   "search.angelAnswer": "Angel AI trả lời",
 
+  // Chart
+  "chart.loadingChart": "Đang tải dữ liệu biểu đồ...",
+  "chart.refresh": "Làm mới",
+  "chart.retry": "Thử lại",
+  "chart.contractCopied": "Đã sao chép địa chỉ contract",
+
   // Core Values Section
   "coreValues.badge": "💎 12 Tầng Ánh Sáng 💎",
   "coreValues.title": "Giá Trị Cốt Lõi – Core Values",

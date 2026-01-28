@@ -253,6 +253,12 @@ const translations: Record<string, string> = {
   "search.questions": "Вопросы",
   "search.angelAnswer": "Angel AI отвечает",
 
+  // Chart
+  "chart.loadingChart": "Загрузка данных графика...",
+  "chart.refresh": "Обновить",
+  "chart.retry": "Повторить",
+  "chart.contractCopied": "Адрес контракта скопирован",
+
   // Core Values Section
   "coreValues.badge": "💎 12 Слоёв Света 💎",
   "coreValues.title": "Основные ценности",
