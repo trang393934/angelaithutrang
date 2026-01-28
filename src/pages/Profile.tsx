@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon, MessageCircle } from "lucide-react";
+import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon, MessageCircle, Move, Maximize2 } from "lucide-react";
+import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
+import { CoverPositionEditor } from "@/components/profile/CoverPositionEditor";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import angelAvatar from "@/assets/angel-avatar.png";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
@@ -103,6 +105,12 @@ const Profile = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Lightbox and position editor state
+  const [avatarLightboxOpen, setAvatarLightboxOpen] = useState(false);
+  const [coverLightboxOpen, setCoverLightboxOpen] = useState(false);
+  const [coverPositionEditorOpen, setCoverPositionEditorOpen] = useState(false);
+  const [coverPosition, setCoverPosition] = useState(50);
 
   useEffect(() => {
     if (!authLoading && !isCheckingAgreement && !user) {
@@ -1019,25 +1027,39 @@ const Profile = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Clickable Cover Preview */}
-              <button
-                onClick={handleCoverClick}
-                disabled={isUploadingCover}
-                className="relative w-full h-[150px] sm:h-[200px] rounded-xl overflow-hidden bg-gradient-to-br from-divine-gold/20 via-divine-deep/30 to-divine-gold/20 group cursor-pointer transition-all duration-500 hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]"
-              >
+              {/* Cover Preview */}
+              <div className="relative w-full h-[150px] sm:h-[200px] rounded-xl overflow-hidden bg-gradient-to-br from-divine-gold/20 via-divine-deep/30 to-divine-gold/20 group">
                 {profile?.cover_photo_url ? (
-                  <img 
-                    src={profile.cover_photo_url} 
-                    alt="Cover photo" 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                  <>
+                    <img 
+                      src={profile.cover_photo_url} 
+                      alt="Cover photo" 
+                      className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-[1.02]"
+                      style={{ objectPosition: `center ${coverPosition}%` }}
+                      onClick={() => setCoverLightboxOpen(true)}
+                    />
+                    {/* Hover overlay */}
+                    <div 
+                      className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 cursor-pointer flex items-center justify-center opacity-0 group-hover:opacity-100"
+                      onClick={() => setCoverLightboxOpen(true)}
+                    >
+                      <div className="bg-black/60 text-white px-4 py-2 rounded-full flex items-center gap-2">
+                        <Maximize2 className="w-4 h-4" />
+                        <span className="text-sm font-medium">Xem ảnh đầy đủ</span>
+                      </div>
+                    </div>
+                  </>
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                  <button
+                    onClick={handleCoverClick}
+                    disabled={isUploadingCover}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 cursor-pointer"
+                  >
                     <div className="p-4 rounded-full bg-black/80 group-hover:bg-black transition-all duration-300">
                       <ImageIcon className="w-10 h-10 text-white group-hover:scale-110 transition-transform duration-300" />
                     </div>
                     <p className="text-black font-medium group-hover:text-gray-700 transition-colors">Nhấn để tải ảnh bìa</p>
-                  </div>
+                  </button>
                 )}
                 
                 {isUploadingCover && (
@@ -1045,17 +1067,31 @@ const Profile = () => {
                     <Loader2 className="w-10 h-10 text-divine-gold animate-spin" />
                   </div>
                 )}
-                
-                {/* Hover overlay for existing cover */}
-                {profile?.cover_photo_url && !isUploadingCover && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-black rounded-full text-white font-medium">
-                      <Camera className="w-4 h-4" />
-                      Đổi ảnh bìa
-                    </div>
-                  </div>
-                )}
-              </button>
+              </div>
+
+              {/* Action buttons for cover */}
+              {profile?.cover_photo_url && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleCoverClick}
+                    disabled={isUploadingCover}
+                    className="flex-1 border-divine-gold/30 hover:border-divine-gold"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Đổi ảnh
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCoverPositionEditorOpen(true)}
+                    className="flex-1 border-divine-gold/30 hover:border-divine-gold"
+                  >
+                    <Move className="w-4 h-4 mr-2" />
+                    Điều chỉnh vị trí
+                  </Button>
+                </div>
+              )}
+
               <input
                 ref={coverInputRef}
                 type="file"
@@ -1069,33 +1105,44 @@ const Profile = () => {
           {/* Avatar Card */}
           <Card className="border-divine-gold/30 shadow-divine bg-gradient-to-b from-background to-divine-deep/10">
             <CardContent className="pt-6">
-              <button
-                onClick={handleAvatarClick}
-                disabled={isUploadingAvatar}
-                className="w-full flex flex-col items-center gap-4 cursor-pointer group"
-              >
-                <div className="relative">
+              <div className="w-full flex flex-col items-center gap-4">
+                <div className="relative group">
                   {/* Glowing effect */}
                   <div className="absolute -inset-2 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold rounded-full opacity-30 blur-lg group-hover:opacity-60 group-hover:blur-xl transition-all duration-500" />
-                  <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-divine-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] group-hover:shadow-[0_0_40px_rgba(212,175,55,0.5)] transition-all duration-500 group-hover:scale-105">
+                  <div 
+                    className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-divine-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] group-hover:shadow-[0_0_40px_rgba(212,175,55,0.5)] transition-all duration-500 group-hover:scale-105 cursor-pointer"
+                    onClick={() => profile?.avatar_url && setAvatarLightboxOpen(true)}
+                  >
                     {isUploadingAvatar ? (
                       <div className="w-full h-full bg-gradient-to-br from-divine-gold/20 to-divine-deep/30 flex items-center justify-center">
                         <Loader2 className="w-10 h-10 text-divine-gold animate-spin" />
                       </div>
                     ) : (
-                      <img 
-                        src={profile?.avatar_url || angelAvatar} 
-                        alt="Avatar" 
-                        className="w-full h-full object-cover"
-                      />
+                      <>
+                        <img 
+                          src={profile?.avatar_url || angelAvatar} 
+                          alt="Avatar" 
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Avatar hover overlay */}
+                        {profile?.avatar_url && (
+                          <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <Maximize2 className="w-8 h-8 text-white drop-shadow-lg" />
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   {/* Camera button */}
-                  <div className="absolute -bottom-1 -right-1 p-3 rounded-full bg-black text-white shadow-lg shadow-black/40 group-hover:shadow-black/60 group-hover:scale-110 transition-all duration-300">
+                  <button
+                    onClick={handleAvatarClick}
+                    disabled={isUploadingAvatar}
+                    className="absolute -bottom-1 -right-1 p-3 rounded-full bg-black text-white shadow-lg shadow-black/40 hover:shadow-black/60 hover:scale-110 transition-all duration-300 z-10"
+                  >
                     <Camera className="w-5 h-5" />
-                  </div>
+                  </button>
                 </div>
-                <p className="text-divine-gold font-medium group-hover:text-divine-light transition-colors">
+                <p className="text-divine-gold font-medium">
                   {t("profile.avatarHint")}
                 </p>
                 <input
@@ -1105,7 +1152,7 @@ const Profile = () => {
                   onChange={handleAvatarChange}
                   className="hidden"
                 />
-              </button>
+              </div>
             </CardContent>
           </Card>
 
@@ -1428,6 +1475,41 @@ const Profile = () => {
           </form>
         </DialogContent>
       </Dialog>
+      {/* Avatar Lightbox */}
+      {profile?.avatar_url && (
+        <ProfileImageLightbox
+          imageUrl={profile.avatar_url}
+          alt="Avatar"
+          isOpen={avatarLightboxOpen}
+          onClose={() => setAvatarLightboxOpen(false)}
+          type="avatar"
+        />
+      )}
+
+      {/* Cover Lightbox */}
+      {profile?.cover_photo_url && (
+        <ProfileImageLightbox
+          imageUrl={profile.cover_photo_url}
+          alt="Cover photo"
+          isOpen={coverLightboxOpen}
+          onClose={() => setCoverLightboxOpen(false)}
+          type="cover"
+        />
+      )}
+
+      {/* Cover Position Editor */}
+      {profile?.cover_photo_url && (
+        <CoverPositionEditor
+          imageUrl={profile.cover_photo_url}
+          isOpen={coverPositionEditorOpen}
+          onClose={() => setCoverPositionEditorOpen(false)}
+          initialPosition={coverPosition}
+          onSave={async (newPosition) => {
+            setCoverPosition(newPosition);
+            // Position is stored locally - can be extended to save to database if needed
+          }}
+        />
+      )}
     </div>
   );
 };
