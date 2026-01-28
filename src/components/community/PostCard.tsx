@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PostImageGrid } from "./PostImageGrid";
 import { LikeButtonWithReactions, ReactionType } from "./PostReactionPicker";
 import ShareDialog from "@/components/ShareDialog";
+import { LinkifiedContent } from "./LinkifiedContent";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -530,7 +531,7 @@ export function PostCard({
             </div>
           ) : (
             <p className="text-base sm:text-lg text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words overflow-hidden w-full post-content">
-              {post.content}
+              <LinkifiedContent content={post.content} />
             </p>
           )}
 
