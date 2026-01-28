@@ -106,95 +106,113 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
         />
       </div>
 
-      {/* Luxurious Pedestal */}
-      <div className={`${config.pedestal} -mt-1 relative`}>
-        {/* Main pedestal body with 3D effect */}
-        <div
-          className="w-full h-full relative overflow-hidden"
+      {/* 3-Step Staircase Pedestal */}
+      <div className="flex flex-col items-center -mt-1 relative">
+        {/* Step 1 - Top (narrowest) */}
+        <div 
+          className="relative overflow-hidden"
           style={{
-            background: "linear-gradient(180deg, #FFD700 0%, #FFC107 15%, #DAA520 30%, #B8860B 50%, #8B6914 70%, #6B5714 85%, #4A3C0F 100%)",
-            borderRadius: "12px 12px 50% 50% / 12px 12px 100% 100%",
-            boxShadow: `
-              0 8px 32px rgba(218, 165, 32, 0.5),
-              0 4px 16px rgba(0, 0, 0, 0.3),
-              inset 0 2px 4px rgba(255, 255, 255, 0.6),
-              inset 0 -2px 8px rgba(0, 0, 0, 0.3)
-            `,
-            border: "1px solid rgba(255, 215, 0, 0.5)",
+            width: size === "large" ? "60px" : size === "medium" ? "50px" : "45px",
+            height: size === "large" ? "10px" : "8px",
+            background: "linear-gradient(180deg, #FFE55C 0%, #FFD700 30%, #DAA520 70%, #B8860B 100%)",
+            borderRadius: "4px 4px 0 0",
+            boxShadow: "inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.2)",
           }}
         >
-          {/* Top shine strip */}
-          <div 
-            className="absolute top-0 left-0 right-0 h-[40%]"
+          {/* Shimmer effect */}
+          <motion.div
+            className="absolute inset-0"
             style={{
-              background: "linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 30%, transparent 100%)",
-              borderRadius: "12px 12px 0 0",
+              background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)",
             }}
+            animate={{ x: ["-100%", "200%"] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }}
           />
-          
-          {/* Shimmer animation overlay */}
+          {/* Sparkle */}
+          <motion.div
+            className="absolute w-1 h-1 rounded-full bg-white"
+            style={{ left: "50%", top: "30%", boxShadow: "0 0 4px 2px rgba(255,255,255,0.8)" }}
+            animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
+          />
+        </div>
+        
+        {/* Step 2 - Middle */}
+        <div 
+          className="relative overflow-hidden"
+          style={{
+            width: size === "large" ? "80px" : size === "medium" ? "68px" : "60px",
+            height: size === "large" ? "10px" : "8px",
+            background: "linear-gradient(180deg, #FFD700 0%, #DAA520 30%, #B8860B 70%, #8B6914 100%)",
+            boxShadow: "inset 0 2px 4px rgba(255,255,255,0.6), 0 2px 4px rgba(0,0,0,0.25)",
+          }}
+        >
+          {/* Shimmer effect */}
+          <motion.div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)",
+            }}
+            animate={{ x: ["-100%", "200%"] }}
+            transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 2.5, ease: "easeInOut" }}
+          />
+          {/* Sparkles */}
+          <motion.div
+            className="absolute w-1 h-1 rounded-full bg-white"
+            style={{ left: "20%", top: "40%", boxShadow: "0 0 3px 1px rgba(255,215,0,0.8)" }}
+            animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+            transition={{ duration: 1.2, repeat: Infinity, delay: 0.5 }}
+          />
+          <motion.div
+            className="absolute w-1 h-1 rounded-full bg-white"
+            style={{ left: "80%", top: "40%", boxShadow: "0 0 3px 1px rgba(255,215,0,0.8)" }}
+            animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+            transition={{ duration: 1.2, repeat: Infinity, delay: 0.8 }}
+          />
+        </div>
+        
+        {/* Step 3 - Bottom (widest) */}
+        <div 
+          className="relative overflow-hidden"
+          style={{
+            width: size === "large" ? "100px" : size === "medium" ? "85px" : "75px",
+            height: size === "large" ? "12px" : "10px",
+            background: "linear-gradient(180deg, #DAA520 0%, #B8860B 30%, #8B6914 70%, #6B5714 100%)",
+            borderRadius: "0 0 6px 6px",
+            boxShadow: "inset 0 2px 4px rgba(255,255,255,0.5), 0 4px 8px rgba(0,0,0,0.3)",
+          }}
+        >
+          {/* Shimmer effect */}
           <motion.div
             className="absolute inset-0"
             style={{
               background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)",
-              borderRadius: "12px 12px 50% 50% / 12px 12px 100% 100%",
             }}
-            animate={{
-              x: ["-100%", "200%"],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              repeatDelay: 3,
-              ease: "easeInOut",
-            }}
+            animate={{ x: ["-100%", "200%"] }}
+            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
           />
-          
-          {/* Gold sparkles */}
+          {/* Sparkles */}
           {[...Array(3)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-1 h-1 rounded-full"
+              className="absolute w-[3px] h-[3px] rounded-full"
               style={{
-                background: "radial-gradient(circle, #FFF 0%, #FFD700 50%, transparent 100%)",
-                left: `${20 + i * 30}%`,
-                top: `${30 + i * 15}%`,
+                background: "radial-gradient(circle, #FFF 0%, #FFD700 60%, transparent 100%)",
+                left: `${15 + i * 35}%`,
+                top: "40%",
                 boxShadow: "0 0 4px 2px rgba(255, 215, 0, 0.6)",
               }}
-              animate={{
-                opacity: [0, 1, 0],
-                scale: [0.5, 1.5, 0.5],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                delay: i * 0.5,
-              }}
+              animate={{ opacity: [0, 1, 0], scale: [0.5, 1.3, 0.5] }}
+              transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.4 }}
             />
           ))}
-          
-          {/* Side highlights */}
-          <div 
-            className="absolute left-0 top-[20%] bottom-[30%] w-[3px]"
-            style={{
-              background: "linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.5) 30%, rgba(255,255,255,0.3) 70%, transparent 100%)",
-              borderRadius: "2px",
-            }}
-          />
-          <div 
-            className="absolute right-0 top-[20%] bottom-[30%] w-[3px]"
-            style={{
-              background: "linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.3) 30%, rgba(255,255,255,0.2) 70%, transparent 100%)",
-              borderRadius: "2px",
-            }}
-          />
         </div>
         
         {/* Glow effect under pedestal */}
         <div 
-          className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[80%] h-3 blur-md"
+          className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-[90%] h-4 blur-md"
           style={{
-            background: "radial-gradient(ellipse, rgba(255, 215, 0, 0.5) 0%, transparent 70%)",
+            background: "radial-gradient(ellipse, rgba(255, 215, 0, 0.6) 0%, rgba(218, 165, 32, 0.3) 50%, transparent 80%)",
           }}
         />
       </div>
