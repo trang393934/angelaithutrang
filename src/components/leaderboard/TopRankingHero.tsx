@@ -5,7 +5,7 @@ import { LeaderboardUser } from "@/hooks/useLeaderboard";
 import { motion } from "framer-motion";
 import { ImageLightbox } from "@/components/community/ImageLightbox";
 import angelAvatar from "@/assets/angel-avatar.png";
-import topRankingBg from "@/assets/top-ranking-bg.jpg";
+import topRankingBg from "@/assets/top-ranking-bg.png";
 
 interface TopRankingHeroProps {
   topUsers: LeaderboardUser[];
@@ -24,29 +24,29 @@ function TrophyAvatar({ user, rank, position, onAvatarClick }: TrophyAvatarProps
   // Avatar sizes - all equal, positioned to fit within golden frames
   const positionConfig = {
     top1: {
-      avatar: "w-[50px] h-[50px] md:w-[68px] md:h-[68px]",
+      avatar: "w-[60px] h-[60px] md:w-[80px] md:h-[80px]",
       name: "text-xs md:text-sm",
-      nameOffset: "mt-[18px] md:mt-[24px]",
+      nameOffset: "mt-[30px] md:mt-[40px]",
     },
     top2: {
-      avatar: "w-[50px] h-[50px] md:w-[68px] md:h-[68px]",
+      avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[18px] md:mt-[24px]",
+      nameOffset: "mt-[25px] md:mt-[35px]",
     },
     top3: {
-      avatar: "w-[50px] h-[50px] md:w-[68px] md:h-[68px]",
+      avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[18px] md:mt-[24px]",
+      nameOffset: "mt-[25px] md:mt-[35px]",
     },
     top4: {
-      avatar: "w-[50px] h-[50px] md:w-[68px] md:h-[68px]",
+      avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[18px] md:mt-[24px]",
+      nameOffset: "mt-[22px] md:mt-[30px]",
     },
     top5: {
-      avatar: "w-[50px] h-[50px] md:w-[68px] md:h-[68px]",
+      avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[18px] md:mt-[24px]",
+      nameOffset: "mt-[22px] md:mt-[30px]",
     },
   };
 
@@ -61,7 +61,7 @@ function TrophyAvatar({ user, rank, position, onAvatarClick }: TrophyAvatarProps
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center relative">
       <motion.div
         key={avatarKey}
         className="flex flex-col items-center cursor-pointer"
@@ -84,9 +84,9 @@ function TrophyAvatar({ user, rank, position, onAvatarClick }: TrophyAvatarProps
         </Avatar>
       </motion.div>
 
-      {/* User Name - clickable to go to profile */}
-      <Link to={`/user/${user.user_id}`} className="group">
-        <p className={`${config.name} ${config.nameOffset} font-semibold text-amber-800 group-hover:text-amber-600 transition-colors text-center max-w-[80px] md:max-w-[110px] leading-tight drop-shadow-[0_1px_2px_rgba(255,255,255,0.95)]`}>
+      {/* User Name - positioned on the pedestal */}
+      <Link to={`/user/${user.user_id}`} className="group absolute left-1/2 -translate-x-1/2" style={{ top: '100%' }}>
+        <p className={`${config.name} ${config.nameOffset} font-bold text-amber-900 group-hover:text-amber-600 transition-colors text-center max-w-[90px] md:max-w-[120px] leading-tight drop-shadow-[0_1px_3px_rgba(255,255,255,1)] whitespace-nowrap overflow-hidden text-ellipsis`}>
           {user.display_name || "Ẩn danh"}
         </p>
       </Link>
@@ -122,35 +122,35 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
       >
         {/* Top 1 - Center, inside the top circle */}
         {top5[0] && (
-          <div className="absolute top-[15%] left-1/2 -translate-x-1/2">
+          <div className="absolute top-[12%] left-1/2 -translate-x-1/2">
             <TrophyAvatar user={top5[0]} rank={1} position="top1" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
         {/* Top 2 - Left side, second row */}
         {top5[1] && (
-          <div className="absolute top-[35%] left-[23%] -translate-x-1/2">
+          <div className="absolute top-[32%] left-[28%] -translate-x-1/2">
             <TrophyAvatar user={top5[1]} rank={2} position="top2" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
         {/* Top 3 - Right side, second row */}
         {top5[2] && (
-          <div className="absolute top-[35%] left-[77%] -translate-x-1/2">
+          <div className="absolute top-[32%] left-[72%] -translate-x-1/2">
             <TrophyAvatar user={top5[2]} rank={3} position="top3" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
         {/* Top 4 - Left side, third row */}
         {top5[3] && (
-          <div className="absolute top-[58%] left-[23%] -translate-x-1/2">
+          <div className="absolute top-[58%] left-[28%] -translate-x-1/2">
             <TrophyAvatar user={top5[3]} rank={4} position="top4" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
         {/* Top 5 - Right side, third row */}
         {top5[4] && (
-          <div className="absolute top-[58%] left-[77%] -translate-x-1/2">
+          <div className="absolute top-[58%] left-[72%] -translate-x-1/2">
             <TrophyAvatar user={top5[4]} rank={5} position="top5" onAvatarClick={handleAvatarClick} />
           </div>
         )}
