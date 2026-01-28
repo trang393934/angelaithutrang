@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -49,6 +49,9 @@ export function useCommunityPosts() {
   const [isLoading, setIsLoading] = useState(true);
   const [dailyLimits, setDailyLimits] = useState<DailyLimits | null>(null);
   const [sortBy, setSortBy] = useState<"recent" | "popular">("recent");
+  
+  // Track pending actions to skip realtime updates for posts being interacted with
+  const pendingActionsRef = useRef<Set<string>>(new Set());
 
   const fetchDailyLimits = useCallback(async () => {
     if (!user) return;
@@ -215,6 +218,9 @@ export function useCommunityPosts() {
       )
     );
 
+    // Mark as pending to skip realtime updates
+    pendingActionsRef.current.add(postId);
+
     try {
       const { data, error } = await supabase.functions.invoke("process-community-post", {
         body: {
@@ -257,6 +263,9 @@ export function useCommunityPosts() {
       );
       console.error("Error toggling like:", error);
       return { success: false, message: error.message || "Lỗi khi thích bài viết" };
+    } finally {
+      // Remove from pending after API completes
+      pendingActionsRef.current.delete(postId);
     }
   };
 
@@ -423,7 +432,7 @@ export function useCommunityPosts() {
     }
   }, [fetchPosts, fetchDailyLimits, user]);
 
-  // Subscribe to realtime updates with deduplication
+  // Subscribe to realtime updates - optimized to avoid full refetch on UPDATE
   useEffect(() => {
     const channel = supabase
       .channel("community_posts_realtime")
@@ -435,25 +444,52 @@ export function useCommunityPosts() {
           table: "community_posts",
         },
         (payload) => {
-          // Use deduplication to ensure accurate counts
-          setPosts((current) => {
-            const payloadData = payload.eventType === "DELETE" ? payload.old : payload.new;
-            const postId = payloadData?.id;
+          // Handle DELETE - remove from local state
+          if (payload.eventType === "DELETE") {
+            const deletedId = payload.old?.id;
+            if (deletedId) {
+              setPosts(current => current.filter(p => p.id !== deletedId));
+            }
+            return;
+          }
+
+          // Handle INSERT - refetch to get complete data with profiles
+          if (payload.eventType === "INSERT") {
+            fetchPosts();
+            return;
+          }
+
+          // Handle UPDATE - merge data without refetch to preserve scroll position
+          if (payload.eventType === "UPDATE") {
+            const updated = payload.new as any;
+            const postId = updated?.id;
             
-            if (!postId) return current;
+            if (!postId) return;
             
-            // Filter out the existing post with this ID to prevent duplicates
-            const filtered = current.filter((post) => post.id !== postId);
-            
-            if (payload.eventType === "DELETE") {
-              return filtered;
+            // Skip if this post has a pending action (optimistic update already applied)
+            if (pendingActionsRef.current.has(postId)) {
+              return;
             }
             
-            // For INSERT/UPDATE, we'll refetch to get complete data with profiles
-            // Use a debounced refetch to avoid multiple rapid calls
-            fetchPosts();
-            return current;
-          });
+            // Merge updated fields into existing post
+            setPosts(current =>
+              current.map(p =>
+                p.id === postId
+                  ? {
+                      ...p,
+                      likes_count: updated.likes_count ?? p.likes_count,
+                      comments_count: updated.comments_count ?? p.comments_count,
+                      shares_count: updated.shares_count ?? p.shares_count,
+                      is_rewarded: updated.is_rewarded ?? p.is_rewarded,
+                      reward_amount: updated.reward_amount ?? p.reward_amount,
+                      content: updated.content ?? p.content,
+                      image_url: updated.image_url ?? p.image_url,
+                      image_urls: updated.image_urls ?? p.image_urls,
+                    }
+                  : p
+              )
+            );
+          }
         }
       )
       .subscribe();
