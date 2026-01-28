@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Crown, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LeaderboardUser } from "@/hooks/useLeaderboard";
 import { motion } from "framer-motion";
@@ -13,42 +12,37 @@ interface TopRankingHeroProps {
 interface TrophyAvatarProps {
   user: LeaderboardUser | undefined;
   rank: number;
-  size: "lg" | "md" | "sm";
+  position: "top1" | "top2" | "top3" | "top4" | "top5";
 }
 
-function TrophyAvatar({ user, rank, size }: TrophyAvatarProps) {
+function TrophyAvatar({ user, rank, position }: TrophyAvatarProps) {
   if (!user) return null;
 
-  const sizeConfig = {
-    lg: {
-      container: "w-28 md:w-36",
-      avatar: "w-20 h-20 md:w-28 md:h-28",
-      frame: "w-24 h-24 md:w-32 md:h-32",
-      base: "w-28 h-8 md:w-36 md:h-10",
-      rank: "text-lg md:text-xl",
+  // Avatar sizes to fit within the golden frames in background image
+  const positionConfig = {
+    top1: {
+      avatar: "w-[70px] h-[70px] md:w-[90px] md:h-[90px]",
       name: "text-sm md:text-base",
     },
-    md: {
-      container: "w-24 md:w-28",
-      avatar: "w-16 h-16 md:w-22 md:h-22",
-      frame: "w-20 h-20 md:w-26 md:h-26",
-      base: "w-24 h-6 md:w-28 md:h-8",
-      rank: "text-base",
+    top2: {
+      avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
       name: "text-xs md:text-sm",
     },
-    sm: {
-      container: "w-20 md:w-24",
-      avatar: "w-14 h-14 md:w-18 md:h-18",
-      frame: "w-18 h-18 md:w-22 md:h-22",
-      base: "w-20 h-5 md:w-24 md:h-7",
-      rank: "text-sm",
+    top3: {
+      avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
+      name: "text-xs md:text-sm",
+    },
+    top4: {
+      avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
+      name: "text-xs",
+    },
+    top5: {
+      avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
       name: "text-xs",
     },
   };
 
-  const config = sizeConfig[size];
-
-  // Use user_id as key ensures re-render when user changes position
+  const config = positionConfig[position];
   const avatarKey = `${user.user_id}-${rank}`;
 
   return (
@@ -58,105 +52,29 @@ function TrophyAvatar({ user, rank, size }: TrophyAvatarProps) {
     >
       <motion.div
         key={avatarKey}
-        className={`relative ${config.container} flex flex-col items-center`}
-        whileHover={{ scale: 1.05, y: -5 }}
+        className="flex flex-col items-center"
+        whileHover={{ scale: 1.08 }}
         transition={{ type: "spring", stiffness: 300 }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
       >
-        {/* Crown for Top 1 */}
-        {rank === 1 && (
-          <motion.div
-            className="absolute -top-6 md:-top-8 left-1/2 -translate-x-1/2 z-20"
-            animate={{ y: [0, -3, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Crown className="w-8 h-8 md:w-10 md:h-10 text-amber-400 fill-amber-400 drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]" />
-          </motion.div>
-        )}
-
-        {/* Ornate Golden Frame */}
-        <div className="relative">
-          {/* Outer glow */}
-          <motion.div
-            className={`absolute inset-0 ${config.frame} rounded-full`}
-            animate={{
-              boxShadow: [
-                "0 0 15px rgba(255,215,0,0.5)",
-                "0 0 30px rgba(255,215,0,0.7)",
-                "0 0 15px rgba(255,215,0,0.5)",
-              ],
-            }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        {/* Clean circular avatar - fits inside background frame */}
+        <Avatar className={`${config.avatar} border-2 border-amber-400/50 shadow-lg`} key={user.avatar_url}>
+          <AvatarImage
+            src={user.avatar_url || angelAvatar}
+            className="object-cover"
+            key={`img-${user.user_id}-${user.avatar_url}`}
           />
-
-          {/* Golden ornate border - multiple layers for depth */}
-          <div className={`relative ${config.frame} flex items-center justify-center`}>
-            {/* Outermost ring */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-b from-yellow-300 via-amber-500 to-yellow-600 shadow-[0_4px_15px_rgba(255,215,0,0.5)]" />
-            
-            {/* Middle ring with highlight */}
-            <div className="absolute inset-[3px] rounded-full bg-gradient-to-b from-yellow-200 via-amber-400 to-yellow-500" />
-            
-            {/* Inner highlight ring */}
-            <div className="absolute inset-[6px] rounded-full bg-gradient-to-b from-yellow-100 via-amber-300 to-yellow-400 shadow-[inset_0_2px_6px_rgba(255,255,255,0.8),inset_0_-2px_6px_rgba(180,130,0,0.5)]" />
-
-            {/* Avatar container */}
-            <div className="absolute inset-[9px] rounded-full overflow-hidden bg-white shadow-inner">
-              <Avatar className="w-full h-full" key={user.avatar_url}>
-                <AvatarImage
-                  src={user.avatar_url || angelAvatar}
-                  className="object-cover"
-                  key={`img-${user.user_id}-${user.avatar_url}`}
-                />
-                <AvatarFallback className="text-lg bg-primary/10 text-primary font-semibold">
-                  {user.display_name?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-
-            {/* Corner sparkle accents */}
-            <motion.div
-              className="absolute -top-1 -right-1"
-              animate={{ opacity: [0, 1, 0], scale: [0.8, 1.2, 0.8] }}
-              transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
-            >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-            </motion.div>
-            <motion.div
-              className="absolute -bottom-1 -left-1"
-              animate={{ opacity: [0, 1, 0], scale: [0.8, 1.2, 0.8] }}
-              transition={{ duration: 1.5, repeat: Infinity, delay: 0.75 }}
-            >
-              <Sparkles className="w-3 h-3 text-yellow-300" />
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Trophy Base / Pedestal */}
-        <div className={`relative ${config.base} -mt-2`}>
-          {/* Base top surface */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[85%] h-[40%] rounded-t-lg bg-gradient-to-b from-yellow-200 via-amber-400 to-amber-500 shadow-[0_2px_8px_rgba(0,0,0,0.2)]" />
-          
-          {/* Base middle */}
-          <div className="absolute top-[35%] left-1/2 -translate-x-1/2 w-full h-[35%] bg-gradient-to-b from-amber-500 via-yellow-600 to-amber-700" />
-          
-          {/* Base bottom platform */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[110%] h-[35%] rounded-b-md bg-gradient-to-b from-amber-600 via-yellow-700 to-amber-800 shadow-[0_4px_12px_rgba(0,0,0,0.3)]" />
-
-          {/* Rank number on base */}
-          <div className={`absolute inset-0 flex items-center justify-center ${config.rank} font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]`}>
-            #{rank}
-          </div>
-        </div>
+          <AvatarFallback className="text-lg bg-amber-100 text-amber-700 font-semibold">
+            {user.display_name?.charAt(0) || "U"}
+          </AvatarFallback>
+        </Avatar>
       </motion.div>
 
-      {/* User Name - Full display */}
-      <div className="mt-2 text-center max-w-[120px] md:max-w-[160px]">
-        <p className={`${config.name} font-semibold text-amber-800 group-hover:text-amber-600 transition-colors leading-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]`}>
-          {user.display_name || "Ẩn danh"}
-        </p>
-      </div>
+      {/* User Name */}
+      <p className={`${config.name} font-semibold text-amber-900 group-hover:text-amber-600 transition-colors mt-1 text-center max-w-[100px] md:max-w-[130px] leading-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]`}>
+        {user.display_name || "Ẩn danh"}
+      </p>
     </Link>
   );
 }
@@ -164,88 +82,45 @@ function TrophyAvatar({ user, rank, size }: TrophyAvatarProps) {
 export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
   const top5 = topUsers.slice(0, 5);
 
-  if (top5.length < 5) {
-    return (
-      <div 
-        className="relative rounded-2xl overflow-hidden py-8 px-4"
-        style={{
-          backgroundImage: `url(${topRankingBg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <div className="flex justify-center gap-4 flex-wrap">
-          {top5.map((user, index) => (
-            <TrophyAvatar
-              key={`${user.user_id}-${index}`}
-              user={user}
-              rank={index + 1}
-              size={index === 0 ? "lg" : "md"}
-            />
-          ))}
-        </div>
-      </div>
-    );
+  if (top5.length === 0) {
+    return null;
   }
 
   return (
     <div 
-      className="relative rounded-2xl overflow-hidden py-6 md:py-8 px-4"
+      className="relative rounded-2xl overflow-hidden"
       style={{
         backgroundImage: `url(${topRankingBg})`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundPosition: 'center top',
+        aspectRatio: '4/5',
       }}
     >
-      {/* Title overlay */}
-      <div className="text-center mb-4">
-        <h3 className="text-2xl md:text-3xl font-bold tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 via-amber-600 to-yellow-500 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-          TOP RANKING
-        </h3>
+      {/* Top 1 - Center top */}
+      {top5[0] && (
+        <div className="absolute top-[15%] left-1/2 -translate-x-1/2">
+          <TrophyAvatar user={top5[0]} rank={1} position="top1" />
+        </div>
+      )}
+
+      {/* Top 2 & 3 - Second row */}
+      <div className="absolute top-[38%] left-0 right-0 flex justify-center gap-[25%] md:gap-[30%]">
+        {top5[1] && (
+          <TrophyAvatar user={top5[1]} rank={2} position="top2" />
+        )}
+        {top5[2] && (
+          <TrophyAvatar user={top5[2]} rank={3} position="top3" />
+        )}
       </div>
 
-      <div className="flex flex-col items-center gap-2 md:gap-4">
-        {/* Row 1: Top 1 (Center, Largest) */}
-        <div className="flex justify-center">
-          <TrophyAvatar 
-            key={`top1-${top5[0].user_id}`}
-            user={top5[0]} 
-            rank={1} 
-            size="lg" 
-          />
-        </div>
-
-        {/* Row 2: Top 2 and 3 */}
-        <div className="flex justify-center gap-8 md:gap-16 -mt-2">
-          <TrophyAvatar 
-            key={`top2-${top5[1].user_id}`}
-            user={top5[1]} 
-            rank={2} 
-            size="md" 
-          />
-          <TrophyAvatar 
-            key={`top3-${top5[2].user_id}`}
-            user={top5[2]} 
-            rank={3} 
-            size="md" 
-          />
-        </div>
-
-        {/* Row 3: Top 4 and 5 */}
-        <div className="flex justify-center gap-10 md:gap-20 -mt-2">
-          <TrophyAvatar 
-            key={`top4-${top5[3].user_id}`}
-            user={top5[3]} 
-            rank={4} 
-            size="sm" 
-          />
-          <TrophyAvatar 
-            key={`top5-${top5[4].user_id}`}
-            user={top5[4]} 
-            rank={5} 
-            size="sm" 
-          />
-        </div>
+      {/* Top 4 & 5 - Third row */}
+      <div className="absolute top-[62%] left-0 right-0 flex justify-center gap-[25%] md:gap-[30%]">
+        {top5[3] && (
+          <TrophyAvatar user={top5[3]} rank={4} position="top4" />
+        )}
+        {top5[4] && (
+          <TrophyAvatar user={top5[4]} rank={5} position="top5" />
+        )}
       </div>
     </div>
   );
