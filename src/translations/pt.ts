@@ -236,8 +236,22 @@ const translations: Record<string, string> = {
   "leaderboard.topCamlyCoin": "Top Camly Coin",
   "leaderboard.topQuestions": "Top Perguntas",
   "leaderboard.noQuestions": "Nenhuma pergunta curtida ainda",
-  "leaderboard.viewCommunity": "Ver comunidade",
+  "leaderboard.viewCommunity": "Ver Comunidade",
   "leaderboard.viewAllQuestions": "Ver todas as perguntas",
+  "leaderboard.members": "Membros",
+  "leaderboard.viewMore": "Ver mais",
+  "leaderboard.collapse": "Recolher",
+
+  // Search
+  "search.placeholder": "Pesquisar...",
+  "search.searching": "Pesquisando...",
+  "search.noResults": "Nenhum resultado encontrado para",
+  "search.error": "Não foi possível pesquisar. Por favor, tente novamente.",
+  "search.askAngel": "Perguntar ao Angel AI sobre",
+  "search.knowledge": "Conhecimento",
+  "search.community": "Comunidade",
+  "search.questions": "Perguntas",
+  "search.angelAnswer": "Angel AI responde",
 
   // Core Values Section
   "coreValues.badge": "💎 12 Camadas de Luz 💎",

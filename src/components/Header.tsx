@@ -121,7 +121,6 @@ export const Header = () => {
           <div className="hidden lg:block w-32 xl:w-44 2xl:w-56 shrink-0">
             <GlobalSearch 
               variant="header" 
-              placeholder="Tìm kiếm..." 
             />
           </div>
 

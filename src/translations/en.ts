@@ -247,8 +247,22 @@ const translations: Record<string, string> = {
   "leaderboard.topCamlyCoin": "Top Camly Coin",
   "leaderboard.topQuestions": "Top Questions",
   "leaderboard.noQuestions": "No liked questions yet",
-  "leaderboard.viewCommunity": "View community",
+  "leaderboard.viewCommunity": "View Community",
   "leaderboard.viewAllQuestions": "View all questions",
+  "leaderboard.members": "Members",
+  "leaderboard.viewMore": "View more",
+  "leaderboard.collapse": "Collapse",
+
+  // Search
+  "search.placeholder": "Search...",
+  "search.searching": "Searching...",
+  "search.noResults": "No results found for",
+  "search.error": "Unable to search. Please try again.",
+  "search.askAngel": "Ask Angel AI about",
+  "search.knowledge": "Knowledge",
+  "search.community": "Community",
+  "search.questions": "Questions",
+  "search.angelAnswer": "Angel AI answers",
 
   // Core Values Section
   "coreValues.badge": "💎 12 Layers of Light 💎",

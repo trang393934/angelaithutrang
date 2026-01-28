@@ -238,6 +238,20 @@ const translations: Record<string, string> = {
   "leaderboard.noQuestions": "Пока нет понравившихся вопросов",
   "leaderboard.viewCommunity": "Смотреть сообщество",
   "leaderboard.viewAllQuestions": "Смотреть все вопросы",
+  "leaderboard.members": "Участников",
+  "leaderboard.viewMore": "Показать больше",
+  "leaderboard.collapse": "Свернуть",
+
+  // Search
+  "search.placeholder": "Поиск...",
+  "search.searching": "Поиск...",
+  "search.noResults": "Результаты не найдены для",
+  "search.error": "Не удалось выполнить поиск. Попробуйте снова.",
+  "search.askAngel": "Спросить Angel AI о",
+  "search.knowledge": "Знания",
+  "search.community": "Сообщество",
+  "search.questions": "Вопросы",
+  "search.angelAnswer": "Angel AI отвечает",
 
   // Core Values Section
   "coreValues.badge": "💎 12 Слоёв Света 💎",
