@@ -151,7 +151,7 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
           <span 
             className="relative z-10 font-black drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]"
             style={{
-              fontSize: size === "large" ? "12px" : size === "medium" ? "11px" : "10px",
+              fontSize: size === "large" ? "16px" : size === "medium" ? "14px" : "12px",
               background: "linear-gradient(180deg, #FFFACD 0%, #FFD700 50%, #B8860B 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
