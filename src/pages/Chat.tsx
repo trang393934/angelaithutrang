@@ -378,6 +378,7 @@ const Chat = () => {
     }
   }, [user, refreshBalance]);
 
+  // NOTE: Image generation does NOT save to chat history - intentional design
   const handleGenerateImage = async (prompt: string) => {
     setMessages(prev => [...prev, { role: "user", content: `🎨 ${t("chat.createImage")} ${prompt}`, type: "text" }]);
     setMessages(prev => [...prev, { role: "assistant", content: t("chat.creatingImage"), type: "text" }]);
@@ -397,6 +398,7 @@ const Chat = () => {
       });
       
       toast.success(t("chat.imageCreated"));
+      // Image generation content is NOT saved to history by design
     } catch (error: any) {
       setMessages(prev => {
         const updated = [...prev];
@@ -411,6 +413,7 @@ const Chat = () => {
     }
   };
 
+  // NOTE: Image analysis does NOT save to chat history - intentional design
   const handleAnalyzeImage = async (question: string) => {
     if (!uploadedImage) return;
 
@@ -433,6 +436,7 @@ const Chat = () => {
       
       setUploadedImage(null);
       setChatMode("chat");
+      // Image analysis content is NOT saved to history by design
     } catch (error: any) {
       setMessages(prev => {
         const updated = [...prev];
