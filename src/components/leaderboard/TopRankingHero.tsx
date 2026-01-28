@@ -117,40 +117,40 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
           backgroundImage: `url(${topRankingBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center top',
-          aspectRatio: '4/5',
+          aspectRatio: '3/4',
         }}
       >
         {/* Top 1 - Center, inside the top circle */}
         {top5[0] && (
-          <div className="absolute top-[12%] left-1/2 -translate-x-1/2">
+          <div className="absolute top-[14%] left-1/2 -translate-x-1/2 -translate-y-1/2">
             <TrophyAvatar user={top5[0]} rank={1} position="top1" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
         {/* Top 2 - Left side, second row */}
         {top5[1] && (
-          <div className="absolute top-[32%] left-[28%] -translate-x-1/2">
+          <div className="absolute top-[38%] left-[30%] -translate-x-1/2 -translate-y-1/2">
             <TrophyAvatar user={top5[1]} rank={2} position="top2" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
         {/* Top 3 - Right side, second row */}
         {top5[2] && (
-          <div className="absolute top-[32%] left-[72%] -translate-x-1/2">
+          <div className="absolute top-[38%] left-[70%] -translate-x-1/2 -translate-y-1/2">
             <TrophyAvatar user={top5[2]} rank={3} position="top3" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
         {/* Top 4 - Left side, third row */}
         {top5[3] && (
-          <div className="absolute top-[58%] left-[28%] -translate-x-1/2">
+          <div className="absolute top-[66%] left-[30%] -translate-x-1/2 -translate-y-1/2">
             <TrophyAvatar user={top5[3]} rank={4} position="top4" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
         {/* Top 5 - Right side, third row */}
         {top5[4] && (
-          <div className="absolute top-[58%] left-[72%] -translate-x-1/2">
+          <div className="absolute top-[66%] left-[70%] -translate-x-1/2 -translate-y-1/2">
             <TrophyAvatar user={top5[4]} rank={5} position="top5" onAvatarClick={handleAvatarClick} />
           </div>
         )}
