@@ -106,20 +106,95 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
         />
       </div>
 
-      {/* Pedestal */}
-      <div
-        className={`${config.pedestal} -mt-2 relative flex items-center justify-center`}
-        style={{
-          background: "linear-gradient(180deg, #DAA520 0%, #B8860B 30%, #8B7355 70%, #6B5344 100%)",
-          borderRadius: "8px 8px 50% 50% / 8px 8px 100% 100%",
-          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)",
-        }}
-      >
-        {/* Pedestal shine */}
-        <div 
-          className="absolute top-0 left-0 right-0 h-1/3 rounded-t-lg opacity-30"
+      {/* Luxurious Pedestal */}
+      <div className={`${config.pedestal} -mt-1 relative`}>
+        {/* Main pedestal body with 3D effect */}
+        <div
+          className="w-full h-full relative overflow-hidden"
           style={{
-            background: "linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 100%)",
+            background: "linear-gradient(180deg, #FFD700 0%, #FFC107 15%, #DAA520 30%, #B8860B 50%, #8B6914 70%, #6B5714 85%, #4A3C0F 100%)",
+            borderRadius: "12px 12px 50% 50% / 12px 12px 100% 100%",
+            boxShadow: `
+              0 8px 32px rgba(218, 165, 32, 0.5),
+              0 4px 16px rgba(0, 0, 0, 0.3),
+              inset 0 2px 4px rgba(255, 255, 255, 0.6),
+              inset 0 -2px 8px rgba(0, 0, 0, 0.3)
+            `,
+            border: "1px solid rgba(255, 215, 0, 0.5)",
+          }}
+        >
+          {/* Top shine strip */}
+          <div 
+            className="absolute top-0 left-0 right-0 h-[40%]"
+            style={{
+              background: "linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 30%, transparent 100%)",
+              borderRadius: "12px 12px 0 0",
+            }}
+          />
+          
+          {/* Shimmer animation overlay */}
+          <motion.div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)",
+              borderRadius: "12px 12px 50% 50% / 12px 12px 100% 100%",
+            }}
+            animate={{
+              x: ["-100%", "200%"],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              repeatDelay: 3,
+              ease: "easeInOut",
+            }}
+          />
+          
+          {/* Gold sparkles */}
+          {[...Array(3)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 rounded-full"
+              style={{
+                background: "radial-gradient(circle, #FFF 0%, #FFD700 50%, transparent 100%)",
+                left: `${20 + i * 30}%`,
+                top: `${30 + i * 15}%`,
+                boxShadow: "0 0 4px 2px rgba(255, 215, 0, 0.6)",
+              }}
+              animate={{
+                opacity: [0, 1, 0],
+                scale: [0.5, 1.5, 0.5],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                delay: i * 0.5,
+              }}
+            />
+          ))}
+          
+          {/* Side highlights */}
+          <div 
+            className="absolute left-0 top-[20%] bottom-[30%] w-[3px]"
+            style={{
+              background: "linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.5) 30%, rgba(255,255,255,0.3) 70%, transparent 100%)",
+              borderRadius: "2px",
+            }}
+          />
+          <div 
+            className="absolute right-0 top-[20%] bottom-[30%] w-[3px]"
+            style={{
+              background: "linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.3) 30%, rgba(255,255,255,0.2) 70%, transparent 100%)",
+              borderRadius: "2px",
+            }}
+          />
+        </div>
+        
+        {/* Glow effect under pedestal */}
+        <div 
+          className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[80%] h-3 blur-md"
+          style={{
+            background: "radial-gradient(ellipse, rgba(255, 215, 0, 0.5) 0%, transparent 70%)",
           }}
         />
       </div>
