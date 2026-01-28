@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import angelAvatar from "@/assets/angel-avatar.png";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SearchResult {
   id: string;
@@ -33,9 +34,11 @@ interface GlobalSearchProps {
 
 export function GlobalSearch({ 
   variant = "header", 
-  placeholder = "Tìm kiếm...",
+  placeholder,
   className = "" 
 }: GlobalSearchProps) {
+  const { t } = useLanguage();
+  const searchPlaceholder = placeholder || t("search.placeholder");
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -94,15 +97,15 @@ export function GlobalSearch({
       if (data.success) {
         setResults(data.results);
       } else {
-        setError(data.error || "Có lỗi xảy ra");
+        setError(data.error || t("common.error"));
       }
     } catch (err) {
       console.error("Search error:", err);
-      setError("Không thể tìm kiếm. Vui lòng thử lại.");
+      setError(t("search.error"));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -170,11 +173,11 @@ export function GlobalSearch({
   const getTypeLabel = (type: string) => {
     switch (type) {
       case "knowledge":
-        return "Kiến thức";
+        return t("search.knowledge");
       case "community":
-        return "Cộng đồng";
+        return t("search.community");
       case "question":
-        return "Câu hỏi";
+        return t("search.questions");
       default:
         return "";
     }
@@ -200,7 +203,7 @@ export function GlobalSearch({
         <Input
           ref={inputRef}
           type="text"
-          placeholder={placeholder}
+          placeholder={searchPlaceholder}
           value={query}
           onChange={handleInputChange}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
@@ -230,7 +233,7 @@ export function GlobalSearch({
             {isLoading && (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                <span className="ml-2 text-sm text-muted-foreground">Đang tìm kiếm...</span>
+                <span className="ml-2 text-sm text-muted-foreground">{t("search.searching")}</span>
               </div>
             )}
 
@@ -255,7 +258,7 @@ export function GlobalSearch({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <Sparkles className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-semibold text-primary">Angel AI trả lời</span>
+                          <span className="text-xs font-semibold text-primary">{t("search.angelAnswer")}</span>
                         </div>
                         <p className="text-sm text-foreground leading-relaxed">
                           {results.aiSummary.content}
@@ -270,7 +273,7 @@ export function GlobalSearch({
                   <div>
                     <div className="px-4 py-2 bg-muted/30 border-b">
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        Kiến thức ({results.knowledge.length})
+                        {t("search.knowledge")} ({results.knowledge.length})
                       </span>
                     </div>
                     {results.knowledge.map((result) => (
@@ -289,7 +292,7 @@ export function GlobalSearch({
                   <div>
                     <div className="px-4 py-2 bg-muted/30 border-b">
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        Cộng đồng ({results.community.length})
+                        {t("search.community")} ({results.community.length})
                       </span>
                     </div>
                     {results.community.map((result) => (
@@ -309,7 +312,7 @@ export function GlobalSearch({
                   <div>
                     <div className="px-4 py-2 bg-muted/30 border-b">
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        Câu hỏi ({results.questions.length})
+                        {t("search.questions")} ({results.questions.length})
                       </span>
                     </div>
                     {results.questions.map((result) => (
@@ -328,7 +331,7 @@ export function GlobalSearch({
                   <div className="p-6 text-center">
                     <Search className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
                     <p className="text-sm text-muted-foreground mb-4">
-                      Không tìm thấy kết quả cho "{query}"
+                      {t("search.noResults")} "{query}"
                     </p>
                   </div>
                 )}
@@ -340,7 +343,7 @@ export function GlobalSearch({
                     className="w-full bg-sapphire-gradient text-white hover:opacity-90 transition-opacity"
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Hỏi Angel AI về "{query.length > 20 ? query.substring(0, 20) + "..." : query}"
+                    {t("search.askAngel")} "{query.length > 20 ? query.substring(0, 20) + "..." : query}"
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>

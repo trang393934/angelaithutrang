@@ -238,6 +238,20 @@ const translations: Record<string, string> = {
   "leaderboard.noQuestions": "まだいいねされた質問がありません",
   "leaderboard.viewCommunity": "コミュニティを見る",
   "leaderboard.viewAllQuestions": "すべての質問を見る",
+  "leaderboard.members": "メンバー",
+  "leaderboard.viewMore": "もっと見る",
+  "leaderboard.collapse": "折りたたむ",
+
+  // Search
+  "search.placeholder": "検索...",
+  "search.searching": "検索中...",
+  "search.noResults": "の結果が見つかりません",
+  "search.error": "検索できませんでした。もう一度お試しください。",
+  "search.askAngel": "Angel AIに聞く",
+  "search.knowledge": "知識",
+  "search.community": "コミュニティ",
+  "search.questions": "質問",
+  "search.angelAnswer": "Angel AIの回答",
 
   // Core Values Section
   "coreValues.badge": "💎 12層の光 💎",

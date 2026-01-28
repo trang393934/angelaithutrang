@@ -238,6 +238,20 @@ const translations: Record<string, string> = {
   "leaderboard.noQuestions": "अभी तक कोई पसंद किए गए प्रश्न नहीं",
   "leaderboard.viewCommunity": "समुदाय देखें",
   "leaderboard.viewAllQuestions": "सभी प्रश्न देखें",
+  "leaderboard.members": "सदस्य",
+  "leaderboard.viewMore": "और देखें",
+  "leaderboard.collapse": "संक्षिप्त",
+
+  // Search
+  "search.placeholder": "खोजें...",
+  "search.searching": "खोज रहे हैं...",
+  "search.noResults": "के लिए कोई परिणाम नहीं मिला",
+  "search.error": "खोज नहीं कर सके। कृपया पुनः प्रयास करें।",
+  "search.askAngel": "Angel AI से पूछें",
+  "search.knowledge": "ज्ञान",
+  "search.community": "समुदाय",
+  "search.questions": "प्रश्न",
+  "search.angelAnswer": "Angel AI उत्तर",
 
   // Core Values Section
   "coreValues.badge": "💎 12 प्रकाश की परतें 💎",

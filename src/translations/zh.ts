@@ -230,6 +230,20 @@ const translations: Record<string, string> = {
   "leaderboard.noQuestions": "暂无热门问题",
   "leaderboard.viewCommunity": "查看社区",
   "leaderboard.viewAllQuestions": "查看所有问题",
+  "leaderboard.members": "成员",
+  "leaderboard.viewMore": "查看更多",
+  "leaderboard.collapse": "收起",
+
+  // Search
+  "search.placeholder": "搜索...",
+  "search.searching": "搜索中...",
+  "search.noResults": "未找到相关结果",
+  "search.error": "搜索失败，请重试。",
+  "search.askAngel": "向Angel AI询问",
+  "search.knowledge": "知识",
+  "search.community": "社区",
+  "search.questions": "问题",
+  "search.angelAnswer": "Angel AI回答",
 
   // Core Values Section
   "coreValues.badge": "💎 12层光芒 💎",

@@ -230,6 +230,20 @@ const translations: Record<string, string> = {
   "leaderboard.noQuestions": "لا توجد أسئلة شعبية بعد",
   "leaderboard.viewCommunity": "عرض المجتمع",
   "leaderboard.viewAllQuestions": "عرض كل الأسئلة",
+  "leaderboard.members": "الأعضاء",
+  "leaderboard.viewMore": "عرض المزيد",
+  "leaderboard.collapse": "طي",
+
+  // Search
+  "search.placeholder": "بحث...",
+  "search.searching": "جاري البحث...",
+  "search.noResults": "لم يتم العثور على نتائج لـ",
+  "search.error": "تعذر البحث. يرجى المحاولة مرة أخرى.",
+  "search.askAngel": "اسأل Angel AI عن",
+  "search.knowledge": "المعرفة",
+  "search.community": "المجتمع",
+  "search.questions": "الأسئلة",
+  "search.angelAnswer": "يجيب Angel AI",
 
   // Core Values Section
   "coreValues.badge": "💎 12 طبقة من النور 💎",

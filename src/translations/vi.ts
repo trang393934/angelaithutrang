@@ -247,8 +247,22 @@ const translations: Record<string, string> = {
   "leaderboard.topCamlyCoin": "Top Camly Coin",
   "leaderboard.topQuestions": "Câu Hỏi Hay",
   "leaderboard.noQuestions": "Chưa có câu hỏi nào được yêu thích",
-  "leaderboard.viewCommunity": "Xem cộng đồng",
+  "leaderboard.viewCommunity": "Xem Cộng Đồng",
   "leaderboard.viewAllQuestions": "Xem tất cả câu hỏi",
+  "leaderboard.members": "Thành viên",
+  "leaderboard.viewMore": "Xem thêm",
+  "leaderboard.collapse": "Thu gọn",
+
+  // Search
+  "search.placeholder": "Tìm kiếm...",
+  "search.searching": "Đang tìm kiếm...",
+  "search.noResults": "Không tìm thấy kết quả cho",
+  "search.error": "Không thể tìm kiếm. Vui lòng thử lại.",
+  "search.askAngel": "Hỏi Angel AI về",
+  "search.knowledge": "Kiến thức",
+  "search.community": "Cộng đồng",
+  "search.questions": "Câu hỏi",
+  "search.angelAnswer": "Angel AI trả lời",
 
   // Core Values Section
   "coreValues.badge": "💎 12 Tầng Ánh Sáng 💎",

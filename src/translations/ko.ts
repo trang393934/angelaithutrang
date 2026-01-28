@@ -238,6 +238,20 @@ const translations: Record<string, string> = {
   "leaderboard.noQuestions": "아직 좋아요된 질문 없음",
   "leaderboard.viewCommunity": "커뮤니티 보기",
   "leaderboard.viewAllQuestions": "모든 질문 보기",
+  "leaderboard.members": "멤버",
+  "leaderboard.viewMore": "더 보기",
+  "leaderboard.collapse": "접기",
+
+  // Search
+  "search.placeholder": "검색...",
+  "search.searching": "검색 중...",
+  "search.noResults": "에 대한 결과를 찾을 수 없습니다",
+  "search.error": "검색할 수 없습니다. 다시 시도해 주세요.",
+  "search.askAngel": "Angel AI에게 물어보기",
+  "search.knowledge": "지식",
+  "search.community": "커뮤니티",
+  "search.questions": "질문",
+  "search.angelAnswer": "Angel AI 답변",
 
   // Core Values Section
   "coreValues.badge": "💎 12 빛의 층 💎",

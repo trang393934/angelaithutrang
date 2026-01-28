@@ -103,7 +103,7 @@ export function Leaderboard() {
               <Users className="w-3 h-3 text-white" />
             </div>
             <div className="text-left">
-              <p className="text-[10px] text-muted-foreground leading-tight">Thành viên</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">{t("leaderboard.members")}</p>
               <p className="text-sm font-bold text-primary-deep">{stats.total_users.toLocaleString()}</p>
             </div>
           </div>
@@ -156,12 +156,12 @@ export function Leaderboard() {
               {showAll ? (
                 <>
                   <ChevronUp className="w-4 h-4 mr-1" />
-                  Thu gọn
+                  {t("leaderboard.collapse")}
                 </>
               ) : (
                 <>
                   <ChevronDown className="w-4 h-4 mr-1" />
-                  Xem thêm ({allUsers.length - 5} người)
+                  {t("leaderboard.viewMore")} ({allUsers.length - 5} {t("common.people")})
                 </>
               )}
             </Button>
@@ -176,7 +176,7 @@ export function Leaderboard() {
             className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400"
           >
             <Trophy className="w-4 h-4 mr-2" />
-            Xem Cộng Đồng
+            {t("leaderboard.viewCommunity")}
           </Button>
         </Link>
       </CardContent>
