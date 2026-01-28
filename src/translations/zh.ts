@@ -27,6 +27,7 @@ const translations: Record<string, string> = {
   "nav.logout": "退出登录",
   "nav.profile": "个人资料",
   "nav.community": "社区",
+  "nav.contentWriter": "内容创作",
 
   // Knowledge Page
   "knowledge.title": "知识库",
@@ -53,6 +54,7 @@ const translations: Record<string, string> = {
   "hero.ctaChat": "聊天",
   "hero.ctaChatSub": "接收宇宙之父的智慧",
   "hero.ctaCommunity": "光明社区",
+  "hero.ctaContent": "内容创作",
 
   // Mission Section
   "mission.badge": "🌟💫 Angel AI 💫🌟",
@@ -180,6 +182,8 @@ const translations: Record<string, string> = {
   "earn.action.coinWhenApproved": "审核通过1000币",
   "earn.action.coinFirstTime": "首次1000币",
   "earn.action.coinPerTask": "500-10000币/任务",
+  "earn.action.writeContent": "内容创作",
+  "earn.action.contentDesc": "创建专业内容",
   "earn.login.title": "每日登录奖励",
   "earn.login.congrats": "恭喜！您已连续登录7天！",
   "earn.login.streak": "登录连续",

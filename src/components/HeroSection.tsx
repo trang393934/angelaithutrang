@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Sparkles, PenLine } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 import Leaderboard from "@/components/Leaderboard";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -65,6 +65,10 @@ export const HeroSection = () => {
               </Link>
               <Link to="/community" className="btn-sacred-outline w-full sm:w-auto text-center justify-center">
                 {t("hero.ctaCommunity")}
+              </Link>
+              <Link to="/content-writer" className="btn-sacred-outline group w-full sm:w-auto text-center justify-center">
+                <PenLine className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                {t("hero.ctaContent")}
               </Link>
             </div>
           </div>

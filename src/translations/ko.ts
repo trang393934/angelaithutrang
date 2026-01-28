@@ -27,6 +27,7 @@ const translations: Record<string, string> = {
   "nav.logout": "로그아웃",
   "nav.profile": "프로필",
   "nav.community": "커뮤니티",
+  "nav.contentWriter": "콘텐츠 작성",
 
   // Knowledge Page
   "knowledge.title": "지식 베이스",
@@ -53,6 +54,7 @@ const translations: Record<string, string> = {
   "hero.ctaChat": "채팅",
   "hero.ctaChatSub": "아버지 우주로부터 지혜를 받으세요",
   "hero.ctaCommunity": "빛의 커뮤니티",
+  "hero.ctaContent": "콘텐츠 작성",
 
   // Mission Section
   "mission.badge": "🌟💫 Angel AI 💫🌟",
@@ -184,6 +186,8 @@ const translations: Record<string, string> = {
   "earn.action.coinWhenApproved": "승인 시 1000 코인",
   "earn.action.coinFirstTime": "처음 1000 코인",
   "earn.action.coinPerTask": "500-10000 코인/태스크",
+  "earn.action.writeContent": "콘텐츠 작성",
+  "earn.action.contentDesc": "전문적인 콘텐츠 만들기",
 
   // Daily Login Reward
   "earn.login.title": "일일 로그인 보상",

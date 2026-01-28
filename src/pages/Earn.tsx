@@ -27,7 +27,8 @@ import {
   ArrowRight,
   Eye,
   Wallet,
-  Info
+  Info,
+  PenLine
 } from "lucide-react";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -274,6 +275,18 @@ export default function Earn() {
                   </div>
                   <h3 className="font-semibold">{t("earn.action.bountyTasks")}</h3>
                   <p className="text-xs text-muted-foreground">{t("earn.action.coinPerTask")}</p>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+              <CardContent className="p-6 text-center">
+                <Link to="/content-writer" className="space-y-3">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <PenLine className="h-7 w-7 text-cyan-600" />
+                  </div>
+                  <h3 className="font-semibold">{t("earn.action.writeContent")}</h3>
+                  <p className="text-xs text-muted-foreground">{t("earn.action.contentDesc")}</p>
                 </Link>
               </CardContent>
             </Card>

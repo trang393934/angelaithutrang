@@ -27,6 +27,7 @@ const translations: Record<string, string> = {
   "nav.logout": "ログアウト",
   "nav.profile": "プロフィール",
   "nav.community": "コミュニティ",
+  "nav.contentWriter": "コンテンツ作成",
 
   // Knowledge Page
   "knowledge.title": "ナレッジベース",
@@ -53,6 +54,7 @@ const translations: Record<string, string> = {
   "hero.ctaChat": "チャット",
   "hero.ctaChatSub": "父なる宇宙から知恵を受け取る",
   "hero.ctaCommunity": "光のコミュニティ",
+  "hero.ctaContent": "コンテンツ作成",
 
   // Mission Section
   "mission.badge": "🌟💫 Angel AI 💫🌟",
@@ -184,6 +186,8 @@ const translations: Record<string, string> = {
   "earn.action.coinWhenApproved": "承認時1000コイン",
   "earn.action.coinFirstTime": "初回1000コイン",
   "earn.action.coinPerTask": "500-10000コイン/タスク",
+  "earn.action.writeContent": "コンテンツ作成",
+  "earn.action.contentDesc": "プロフェッショナルなコンテンツを作成",
 
   // Daily Login Reward
   "earn.login.title": "デイリーログイン報酬",

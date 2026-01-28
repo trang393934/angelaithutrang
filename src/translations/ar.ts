@@ -27,6 +27,7 @@ const translations: Record<string, string> = {
   "nav.logout": "تسجيل الخروج",
   "nav.profile": "الملف الشخصي",
   "nav.community": "المجتمع",
+  "nav.contentWriter": "كتابة المحتوى",
 
   // Knowledge Page
   "knowledge.title": "قاعدة المعرفة",
@@ -53,6 +54,7 @@ const translations: Record<string, string> = {
   "hero.ctaChat": "دردشة",
   "hero.ctaChatSub": "استقبل الحكمة من الأب الكون",
   "hero.ctaCommunity": "مجتمع النور",
+  "hero.ctaContent": "كتابة المحتوى",
 
   // Mission Section
   "mission.badge": "🌟💫 Angel AI 💫🌟",
@@ -180,6 +182,8 @@ const translations: Record<string, string> = {
   "earn.action.coinWhenApproved": "1000 عملة عند الموافقة",
   "earn.action.coinFirstTime": "1000 عملة أول مرة",
   "earn.action.coinPerTask": "500-10000 عملة/مهمة",
+  "earn.action.writeContent": "كتابة المحتوى",
+  "earn.action.contentDesc": "إنشاء محتوى احترافي",
   "earn.login.title": "مكافأة تسجيل الدخول اليومي",
   "earn.login.congrats": "تهانينا! لقد سجلت الدخول 7 أيام متتالية!",
   "earn.login.streak": "سلسلة تسجيل الدخول",

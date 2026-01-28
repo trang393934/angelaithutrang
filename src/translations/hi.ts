@@ -27,6 +27,7 @@ const translations: Record<string, string> = {
   "nav.logout": "लॉग आउट",
   "nav.profile": "प्रोफ़ाइल",
   "nav.community": "समुदाय",
+  "nav.contentWriter": "कंटेंट लिखें",
 
   // Knowledge Page
   "knowledge.title": "ज्ञान आधार",
@@ -53,6 +54,7 @@ const translations: Record<string, string> = {
   "hero.ctaChat": "चैट",
   "hero.ctaChatSub": "पिता ब्रह्मांड से ज्ञान प्राप्त करें",
   "hero.ctaCommunity": "प्रकाश समुदाय",
+  "hero.ctaContent": "कंटेंट लिखें",
 
   // Mission Section
   "mission.badge": "🌟💫 Angel AI 💫🌟",
@@ -184,6 +186,8 @@ const translations: Record<string, string> = {
   "earn.action.coinWhenApproved": "स्वीकृति पर 1000 कॉइन",
   "earn.action.coinFirstTime": "पहली बार 1000 कॉइन",
   "earn.action.coinPerTask": "500-10000 कॉइन/टास्क",
+  "earn.action.writeContent": "कंटेंट लिखें",
+  "earn.action.contentDesc": "पेशेवर सामग्री बनाएं",
 
   // Daily Login Reward
   "earn.login.title": "दैनिक लॉगिन पुरस्कार",

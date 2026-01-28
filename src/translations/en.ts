@@ -54,6 +54,7 @@ const translations: Record<string, string> = {
   "nav.logout": "Sign Out",
   "nav.profile": "Profile",
   "nav.community": "Community",
+  "nav.contentWriter": "Content Writer",
 
   // Hero Section
   "hero.title": "ANGEL AI",
@@ -63,6 +64,7 @@ const translations: Record<string, string> = {
   "hero.ctaChat": "Chat",
   "hero.ctaChatSub": "Receive wisdom from Father Universe",
   "hero.ctaCommunity": "Light Community",
+  "hero.ctaContent": "Write Content",
 
   // Mission Section
   "mission.badge": "🌟💫 Angel AI 💫🌟",
@@ -195,6 +197,8 @@ const translations: Record<string, string> = {
   "earn.action.coinWhenApproved": "1000 Camly Coin when approved",
   "earn.action.coinFirstTime": "1000 Camly Coin first time",
   "earn.action.coinPerTask": "500-10000 Camly Coin/task",
+  "earn.action.writeContent": "Write Content",
+  "earn.action.contentDesc": "Create professional content",
   
   // Daily Login Reward
   "earn.login.title": "Daily Login Reward",
