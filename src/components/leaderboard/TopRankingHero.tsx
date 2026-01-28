@@ -103,35 +103,35 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
     >
       {/* Top 1 - Center, inside the top circle */}
       {top5[0] && (
-        <div className="absolute top-[14%] left-1/2 -translate-x-1/2">
+        <div className="absolute top-[19%] left-1/2 -translate-x-1/2">
           <TrophyAvatar user={top5[0]} rank={1} position="top1" />
         </div>
       )}
 
       {/* Top 2 - Left side, second row */}
       {top5[1] && (
-        <div className="absolute top-[35%] left-[27%] -translate-x-1/2">
+        <div className="absolute top-[40%] left-[23%] -translate-x-1/2">
           <TrophyAvatar user={top5[1]} rank={2} position="top2" />
         </div>
       )}
 
       {/* Top 3 - Right side, second row */}
       {top5[2] && (
-        <div className="absolute top-[35%] left-[73%] -translate-x-1/2">
+        <div className="absolute top-[40%] left-[77%] -translate-x-1/2">
           <TrophyAvatar user={top5[2]} rank={3} position="top3" />
         </div>
       )}
 
       {/* Top 4 - Left side, third row */}
       {top5[3] && (
-        <div className="absolute top-[60%] left-[27%] -translate-x-1/2">
+        <div className="absolute top-[65%] left-[23%] -translate-x-1/2">
           <TrophyAvatar user={top5[3]} rank={4} position="top4" />
         </div>
       )}
 
       {/* Top 5 - Right side, third row */}
       {top5[4] && (
-        <div className="absolute top-[60%] left-[73%] -translate-x-1/2">
+        <div className="absolute top-[65%] left-[77%] -translate-x-1/2">
           <TrophyAvatar user={top5[4]} rank={5} position="top5" />
         </div>
       )}
