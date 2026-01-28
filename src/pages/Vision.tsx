@@ -84,7 +84,7 @@ export default function Vision() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pt-28">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Header */}
           <div className="text-center space-y-4">
