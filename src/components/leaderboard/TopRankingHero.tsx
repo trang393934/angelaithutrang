@@ -21,29 +21,29 @@ function TrophyAvatar({ user, rank, position }: TrophyAvatarProps) {
   // Avatar sizes and name offset to fit within the golden frames
   const positionConfig = {
     top1: {
-      avatar: "w-[60px] h-[60px] md:w-[85px] md:h-[85px]",
+      avatar: "w-[52px] h-[52px] md:w-[72px] md:h-[72px]",
       name: "text-xs md:text-sm",
-      nameOffset: "mt-[28px] md:mt-[38px]", // Distance to pedestal base
+      nameOffset: "mt-[18px] md:mt-[24px]",
     },
     top2: {
-      avatar: "w-[50px] h-[50px] md:w-[70px] md:h-[70px]",
+      avatar: "w-[44px] h-[44px] md:w-[58px] md:h-[58px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[22px] md:mt-[32px]",
+      nameOffset: "mt-[14px] md:mt-[20px]",
     },
     top3: {
-      avatar: "w-[50px] h-[50px] md:w-[70px] md:h-[70px]",
+      avatar: "w-[44px] h-[44px] md:w-[58px] md:h-[58px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[22px] md:mt-[32px]",
+      nameOffset: "mt-[14px] md:mt-[20px]",
     },
     top4: {
-      avatar: "w-[45px] h-[45px] md:w-[60px] md:h-[60px]",
+      avatar: "w-[40px] h-[40px] md:w-[52px] md:h-[52px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[20px] md:mt-[28px]",
+      nameOffset: "mt-[12px] md:mt-[18px]",
     },
     top5: {
-      avatar: "w-[45px] h-[45px] md:w-[60px] md:h-[60px]",
+      avatar: "w-[40px] h-[40px] md:w-[52px] md:h-[52px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[20px] md:mt-[28px]",
+      nameOffset: "mt-[12px] md:mt-[18px]",
     },
   };
 
@@ -103,13 +103,13 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
     >
       {/* Top 1 - Center, inside the top circle */}
       {top5[0] && (
-        <div className="absolute top-[10%] left-1/2 -translate-x-1/2">
+        <div className="absolute top-[12%] left-1/2 -translate-x-1/2">
           <TrophyAvatar user={top5[0]} rank={1} position="top1" />
         </div>
       )}
 
       {/* Top 2 & 3 - Second row, inside circles */}
-      <div className="absolute top-[32%] left-0 right-0 flex justify-center gap-[28%] md:gap-[32%]">
+      <div className="absolute top-[35%] left-0 right-0 flex justify-center gap-[30%] md:gap-[34%]">
         {top5[1] && (
           <TrophyAvatar user={top5[1]} rank={2} position="top2" />
         )}
@@ -119,7 +119,7 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
       </div>
 
       {/* Top 4 & 5 - Third row, inside circles */}
-      <div className="absolute top-[63%] left-0 right-0 flex justify-center gap-[28%] md:gap-[32%]">
+      <div className="absolute top-[58%] left-0 right-0 flex justify-center gap-[30%] md:gap-[34%]">
         {top5[3] && (
           <TrophyAvatar user={top5[3]} rank={4} position="top4" />
         )}
