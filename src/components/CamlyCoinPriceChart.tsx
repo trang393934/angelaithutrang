@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { RefreshCw, TrendingUp, TrendingDown, ExternalLink, Copy, Check, Star, Share2, Info, Users } from "lucide-react";
 import { useCamlyPrice } from "@/hooks/useCamlyPrice";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   AreaChart,
   Area,
@@ -15,13 +16,14 @@ import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
 export const CamlyCoinPriceChart = () => {
   const { priceData, priceHistory, isLoading, error, refetch, contractAddress } = useCamlyPrice();
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [activeTimeframe, setActiveTimeframe] = useState<"24h" | "1M" | "All">("24h");
 
   const copyContract = () => {
     navigator.clipboard.writeText(contractAddress);
     setCopied(true);
-    toast.success("Đã sao chép địa chỉ contract");
+    toast.success(t("chart.contractCopied"));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -78,7 +80,7 @@ export const CamlyCoinPriceChart = () => {
                 onClick={refetch}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm"
               >
-                Thử lại
+                {t("chart.retry")}
               </button>
             </div>
           ) : priceData ? (
@@ -326,7 +328,7 @@ export const CamlyCoinPriceChart = () => {
                     ) : (
                       <div className="flex items-center justify-center h-full text-muted-foreground">
                         <RefreshCw className="w-5 h-5 animate-spin mr-2" />
-                        Đang tải dữ liệu biểu đồ...
+                        {t("chart.loadingChart")}
                       </div>
                     )}
                   </div>
@@ -378,7 +380,7 @@ export const CamlyCoinPriceChart = () => {
                     className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20 ml-auto"
                   >
                     <RefreshCw className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${isLoading ? "animate-spin" : ""}`} />
-                    Làm mới
+                    {t("chart.refresh")}
                   </button>
                 </div>
               </div>

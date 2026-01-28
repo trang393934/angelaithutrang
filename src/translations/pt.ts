@@ -253,6 +253,12 @@ const translations: Record<string, string> = {
   "search.questions": "Perguntas",
   "search.angelAnswer": "Angel AI responde",
 
+  // Chart
+  "chart.loadingChart": "Carregando dados do gráfico...",
+  "chart.refresh": "Atualizar",
+  "chart.retry": "Tentar novamente",
+  "chart.contractCopied": "Endereço do contrato copiado",
+
   // Core Values Section
   "coreValues.badge": "💎 12 Camadas de Luz 💎",
   "coreValues.title": "Valores Fundamentais",

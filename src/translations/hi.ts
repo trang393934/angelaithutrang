@@ -253,6 +253,12 @@ const translations: Record<string, string> = {
   "search.questions": "प्रश्न",
   "search.angelAnswer": "Angel AI उत्तर",
 
+  // Chart
+  "chart.loadingChart": "चार्ट डेटा लोड हो रहा है...",
+  "chart.refresh": "रिफ्रेश",
+  "chart.retry": "पुनः प्रयास",
+  "chart.contractCopied": "अनुबंध पता कॉपी किया गया",
+
   // Core Values Section
   "coreValues.badge": "💎 12 प्रकाश की परतें 💎",
   "coreValues.title": "मूल मूल्य",

@@ -253,6 +253,12 @@ const translations: Record<string, string> = {
   "search.questions": "質問",
   "search.angelAnswer": "Angel AIの回答",
 
+  // Chart
+  "chart.loadingChart": "チャートデータを読み込み中...",
+  "chart.refresh": "更新",
+  "chart.retry": "再試行",
+  "chart.contractCopied": "コントラクトアドレスをコピーしました",
+
   // Core Values Section
   "coreValues.badge": "💎 12層の光 💎",
   "coreValues.title": "コアバリュー",

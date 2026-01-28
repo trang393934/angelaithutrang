@@ -245,6 +245,12 @@ const translations: Record<string, string> = {
   "search.questions": "Questions",
   "search.angelAnswer": "Angel AI répond",
 
+  // Chart
+  "chart.loadingChart": "Chargement des données du graphique...",
+  "chart.refresh": "Actualiser",
+  "chart.retry": "Réessayer",
+  "chart.contractCopied": "Adresse du contrat copiée",
+
   // Core Values Section
   "coreValues.badge": "💎 12 Couches de Lumière 💎",
   "coreValues.title": "Valeurs Fondamentales",

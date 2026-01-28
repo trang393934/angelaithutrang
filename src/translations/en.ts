@@ -264,6 +264,12 @@ const translations: Record<string, string> = {
   "search.questions": "Questions",
   "search.angelAnswer": "Angel AI answers",
 
+  // Chart
+  "chart.loadingChart": "Loading chart data...",
+  "chart.refresh": "Refresh",
+  "chart.retry": "Retry",
+  "chart.contractCopied": "Contract address copied",
+
   // Core Values Section
   "coreValues.badge": "💎 12 Layers of Light 💎",
   "coreValues.title": "Core Values",
