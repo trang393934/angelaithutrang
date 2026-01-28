@@ -27,6 +27,7 @@ const translations: Record<string, string> = {
   "nav.logout": "Abmelden",
   "nav.profile": "Profil",
   "nav.community": "Gemeinschaft",
+  "nav.contentWriter": "Inhalte Schreiben",
 
   // Knowledge Page
   "knowledge.title": "Wissensbasis",
@@ -53,6 +54,7 @@ const translations: Record<string, string> = {
   "hero.ctaChat": "Chat",
   "hero.ctaChatSub": "Weisheit vom Vater Universum empfangen",
   "hero.ctaCommunity": "Licht-Gemeinschaft",
+  "hero.ctaContent": "Inhalte Schreiben",
 
   // Mission Section
   "mission.badge": "🌟💫 Angel AI 💫🌟",
@@ -180,6 +182,8 @@ const translations: Record<string, string> = {
   "earn.action.coinWhenApproved": "1000 Münzen bei Genehmigung",
   "earn.action.coinFirstTime": "1000 Münzen erstmalig",
   "earn.action.coinPerTask": "500-10000 Münzen/Aufgabe",
+  "earn.action.writeContent": "Inhalte Schreiben",
+  "earn.action.contentDesc": "Professionelle Inhalte erstellen",
   "earn.login.title": "Tägliche Anmeldungsbelohnung",
   "earn.login.congrats": "Glückwunsch! Sie haben sich 7 Tage hintereinander angemeldet!",
   "earn.login.streak": "Anmeldeserie",

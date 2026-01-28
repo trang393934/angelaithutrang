@@ -54,6 +54,7 @@ const translations: Record<string, string> = {
   "nav.logout": "Đăng xuất",
   "nav.profile": "Hồ sơ",
   "nav.community": "Cộng đồng",
+  "nav.contentWriter": "Viết Content",
 
   // Hero Section
   "hero.title": "ANGEL AI",
@@ -63,6 +64,7 @@ const translations: Record<string, string> = {
   "hero.ctaChat": "Trò Chuyện",
   "hero.ctaChatSub": "Nhận trí tuệ từ Cha Vũ Trụ",
   "hero.ctaCommunity": "Cộng Đồng Ánh Sáng",
+  "hero.ctaContent": "Viết Content",
 
   // Mission Section
   "mission.badge": "🌟💫 Angel AI 💫🌟",
@@ -195,6 +197,8 @@ const translations: Record<string, string> = {
   "earn.action.coinWhenApproved": "1000 Camly Coin khi duyệt",
   "earn.action.coinFirstTime": "1000 Camly Coin lần đầu",
   "earn.action.coinPerTask": "500-10000 Camly Coin/task",
+  "earn.action.writeContent": "Viết Content",
+  "earn.action.contentDesc": "Sáng tạo nội dung chuyên nghiệp",
   
   // Daily Login Reward
   "earn.login.title": "Phần thưởng đăng nhập hàng ngày",

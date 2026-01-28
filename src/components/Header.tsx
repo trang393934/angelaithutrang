@@ -80,6 +80,7 @@ export const Header = () => {
     { label: t("nav.knowledge"), href: "/knowledge" },
     { label: t("nav.connect"), href: "/chat" },
     { label: t("nav.community") || "Cộng đồng", href: "/community" },
+    { label: t("nav.contentWriter"), href: "/content-writer" },
     { label: t("nav.swap"), href: "/swap" },
     { label: t("nav.earn"), href: "/earn" },
   ];
