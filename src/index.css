@@ -461,3 +461,13 @@
 .text-message-lg {
   @apply text-base sm:text-lg leading-relaxed;
 }
+
+/* Golden shimmer animation for navigation buttons */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}

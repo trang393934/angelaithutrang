@@ -125,19 +125,38 @@ export const Header = () => {
             />
           </div>
 
-          {/* Navigation - Styled with blue background and golden border */}
-          <nav className="hidden lg:flex items-center gap-1 lg:gap-1.5 xl:gap-2 2xl:gap-3 flex-1 justify-center min-w-0 mx-1 xl:mx-3 overflow-x-auto scrollbar-hide">
+          {/* Navigation - Premium golden metallic border with shimmer */}
+          <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2 flex-1 justify-center min-w-0 mx-2 xl:mx-4 overflow-x-auto scrollbar-hide">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`text-[11px] lg:text-xs xl:text-sm font-semibold transition-all duration-300 whitespace-nowrap px-2 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 shrink-0 rounded-md border ${
+                className={`relative text-xs xl:text-sm font-semibold transition-all duration-300 whitespace-nowrap px-3 xl:px-4 py-2 shrink-0 rounded-lg overflow-hidden ${
                   location.pathname === item.href 
-                    ? 'bg-primary text-white border-amber-400/80 shadow-[0_0_8px_rgba(251,191,36,0.4)] ring-1 ring-amber-300/50' 
-                    : 'bg-primary-deep/90 text-white/90 border-amber-500/40 hover:bg-primary hover:border-amber-400/70 hover:shadow-[0_0_6px_rgba(251,191,36,0.3)]'
+                    ? 'bg-primary text-white' 
+                    : 'bg-primary-deep/95 text-white/95 hover:bg-primary'
                 }`}
+                style={{
+                  boxShadow: location.pathname === item.href 
+                    ? '0 0 12px rgba(255,215,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)' 
+                    : '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
+                  border: '2px solid transparent',
+                  backgroundImage: location.pathname === item.href
+                    ? 'linear-gradient(hsl(var(--primary)), hsl(var(--primary))), linear-gradient(135deg, #FFEB3B, #FFD700, #FFA500, #FFD700, #FFEB3B)'
+                    : 'linear-gradient(hsl(217 91% 25% / 0.95), hsl(217 91% 25% / 0.95)), linear-gradient(135deg, #DAA520, #FFD700, #B8860B, #FFD700, #DAA520)',
+                  backgroundOrigin: 'border-box',
+                  backgroundClip: 'padding-box, border-box',
+                }}
               >
-                {item.label}
+                {/* Shimmer effect */}
+                <span 
+                  className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                    animation: 'shimmer 2s infinite',
+                  }}
+                />
+                <span className="relative z-10">{item.label}</span>
               </Link>
             ))}
           </nav>
