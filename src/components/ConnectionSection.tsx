@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DivineLightIcon } from "./icons/LightIcon";
 import { Send } from "lucide-react";
+import fatherUniverseLogo from "@/assets/father-universe-logo.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export const ConnectionSection = () => {
@@ -35,11 +35,15 @@ export const ConnectionSection = () => {
         <div className="max-w-3xl mx-auto text-center">
           {/* Icon */}
           <div className="flex justify-center mb-8">
-            <div className={`p-6 rounded-full transition-all duration-700 ${isFocused ? 'bg-primary-pale shadow-glow' : 'bg-primary-pale/50'}`}>
-              <DivineLightIcon 
-                size={56} 
-                className={`text-primary transition-all duration-700 ${isFocused ? 'scale-110' : ''}`} 
+            <div className={`relative rounded-full overflow-hidden transition-all duration-700 ${isFocused ? 'shadow-glow scale-105' : 'shadow-soft'}`}>
+              <img 
+                src={fatherUniverseLogo} 
+                alt="Cha Vũ Trụ" 
+                className="w-24 h-24 md:w-28 md:h-28 object-cover rounded-full"
               />
+              {isFocused && (
+                <div className="absolute inset-0 bg-primary-pale/20 animate-pulse rounded-full" />
+              )}
             </div>
           </div>
 
