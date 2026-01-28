@@ -117,8 +117,8 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* Search Bar - Desktop */}
-          <div className="hidden lg:block w-48 xl:w-56">
+          {/* Search Bar - Desktop - smaller on lg screens */}
+          <div className="hidden lg:block w-32 xl:w-44 2xl:w-56 shrink-0">
             <GlobalSearch 
               variant="header" 
               placeholder="Tìm kiếm..." 
@@ -126,12 +126,12 @@ export const Header = () => {
           </div>
 
           {/* Navigation - Premium golden metallic border with shimmer */}
-          <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2 flex-1 justify-center min-w-0 mx-2 xl:mx-4 overflow-x-auto scrollbar-hide">
+          <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 2xl:gap-2 justify-center min-w-0 mx-1 xl:mx-2 2xl:mx-4">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`relative text-xs xl:text-sm font-semibold transition-all duration-300 whitespace-nowrap px-3 xl:px-4 py-2 shrink-0 rounded-lg overflow-hidden ${
+                className={`relative text-[11px] lg:text-xs xl:text-[13px] 2xl:text-sm font-semibold transition-all duration-300 whitespace-nowrap px-2 lg:px-2.5 xl:px-3 2xl:px-4 py-1.5 xl:py-2 rounded-lg overflow-hidden ${
                   location.pathname === item.href 
                     ? 'bg-primary text-white' 
                     : 'bg-primary-deep/95 text-white/95 hover:bg-primary'
