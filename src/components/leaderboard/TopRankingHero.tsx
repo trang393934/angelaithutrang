@@ -112,11 +112,11 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
         <div 
           className="relative overflow-hidden"
           style={{
-            width: size === "large" ? "60px" : size === "medium" ? "50px" : "45px",
-            height: size === "large" ? "10px" : "8px",
+            width: size === "large" ? "50px" : size === "medium" ? "42px" : "38px",
+            height: size === "large" ? "8px" : "6px",
             background: "linear-gradient(180deg, #FFE55C 0%, #FFD700 30%, #DAA520 70%, #B8860B 100%)",
-            borderRadius: "4px 4px 0 0",
-            boxShadow: "inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.2)",
+            borderRadius: "3px 3px 0 0",
+            boxShadow: "inset 0 2px 3px rgba(255,255,255,0.8), 0 1px 3px rgba(0,0,0,0.2)",
           }}
         >
           {/* Shimmer effect */}
@@ -130,8 +130,8 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
           />
           {/* Sparkle */}
           <motion.div
-            className="absolute w-1 h-1 rounded-full bg-white"
-            style={{ left: "50%", top: "30%", boxShadow: "0 0 4px 2px rgba(255,255,255,0.8)" }}
+            className="absolute w-[2px] h-[2px] md:w-1 md:h-1 rounded-full bg-white"
+            style={{ left: "50%", top: "30%", boxShadow: "0 0 3px 1px rgba(255,255,255,0.8)" }}
             animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
             transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
           />
@@ -141,10 +141,10 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
         <div 
           className="relative overflow-hidden"
           style={{
-            width: size === "large" ? "80px" : size === "medium" ? "68px" : "60px",
-            height: size === "large" ? "10px" : "8px",
+            width: size === "large" ? "68px" : size === "medium" ? "56px" : "50px",
+            height: size === "large" ? "8px" : "6px",
             background: "linear-gradient(180deg, #FFD700 0%, #DAA520 30%, #B8860B 70%, #8B6914 100%)",
-            boxShadow: "inset 0 2px 4px rgba(255,255,255,0.6), 0 2px 4px rgba(0,0,0,0.25)",
+            boxShadow: "inset 0 2px 3px rgba(255,255,255,0.6), 0 1px 3px rgba(0,0,0,0.25)",
           }}
         >
           {/* Shimmer effect */}
@@ -158,14 +158,14 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
           />
           {/* Sparkles */}
           <motion.div
-            className="absolute w-1 h-1 rounded-full bg-white"
-            style={{ left: "20%", top: "40%", boxShadow: "0 0 3px 1px rgba(255,215,0,0.8)" }}
+            className="absolute w-[2px] h-[2px] md:w-1 md:h-1 rounded-full bg-white"
+            style={{ left: "20%", top: "40%", boxShadow: "0 0 2px 1px rgba(255,215,0,0.8)" }}
             animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
             transition={{ duration: 1.2, repeat: Infinity, delay: 0.5 }}
           />
           <motion.div
-            className="absolute w-1 h-1 rounded-full bg-white"
-            style={{ left: "80%", top: "40%", boxShadow: "0 0 3px 1px rgba(255,215,0,0.8)" }}
+            className="absolute w-[2px] h-[2px] md:w-1 md:h-1 rounded-full bg-white"
+            style={{ left: "80%", top: "40%", boxShadow: "0 0 2px 1px rgba(255,215,0,0.8)" }}
             animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
             transition={{ duration: 1.2, repeat: Infinity, delay: 0.8 }}
           />
@@ -175,11 +175,11 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
         <div 
           className="relative overflow-hidden"
           style={{
-            width: size === "large" ? "100px" : size === "medium" ? "85px" : "75px",
-            height: size === "large" ? "12px" : "10px",
+            width: size === "large" ? "85px" : size === "medium" ? "70px" : "62px",
+            height: size === "large" ? "10px" : "8px",
             background: "linear-gradient(180deg, #DAA520 0%, #B8860B 30%, #8B6914 70%, #6B5714 100%)",
-            borderRadius: "0 0 6px 6px",
-            boxShadow: "inset 0 2px 4px rgba(255,255,255,0.5), 0 4px 8px rgba(0,0,0,0.3)",
+            borderRadius: "0 0 5px 5px",
+            boxShadow: "inset 0 2px 3px rgba(255,255,255,0.5), 0 3px 6px rgba(0,0,0,0.3)",
           }}
         >
           {/* Shimmer effect */}
@@ -195,12 +195,12 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
           {[...Array(3)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-[3px] h-[3px] rounded-full"
+              className="absolute w-[2px] h-[2px] md:w-[3px] md:h-[3px] rounded-full"
               style={{
                 background: "radial-gradient(circle, #FFF 0%, #FFD700 60%, transparent 100%)",
                 left: `${15 + i * 35}%`,
                 top: "40%",
-                boxShadow: "0 0 4px 2px rgba(255, 215, 0, 0.6)",
+                boxShadow: "0 0 3px 1px rgba(255, 215, 0, 0.6)",
               }}
               animate={{ opacity: [0, 1, 0], scale: [0.5, 1.3, 0.5] }}
               transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.4 }}
@@ -210,7 +210,7 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
         
         {/* Glow effect under pedestal */}
         <div 
-          className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-[90%] h-4 blur-md"
+          className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 w-[90%] h-3 md:h-4 blur-md"
           style={{
             background: "radial-gradient(ellipse, rgba(255, 215, 0, 0.6) 0%, rgba(218, 165, 32, 0.3) 50%, transparent 80%)",
           }}
