@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LeaderboardUser } from "@/hooks/useLeaderboard";
 import { motion } from "framer-motion";
+import { ImageLightbox } from "@/components/community/ImageLightbox";
 import angelAvatar from "@/assets/angel-avatar.png";
 import topRankingBg from "@/assets/top-ranking-bg.jpg";
 
@@ -13,9 +15,10 @@ interface TrophyAvatarProps {
   user: LeaderboardUser | undefined;
   rank: number;
   position: "top1" | "top2" | "top3" | "top4" | "top5";
+  onAvatarClick: (imageUrl: string, userName: string) => void;
 }
 
-function TrophyAvatar({ user, rank, position }: TrophyAvatarProps) {
+function TrophyAvatar({ user, rank, position, onAvatarClick }: TrophyAvatarProps) {
   if (!user) return null;
 
   // Avatar sizes - all equal, positioned to fit within golden frames
@@ -49,24 +52,29 @@ function TrophyAvatar({ user, rank, position }: TrophyAvatarProps) {
 
   const config = positionConfig[position];
   const avatarKey = `${user.user_id}-${rank}`;
+  const avatarUrl = user.avatar_url || angelAvatar;
+
+  const handleAvatarClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onAvatarClick(avatarUrl, user.display_name || "Ẩn danh");
+  };
 
   return (
-    <Link
-      to={`/user/${user.user_id}`}
-      className="flex flex-col items-center group"
-    >
+    <div className="flex flex-col items-center">
       <motion.div
         key={avatarKey}
-        className="flex flex-col items-center"
+        className="flex flex-col items-center cursor-pointer"
         whileHover={{ scale: 1.08 }}
         transition={{ type: "spring", stiffness: 300 }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
+        onClick={handleAvatarClick}
       >
         {/* Avatar - positioned to fit inside golden circle */}
         <Avatar className={`${config.avatar} border-2 border-amber-300/60 shadow-lg`} key={user.avatar_url}>
           <AvatarImage
-            src={user.avatar_url || angelAvatar}
+            src={avatarUrl}
             className="object-cover"
             key={`img-${user.user_id}-${user.avatar_url}`}
           />
@@ -76,65 +84,84 @@ function TrophyAvatar({ user, rank, position }: TrophyAvatarProps) {
         </Avatar>
       </motion.div>
 
-      {/* User Name - positioned at pedestal base */}
-      <p className={`${config.name} ${config.nameOffset} font-semibold text-amber-800 group-hover:text-amber-600 transition-colors text-center max-w-[80px] md:max-w-[110px] leading-tight drop-shadow-[0_1px_2px_rgba(255,255,255,0.95)]`}>
-        {user.display_name || "Ẩn danh"}
-      </p>
-    </Link>
+      {/* User Name - clickable to go to profile */}
+      <Link to={`/user/${user.user_id}`} className="group">
+        <p className={`${config.name} ${config.nameOffset} font-semibold text-amber-800 group-hover:text-amber-600 transition-colors text-center max-w-[80px] md:max-w-[110px] leading-tight drop-shadow-[0_1px_2px_rgba(255,255,255,0.95)]`}>
+          {user.display_name || "Ẩn danh"}
+        </p>
+      </Link>
+    </div>
   );
 }
 
 export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState({ url: "", name: "" });
+  
   const top5 = topUsers.slice(0, 5);
+
+  const handleAvatarClick = (imageUrl: string, userName: string) => {
+    setSelectedImage({ url: imageUrl, name: userName });
+    setLightboxOpen(true);
+  };
 
   if (top5.length === 0) {
     return null;
   }
 
   return (
-    <div 
-      className="relative rounded-2xl overflow-hidden"
-      style={{
-        backgroundImage: `url(${topRankingBg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center top',
-        aspectRatio: '4/5',
-      }}
-    >
-      {/* Top 1 - Center, inside the top circle */}
-      {top5[0] && (
-        <div className="absolute top-[15%] left-1/2 -translate-x-1/2">
-          <TrophyAvatar user={top5[0]} rank={1} position="top1" />
-        </div>
-      )}
+    <>
+      <div 
+        className="relative rounded-2xl overflow-hidden"
+        style={{
+          backgroundImage: `url(${topRankingBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center top',
+          aspectRatio: '4/5',
+        }}
+      >
+        {/* Top 1 - Center, inside the top circle */}
+        {top5[0] && (
+          <div className="absolute top-[15%] left-1/2 -translate-x-1/2">
+            <TrophyAvatar user={top5[0]} rank={1} position="top1" onAvatarClick={handleAvatarClick} />
+          </div>
+        )}
 
-      {/* Top 2 - Left side, second row */}
-      {top5[1] && (
-        <div className="absolute top-[35%] left-[23%] -translate-x-1/2">
-          <TrophyAvatar user={top5[1]} rank={2} position="top2" />
-        </div>
-      )}
+        {/* Top 2 - Left side, second row */}
+        {top5[1] && (
+          <div className="absolute top-[35%] left-[23%] -translate-x-1/2">
+            <TrophyAvatar user={top5[1]} rank={2} position="top2" onAvatarClick={handleAvatarClick} />
+          </div>
+        )}
 
-      {/* Top 3 - Right side, second row */}
-      {top5[2] && (
-        <div className="absolute top-[35%] left-[77%] -translate-x-1/2">
-          <TrophyAvatar user={top5[2]} rank={3} position="top3" />
-        </div>
-      )}
+        {/* Top 3 - Right side, second row */}
+        {top5[2] && (
+          <div className="absolute top-[35%] left-[77%] -translate-x-1/2">
+            <TrophyAvatar user={top5[2]} rank={3} position="top3" onAvatarClick={handleAvatarClick} />
+          </div>
+        )}
 
-      {/* Top 4 - Left side, third row */}
-      {top5[3] && (
-        <div className="absolute top-[58%] left-[23%] -translate-x-1/2">
-          <TrophyAvatar user={top5[3]} rank={4} position="top4" />
-        </div>
-      )}
+        {/* Top 4 - Left side, third row */}
+        {top5[3] && (
+          <div className="absolute top-[58%] left-[23%] -translate-x-1/2">
+            <TrophyAvatar user={top5[3]} rank={4} position="top4" onAvatarClick={handleAvatarClick} />
+          </div>
+        )}
 
-      {/* Top 5 - Right side, third row */}
-      {top5[4] && (
-        <div className="absolute top-[58%] left-[77%] -translate-x-1/2">
-          <TrophyAvatar user={top5[4]} rank={5} position="top5" />
-        </div>
-      )}
-    </div>
+        {/* Top 5 - Right side, third row */}
+        {top5[4] && (
+          <div className="absolute top-[58%] left-[77%] -translate-x-1/2">
+            <TrophyAvatar user={top5[4]} rank={5} position="top5" onAvatarClick={handleAvatarClick} />
+          </div>
+        )}
+      </div>
+
+      <ImageLightbox
+        imageUrl={selectedImage.url}
+        alt={`Avatar của ${selectedImage.name}`}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+      />
+    </>
   );
 }
