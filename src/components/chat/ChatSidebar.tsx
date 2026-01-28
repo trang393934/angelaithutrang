@@ -169,14 +169,23 @@ export function ChatSidebar({
   return (
     <aside
       className={cn(
-        "hidden lg:flex flex-col h-full bg-background border-r border-primary-pale transition-all duration-300",
-        isCollapsed ? "w-16" : "w-72"
+        "hidden lg:flex flex-col h-full bg-background border-r border-primary-pale transition-all duration-300 ease-in-out",
+        isCollapsed ? "w-[60px]" : "w-72"
       )}
     >
       {/* Header: Logo + Toggle */}
-      <div className="flex-shrink-0 p-3 border-b border-primary-pale">
-        <div className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-between")}>
-          {!isCollapsed && (
+      <div className="flex-shrink-0 p-2 border-b border-primary-pale">
+        <div className={cn("flex items-center", isCollapsed ? "flex-col gap-2" : "justify-between")}>
+          {isCollapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to="/" className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-primary/5 transition-colors">
+                  <img src={angelAiLogo} alt="Angel AI" className="w-8 h-8 rounded-lg" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Về trang chủ</TooltipContent>
+            </Tooltip>
+          ) : (
             <Link to="/" className="flex items-center gap-2">
               <img src={angelAiLogo} alt="Angel AI" className="w-8 h-8 rounded-lg" />
               <span className="font-bold text-primary-deep">ANGEL AI</span>
@@ -188,25 +197,25 @@ export function ChatSidebar({
                 variant="ghost"
                 size="icon"
                 onClick={onToggleCollapse}
-                className="h-8 w-8"
+                className="h-8 w-8 hover:bg-primary/10"
               >
                 {isCollapsed ? (
-                  <PanelLeft className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4" />
                 ) : (
                   <PanelLeftClose className="w-4 h-4" />
                 )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              {isCollapsed ? "Mở rộng" : "Thu gọn"}
+              {isCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
             </TooltipContent>
           </Tooltip>
         </div>
       </div>
 
-      {/* Search Input */}
-      {!isCollapsed && (
-        <div className="flex-shrink-0 p-3">
+      {/* Search Input - Only when expanded */}
+      {!isCollapsed ? (
+        <div className="flex-shrink-0 p-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
             <Input
@@ -217,17 +226,33 @@ export function ChatSidebar({
             />
           </div>
         </div>
+      ) : (
+        <div className="flex-shrink-0 p-2 flex justify-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 hover:bg-primary/10"
+                onClick={() => onToggleCollapse()}
+              >
+                <Search className="w-4 h-4 text-foreground-muted" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Tìm kiếm</TooltipContent>
+          </Tooltip>
+        </div>
       )}
 
       {/* New Chat Button */}
-      <div className={cn("flex-shrink-0 px-3 pb-3", isCollapsed && "flex justify-center")}>
+      <div className={cn("flex-shrink-0 px-2 pb-2", isCollapsed && "flex justify-center")}>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               onClick={onNewSession}
               className={cn(
-                "bg-sapphire-gradient hover:opacity-90 transition-all",
-                isCollapsed ? "w-10 h-10 p-0" : "w-full"
+                "bg-sapphire-gradient hover:opacity-90 transition-all shadow-md",
+                isCollapsed ? "w-10 h-10 p-0 rounded-xl" : "w-full"
               )}
               size={isCollapsed ? "icon" : "default"}
             >
@@ -267,7 +292,7 @@ export function ChatSidebar({
       </ScrollArea>
 
       {/* Footer: Image Gallery + User */}
-      <div className="flex-shrink-0 border-t border-primary-pale p-3 space-y-2">
+      <div className="flex-shrink-0 border-t border-primary-pale p-2 space-y-1">
         {/* Image Gallery Shortcut */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -275,8 +300,8 @@ export function ChatSidebar({
               variant="ghost"
               onClick={onOpenImageHistory}
               className={cn(
-                "relative",
-                isCollapsed ? "w-10 h-10 p-0 mx-auto" : "w-full justify-start"
+                "relative hover:bg-primary/10 transition-colors",
+                isCollapsed ? "w-10 h-10 p-0 mx-auto rounded-xl" : "w-full justify-start"
               )}
             >
               <Image className={cn("w-4 h-4", !isCollapsed && "mr-2")} />
@@ -284,7 +309,7 @@ export function ChatSidebar({
               {imageHistoryCount > 0 && (
                 <span
                   className={cn(
-                    "absolute bg-divine-gold text-white text-[10px] font-bold rounded-full flex items-center justify-center",
+                    "absolute bg-divine-gold text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm",
                     isCollapsed ? "-top-1 -right-1 w-4 h-4" : "ml-auto w-5 h-5"
                   )}
                 >
@@ -293,32 +318,42 @@ export function ChatSidebar({
               )}
             </Button>
           </TooltipTrigger>
-          {isCollapsed && <TooltipContent side="right">Kho hình ảnh</TooltipContent>}
+          {isCollapsed && <TooltipContent side="right">Kho hình ảnh ({imageHistoryCount})</TooltipContent>}
         </Tooltip>
 
         {/* User Profile */}
-        <div
-          className={cn(
-            "flex items-center gap-2 p-2 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors",
-            isCollapsed && "justify-center p-1"
-          )}
-          onClick={() => navigate("/profile")}
-        >
-          <Avatar className={cn("border-2 border-primary/20", isCollapsed ? "w-8 h-8" : "w-9 h-9")}>
-            <AvatarImage src={userProfile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-primary/10 text-primary text-sm">
-              {userProfile?.display_name?.charAt(0) || <User className="w-4 h-4" />}
-            </AvatarFallback>
-          </Avatar>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
-                {userProfile?.display_name || "Người dùng"}
-              </p>
-              <p className="text-xs text-foreground-muted truncate">{user?.email}</p>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className={cn(
+                "flex items-center gap-2 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors",
+                isCollapsed && "justify-center p-1"
+              )}
+              onClick={() => navigate("/profile")}
+            >
+              <Avatar className={cn("border-2 border-primary/20 transition-all", isCollapsed ? "w-9 h-9" : "w-9 h-9")}>
+                <AvatarImage src={userProfile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                  {userProfile?.display_name?.charAt(0) || <User className="w-4 h-4" />}
+                </AvatarFallback>
+              </Avatar>
+              {!isCollapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {userProfile?.display_name || "Người dùng"}
+                  </p>
+                  <p className="text-xs text-foreground-muted truncate">{user?.email}</p>
+                </div>
+              )}
             </div>
+          </TooltipTrigger>
+          {isCollapsed && (
+            <TooltipContent side="right">
+              <p className="font-medium">{userProfile?.display_name || "Người dùng"}</p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
+            </TooltipContent>
           )}
-        </div>
+        </Tooltip>
       </div>
     </aside>
   );
@@ -358,19 +393,19 @@ function SessionItem({
         <TooltipTrigger asChild>
           <div
             className={cn(
-              "flex items-center justify-center w-10 h-10 mx-auto rounded-lg cursor-pointer transition-colors",
+              "flex items-center justify-center w-10 h-10 mx-auto rounded-xl cursor-pointer transition-all duration-200",
               isActive
-                ? "bg-primary/10 border border-primary/20"
-                : "hover:bg-primary/5"
+                ? "bg-primary/15 border border-primary/30 shadow-sm"
+                : "hover:bg-primary/10"
             )}
             onClick={onSelect}
           >
-            <Sparkles className={cn("w-4 h-4", isActive ? "text-primary" : "text-foreground-muted")} />
+            <Sparkles className={cn("w-4 h-4 transition-colors", isActive ? "text-primary" : "text-foreground-muted")} />
           </div>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[200px]">
-          <p className="font-medium">{session.title}</p>
-          <p className="text-xs text-muted-foreground">
+        <TooltipContent side="right" className="max-w-[220px]">
+          <p className="font-medium line-clamp-2">{session.title}</p>
+          <p className="text-xs text-muted-foreground mt-1">
             {formatDistanceToNow(new Date(session.last_message_at), {
               addSuffix: true,
               locale: vi,
