@@ -26,6 +26,7 @@ import Community from "./pages/Community";
 import Earn from "./pages/Earn";
 import Vision from "./pages/Vision";
 import Ideas from "./pages/Ideas";
+import Bounty from "./pages/Bounty";
 import Swap from "./pages/Swap";
 import Knowledge from "./pages/Knowledge";
 import NotFound from "./pages/NotFound";
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/earn" element={<ProfileCompletionGate><Earn /></ProfileCompletionGate>} />
               <Route path="/vision" element={<ProfileCompletionGate><Vision /></ProfileCompletionGate>} />
               <Route path="/ideas" element={<ProfileCompletionGate><Ideas /></ProfileCompletionGate>} />
+              <Route path="/bounty" element={<ProfileCompletionGate><Bounty /></ProfileCompletionGate>} />
               <Route path="/swap" element={<Swap />} />
               <Route path="/knowledge" element={<Knowledge />} />
               <Route path="/activity-history" element={<ProfileCompletionGate><ActivityHistory /></ProfileCompletionGate>} />
