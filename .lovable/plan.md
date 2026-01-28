@@ -1,131 +1,176 @@
 
+# Plan: Redesign Chat Interface - Grok-Style Layout
 
-# Kế Hoạch Điều Chỉnh Vị Trí Avatar Trong Top Ranking
+## Problem Analysis
 
-## Phân Tích Vấn Đề Hiện Tại
+The current chat interface has several usability issues:
+1. **Wasted Space**: Messages are constrained to `max-w-3xl` (768px), leaving large empty margins on desktop screens
+2. **Hidden Sidebar**: Chat history sidebar is hidden by default and opens as an overlay, breaking workflow
+3. **Long Scrolling**: Narrow message containers force long answers to be excessively tall, requiring more scrolling
+4. **Mobile Inefficiency**: Mobile layout doesn't maximize screen real estate
 
-Dựa vào hình ảnh:
+## Solution Overview
 
-| Vị trí | Vấn đề |
-|--------|--------|
-| **Top 1** | Avatar nằm quá cao, cần dịch xuống thêm |
-| **Top 2** | Avatar nằm cao hơn vòng tròn, tên đè lên avatar Top 1 |
-| **Top 3** | Tương tự Top 2 - quá cao |
-| **Top 4** | Avatar nằm trên vòng tròn thay vì bên trong |
-| **Top 5** | Tương tự Top 4 - quá cao |
+Implement a Grok-inspired two-panel layout with:
+- **Desktop**: Persistent collapsible sidebar + expanded main chat area
+- **Mobile**: Full-width chat with slide-out sidebar
 
-## Giải Pháp
+---
 
-### 1. Loại bỏ `-translate-y-1/2`
-
-Hiện tại code đang dùng `-translate-y-1/2` khiến avatar bị đẩy lên trên. Cần loại bỏ thuộc tính này để avatar căn theo điểm top thực tế.
-
-### 2. Điều chỉnh tọa độ mới
+## Visual Structure
 
 ```text
-┌─────────────────────────────────────┐
-│         TOP RANKING                 │
-│                                     │
-│            ┌───┐                    │  
-│            │ 1 │  top: 11%          │
-│            └───┘                    │
-│                                     │
-│  ┌───┐                 ┌───┐       │  
-│  │ 2 │                 │ 3 │       │  top: 33%
-│  └───┘                 └───┘       │  left: 27% / 73%
-│                                     │
-│  ┌───┐                 ┌───┐       │  
-│  │ 4 │                 │ 5 │       │  top: 58%
-│  └───┘                 └───┘       │  left: 27% / 73%
-│                                     │
-└─────────────────────────────────────┘
+Desktop Layout (sidebar open):
++------------------+----------------------------------------+
+|  SIDEBAR (280px) |           MAIN CHAT AREA               |
+|  - Angel AI Logo |  +----------------------------------+  |
+|  - Search        |  |    Header (Avatar + Title)      |  |
+|  - New Chat      |  +----------------------------------+  |
+|  - History       |  |                                  |  |
+|    - Today       |  |    MESSAGES (max-w-5xl)          |  |
+|    - Yesterday   |  |    - Wide bubble layout          |  |
+|    - This Week   |  |    - Better content density      |  |
+|  - Image Gallery |  |                                  |  |
+|  ----------------|  +----------------------------------+  |
+|  [Collapse] User |  |    INPUT BAR (bottom fixed)      |  |
++------------------+----------------------------------------+
+
+Mobile Layout:
++----------------------------------------+
+|  [=] Angel AI        [+] [8/10] [Heart]|
+|----------------------------------------|
+|                                        |
+|        MESSAGES (full width)           |
+|        - Minimal padding               |
+|        - 95% screen width              |
+|                                        |
+|----------------------------------------|
+|   [Mode Icons]  [  Input field  ] [>]  |
++----------------------------------------+
 ```
 
-| Avatar | Giá trị hiện tại | Giá trị mới |
-|--------|------------------|-------------|
-| **Top 1** | `top-[14%]` + translate-y | `top-[11%]` (không translate) |
-| **Top 2** | `top-[38%] left-[30%]` + translate-y | `top-[33%] left-[27%]` |
-| **Top 3** | `top-[38%] left-[70%]` + translate-y | `top-[33%] left-[73%]` |
-| **Top 4** | `top-[66%] left-[30%]` + translate-y | `top-[58%] left-[27%]` |
-| **Top 5** | `top-[66%] left-[70%]` + translate-y | `top-[58%] left-[73%]` |
+---
 
-### 3. Điều chỉnh vị trí tên user
+## Technical Implementation
 
-Cập nhật `nameOffset` trong `positionConfig` để tên user nằm đúng trên bệ đỡ (dưới avatar):
+### 1. Create New Persistent Sidebar Component (Desktop)
+**File**: `src/components/chat/ChatSidebar.tsx`
 
-- Top 1: `mt-[5px] md:mt-[8px]`
-- Top 2, 3: `mt-[5px] md:mt-[8px]`
-- Top 4, 5: `mt-[5px] md:mt-[8px]`
+- Persistent visibility on desktop (lg: screens and above)
+- Collapsible to a mini-state (icons only, ~56px width)
+- Contains:
+  - Angel AI branding/logo
+  - Quick search for chat history
+  - "New Chat" button
+  - Chat history list grouped by: Today, Yesterday, This Week, Older
+  - Image Gallery shortcut
+  - User avatar with collapse toggle at bottom
 
-## Chi Tiết Kỹ Thuật
+### 2. Update Chat Page Layout
+**File**: `src/pages/Chat.tsx`
 
-### File cần chỉnh sửa
-`src/components/leaderboard/TopRankingHero.tsx`
+Changes:
+- Wrap content with `SidebarProvider` for collapse state management
+- Use CSS Grid/Flexbox for two-column layout
+- Main chat area expands dynamically based on sidebar state
+- Remove `max-w-3xl` constraint on messages, replace with `max-w-5xl` or `max-w-6xl`
+- Adjust message bubble widths for better content density
 
-### Thay đổi 1: Cập nhật positionConfig (dòng 25-51)
+### 3. Enhance Message Display
+**File**: `src/pages/Chat.tsx` (Messages section)
 
+- Increase max-width of message bubbles from 80% to 85-90%
+- Use responsive typography: larger line-height for readability
+- Add subtle backgrounds for better visual separation
+- Optimize spacing between messages
+
+### 4. Responsive Breakpoints
+
+| Screen Size | Sidebar | Chat Area |
+|-------------|---------|-----------|
+| Mobile (<768px) | Hidden (overlay) | Full width |
+| Tablet (768-1024px) | Collapsed (icons) | Expanded |
+| Desktop (>1024px) | Open (280px) | max-w-5xl centered |
+
+### 5. Mobile Optimizations
+- Full-width messages with minimal padding (px-2)
+- Compact header with hamburger menu
+- Bottom sheet for mode selection (optional)
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/chat/ChatSidebar.tsx` | **Create** | New persistent sidebar component |
+| `src/pages/Chat.tsx` | **Modify** | Update layout to two-panel structure |
+| `src/components/chat/ChatSessionsSidebar.tsx` | **Modify** | Refactor to work within new sidebar |
+| `src/index.css` | **Modify** | Add layout utilities if needed |
+
+---
+
+## Key Code Changes
+
+### New ChatSidebar Component Structure
 ```tsx
-const positionConfig = {
-  top1: {
-    avatar: "w-[60px] h-[60px] md:w-[80px] md:h-[80px]",
-    name: "text-xs md:text-sm",
-    nameOffset: "mt-[5px] md:mt-[8px]",  // Giảm margin-top
-  },
-  top2: {
-    avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
-    name: "text-[10px] md:text-xs",
-    nameOffset: "mt-[5px] md:mt-[8px]",
-  },
-  top3: {
-    avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
-    name: "text-[10px] md:text-xs",
-    nameOffset: "mt-[5px] md:mt-[8px]",
-  },
-  top4: {
-    avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
-    name: "text-[10px] md:text-xs",
-    nameOffset: "mt-[5px] md:mt-[8px]",
-  },
-  top5: {
-    avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
-    name: "text-[10px] md:text-xs",
-    nameOffset: "mt-[5px] md:mt-[8px]",
-  },
-};
+// Persistent sidebar with collapse functionality
+<aside className={cn(
+  "hidden lg:flex flex-col h-full bg-background border-r transition-all",
+  isCollapsed ? "w-14" : "w-72"
+)}>
+  {/* Header: Logo + Toggle */}
+  {/* Search Input */}
+  {/* New Chat Button */}
+  {/* History List (scrollable) */}
+  {/* Footer: Image Gallery + User */}
+</aside>
 ```
 
-### Thay đổi 2: Cập nhật tọa độ avatar (dòng 123-156)
-
+### Updated Chat Layout
 ```tsx
-{/* Top 1 - Center */}
-<div className="absolute top-[11%] left-1/2 -translate-x-1/2">
-  <TrophyAvatar ... />
-</div>
-
-{/* Top 2 - Left, row 2 */}
-<div className="absolute top-[33%] left-[27%] -translate-x-1/2">
-  <TrophyAvatar ... />
-</div>
-
-{/* Top 3 - Right, row 2 */}
-<div className="absolute top-[33%] left-[73%] -translate-x-1/2">
-  <TrophyAvatar ... />
-</div>
-
-{/* Top 4 - Left, row 3 */}
-<div className="absolute top-[58%] left-[27%] -translate-x-1/2">
-  <TrophyAvatar ... />
-</div>
-
-{/* Top 5 - Right, row 3 */}
-<div className="absolute top-[58%] left-[73%] -translate-x-1/2">
-  <TrophyAvatar ... />
+<div className="h-[100dvh] flex">
+  {/* Sidebar - desktop only */}
+  <ChatSidebar ... />
+  
+  {/* Main Chat Area - expands to fill space */}
+  <div className="flex-1 flex flex-col min-w-0">
+    {/* Header */}
+    {/* Messages - wider container */}
+    <div className="flex-1 overflow-y-auto">
+      <div className="mx-auto max-w-5xl px-4 lg:px-8">
+        {/* Messages with increased width */}
+      </div>
+    </div>
+    {/* Input */}
+  </div>
 </div>
 ```
 
-## Kết Quả Mong Đợi
+### Message Bubble Width Increase
+```tsx
+// Before: max-w-[80%]
+// After: responsive widths
+<div className="max-w-[95%] sm:max-w-[90%] lg:max-w-[85%]">
+```
 
-- Tất cả 5 avatar sẽ nằm chính giữa các vòng tròn vàng
-- Tên user hiển thị ngay dưới avatar, trên bệ đỡ
-- Bố cục cân đối và chuyên nghiệp
+---
 
+## Benefits
+
+1. **Maximum Space Usage**: Chat area expands to use available screen width
+2. **Persistent Navigation**: Chat history always accessible on desktop
+3. **Better Readability**: Wider messages = fewer line breaks = less scrolling
+4. **Professional Look**: Matches modern AI chat interfaces (Grok, ChatGPT)
+5. **Responsive Design**: Optimized for both mobile and desktop
+
+---
+
+## Implementation Order
+
+1. Create `ChatSidebar.tsx` component with basic structure
+2. Update `Chat.tsx` with new two-panel layout
+3. Migrate functionality from `ChatSessionsSidebar.tsx` to new sidebar
+4. Adjust message container widths and styling
+5. Test on mobile, tablet, and desktop viewports
+6. Fine-tune spacing and animations
