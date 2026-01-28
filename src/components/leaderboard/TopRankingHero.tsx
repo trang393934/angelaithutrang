@@ -5,6 +5,38 @@ import { LeaderboardUser } from "@/hooks/useLeaderboard";
 import { motion } from "framer-motion";
 import { ImageLightbox } from "@/components/community/ImageLightbox";
 import angelAvatar from "@/assets/angel-avatar.png";
+import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+
+// Firework Camly Coin component
+const FireworkCoin = ({ delay, startX, startY }: { delay: number; startX: number; startY: number }) => {
+  const angle = Math.random() * 360;
+  const distance = 80 + Math.random() * 60;
+  const endX = Math.cos(angle * Math.PI / 180) * distance;
+  const endY = Math.sin(angle * Math.PI / 180) * distance;
+  
+  return (
+    <motion.div
+      className="absolute w-4 h-4 md:w-5 md:h-5"
+      style={{ left: `${startX}%`, top: `${startY}%` }}
+      initial={{ scale: 0, opacity: 0, x: 0, y: 0 }}
+      animate={{
+        scale: [0, 1.2, 0.8, 0],
+        opacity: [0, 1, 1, 0],
+        x: [0, endX * 0.5, endX],
+        y: [0, endY * 0.5, endY],
+      }}
+      transition={{
+        duration: 2,
+        delay,
+        repeat: Infinity,
+        repeatDelay: 3,
+        ease: "easeOut",
+      }}
+    >
+      <img src={camlyCoinLogo} alt="" className="w-full h-full drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]" />
+    </motion.div>
+  );
+};
 
 interface TopRankingHeroProps {
   topUsers: LeaderboardUser[];
@@ -61,21 +93,21 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay, duration: 0.5, type: "spring", stiffness: 100 }}
     >
-      {/* Golden Ring Frame */}
+      {/* Brighter Golden Ring Frame */}
       <div
         className={`${config.ring} rounded-full flex items-center justify-center cursor-pointer relative`}
         style={{
-          background: "linear-gradient(145deg, #FFD700, #DAA520, #B8860B, #DAA520, #FFD700)",
-          boxShadow: "0 4px 20px rgba(218, 165, 32, 0.5), inset 0 2px 10px rgba(255, 255, 255, 0.3)",
+          background: "linear-gradient(145deg, #FFEB3B, #FFD700, #FFC107, #FFD700, #FFEB3B)",
+          boxShadow: "0 4px 25px rgba(255, 235, 59, 0.7), inset 0 2px 12px rgba(255, 255, 255, 0.5)",
         }}
         onClick={handleAvatarClick}
       >
-        {/* Inner shadow ring */}
+        {/* Inner shadow ring - brighter */}
         <div
           className="absolute inset-[3px] md:inset-[4px] rounded-full"
           style={{
-            background: "linear-gradient(145deg, #B8860B, #8B7355, #B8860B)",
-            boxShadow: "inset 0 2px 8px rgba(0, 0, 0, 0.3)",
+            background: "linear-gradient(145deg, #FFC107, #DAA520, #FFC107)",
+            boxShadow: "inset 0 2px 8px rgba(0, 0, 0, 0.2)",
           }}
         />
         
@@ -85,77 +117,77 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
           transition={{ type: "spring", stiffness: 300 }}
           className="relative z-10"
         >
-          <Avatar className={`${config.avatar} border-2 border-amber-200/60`} key={user.avatar_url}>
+          <Avatar className={`${config.avatar} border-2 border-yellow-200/80`} key={user.avatar_url}>
             <AvatarImage
               src={avatarUrl}
               className="object-cover"
               key={`img-${user.user_id}-${user.avatar_url}`}
             />
-            <AvatarFallback className="text-lg bg-amber-100 text-amber-700 font-semibold">
+            <AvatarFallback className="text-lg bg-yellow-100 text-amber-700 font-semibold">
               {user.display_name?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
         </motion.div>
         
-        {/* Shine effect */}
+        {/* Brighter shine effect */}
         <div 
-          className="absolute top-1 left-1/4 w-1/3 h-1/4 rounded-full opacity-40"
+          className="absolute top-1 left-1/4 w-1/3 h-1/4 rounded-full opacity-60"
           style={{
-            background: "linear-gradient(180deg, rgba(255,255,255,0.8) 0%, transparent 100%)",
+            background: "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, transparent 100%)",
           }}
         />
       </div>
 
-      {/* 3-Step Staircase Pedestal */}
+      {/* 3-Step Staircase Pedestal - Brighter */}
       <div className="flex flex-col items-center -mt-1 relative">
-        {/* Step 1 - Top (narrowest) */}
+        {/* Step 1 - Top (narrowest) - Brighter yellow */}
         <div 
           className="relative overflow-hidden"
           style={{
             width: size === "large" ? "50px" : size === "medium" ? "42px" : "38px",
             height: size === "large" ? "8px" : "6px",
-            background: "linear-gradient(180deg, #FFE55C 0%, #FFD700 30%, #DAA520 70%, #B8860B 100%)",
+            background: "linear-gradient(180deg, #FFF176 0%, #FFEB3B 30%, #FFD700 70%, #FFC107 100%)",
             borderRadius: "3px 3px 0 0",
-            boxShadow: "inset 0 2px 3px rgba(255,255,255,0.8), 0 1px 3px rgba(0,0,0,0.2)",
+            boxShadow: "inset 0 2px 4px rgba(255,255,255,0.9), 0 2px 4px rgba(255,235,59,0.5)",
           }}
         >
           {/* Shimmer effect */}
           <motion.div
             className="absolute inset-0"
             style={{
-              background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)",
+              background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.8) 50%, transparent 100%)",
             }}
             animate={{ x: ["-100%", "200%"] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }}
+            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1.5, ease: "easeInOut" }}
           />
           {/* Sparkle */}
           <motion.div
-            className="absolute w-[2px] h-[2px] md:w-1 md:h-1 rounded-full bg-white"
-            style={{ left: "50%", top: "30%", boxShadow: "0 0 3px 1px rgba(255,255,255,0.8)" }}
-            animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
-            transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
+            className="absolute w-[3px] h-[3px] md:w-[4px] md:h-[4px] rounded-full bg-white"
+            style={{ left: "50%", top: "30%", boxShadow: "0 0 6px 2px rgba(255,255,255,1)" }}
+            animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 0.5] }}
+            transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
           />
         </div>
         
-        {/* Step 2 - Middle with Rank Number */}
+        {/* Step 2 - Middle with Rank Number - Brighter */}
         <div 
           className="relative overflow-hidden flex items-center justify-center"
           style={{
             width: size === "large" ? "68px" : size === "medium" ? "56px" : "50px",
             height: size === "large" ? "18px" : size === "medium" ? "16px" : "14px",
-            background: "linear-gradient(180deg, #FFD700 0%, #DAA520 30%, #B8860B 70%, #8B6914 100%)",
-            boxShadow: "inset 0 2px 3px rgba(255,255,255,0.6), 0 1px 3px rgba(0,0,0,0.25)",
+            background: "linear-gradient(180deg, #FFEB3B 0%, #FFD700 30%, #FFC107 70%, #DAA520 100%)",
+            boxShadow: "inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(255,235,59,0.4)",
           }}
         >
-          {/* Rank Number */}
+          {/* Rank Number - Brighter */}
           <span 
-            className="relative z-10 font-black drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]"
+            className="relative z-10 font-black drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
             style={{
               fontSize: size === "large" ? "16px" : size === "medium" ? "14px" : "12px",
-              background: "linear-gradient(180deg, #FFFACD 0%, #FFD700 50%, #B8860B 100%)",
+              background: "linear-gradient(180deg, #FFFFFF 0%, #FFF59D 30%, #FFEB3B 70%, #FFD700 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              textShadow: "0 0 8px rgba(255, 215, 0, 0.8)",
+              textShadow: "0 0 12px rgba(255, 255, 255, 1), 0 0 20px rgba(255, 235, 59, 0.8)",
             }}
           >
             {rank}
@@ -165,68 +197,68 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
           <motion.div
             className="absolute inset-0"
             style={{
-              background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)",
+              background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%)",
             }}
             animate={{ x: ["-100%", "200%"] }}
-            transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 2.5, ease: "easeInOut" }}
+            transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }}
           />
           {/* Sparkles */}
           <motion.div
-            className="absolute w-[2px] h-[2px] md:w-1 md:h-1 rounded-full bg-white"
-            style={{ left: "20%", top: "40%", boxShadow: "0 0 2px 1px rgba(255,215,0,0.8)" }}
-            animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
-            transition={{ duration: 1.2, repeat: Infinity, delay: 0.5 }}
+            className="absolute w-[3px] h-[3px] md:w-[4px] md:h-[4px] rounded-full bg-white"
+            style={{ left: "15%", top: "40%", boxShadow: "0 0 4px 2px rgba(255,255,255,0.9)" }}
+            animate={{ opacity: [0, 1, 0], scale: [0.5, 1.3, 0.5] }}
+            transition={{ duration: 0.8, repeat: Infinity, delay: 0.3 }}
           />
           <motion.div
-            className="absolute w-[2px] h-[2px] md:w-1 md:h-1 rounded-full bg-white"
-            style={{ left: "80%", top: "40%", boxShadow: "0 0 2px 1px rgba(255,215,0,0.8)" }}
-            animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
-            transition={{ duration: 1.2, repeat: Infinity, delay: 0.8 }}
+            className="absolute w-[3px] h-[3px] md:w-[4px] md:h-[4px] rounded-full bg-white"
+            style={{ left: "85%", top: "40%", boxShadow: "0 0 4px 2px rgba(255,255,255,0.9)" }}
+            animate={{ opacity: [0, 1, 0], scale: [0.5, 1.3, 0.5] }}
+            transition={{ duration: 0.8, repeat: Infinity, delay: 0.6 }}
           />
         </div>
         
-        {/* Step 3 - Bottom (widest) */}
+        {/* Step 3 - Bottom (widest) - Brighter */}
         <div 
           className="relative overflow-hidden"
           style={{
             width: size === "large" ? "85px" : size === "medium" ? "70px" : "62px",
             height: size === "large" ? "10px" : "8px",
-            background: "linear-gradient(180deg, #DAA520 0%, #B8860B 30%, #8B6914 70%, #6B5714 100%)",
+            background: "linear-gradient(180deg, #FFD700 0%, #FFC107 30%, #DAA520 70%, #B8860B 100%)",
             borderRadius: "0 0 5px 5px",
-            boxShadow: "inset 0 2px 3px rgba(255,255,255,0.5), 0 3px 6px rgba(0,0,0,0.3)",
+            boxShadow: "inset 0 2px 4px rgba(255,255,255,0.7), 0 4px 8px rgba(255,193,7,0.4)",
           }}
         >
           {/* Shimmer effect */}
           <motion.div
             className="absolute inset-0"
             style={{
-              background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)",
+              background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)",
             }}
             animate={{ x: ["-100%", "200%"] }}
-            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 2.5, ease: "easeInOut" }}
           />
           {/* Sparkles */}
           {[...Array(3)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-[2px] h-[2px] md:w-[3px] md:h-[3px] rounded-full"
+              className="absolute w-[3px] h-[3px] md:w-[4px] md:h-[4px] rounded-full"
               style={{
-                background: "radial-gradient(circle, #FFF 0%, #FFD700 60%, transparent 100%)",
+                background: "radial-gradient(circle, #FFF 0%, #FFEB3B 60%, transparent 100%)",
                 left: `${15 + i * 35}%`,
                 top: "40%",
-                boxShadow: "0 0 3px 1px rgba(255, 215, 0, 0.6)",
+                boxShadow: "0 0 5px 2px rgba(255, 235, 59, 0.8)",
               }}
-              animate={{ opacity: [0, 1, 0], scale: [0.5, 1.3, 0.5] }}
-              transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.4 }}
+              animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 0.5] }}
+              transition={{ duration: 1, repeat: Infinity, delay: i * 0.3 }}
             />
           ))}
         </div>
         
-        {/* Glow effect under pedestal */}
+        {/* Brighter glow effect under pedestal */}
         <div 
-          className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 w-[90%] h-3 md:h-4 blur-md"
+          className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 w-[100%] h-4 md:h-5 blur-md"
           style={{
-            background: "radial-gradient(ellipse, rgba(255, 215, 0, 0.6) 0%, rgba(218, 165, 32, 0.3) 50%, transparent 80%)",
+            background: "radial-gradient(ellipse, rgba(255, 235, 59, 0.8) 0%, rgba(255, 215, 0, 0.5) 50%, transparent 80%)",
           }}
         />
       </div>
@@ -261,40 +293,55 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
       <div 
         className="relative rounded-2xl overflow-hidden p-4 md:p-6"
         style={{
-          background: "linear-gradient(180deg, #FFF8DC 0%, #FFE4B5 20%, #F4A460 50%, #DAA520 80%, #B8860B 100%)",
+          background: "linear-gradient(180deg, #FFFDE7 0%, #FFF9C4 20%, #FFEB3B 50%, #FFD700 80%, #FFC107 100%)",
         }}
       >
-        {/* Light rays background */}
-        <div className="absolute inset-0 overflow-hidden">
+        {/* Firework Camly Coins */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(8)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute top-0 left-1/2 h-full origin-top"
-              style={{
-                width: "4px",
-                background: "linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 60%)",
-                transform: `translateX(-50%) rotate(${i * 22.5 - 90}deg)`,
-              }}
+            <FireworkCoin
+              key={`firework-${i}`}
+              delay={i * 0.5}
+              startX={25 + (i % 3) * 25}
+              startY={30 + Math.floor(i / 3) * 25}
             />
           ))}
         </div>
 
-        {/* Sparkle effects */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Light rays background - brighter */}
+        <div className="absolute inset-0 overflow-hidden">
           {[...Array(12)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-1 h-1 bg-white rounded-full"
+              className="absolute top-0 left-1/2 h-full origin-top"
               style={{
-                left: `${10 + Math.random() * 80}%`,
-                top: `${10 + Math.random() * 80}%`,
+                width: "5px",
+                background: "linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,235,59,0.3) 30%, transparent 60%)",
+                transform: `translateX(-50%) rotate(${i * 30 - 180}deg)`,
+              }}
+              animate={{ opacity: [0.4, 0.7, 0.4] }}
+              transition={{ duration: 2, repeat: Infinity, delay: i * 0.15 }}
+            />
+          ))}
+        </div>
+
+        {/* Sparkle effects - more and brighter */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1.5 h-1.5 bg-white rounded-full"
+              style={{
+                left: `${5 + Math.random() * 90}%`,
+                top: `${5 + Math.random() * 90}%`,
+                boxShadow: "0 0 6px 2px rgba(255,255,255,0.9)",
               }}
               animate={{
                 opacity: [0, 1, 0],
-                scale: [0.5, 1.2, 0.5],
+                scale: [0.3, 1.5, 0.3],
               }}
               transition={{
-                duration: 2 + Math.random() * 2,
+                duration: 1.5 + Math.random() * 1,
                 repeat: Infinity,
                 delay: Math.random() * 2,
               }}
@@ -302,22 +349,22 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
           ))}
         </div>
 
-        {/* Title */}
+        {/* Title - Brighter */}
         <motion.h2 
           className="text-center font-black text-2xl md:text-3xl mb-6 relative z-10"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           style={{
-            background: "linear-gradient(180deg, #8B4513 0%, #654321 50%, #3E2723 100%)",
+            background: "linear-gradient(180deg, #5D4037 0%, #3E2723 50%, #1B0F08 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
-            textShadow: "2px 2px 4px rgba(255, 215, 0, 0.3)",
+            textShadow: "3px 3px 6px rgba(255, 235, 59, 0.5)",
             fontFamily: "'Impact', 'Arial Black', sans-serif",
-            letterSpacing: "2px",
+            letterSpacing: "3px",
           }}
         >
-          TOP RANKING
+          ⭐ TOP RANKING ⭐
         </motion.h2>
 
         {/* Rankings Layout */}
