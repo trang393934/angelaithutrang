@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Users, MessageCircle, ShoppingBag, Bell, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +9,7 @@ import { StoryViewer } from "./StoryViewer";
 import { CreateStoryModal } from "./CreateStoryModal";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 import angelAiLogo from "@/assets/angel-ai-logo.png";
 
@@ -38,10 +39,34 @@ export function CommunityHeader() {
 
   const isActive = (href: string) => location.pathname === href;
 
+  const [userProfile, setUserProfile] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null);
+
   const handleStoryClick = (groupIndex: number) => {
     setSelectedGroupIndex(groupIndex);
     setShowStoryViewer(true);
   };
+
+  // Fetch user profile for avatar
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) {
+        setUserProfile(null);
+        return;
+      }
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setUserProfile(data);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   // Get current user's profile from grouped stories or fallback
   const currentUserStories = groupedStories.find(g => g.user_id === user?.id);
@@ -125,9 +150,9 @@ export function CommunityHeader() {
                 
                 <Link to={user ? "/profile" : "/auth"}>
                   <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-white/50 cursor-pointer hover:ring-white transition-all">
-                    <AvatarImage src={currentUserStories?.avatar_url || angelAvatar} />
+                    <AvatarImage src={userProfile?.avatar_url || currentUserStories?.avatar_url || angelAvatar} />
                     <AvatarFallback className="bg-white text-primary-deep text-sm">
-                      {currentUserStories?.display_name?.charAt(0) || "A"}
+                      {userProfile?.display_name?.charAt(0) || currentUserStories?.display_name?.charAt(0) || "A"}
                     </AvatarFallback>
                   </Avatar>
                 </Link>
