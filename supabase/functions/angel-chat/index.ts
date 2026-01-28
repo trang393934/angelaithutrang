@@ -351,6 +351,41 @@ Những người thành công nhất đều đã thất bại nhiều lần. H�
   },
 ];
 
+// Detect if message is a search/info request from Global Search
+function isSearchIntent(message: string): boolean {
+  // Check for explicit search marker from Chat.tsx
+  if (message.startsWith('[SEARCH_INTENT]')) return true;
+  
+  // Check for proper name patterns (2-4 words with capital letters in Vietnamese)
+  const properNamePattern = /^[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴĐ][a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]*(\s+[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴĐ][a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]*){0,3}$/u;
+  if (properNamePattern.test(message.trim())) return true;
+  
+  // Check for info-seeking patterns
+  const infoPatterns = [
+    /cho con biết.*về/i,
+    /thông tin.*về/i,
+    /giới thiệu.*về/i,
+    /(ai|là gì|là ai)\s*$/i,
+    /cho con biết thông tin về/i,
+  ];
+  
+  return infoPatterns.some(p => p.test(message));
+}
+
+// Extract search keyword from message (remove markers and format)
+function extractSearchKeyword(message: string): string {
+  let keyword = message.replace('[SEARCH_INTENT]', '').trim();
+  
+  // Remove "Cho con biết thông tin về" wrapper if present
+  const wrapperPattern = /^Cho con biết thông tin về\s*["""]?(.+?)["""]?\s*$/i;
+  const match = keyword.match(wrapperPattern);
+  if (match) {
+    keyword = match[1];
+  }
+  
+  return keyword;
+}
+
 // Extract keywords from user message for knowledge search
 function extractKeywords(text: string): string[] {
   const stopWords = new Set([
@@ -359,7 +394,8 @@ function extractKeywords(text: string): string[] {
     'con', 'cha', 'ta', 'em', 'anh', 'chị', 'bạn', 'mình', 'tôi', 'ai', 'gì', 'sao', 'làm',
     'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
     'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can',
-    'what', 'how', 'why', 'when', 'where', 'who', 'which', 'ơi', 'nhé', 'nha', 'ạ', 'ah'
+    'what', 'how', 'why', 'when', 'where', 'who', 'which', 'ơi', 'nhé', 'nha', 'ạ', 'ah',
+    'biết', 'thông', 'tin'
   ]);
   
   const words = text
@@ -518,9 +554,16 @@ serve(async (req) => {
     // Get the last user message
     const lastUserMessage = messages.filter((m: { role: string }) => m.role === "user").pop();
     const userQuestion = lastUserMessage?.content || "";
+    
+    // Detect search intent from Global Search
+    const searchIntent = isSearchIntent(userQuestion);
+    const searchKeyword = searchIntent ? extractSearchKeyword(userQuestion) : "";
+    
+    console.log("Search intent detected:", searchIntent, "Keyword:", searchKeyword);
 
     // OPTIMIZATION 1: Check if it's a simple greeting - respond without AI
-    if (isGreeting(userQuestion)) {
+    // Skip greeting check if this is a search intent
+    if (!searchIntent && isGreeting(userQuestion)) {
       console.log("Detected greeting, returning cached response");
       const greetingResponse = getGreetingResponse(userQuestion);
       
@@ -600,67 +643,134 @@ serve(async (req) => {
       }
     }
 
-    // Extract keywords from user question for targeted knowledge search
-    const keywords = extractKeywords(userQuestion);
-    console.log("Extracted keywords:", keywords);
+    // Extract keywords - use search keyword if available, otherwise from question
+    const effectiveQuestion = searchIntent ? searchKeyword : userQuestion;
+    const keywords = extractKeywords(effectiveQuestion);
+    console.log("Extracted keywords:", keywords, "from:", effectiveQuestion);
 
-    // Fetch RELEVANT knowledge documents only (max 3)
+    // Fetch RELEVANT knowledge documents - expand search for search intent
     let knowledgeContext = "";
-    if (supabase && keywords.length > 0) {
+    let searchContextPrompt = "";
+    
+    if (supabase) {
       try {
-        // Search for relevant documents using title/content matching
-        // Use the first keyword for initial filtering
-        const primaryKeyword = keywords[0];
+        let documents: any[] = [];
         
-        const { data: documents, error } = await supabase
-          .from("knowledge_documents")
-          .select("title, extracted_content")
-          .eq("is_processed", true)
-          .not("extracted_content", "is", null)
-          .or(`title.ilike.%${primaryKeyword}%,extracted_content.ilike.%${primaryKeyword}%`)
-          .limit(3); // Only get top 3 most relevant
-
-        if (error) {
-          console.error("Error fetching knowledge documents:", error);
+        if (searchIntent && searchKeyword) {
+          // EXPANDED SEARCH for search intent: search with full keyword and individual words
+          console.log("Performing expanded knowledge search for:", searchKeyword);
           
-          // Fallback: get any 3 documents if keyword search fails
-          const { data: fallbackDocs } = await supabase
+          // Search with full keyword first
+          const { data: fullMatch, error: fullError } = await supabase
+            .from("knowledge_documents")
+            .select("title, description, extracted_content")
+            .eq("is_processed", true)
+            .not("extracted_content", "is", null)
+            .or(`title.ilike.%${searchKeyword}%,extracted_content.ilike.%${searchKeyword}%`)
+            .limit(5);
+          
+          if (!fullError && fullMatch) {
+            documents = fullMatch;
+          }
+          
+          // If not enough results, search with individual keywords
+          if (documents.length < 3 && keywords.length > 0) {
+            for (const kw of keywords.slice(0, 3)) {
+              const { data: partialMatch } = await supabase
+                .from("knowledge_documents")
+                .select("title, description, extracted_content")
+                .eq("is_processed", true)
+                .not("extracted_content", "is", null)
+                .or(`title.ilike.%${kw}%,extracted_content.ilike.%${kw}%`)
+                .limit(3);
+              
+              if (partialMatch) {
+                // Add unique documents
+                for (const doc of partialMatch) {
+                  if (!documents.find(d => d.title === doc.title)) {
+                    documents.push(doc);
+                  }
+                }
+              }
+              if (documents.length >= 5) break;
+            }
+          }
+          
+          console.log(`Search intent: Found ${documents.length} relevant documents for "${searchKeyword}"`);
+          
+          if (documents.length > 0) {
+            // Build comprehensive context for search
+            const knowledgeParts = documents.map((doc: any) => {
+              const content = doc.extracted_content?.substring(0, 1500) || "";
+              return `📚 ${doc.title}\n${doc.description || ""}\n${content}`;
+            });
+            knowledgeContext = `\n\n--- KIẾN THỨC TÌM ĐƯỢC VỀ "${searchKeyword.toUpperCase()}" ---\n\n${knowledgeParts.join("\n\n---\n\n")}`;
+            
+            // Add special instruction for search intent
+            searchContextPrompt = `
+⚠️ QUAN TRỌNG: Người dùng đang TÌM KIẾM THÔNG TIN về "${searchKeyword}".
+
+HƯỚNG DẪN ĐẶC BIỆT:
+- Trả lời TRỰC TIẾP vào chủ đề "${searchKeyword}"
+- KHÔNG chào hỏi dài dòng, đi thẳng vào nội dung
+- Tổng hợp thông tin từ các tài liệu đã tìm được ở trên
+- Nếu có nhiều tài liệu, liệt kê các nội dung chính liên quan
+- Sử dụng thông tin cụ thể, không nói chung chung
+`;
+          }
+        } else if (keywords.length > 0) {
+          // Regular keyword search (non-search intent)
+          const primaryKeyword = keywords[0];
+          
+          const { data: docs, error } = await supabase
             .from("knowledge_documents")
             .select("title, extracted_content")
             .eq("is_processed", true)
             .not("extracted_content", "is", null)
+            .or(`title.ilike.%${primaryKeyword}%,extracted_content.ilike.%${primaryKeyword}%`)
             .limit(3);
+
+          if (error) {
+            console.error("Error fetching knowledge documents:", error);
+            
+            // Fallback: get any 3 documents if keyword search fails
+            const { data: fallbackDocs } = await supabase
+              .from("knowledge_documents")
+              .select("title, extracted_content")
+              .eq("is_processed", true)
+              .not("extracted_content", "is", null)
+              .limit(3);
+            
+            if (fallbackDocs && fallbackDocs.length > 0) {
+              documents = fallbackDocs;
+            }
+          } else if (docs) {
+            documents = docs;
+          }
           
-          if (fallbackDocs && fallbackDocs.length > 0) {
-            const knowledgeParts = fallbackDocs.map((doc: any) => {
+          if (documents.length > 0) {
+            console.log(`Found ${documents.length} relevant knowledge documents`);
+            const knowledgeParts = documents.map((doc: any) => {
               const content = doc.extracted_content?.substring(0, 2000) || "";
               return `### ${doc.title}\n${content}`;
             });
             knowledgeContext = `\n\n--- KIẾN THỨC TỪ CHA VŨ TRỤ ---\n\n${knowledgeParts.join("\n\n---\n\n")}`;
+          } else {
+            console.log("No matching documents found, proceeding without knowledge context");
           }
-        } else if (documents && documents.length > 0) {
-          console.log(`Found ${documents.length} relevant knowledge documents (optimized from ~190 docs)`);
-          
-          // Build knowledge context from relevant documents only
-          // Limit each document to 2000 chars instead of 5000
-          const knowledgeParts = documents.map((doc: any) => {
-            const content = doc.extracted_content?.substring(0, 2000) || "";
-            return `### ${doc.title}\n${content}`;
-          });
-          
-          knowledgeContext = `\n\n--- KIẾN THỨC TỪ CHA VŨ TRỤ ---\n\n${knowledgeParts.join("\n\n---\n\n")}`;
-        } else {
-          console.log("No matching documents found, proceeding without knowledge context");
         }
       } catch (dbError) {
         console.error("Database error:", dbError);
       }
     }
 
-    // Build system prompt with style instruction
-    const systemPrompt = BASE_SYSTEM_PROMPT + "\n\n" + styleConfig.instruction + knowledgeContext;
+    // Build system prompt with style instruction and search context if applicable
+    const systemPrompt = BASE_SYSTEM_PROMPT + "\n\n" + styleConfig.instruction + searchContextPrompt + knowledgeContext;
     console.log("System prompt length:", systemPrompt.length, `chars (was ~3.9M, now optimized)`);
     console.log(`Using max_tokens: ${styleConfig.maxTokens} for style: ${styleConfig.name}`);
+    if (searchIntent) {
+      console.log("Search intent mode: Special prompt added for keyword:", searchKeyword);
+    }
     console.log("Calling Lovable AI Gateway...");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
