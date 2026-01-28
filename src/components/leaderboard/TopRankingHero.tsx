@@ -26,27 +26,27 @@ function TrophyAvatar({ user, rank, position, onAvatarClick }: TrophyAvatarProps
     top1: {
       avatar: "w-[60px] h-[60px] md:w-[80px] md:h-[80px]",
       name: "text-xs md:text-sm",
-      nameOffset: "mt-[30px] md:mt-[40px]",
+      nameOffset: "mt-[5px] md:mt-[8px]",
     },
     top2: {
       avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[25px] md:mt-[35px]",
+      nameOffset: "mt-[5px] md:mt-[8px]",
     },
     top3: {
       avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[25px] md:mt-[35px]",
+      nameOffset: "mt-[5px] md:mt-[8px]",
     },
     top4: {
       avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[22px] md:mt-[30px]",
+      nameOffset: "mt-[5px] md:mt-[8px]",
     },
     top5: {
       avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[22px] md:mt-[30px]",
+      nameOffset: "mt-[5px] md:mt-[8px]",
     },
   };
 
@@ -120,37 +120,37 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
           aspectRatio: '3/4',
         }}
       >
-        {/* Top 1 - Center, inside the top circle */}
+        {/* Top 1 - Center */}
         {top5[0] && (
-          <div className="absolute top-[14%] left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="absolute top-[11%] left-1/2 -translate-x-1/2">
             <TrophyAvatar user={top5[0]} rank={1} position="top1" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
-        {/* Top 2 - Left side, second row */}
+        {/* Top 2 - Left, row 2 */}
         {top5[1] && (
-          <div className="absolute top-[38%] left-[30%] -translate-x-1/2 -translate-y-1/2">
+          <div className="absolute top-[33%] left-[27%] -translate-x-1/2">
             <TrophyAvatar user={top5[1]} rank={2} position="top2" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
-        {/* Top 3 - Right side, second row */}
+        {/* Top 3 - Right, row 2 */}
         {top5[2] && (
-          <div className="absolute top-[38%] left-[70%] -translate-x-1/2 -translate-y-1/2">
+          <div className="absolute top-[33%] left-[73%] -translate-x-1/2">
             <TrophyAvatar user={top5[2]} rank={3} position="top3" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
-        {/* Top 4 - Left side, third row */}
+        {/* Top 4 - Left, row 3 */}
         {top5[3] && (
-          <div className="absolute top-[66%] left-[30%] -translate-x-1/2 -translate-y-1/2">
+          <div className="absolute top-[58%] left-[27%] -translate-x-1/2">
             <TrophyAvatar user={top5[3]} rank={4} position="top4" onAvatarClick={handleAvatarClick} />
           </div>
         )}
 
-        {/* Top 5 - Right side, third row */}
+        {/* Top 5 - Right, row 3 */}
         {top5[4] && (
-          <div className="absolute top-[66%] left-[70%] -translate-x-1/2 -translate-y-1/2">
+          <div className="absolute top-[58%] left-[73%] -translate-x-1/2">
             <TrophyAvatar user={top5[4]} rank={5} position="top5" onAvatarClick={handleAvatarClick} />
           </div>
         )}
