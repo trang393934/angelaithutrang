@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2, 
   ImagePlus, Camera, Wand2, X, Download, Loader2, MessageSquare,
-  History, FolderOpen, Plus, Volume2
+  History, FolderOpen, Plus, Volume2, Image
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ import ChatRewardNotification from "@/components/ChatRewardNotification";
 import ChatShareDialog from "@/components/ChatShareDialog";
 import EarlyAdopterRewardPopup from "@/components/EarlyAdopterRewardPopup";
 import { ChatSessionsSidebar } from "@/components/chat/ChatSessionsSidebar";
+import { ImageHistorySidebar } from "@/components/chat/ImageHistorySidebar";
 import { AudioButton } from "@/components/chat/AudioButton";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
@@ -24,6 +25,7 @@ import { useChatHistory } from "@/hooks/useChatHistory";
 import { useChatSessions } from "@/hooks/useChatSessions";
 import { useChatFolders } from "@/hooks/useChatFolders";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useImageHistory } from "@/hooks/useImageHistory";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -96,7 +98,16 @@ const Chat = () => {
     deleteFolder,
   } = useChatFolders();
 
+  // Image history
+  const {
+    history: imageHistory,
+    isLoading: imageHistoryLoading,
+    saveToHistory: saveToImageHistory,
+    deleteFromHistory: deleteFromImageHistory,
+  } = useImageHistory();
+
   const [showSidebar, setShowSidebar] = useState(false);
+  const [showImageHistorySidebar, setShowImageHistorySidebar] = useState(false);
   const [hasAgreed, setHasAgreed] = useState<boolean | null>(null);
   const [userResponseStyle, setUserResponseStyle] = useState<string>("detailed");
   const [messages, setMessages] = useState<Message[]>([
@@ -378,7 +389,7 @@ const Chat = () => {
     }
   }, [user, refreshBalance]);
 
-  // NOTE: Image generation does NOT save to chat history - intentional design
+  // Image generation - saves to IMAGE history (separate from chat history)
   const handleGenerateImage = async (prompt: string) => {
     setMessages(prev => [...prev, { role: "user", content: `🎨 ${t("chat.createImage")} ${prompt}`, type: "text" }]);
     setMessages(prev => [...prev, { role: "assistant", content: t("chat.creatingImage"), type: "text" }]);
@@ -397,8 +408,12 @@ const Chat = () => {
         return updated;
       });
       
+      // Save to IMAGE history (not chat history)
+      if (user && result.imageUrl) {
+        saveToImageHistory('generated', prompt, result.imageUrl, result.description, imageStyle);
+      }
+      
       toast.success(t("chat.imageCreated"));
-      // Image generation content is NOT saved to history by design
     } catch (error: any) {
       setMessages(prev => {
         const updated = [...prev];
@@ -413,20 +428,25 @@ const Chat = () => {
     }
   };
 
-  // NOTE: Image analysis does NOT save to chat history - intentional design
+  // Image analysis - saves to IMAGE history (separate from chat history)
   const handleAnalyzeImage = async (question: string) => {
     if (!uploadedImage) return;
+    
+    const imageToAnalyze = uploadedImage; // Store before clearing
 
     setMessages(prev => [...prev, { 
       role: "user", 
       content: question || t("chat.analyzeDefault"), 
       type: "image-analysis",
-      imageUrl: uploadedImage
+      imageUrl: imageToAnalyze
     }]);
     setMessages(prev => [...prev, { role: "assistant", content: "", type: "text" }]);
 
+    let analysisResult = "";
+    
     try {
-      await analyzeImage(uploadedImage, question, (text) => {
+      await analyzeImage(imageToAnalyze, question, (text) => {
+        analysisResult = text;
         setMessages(prev => {
           const updated = [...prev];
           updated[updated.length - 1] = { role: "assistant", content: text, type: "text" };
@@ -434,9 +454,13 @@ const Chat = () => {
         });
       });
       
+      // Save to IMAGE history (not chat history)
+      if (user && analysisResult) {
+        saveToImageHistory('analyzed', question || t("chat.analyzeDefault"), imageToAnalyze, analysisResult);
+      }
+      
       setUploadedImage(null);
       setChatMode("chat");
-      // Image analysis content is NOT saved to history by design
     } catch (error: any) {
       setMessages(prev => {
         const updated = [...prev];
@@ -606,6 +630,15 @@ const Chat = () => {
         onUpdateFolder={updateFolder}
       />
 
+      {/* Image History Sidebar */}
+      <ImageHistorySidebar
+        isOpen={showImageHistorySidebar}
+        onClose={() => setShowImageHistorySidebar(false)}
+        history={imageHistory}
+        isLoading={imageHistoryLoading}
+        onDelete={deleteFromImageHistory}
+      />
+
       {/* Early Adopter Reward Popup */}
       <EarlyAdopterRewardPopup
         isOpen={showEarlyAdopterPopup}
@@ -643,6 +676,24 @@ const Chat = () => {
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="bg-primary-deep text-white">
                   <p>Lịch sử hội thoại</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    onClick={() => setShowImageHistorySidebar(true)}
+                    className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group relative"
+                  >
+                    <Image className="w-5 h-5 text-primary group-hover:text-primary-deep transition-all duration-300" />
+                    {imageHistory.length > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-divine-gold text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                        {imageHistory.length > 99 ? '99+' : imageHistory.length}
+                      </span>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-primary-deep text-white">
+                  <p>Kho hình ảnh</p>
                 </TooltipContent>
               </Tooltip>
               <div className="flex items-center gap-2 sm:gap-3">
