@@ -5,6 +5,7 @@ import {
   ImagePlus, Camera, Wand2, X, Download, Loader2, MessageSquare,
   History, FolderOpen, Plus, Volume2, Image, Menu
 } from "lucide-react";
+import { MessageFeedback } from "@/components/chat/MessageFeedback";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -835,7 +836,16 @@ const Chat = () => {
                   
                   {/* Action buttons for assistant messages */}
                   {message.role === "assistant" && message.content && !(isLoading || isGenerating || isAnalyzing) && (
-                    <div className="flex items-center gap-2 ml-1">
+                    <div className="flex items-center gap-1 sm:gap-2 ml-1 flex-wrap">
+                      {/* Like/Dislike Feedback - Grok style */}
+                      <MessageFeedback 
+                        messageIndex={index}
+                        questionText={getQuestionForAnswer(index)}
+                        answerText={message.content}
+                      />
+                      
+                      <div className="w-px h-4 bg-border mx-1 hidden sm:block" />
+                      
                       {/* Audio Button */}
                       <AudioButton
                         isLoading={ttsLoading}
@@ -849,14 +859,14 @@ const Chat = () => {
                         className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary-pale/50 rounded-md transition-colors"
                       >
                         <Copy className="w-3 h-3" />
-                        <span>{t("chat.copy")}</span>
+                        <span className="hidden sm:inline">{t("chat.copy")}</span>
                       </button>
                       <button
                         onClick={() => handleOpenShare(index, message.content)}
                         className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
                       >
                         <Share2 className="w-3 h-3" />
-                        <span>{t("chat.share")}</span>
+                        <span className="hidden sm:inline">{t("chat.share")}</span>
                       </button>
                     </div>
                   )}
