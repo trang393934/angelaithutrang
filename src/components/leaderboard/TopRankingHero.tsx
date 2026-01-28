@@ -108,25 +108,33 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
         </div>
       )}
 
-      {/* Top 2 & 3 - Second row, inside circles */}
-      <div className="absolute top-[32%] left-0 right-0 flex justify-between px-[12%] md:px-[14%]">
-        {top5[1] && (
+      {/* Top 2 - Left side, second row */}
+      {top5[1] && (
+        <div className="absolute top-[32%] left-[18%] md:left-[20%] -translate-x-1/2">
           <TrophyAvatar user={top5[1]} rank={2} position="top2" />
-        )}
-        {top5[2] && (
-          <TrophyAvatar user={top5[2]} rank={3} position="top3" />
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Top 4 & 5 - Third row, inside circles */}
-      <div className="absolute top-[56%] left-0 right-0 flex justify-between px-[12%] md:px-[14%]">
-        {top5[3] && (
+      {/* Top 3 - Right side, second row */}
+      {top5[2] && (
+        <div className="absolute top-[32%] right-[18%] md:right-[20%] translate-x-1/2">
+          <TrophyAvatar user={top5[2]} rank={3} position="top3" />
+        </div>
+      )}
+
+      {/* Top 4 - Left side, third row */}
+      {top5[3] && (
+        <div className="absolute top-[56%] left-[18%] md:left-[20%] -translate-x-1/2">
           <TrophyAvatar user={top5[3]} rank={4} position="top4" />
-        )}
-        {top5[4] && (
+        </div>
+      )}
+
+      {/* Top 5 - Right side, third row */}
+      {top5[4] && (
+        <div className="absolute top-[56%] right-[18%] md:right-[20%] translate-x-1/2">
           <TrophyAvatar user={top5[4]} rank={5} position="top5" />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
