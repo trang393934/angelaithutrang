@@ -137,16 +137,30 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
           />
         </div>
         
-        {/* Step 2 - Middle */}
+        {/* Step 2 - Middle with Rank Number */}
         <div 
-          className="relative overflow-hidden"
+          className="relative overflow-hidden flex items-center justify-center"
           style={{
             width: size === "large" ? "68px" : size === "medium" ? "56px" : "50px",
-            height: size === "large" ? "8px" : "6px",
+            height: size === "large" ? "18px" : size === "medium" ? "16px" : "14px",
             background: "linear-gradient(180deg, #FFD700 0%, #DAA520 30%, #B8860B 70%, #8B6914 100%)",
             boxShadow: "inset 0 2px 3px rgba(255,255,255,0.6), 0 1px 3px rgba(0,0,0,0.25)",
           }}
         >
+          {/* Rank Number */}
+          <span 
+            className="relative z-10 font-black drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]"
+            style={{
+              fontSize: size === "large" ? "12px" : size === "medium" ? "11px" : "10px",
+              background: "linear-gradient(180deg, #FFFACD 0%, #FFD700 50%, #B8860B 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              textShadow: "0 0 8px rgba(255, 215, 0, 0.8)",
+            }}
+          >
+            {rank}
+          </span>
+          
           {/* Shimmer effect */}
           <motion.div
             className="absolute inset-0"
