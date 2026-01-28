@@ -5,7 +5,7 @@ import { LeaderboardUser } from "@/hooks/useLeaderboard";
 import { motion } from "framer-motion";
 import { ImageLightbox } from "@/components/community/ImageLightbox";
 import angelAvatar from "@/assets/angel-avatar.png";
-import topRankingBg from "@/assets/top-ranking-bg.png";
+import topRankingBg from "@/assets/top-ranking-bg-clean.png";
 
 interface TopRankingHeroProps {
   topUsers: LeaderboardUser[];
