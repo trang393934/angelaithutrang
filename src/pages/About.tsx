@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import angelAvatar from "@/assets/angel-avatar.png";
+import beLyFounder from "@/assets/be-ly-founder.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
 import funPlanetLogo from "@/assets/fun-planet-logo.png";
 import funFarmLogo from "@/assets/fun-farm-logo.png";
@@ -161,6 +162,23 @@ const About = () => {
                 <Crown className="w-4 h-4" />
                 <span>{t("about.beLy.badge")}</span>
               </div>
+              
+              {/* Bé Ly Avatar */}
+              <div className="flex justify-center mb-8">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-accent-gold/40 via-primary-light/30 to-primary-pale/20 rounded-full blur-3xl scale-125 animate-glow-pulse" />
+                  <div className="absolute -inset-2 bg-gradient-to-r from-accent-gold/30 via-primary/20 to-accent-gold/30 rounded-full blur-xl animate-pulse" />
+                  <img 
+                    src={beLyFounder} 
+                    alt="Bé Ly - Kênh Dẫn Ánh Sáng" 
+                    className="relative w-40 h-40 md:w-52 md:h-52 rounded-full object-cover object-top shadow-divine border-4 border-accent-gold/50"
+                  />
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1 bg-accent-gold rounded-full text-xs font-semibold text-primary-deep shadow-lg">
+                    👑 Cosmic Queen
+                  </div>
+                </div>
+              </div>
+              
               <h2 className="text-3xl md:text-4xl font-bold text-primary-deep mb-4">
                 {t("about.beLy.title")}
               </h2>
