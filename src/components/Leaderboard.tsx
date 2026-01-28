@@ -131,10 +131,10 @@ export function Leaderboard() {
           </div>
         )}
 
-        {/* Ranking List */}
-        {displayUsers.length > 0 && (
+        {/* Ranking List - Only show when expanded (users beyond top 5) */}
+        {showAll && allUsers.length > 5 && (
           <div className="space-y-2 mt-4">
-            {displayUsers.map(user => (
+            {allUsers.slice(5).map(user => (
               <RankingRow
                 key={user.user_id}
                 user={user}
@@ -144,7 +144,7 @@ export function Leaderboard() {
           </div>
         )}
 
-        {/* View All Button */}
+        {/* View All Button - only show if there are users beyond top 5 */}
         {allUsers.length > 5 && (
           <div className="mt-4 text-center">
             <Button
@@ -161,7 +161,7 @@ export function Leaderboard() {
               ) : (
                 <>
                   <ChevronDown className="w-4 h-4 mr-1" />
-                  Xem tất cả ({allUsers.length} người)
+                  Xem thêm ({allUsers.length - 5} người)
                 </>
               )}
             </Button>
