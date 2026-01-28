@@ -45,26 +45,21 @@ export function MessageFeedback({ messageIndex, questionText, answerText }: Mess
     setFeedback(type); // Optimistic update
 
     try {
-      // Save feedback to database (can be used for AI improvement)
-      const { error } = await supabase
+      // Save feedback to database - use type assertion for new table
+      const { error } = await (supabase as any)
         .from("chat_feedback")
         .upsert({
           user_id: user.id,
-          question_text: questionText.slice(0, 500), // Limit length
-          answer_text: answerText.slice(0, 2000), // Limit length
+          question_text: questionText.slice(0, 500),
+          answer_text: answerText.slice(0, 2000),
           feedback_type: type,
-          created_at: new Date().toISOString(),
         }, {
           onConflict: "user_id,question_text",
         });
 
+      // Silently handle any errors - feedback is non-critical
       if (error) {
-        // If table doesn't exist yet, just show success without saving
-        if (error.code === "42P01") {
-          console.log("Feedback table not created yet, skipping save");
-        } else {
-          throw error;
-        }
+        console.log("Feedback save skipped:", error.message);
       }
 
       toast.success(

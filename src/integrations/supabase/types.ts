@@ -262,6 +262,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_feedback: {
+        Row: {
+          answer_text: string
+          created_at: string
+          feedback_type: string
+          id: string
+          question_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answer_text: string
+          created_at?: string
+          feedback_type: string
+          id?: string
+          question_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answer_text?: string
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          question_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_folders: {
         Row: {
           color: string | null
