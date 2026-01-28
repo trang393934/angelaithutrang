@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2, 
   ImagePlus, Camera, Wand2, X, Download, Loader2, MessageSquare,
-  History, FolderOpen, Plus, Volume2, Image
+  History, FolderOpen, Plus, Volume2, Image, Menu
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import ChatRewardNotification from "@/components/ChatRewardNotification";
 import ChatShareDialog from "@/components/ChatShareDialog";
 import EarlyAdopterRewardPopup from "@/components/EarlyAdopterRewardPopup";
+import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatSessionsSidebar } from "@/components/chat/ChatSessionsSidebar";
 import { ImageHistorySidebar } from "@/components/chat/ImageHistorySidebar";
 import { AudioButton } from "@/components/chat/AudioButton";
@@ -26,6 +27,7 @@ import { useChatSessions } from "@/hooks/useChatSessions";
 import { useChatFolders } from "@/hooks/useChatFolders";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useImageHistory } from "@/hooks/useImageHistory";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -65,6 +67,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/angel-chat`;
 
 const Chat = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
   const { t } = useLanguage();
@@ -106,8 +109,11 @@ const Chat = () => {
     deleteFromHistory: deleteFromImageHistory,
   } = useImageHistory();
 
-  const [showSidebar, setShowSidebar] = useState(false);
+  // Sidebar states
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showImageHistorySidebar, setShowImageHistorySidebar] = useState(false);
+  
   const [hasAgreed, setHasAgreed] = useState<boolean | null>(null);
   const [userResponseStyle, setUserResponseStyle] = useState<string>("detailed");
   const [messages, setMessages] = useState<Message[]>([
@@ -608,16 +614,31 @@ const Chat = () => {
   }
 
   return (
-    <div className="h-[100dvh] bg-gradient-to-b from-primary-pale via-background to-background flex flex-col overflow-hidden">
+    <div className="h-[100dvh] flex bg-gradient-to-b from-primary-pale via-background to-background overflow-hidden">
       <ChatRewardNotification 
         reward={currentReward} 
         onDismiss={() => setCurrentReward(null)} 
       />
 
-      {/* Chat Sessions Sidebar */}
+      {/* Desktop Sidebar - Persistent */}
+      <ChatSidebar
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        sessions={sessions}
+        folders={folders}
+        currentSession={currentSession}
+        onSelectSession={selectSession}
+        onNewSession={handleNewSession}
+        onDeleteSession={deleteSession}
+        onUpdateSession={updateSession}
+        imageHistoryCount={imageHistory.length}
+        onOpenImageHistory={() => setShowImageHistorySidebar(true)}
+      />
+
+      {/* Mobile Sidebar Overlay */}
       <ChatSessionsSidebar
-        isOpen={showSidebar}
-        onClose={() => setShowSidebar(false)}
+        isOpen={showMobileSidebar}
+        onClose={() => setShowMobileSidebar(false)}
         sessions={sessions}
         folders={folders}
         currentSession={currentSession}
@@ -647,329 +668,327 @@ const Chat = () => {
         onClose={dismissEarlyAdopterPopup}
       />
 
-      {/* Header - Compact for mobile */}
-      <header className="flex-shrink-0 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft safe-area-top">
-        <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button 
-                    onClick={() => navigate("/")}
-                    className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
-                  >
-                    <ArrowLeft className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:-translate-x-0.5 transition-all duration-300" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-primary-deep text-white">
-                  <p>Về trang chủ</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button 
-                    onClick={() => setShowSidebar(true)}
-                    className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
-                  >
-                    <History className="w-5 h-5 text-primary group-hover:text-primary-deep transition-all duration-300" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-primary-deep text-white">
-                  <p>Lịch sử hội thoại</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button 
-                    onClick={() => setShowImageHistorySidebar(true)}
-                    className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group relative"
-                  >
-                    <Image className="w-5 h-5 text-primary group-hover:text-primary-deep transition-all duration-300" />
-                    {imageHistory.length > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-divine-gold text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                        {imageHistory.length > 99 ? '99+' : imageHistory.length}
-                      </span>
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-primary-deep text-white">
-                  <p>Kho hình ảnh</p>
-                </TooltipContent>
-              </Tooltip>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header - Compact for mobile */}
+        <header className="flex-shrink-0 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft safe-area-top">
+          <div className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="relative">
-                  <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shadow-soft" />
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-400 border-2 border-white rounded-full"></span>
-                </div>
-                <div>
-                  <h1 className="font-serif text-base sm:text-lg font-semibold text-primary-deep">
-                    {currentSession ? currentSession.title : "Angel AI"}
-                  </h1>
-                  <p className="text-[10px] sm:text-xs text-foreground-muted">
-                    {currentSession ? "Đang tiếp tục chủ đề" : t("chat.subtitle")}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* New chat button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={handleNewSession}
-                    className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
-                  >
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-primary group-hover:text-primary-deep transition-all duration-300" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-primary-deep text-white">
-                  <p>Cuộc trò chuyện mới</p>
-                </TooltipContent>
-              </Tooltip>
-              {dailyStatus && (
-                <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
-                  <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
-                  <span className="text-[10px] sm:text-xs text-amber-700 font-medium">{dailyStatus.questionsRemaining}/10</span>
-                </div>
-              )}
-              <Link to="/community" className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-pink-50 rounded-full border border-pink-200/50 hover:bg-pink-100 transition-colors">
-                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-500" />
-                <span className="text-[10px] sm:text-xs text-pink-700 font-medium hidden sm:inline">{t("chat.community")}</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-
-      {/* Messages - Scrollable area with proper mobile padding */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-3 sm:px-4 py-4 sm:py-6">
-        <div className="container mx-auto max-w-3xl space-y-4 sm:space-y-6">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""} animate-fade-in`}
-            >
-              {message.role === "assistant" && (
-                <img src={angelAvatar} alt="Angel AI" className="w-10 h-10 rounded-full object-cover shadow-soft flex-shrink-0" />
-              )}
-              <div className="flex flex-col gap-2 max-w-[80%]">
-                {/* Image in message */}
-                {message.imageUrl && message.type === "image-analysis" && (
-                  <div 
-                    className="rounded-xl overflow-hidden cursor-pointer"
-                    onClick={() => { setSelectedImage(message.imageUrl!); setShowImageDialog(true); }}
-                  >
-                    <img src={message.imageUrl} alt="Uploaded" className="max-w-xs rounded-xl" />
-                  </div>
+                {/* Mobile menu button */}
+                <button 
+                  onClick={() => setShowMobileSidebar(true)}
+                  className="lg:hidden p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300"
+                >
+                  <Menu className="w-5 h-5 text-primary" />
+                </button>
+                
+                {/* Back button - desktop only when sidebar collapsed */}
+                {sidebarCollapsed && !isMobile && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button 
+                        onClick={() => navigate("/")}
+                        className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
+                      >
+                        <ArrowLeft className="w-5 h-5 text-primary group-hover:text-primary-deep group-hover:-translate-x-0.5 transition-all duration-300" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-primary-deep text-white">
+                      <p>Về trang chủ</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
                 
-                <div
-                  className={`rounded-2xl px-3 sm:px-5 py-3 sm:py-4 max-w-[85vw] sm:max-w-none ${
-                    message.role === "user"
-                      ? "bg-sapphire-gradient text-white rounded-br-md shadow-sacred"
-                      : "bg-white border border-primary-pale/50 text-foreground rounded-bl-md shadow-soft"
-                  }`}
+                {/* Image gallery - mobile only */}
+                <button 
+                  onClick={() => setShowImageHistorySidebar(true)}
+                  className="lg:hidden p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group relative"
                 >
-                  <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap break-words message-content">
-                    {message.content || (isLoading && index === messages.length - 1 ? "" : message.content)}
-                  </p>
-                  {(isLoading || isGenerating || isAnalyzing) && message.role === "assistant" && !message.content && (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                      <span className="text-xs sm:text-sm text-foreground-muted">
-                        {isGenerating ? t("chat.generating") : isAnalyzing ? t("chat.analyzing") : t("chat.thinking")}
-                      </span>
+                  <Image className="w-5 h-5 text-primary group-hover:text-primary-deep transition-all duration-300" />
+                  {imageHistory.length > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-divine-gold text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {imageHistory.length > 99 ? '99+' : imageHistory.length}
+                    </span>
+                  )}
+                </button>
+
+                {/* Avatar and title */}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="relative">
+                    <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shadow-soft" />
+                    <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-400 border-2 border-white rounded-full"></span>
+                  </div>
+                  <div className="hidden sm:block">
+                    <h1 className="font-serif text-base sm:text-lg font-semibold text-primary-deep">
+                      {currentSession ? currentSession.title : "Angel AI"}
+                    </h1>
+                    <p className="text-[10px] sm:text-xs text-foreground-muted">
+                      {currentSession ? "Đang tiếp tục chủ đề" : t("chat.subtitle")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* New chat button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={handleNewSession}
+                      className="p-1.5 sm:p-2 rounded-full hover:bg-primary-pale hover:scale-110 active:scale-95 transition-all duration-300 group"
+                    >
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-primary group-hover:text-primary-deep transition-all duration-300" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-primary-deep text-white">
+                    <p>Cuộc trò chuyện mới</p>
+                  </TooltipContent>
+                </Tooltip>
+                {dailyStatus && (
+                  <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-amber-50 rounded-full border border-amber-200/50">
+                    <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
+                    <span className="text-[10px] sm:text-xs text-amber-700 font-medium">{dailyStatus.questionsRemaining}/10</span>
+                  </div>
+                )}
+                <Link to="/community" className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-pink-50 rounded-full border border-pink-200/50 hover:bg-pink-100 transition-colors">
+                  <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-500" />
+                  <span className="text-[10px] sm:text-xs text-pink-700 font-medium hidden sm:inline">{t("chat.community")}</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Messages - Scrollable area with wider container */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
+          <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex gap-2 sm:gap-3 ${message.role === "user" ? "flex-row-reverse" : ""} animate-fade-in`}
+              >
+                {message.role === "assistant" && (
+                  <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shadow-soft flex-shrink-0" />
+                )}
+                <div className="flex flex-col gap-2 max-w-[95%] sm:max-w-[90%] lg:max-w-[85%]">
+                  {/* Image in message */}
+                  {message.imageUrl && message.type === "image-analysis" && (
+                    <div 
+                      className="rounded-xl overflow-hidden cursor-pointer"
+                      onClick={() => { setSelectedImage(message.imageUrl!); setShowImageDialog(true); }}
+                    >
+                      <img src={message.imageUrl} alt="Uploaded" className="max-w-xs rounded-xl" />
+                    </div>
+                  )}
+                  
+                  <div
+                    className={`rounded-2xl px-3 sm:px-5 py-3 sm:py-4 ${
+                      message.role === "user"
+                        ? "bg-sapphire-gradient text-white rounded-br-md shadow-sacred"
+                        : "bg-white border border-primary-pale/50 text-foreground rounded-bl-md shadow-soft"
+                    }`}
+                  >
+                    <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap break-words message-content">
+                      {message.content || (isLoading && index === messages.length - 1 ? "" : message.content)}
+                    </p>
+                    {(isLoading || isGenerating || isAnalyzing) && message.role === "assistant" && !message.content && (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                        <span className="text-xs sm:text-sm text-foreground-muted">
+                          {isGenerating ? t("chat.generating") : isAnalyzing ? t("chat.analyzing") : t("chat.thinking")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Generated image */}
+                  {message.type === "image" && message.imageUrl && (
+                    <div className="relative group">
+                      <img 
+                        src={message.imageUrl} 
+                        alt="Generated" 
+                        className="max-w-full rounded-xl shadow-lg cursor-pointer"
+                        onClick={() => { setSelectedImage(message.imageUrl!); setShowImageDialog(true); }}
+                      />
+                      <button
+                        onClick={() => handleDownloadImage(message.imageUrl!)}
+                        className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Action buttons for user messages */}
+                  {message.role === "user" && message.content && (
+                    <div className="flex items-center gap-2 mr-1 justify-end">
+                      <button
+                        onClick={() => handleCopyMessage(message.content)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary-pale/50 rounded-md transition-colors"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>{t("chat.copy")}</span>
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Action buttons for assistant messages */}
+                  {message.role === "assistant" && message.content && !(isLoading || isGenerating || isAnalyzing) && (
+                    <div className="flex items-center gap-2 ml-1">
+                      {/* Audio Button */}
+                      <AudioButton
+                        isLoading={ttsLoading}
+                        isPlaying={ttsPlaying}
+                        isCurrentMessage={ttsMessageId === `msg-${index}`}
+                        onPlay={() => playText(message.content, `msg-${index}`)}
+                        onStop={stopAudio}
+                      />
+                      <button
+                        onClick={() => handleCopyMessage(message.content)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary-pale/50 rounded-md transition-colors"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>{t("chat.copy")}</span>
+                      </button>
+                      <button
+                        onClick={() => handleOpenShare(index, message.content)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                      >
+                        <Share2 className="w-3 h-3" />
+                        <span>{t("chat.share")}</span>
+                      </button>
                     </div>
                   )}
                 </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
 
-                {/* Generated image */}
-                {message.type === "image" && message.imageUrl && (
-                  <div className="relative group">
-                    <img 
-                      src={message.imageUrl} 
-                      alt="Generated" 
-                      className="max-w-full rounded-xl shadow-lg cursor-pointer"
-                      onClick={() => { setSelectedImage(message.imageUrl!); setShowImageDialog(true); }}
-                    />
-                    <button
-                      onClick={() => handleDownloadImage(message.imageUrl!)}
-                      className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-                
-                {/* Action buttons for user messages */}
-                {message.role === "user" && message.content && (
-                  <div className="flex items-center gap-2 mr-1 justify-end">
-                    <button
-                      onClick={() => handleCopyMessage(message.content)}
-                      className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary-pale/50 rounded-md transition-colors"
-                    >
-                      <Copy className="w-3 h-3" />
-                      <span>{t("chat.copy")}</span>
-                    </button>
-                  </div>
-                )}
-                
-                {/* Action buttons for assistant messages */}
-                {message.role === "assistant" && message.content && !(isLoading || isGenerating || isAnalyzing) && (
-                  <div className="flex items-center gap-2 ml-1">
-                    {/* Audio Button */}
-                    <AudioButton
-                      isLoading={ttsLoading}
-                      isPlaying={ttsPlaying}
-                      isCurrentMessage={ttsMessageId === `msg-${index}`}
-                      onPlay={() => playText(message.content, `msg-${index}`)}
-                      onStop={stopAudio}
-                    />
-                    <button
-                      onClick={() => handleCopyMessage(message.content)}
-                      className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary-pale/50 rounded-md transition-colors"
-                    >
-                      <Copy className="w-3 h-3" />
-                      <span>{t("chat.copy")}</span>
-                    </button>
-                    <button
-                      onClick={() => handleOpenShare(index, message.content)}
-                      className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
-                    >
-                      <Share2 className="w-3 h-3" />
-                      <span>{t("chat.share")}</span>
-                    </button>
-                  </div>
-                )}
+        {/* Uploaded Image Preview */}
+        {uploadedImage && (
+          <div className="flex-shrink-0 px-3 sm:px-4 lg:px-8 py-2 bg-muted/50 border-t border-border">
+            <div className="mx-auto max-w-5xl flex items-center gap-2 sm:gap-3">
+              <div className="relative flex-shrink-0">
+                <img src={uploadedImage} alt="To analyze" className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover" />
+                <button
+                  onClick={() => { setUploadedImage(null); setChatMode("chat"); }}
+                  className="absolute -top-1.5 -right-1.5 p-0.5 sm:p-1 bg-destructive text-destructive-foreground rounded-full"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground">{t("chat.askAboutImage")}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Mode Indicator */}
+        {chatMode !== "chat" && !uploadedImage && (
+          <div className="flex-shrink-0 px-3 sm:px-4 lg:px-8 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-t border-border">
+            <div className="mx-auto max-w-5xl flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Wand2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium text-purple-700 dark:text-purple-300">
+                  {t("chat.mode.image")}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <select
+                  value={imageStyle}
+                  onChange={(e) => setImageStyle(e.target.value as any)}
+                  className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white dark:bg-gray-800 border border-border"
+                >
+                  <option value="spiritual">{t("chat.styleSpiritual")}</option>
+                  <option value="realistic">{t("chat.styleRealistic")}</option>
+                  <option value="artistic">{t("chat.styleArtistic")}</option>
+                </select>
+                <button
+                  onClick={() => setChatMode("chat")}
+                  className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground px-1.5"
+                >
+                  {t("chat.cancel")}
+                </button>
               </div>
             </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
-
-      {/* Uploaded Image Preview */}
-      {uploadedImage && (
-        <div className="flex-shrink-0 px-3 sm:px-4 py-2 bg-muted/50 border-t border-border">
-          <div className="container mx-auto max-w-3xl flex items-center gap-2 sm:gap-3">
-            <div className="relative flex-shrink-0">
-              <img src={uploadedImage} alt="To analyze" className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover" />
-              <button
-                onClick={() => { setUploadedImage(null); setChatMode("chat"); }}
-                className="absolute -top-1.5 -right-1.5 p-0.5 sm:p-1 bg-destructive text-destructive-foreground rounded-full"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">{t("chat.askAboutImage")}</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Mode Indicator */}
-      {chatMode !== "chat" && !uploadedImage && (
-        <div className="flex-shrink-0 px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-t border-border">
-          <div className="container mx-auto max-w-3xl flex items-center justify-between gap-2">
+        {/* Input - Fixed at bottom with safe area padding */}
+        <div className="flex-shrink-0 bg-background-pure/95 backdrop-blur-lg border-t border-primary-pale px-3 sm:px-4 lg:px-8 py-2 sm:py-3 safe-area-bottom">
+          <form onSubmit={handleSubmit} className="mx-auto max-w-5xl">
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <Wand2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
-              <span className="text-xs sm:text-sm font-medium text-purple-700 dark:text-purple-300">
-                {t("chat.mode.image")}
-              </span>
+              {/* Mode buttons - Compact on mobile */}
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setChatMode("chat")}
+                  className={`p-1.5 sm:p-2 rounded-full transition-colors ${chatMode === "chat" ? "bg-primary text-primary-foreground" : "hover:bg-primary-pale"}`}
+                  title={t("chat.mode.chat")}
+                >
+                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatMode("generate-image")}
+                  className={`p-1.5 sm:p-2 rounded-full transition-colors ${chatMode === "generate-image" ? "bg-purple-500 text-white" : "hover:bg-purple-100"}`}
+                  title={t("chat.generateImage")}
+                >
+                  <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-blue-100 transition-colors"
+                  title={t("chat.analyzeImage")}
+                >
+                  <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </div>
+
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={
+                    chatMode === "generate-image" 
+                      ? t("chat.placeholderImage")
+                      : chatMode === "analyze-image"
+                      ? t("chat.placeholderAnalyze")
+                      : t("chat.placeholder")
+                  }
+                  disabled={isLoading || isGenerating || isAnalyzing}
+                  enterKeyHint="send"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  className="w-full px-3 sm:px-5 py-2.5 sm:py-3 pr-10 sm:pr-12 rounded-full border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-300 disabled:opacity-50 text-sm sm:text-base"
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isLoading || isGenerating || isAnalyzing}
+                  className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full bg-sapphire-gradient text-white hover:shadow-sacred transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading || isGenerating || isAnalyzing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <select
-                value={imageStyle}
-                onChange={(e) => setImageStyle(e.target.value as any)}
-                className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white dark:bg-gray-800 border border-border"
-              >
-                <option value="spiritual">{t("chat.styleSpiritual")}</option>
-                <option value="realistic">{t("chat.styleRealistic")}</option>
-                <option value="artistic">{t("chat.styleArtistic")}</option>
-              </select>
-              <button
-                onClick={() => setChatMode("chat")}
-                className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground px-1.5"
-              >
-                {t("chat.cancel")}
-              </button>
-            </div>
-          </div>
+          </form>
         </div>
-      )}
-
-      {/* Input - Fixed at bottom with safe area padding */}
-      <div className="flex-shrink-0 bg-background-pure/95 backdrop-blur-lg border-t border-primary-pale px-3 sm:px-4 py-2 sm:py-3 safe-area-bottom">
-        <form onSubmit={handleSubmit} className="container mx-auto max-w-3xl">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Mode buttons - Compact on mobile */}
-            <div className="flex items-center">
-              <button
-                type="button"
-                onClick={() => setChatMode("chat")}
-                className={`p-1.5 sm:p-2 rounded-full transition-colors ${chatMode === "chat" ? "bg-primary text-primary-foreground" : "hover:bg-primary-pale"}`}
-                title={t("chat.mode.chat")}
-              >
-                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setChatMode("generate-image")}
-                className={`p-1.5 sm:p-2 rounded-full transition-colors ${chatMode === "generate-image" ? "bg-purple-500 text-white" : "hover:bg-purple-100"}`}
-                title={t("chat.generateImage")}
-              >
-                <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="p-1.5 sm:p-2 rounded-full hover:bg-blue-100 transition-colors"
-                title={t("chat.analyzeImage")}
-              >
-                <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </div>
-
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={
-                  chatMode === "generate-image" 
-                    ? t("chat.placeholderImage")
-                    : chatMode === "analyze-image"
-                    ? t("chat.placeholderAnalyze")
-                    : t("chat.placeholder")
-                }
-                disabled={isLoading || isGenerating || isAnalyzing}
-                enterKeyHint="send"
-                autoComplete="off"
-                autoCorrect="off"
-                className="w-full px-3 sm:px-5 py-2.5 sm:py-3 pr-10 sm:pr-12 rounded-full border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-300 disabled:opacity-50 text-sm sm:text-base"
-              />
-              <button
-                type="submit"
-                disabled={!input.trim() || isLoading || isGenerating || isAnalyzing}
-                className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full bg-sapphire-gradient text-white hover:shadow-sacred transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading || isGenerating || isAnalyzing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </button>
-            </div>
-          </div>
-        </form>
       </div>
 
       {/* Share Dialog */}
