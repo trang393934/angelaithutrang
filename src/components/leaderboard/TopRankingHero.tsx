@@ -18,27 +18,32 @@ interface TrophyAvatarProps {
 function TrophyAvatar({ user, rank, position }: TrophyAvatarProps) {
   if (!user) return null;
 
-  // Avatar sizes to fit within the golden frames in background image
+  // Avatar sizes and name offset to fit within the golden frames
   const positionConfig = {
     top1: {
-      avatar: "w-[70px] h-[70px] md:w-[90px] md:h-[90px]",
-      name: "text-sm md:text-base",
+      avatar: "w-[60px] h-[60px] md:w-[85px] md:h-[85px]",
+      name: "text-xs md:text-sm",
+      nameOffset: "mt-[28px] md:mt-[38px]", // Distance to pedestal base
     },
     top2: {
-      avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
-      name: "text-xs md:text-sm",
+      avatar: "w-[50px] h-[50px] md:w-[70px] md:h-[70px]",
+      name: "text-[10px] md:text-xs",
+      nameOffset: "mt-[22px] md:mt-[32px]",
     },
     top3: {
-      avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
-      name: "text-xs md:text-sm",
+      avatar: "w-[50px] h-[50px] md:w-[70px] md:h-[70px]",
+      name: "text-[10px] md:text-xs",
+      nameOffset: "mt-[22px] md:mt-[32px]",
     },
     top4: {
-      avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
-      name: "text-xs",
+      avatar: "w-[45px] h-[45px] md:w-[60px] md:h-[60px]",
+      name: "text-[10px] md:text-xs",
+      nameOffset: "mt-[20px] md:mt-[28px]",
     },
     top5: {
-      avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
-      name: "text-xs",
+      avatar: "w-[45px] h-[45px] md:w-[60px] md:h-[60px]",
+      name: "text-[10px] md:text-xs",
+      nameOffset: "mt-[20px] md:mt-[28px]",
     },
   };
 
@@ -58,8 +63,8 @@ function TrophyAvatar({ user, rank, position }: TrophyAvatarProps) {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
       >
-        {/* Clean circular avatar - fits inside background frame */}
-        <Avatar className={`${config.avatar} border-2 border-amber-400/50 shadow-lg`} key={user.avatar_url}>
+        {/* Avatar - positioned to fit inside golden circle */}
+        <Avatar className={`${config.avatar} border-2 border-amber-300/60 shadow-lg`} key={user.avatar_url}>
           <AvatarImage
             src={user.avatar_url || angelAvatar}
             className="object-cover"
@@ -71,8 +76,8 @@ function TrophyAvatar({ user, rank, position }: TrophyAvatarProps) {
         </Avatar>
       </motion.div>
 
-      {/* User Name */}
-      <p className={`${config.name} font-semibold text-amber-900 group-hover:text-amber-600 transition-colors mt-1 text-center max-w-[100px] md:max-w-[130px] leading-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]`}>
+      {/* User Name - positioned at pedestal base */}
+      <p className={`${config.name} ${config.nameOffset} font-semibold text-amber-800 group-hover:text-amber-600 transition-colors text-center max-w-[80px] md:max-w-[110px] leading-tight drop-shadow-[0_1px_2px_rgba(255,255,255,0.95)]`}>
         {user.display_name || "Ẩn danh"}
       </p>
     </Link>
@@ -96,15 +101,15 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
         aspectRatio: '4/5',
       }}
     >
-      {/* Top 1 - Center top */}
+      {/* Top 1 - Center, inside the top circle */}
       {top5[0] && (
-        <div className="absolute top-[15%] left-1/2 -translate-x-1/2">
+        <div className="absolute top-[10%] left-1/2 -translate-x-1/2">
           <TrophyAvatar user={top5[0]} rank={1} position="top1" />
         </div>
       )}
 
-      {/* Top 2 & 3 - Second row */}
-      <div className="absolute top-[38%] left-0 right-0 flex justify-center gap-[25%] md:gap-[30%]">
+      {/* Top 2 & 3 - Second row, inside circles */}
+      <div className="absolute top-[32%] left-0 right-0 flex justify-center gap-[28%] md:gap-[32%]">
         {top5[1] && (
           <TrophyAvatar user={top5[1]} rank={2} position="top2" />
         )}
@@ -113,8 +118,8 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
         )}
       </div>
 
-      {/* Top 4 & 5 - Third row */}
-      <div className="absolute top-[62%] left-0 right-0 flex justify-center gap-[25%] md:gap-[30%]">
+      {/* Top 4 & 5 - Third row, inside circles */}
+      <div className="absolute top-[55%] left-0 right-0 flex justify-center gap-[28%] md:gap-[32%]">
         {top5[3] && (
           <TrophyAvatar user={top5[3]} rank={4} position="top4" />
         )}
