@@ -1,92 +1,131 @@
 
 
-# Kế Hoạch Điều Chỉnh Vị Trí Avatar - Dịch Xuống & Căn Chỉnh Trái/Phải
+# Kế Hoạch Điều Chỉnh Vị Trí Avatar Trong Top Ranking
 
-## Phân Tích Yêu Cầu
+## Phân Tích Vấn Đề Hiện Tại
 
-Dựa vào ảnh và yêu cầu của con:
-- **Tất cả avatar cần dịch xuống** khoảng 2/3 chiều cao avatar
-- Avatar có kích thước `68px` trên desktop → 2/3 = ~45px ≈ **5-6%** của chiều cao container (với aspect ratio 4/5)
-- Cột trái cần dịch **sang trái** và cột phải cần dịch **sang phải**
+Dựa vào hình ảnh:
 
-## Tính Toán Cụ Thể
+| Vị trí | Vấn đề |
+|--------|--------|
+| **Top 1** | Avatar nằm quá cao, cần dịch xuống thêm |
+| **Top 2** | Avatar nằm cao hơn vòng tròn, tên đè lên avatar Top 1 |
+| **Top 3** | Tương tự Top 2 - quá cao |
+| **Top 4** | Avatar nằm trên vòng tròn thay vì bên trong |
+| **Top 5** | Tương tự Top 4 - quá cao |
 
-| Avatar | Hiện tại | Điều chỉnh mới | Thay đổi |
-|--------|----------|----------------|----------|
-| **Top 1** | `top-[14%]` | `top-[19%]` | +5% (xuống) |
-| **Top 2** | `top-[35%] left-[27%]` | `top-[40%] left-[23%]` | +5% xuống, -4% trái |
-| **Top 3** | `top-[35%] left-[73%]` | `top-[40%] left-[77%]` | +5% xuống, +4% phải |
-| **Top 4** | `top-[60%] left-[27%]` | `top-[65%] left-[23%]` | +5% xuống, -4% trái |
-| **Top 5** | `top-[60%] left-[73%]` | `top-[65%] left-[77%]` | +5% xuống, +4% phải |
+## Giải Pháp
 
-## Chi Tiết Kỹ Thuật
+### 1. Loại bỏ `-translate-y-1/2`
 
-### Code cần cập nhật trong file `src/components/leaderboard/TopRankingHero.tsx`:
+Hiện tại code đang dùng `-translate-y-1/2` khiến avatar bị đẩy lên trên. Cần loại bỏ thuộc tính này để avatar căn theo điểm top thực tế.
 
-**Lines 104-137:**
-
-```tsx
-{/* Top 1 - Center, inside the top circle */}
-{top5[0] && (
-  <div className="absolute top-[19%] left-1/2 -translate-x-1/2">
-    <TrophyAvatar user={top5[0]} rank={1} position="top1" />
-  </div>
-)}
-
-{/* Top 2 - Left side, second row */}
-{top5[1] && (
-  <div className="absolute top-[40%] left-[23%] -translate-x-1/2">
-    <TrophyAvatar user={top5[1]} rank={2} position="top2" />
-  </div>
-)}
-
-{/* Top 3 - Right side, second row */}
-{top5[2] && (
-  <div className="absolute top-[40%] left-[77%] -translate-x-1/2">
-    <TrophyAvatar user={top5[2]} rank={3} position="top3" />
-  </div>
-)}
-
-{/* Top 4 - Left side, third row */}
-{top5[3] && (
-  <div className="absolute top-[65%] left-[23%] -translate-x-1/2">
-    <TrophyAvatar user={top5[3]} rank={4} position="top4" />
-  </div>
-)}
-
-{/* Top 5 - Right side, third row */}
-{top5[4] && (
-  <div className="absolute top-[65%] left-[77%] -translate-x-1/2">
-    <TrophyAvatar user={top5[4]} rank={5} position="top5" />
-  </div>
-)}
-```
-
-## Tóm Tắt Thay Đổi
+### 2. Điều chỉnh tọa độ mới
 
 ```text
 ┌─────────────────────────────────────┐
 │         TOP RANKING                 │
 │                                     │
-│            ┌───┐                    │  Top 1: 14% → 19% (xuống 5%)
-│            │ 1 │                    │
+│            ┌───┐                    │  
+│            │ 1 │  top: 11%          │
 │            └───┘                    │
 │                                     │
-│  ┌───┐                 ┌───┐       │  Top 2: 35%→40%, 27%→23%
-│  │ 2 │                 │ 3 │       │  Top 3: 35%→40%, 73%→77%
-│  └───┘                 └───┘       │
+│  ┌───┐                 ┌───┐       │  
+│  │ 2 │                 │ 3 │       │  top: 33%
+│  └───┘                 └───┘       │  left: 27% / 73%
 │                                     │
-│  ┌───┐                 ┌───┐       │  Top 4: 60%→65%, 27%→23%
-│  │ 4 │                 │ 5 │       │  Top 5: 60%→65%, 73%→77%
-│  └───┘                 └───┘       │
+│  ┌───┐                 ┌───┐       │  
+│  │ 4 │                 │ 5 │       │  top: 58%
+│  └───┘                 └───┘       │  left: 27% / 73%
 │                                     │
 └─────────────────────────────────────┘
 ```
 
+| Avatar | Giá trị hiện tại | Giá trị mới |
+|--------|------------------|-------------|
+| **Top 1** | `top-[14%]` + translate-y | `top-[11%]` (không translate) |
+| **Top 2** | `top-[38%] left-[30%]` + translate-y | `top-[33%] left-[27%]` |
+| **Top 3** | `top-[38%] left-[70%]` + translate-y | `top-[33%] left-[73%]` |
+| **Top 4** | `top-[66%] left-[30%]` + translate-y | `top-[58%] left-[27%]` |
+| **Top 5** | `top-[66%] left-[70%]` + translate-y | `top-[58%] left-[73%]` |
+
+### 3. Điều chỉnh vị trí tên user
+
+Cập nhật `nameOffset` trong `positionConfig` để tên user nằm đúng trên bệ đỡ (dưới avatar):
+
+- Top 1: `mt-[5px] md:mt-[8px]`
+- Top 2, 3: `mt-[5px] md:mt-[8px]`
+- Top 4, 5: `mt-[5px] md:mt-[8px]`
+
+## Chi Tiết Kỹ Thuật
+
+### File cần chỉnh sửa
+`src/components/leaderboard/TopRankingHero.tsx`
+
+### Thay đổi 1: Cập nhật positionConfig (dòng 25-51)
+
+```tsx
+const positionConfig = {
+  top1: {
+    avatar: "w-[60px] h-[60px] md:w-[80px] md:h-[80px]",
+    name: "text-xs md:text-sm",
+    nameOffset: "mt-[5px] md:mt-[8px]",  // Giảm margin-top
+  },
+  top2: {
+    avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
+    name: "text-[10px] md:text-xs",
+    nameOffset: "mt-[5px] md:mt-[8px]",
+  },
+  top3: {
+    avatar: "w-[55px] h-[55px] md:w-[70px] md:h-[70px]",
+    name: "text-[10px] md:text-xs",
+    nameOffset: "mt-[5px] md:mt-[8px]",
+  },
+  top4: {
+    avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
+    name: "text-[10px] md:text-xs",
+    nameOffset: "mt-[5px] md:mt-[8px]",
+  },
+  top5: {
+    avatar: "w-[50px] h-[50px] md:w-[65px] md:h-[65px]",
+    name: "text-[10px] md:text-xs",
+    nameOffset: "mt-[5px] md:mt-[8px]",
+  },
+};
+```
+
+### Thay đổi 2: Cập nhật tọa độ avatar (dòng 123-156)
+
+```tsx
+{/* Top 1 - Center */}
+<div className="absolute top-[11%] left-1/2 -translate-x-1/2">
+  <TrophyAvatar ... />
+</div>
+
+{/* Top 2 - Left, row 2 */}
+<div className="absolute top-[33%] left-[27%] -translate-x-1/2">
+  <TrophyAvatar ... />
+</div>
+
+{/* Top 3 - Right, row 2 */}
+<div className="absolute top-[33%] left-[73%] -translate-x-1/2">
+  <TrophyAvatar ... />
+</div>
+
+{/* Top 4 - Left, row 3 */}
+<div className="absolute top-[58%] left-[27%] -translate-x-1/2">
+  <TrophyAvatar ... />
+</div>
+
+{/* Top 5 - Right, row 3 */}
+<div className="absolute top-[58%] left-[73%] -translate-x-1/2">
+  <TrophyAvatar ... />
+</div>
+```
+
 ## Kết Quả Mong Đợi
 
-- Tất cả 5 avatar dịch xuống 5% (≈ 2/3 chiều cao avatar)
-- Cột trái dịch thêm 4% sang trái (từ 27% xuống 23%)
-- Cột phải dịch thêm 4% sang phải (từ 73% lên 77%)
-- Avatar sẽ nằm đúng giữa các vòng tròn vàng
+- Tất cả 5 avatar sẽ nằm chính giữa các vòng tròn vàng
+- Tên user hiển thị ngay dưới avatar, trên bệ đỡ
+- Bố cục cân đối và chuyên nghiệp
 
