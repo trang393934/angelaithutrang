@@ -21,29 +21,29 @@ function TrophyAvatar({ user, rank, position }: TrophyAvatarProps) {
   // Avatar sizes and name offset to fit within the golden frames
   const positionConfig = {
     top1: {
-      avatar: "w-[52px] h-[52px] md:w-[72px] md:h-[72px]",
+      avatar: "w-[62px] h-[62px] md:w-[88px] md:h-[88px]",
       name: "text-xs md:text-sm",
-      nameOffset: "mt-[18px] md:mt-[24px]",
+      nameOffset: "mt-[20px] md:mt-[28px]",
     },
     top2: {
-      avatar: "w-[44px] h-[44px] md:w-[58px] md:h-[58px]",
+      avatar: "w-[52px] h-[52px] md:w-[72px] md:h-[72px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[14px] md:mt-[20px]",
+      nameOffset: "mt-[16px] md:mt-[22px]",
     },
     top3: {
-      avatar: "w-[44px] h-[44px] md:w-[58px] md:h-[58px]",
+      avatar: "w-[52px] h-[52px] md:w-[72px] md:h-[72px]",
+      name: "text-[10px] md:text-xs",
+      nameOffset: "mt-[16px] md:mt-[22px]",
+    },
+    top4: {
+      avatar: "w-[48px] h-[48px] md:w-[66px] md:h-[66px]",
       name: "text-[10px] md:text-xs",
       nameOffset: "mt-[14px] md:mt-[20px]",
     },
-    top4: {
-      avatar: "w-[40px] h-[40px] md:w-[52px] md:h-[52px]",
-      name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[12px] md:mt-[18px]",
-    },
     top5: {
-      avatar: "w-[40px] h-[40px] md:w-[52px] md:h-[52px]",
+      avatar: "w-[48px] h-[48px] md:w-[66px] md:h-[66px]",
       name: "text-[10px] md:text-xs",
-      nameOffset: "mt-[12px] md:mt-[18px]",
+      nameOffset: "mt-[14px] md:mt-[20px]",
     },
   };
 
