@@ -1,177 +1,133 @@
 
-# Kế Hoạch Thiết Kế Lại Bảng Xếp Hạng Trang Chủ
+# Kế hoạch: Cải thiện UX thả Like/Reaction trên trang Cộng đồng
 
-## Ý Tưởng Thiết Kế (Dựa trên mẫu)
+## Vấn đề hiện tại
+1. **Thời gian chờ ~5s**: Edge function xử lý nhiều bước tuần tự
+2. **Trang scroll về đầu**: Realtime subscription gọi `fetchPosts()` sau mỗi thay đổi, gây re-render toàn bộ danh sách
 
-Tạo một bảng xếp hạng vinh danh sang trọng với:
+## Giải pháp
 
-1. **Biểu tượng vinh danh trung tâm**: Logo Angel AI hoặc biểu tượng Trophy nằm chính giữa với hiệu ứng lấp lánh
-2. **Top 5 Avatar bao quanh**: 5 avatar xếp theo hình bán nguyệt hoặc vòng cung quanh biểu tượng trung tâm
-3. **Viền vàng kim loại 3D**: Mỗi avatar có viền 3 lớp gradient vàng tạo hiệu ứng 3D kim loại sáng
-4. **Tiêu đề "TOP RANKING"**: Màu vàng gradient lấp lánh
-5. **Danh sách xếp hạng bên dưới**: Hiển thị thông tin chi tiết (tên, điểm) với viền vàng
-6. **Nút xem đầy đủ**: Dẫn đến trang Community hoặc mở rộng danh sách
+### Phần 1: Tối ưu Realtime Subscription (Nguyên nhân chính)
 
----
+**File:** `src/hooks/useCommunityPosts.ts`
 
-## Chi Tiết Thiết Kế
-
-### Khu vực Vinh Danh (Hero Zone)
+Thay vì gọi `fetchPosts()` khi nhận realtime event, ta sẽ:
+- **Bỏ việc refetch toàn bộ** khi có UPDATE event từ realtime
+- Chỉ **merge payload data** trực tiếp vào state hiện tại
+- Giữ nguyên vị trí scroll vì không có re-render toàn bộ
 
 ```text
-                    ┌─────────────────────────────────────┐
-                    │         🏆 ANGEL AI LOGO 🏆          │
-                    │      (Hiệu ứng phát sáng, lấp lánh)  │
-                    └─────────────────────────────────────┘
-                    
-          ┌──────┐                           ┌──────┐
-          │ #2   │                           │ #3   │
-          │Avatar│                           │Avatar│
-          │ Kim  │                           │ Hoa  │
-          │ Ngân │                           │ Nguy │
-          └──────┘                           └──────┘
-                    
-                         ┌───────────┐
-                         │   #1      │  ← Avatar lớn nhất
-                         │  Avatar   │     với vương miện
-                         │  Thiên    │
-                         │   Hạnh    │
-                         └───────────┘
-                         
-          ┌──────┐                           ┌──────┐
-          │ #4   │                           │ #5   │
-          │Avatar│                           │Avatar│
-          │ Hải  │                           │ joni │
-          │ Vũ   │                           │      │
-          └──────┘                           └──────┘
+Trước:
+┌───────────────────────────────────────┐
+│  Realtime Event (UPDATE)              │
+│       ↓                               │
+│  fetchPosts() → Full API call         │
+│       ↓                               │
+│  setPosts(newPosts) → Full re-render  │
+│       ↓                               │
+│  Scroll reset về đầu ❌                │
+└───────────────────────────────────────┘
+
+Sau:
+┌───────────────────────────────────────┐
+│  Realtime Event (UPDATE)              │
+│       ↓                               │
+│  Merge payload vào post tương ứng     │
+│       ↓                               │
+│  Chỉ re-render 1 PostCard ✅           │
+│       ↓                               │
+│  Giữ nguyên scroll position ✅         │
+└───────────────────────────────────────┘
 ```
 
-### Chi Tiết Avatar Vinh Danh
+### Phần 2: Bỏ refetch khi toggle_like thành công
 
-- **Top 1**: Avatar lớn nhất (80px), có vương miện phía trên, viền vàng dày 4px với glow mạnh
-- **Top 2-3**: Avatar vừa (64px), viền vàng 3px, nằm 2 bên phía trên
-- **Top 4-5**: Avatar nhỏ hơn (56px), viền vàng 2px, nằm 2 bên phía dưới
-- Tất cả avatar có **hiệu ứng hover** phóng to nhẹ và tăng glow
+**File:** `src/hooks/useCommunityPosts.ts` - function `toggleLike`
 
-### Danh Sách Chi Tiết Bên Dưới
+Hiện tại đã có optimistic update tốt. Tuy nhiên sau khi edge function response, realtime vẫn trigger refetch. Ta cần:
+- Loại bỏ việc refetch trong realtime callback cho UPDATE events
+- Chỉ fetch lại khi có INSERT (bài viết mới) để thêm vào list
 
-Giống mẫu tham khảo:
-- Mỗi hàng hiển thị: Thứ hạng | Avatar nhỏ | Tên | Số coin (màu vàng/xanh lá)
-- Viền vàng kim loại 3D bao quanh từng hàng
-- Hover highlight row
+### Phần 3: Skip Realtime trigger cho chính user đang thao tác
 
----
+**File:** `src/hooks/useCommunityPosts.ts`
 
-## Thay Đổi File
+- Thêm một "pending action" ref để track các post đang được like
+- Khi realtime event đến cho post đang pending → skip, không update state
+- Điều này tránh conflict giữa optimistic update và realtime update
 
-| File | Thay Đổi |
-|------|----------|
-| `src/components/Leaderboard.tsx` | Viết lại toàn bộ với thiết kế mới |
+## Chi tiết Implementation
 
----
+### Thay đổi 1: Cải tiến Realtime Subscription
 
-## Chi Tiết Kỹ Thuật
-
-### 1. Cấu Trúc Component Mới
-
-```text
-<Card>
-  {/* Header với logo trung tâm */}
-  <div className="relative">
-    {/* Logo Angel AI với hiệu ứng lấp lánh */}
-    <motion.div animate sparkle effect>
-      <img src={angelLogo} />
-    </motion.div>
+```typescript
+// Thay thế logic hiện tại
+.on('postgres_changes', { event: '*', schema: 'public', table: 'community_posts' },
+  (payload) => {
+    if (payload.eventType === 'DELETE') {
+      setPosts(current => current.filter(p => p.id !== payload.old.id));
+      return;
+    }
     
-    {/* Tiêu đề "TOP RANKING" vàng gradient */}
-    <h2 className="golden-gradient-text">TOP RANKING</h2>
-  </div>
-  
-  {/* Khu vực Avatar vinh danh - dạng pyramid/arc */}
-  <div className="flex flex-col items-center">
-    {/* Row 1: Top 2 và Top 3 */}
-    <div className="flex justify-center gap-8">
-      <AvatarBadge rank={2} user={top2} size="md" />
-      <AvatarBadge rank={3} user={top3} size="md" />
-    </div>
+    if (payload.eventType === 'INSERT') {
+      // Chỉ refetch khi có bài viết MỚI
+      fetchPosts();
+      return;
+    }
     
-    {/* Row 2: Top 1 ở giữa (lớn nhất) */}
-    <div className="flex justify-center -mt-2">
-      <AvatarBadge rank={1} user={top1} size="lg" crown />
-    </div>
-    
-    {/* Row 3: Top 4 và Top 5 */}
-    <div className="flex justify-center gap-12 -mt-2">
-      <AvatarBadge rank={4} user={top4} size="sm" />
-      <AvatarBadge rank={5} user={top5} size="sm" />
-    </div>
-  </div>
-  
-  {/* Danh sách chi tiết */}
-  <div className="space-y-2">
-    {top5Users.map(user => (
-      <RankingRow user={user} />
-    ))}
-  </div>
-  
-  {/* Nút xem đầy đủ */}
-  <Button>Xem bảng xếp hạng đầy đủ →</Button>
-</Card>
+    if (payload.eventType === 'UPDATE') {
+      // KHÔNG refetch - chỉ merge data vào post tương ứng
+      const updated = payload.new;
+      setPosts(current => current.map(p => 
+        p.id === updated.id 
+          ? { ...p, 
+              likes_count: updated.likes_count ?? p.likes_count,
+              comments_count: updated.comments_count ?? p.comments_count,
+              shares_count: updated.shares_count ?? p.shares_count,
+              is_rewarded: updated.is_rewarded ?? p.is_rewarded,
+            }
+          : p
+      ));
+    }
+  }
+)
 ```
 
-### 2. AvatarBadge Component
+### Thay đổi 2: Thêm Pending Action Tracking
 
-```text
-Props:
-- rank: number (1-5)
-- user: LeaderboardUser
-- size: "sm" | "md" | "lg"
-- crown?: boolean (chỉ Top 1)
+```typescript
+// Thêm ref để track pending actions
+const pendingLikesRef = useRef<Set<string>>(new Set());
 
-Features:
-- Viền vàng 3D 3 lớp (outer glow, highlight, inner shadow)
-- Badge số thứ hạng góc dưới
-- Hiệu ứng hover phóng to + tăng glow
-- Crown icon cho Top 1
-- Link đến profile user
+// Trong toggleLike - đánh dấu pending trước khi call API
+pendingLikesRef.current.add(postId);
+
+// Sau khi API trả về - xóa pending
+pendingLikesRef.current.delete(postId);
+
+// Trong realtime callback - skip nếu post đang pending
+if (payload.eventType === 'UPDATE') {
+  const postId = payload.new?.id;
+  if (pendingLikesRef.current.has(postId)) {
+    // Skip - đang có optimistic update xử lý rồi
+    return;
+  }
+  // ... merge logic
+}
 ```
 
-### 3. RankingRow Component
+## Kết quả mong đợi
 
-```text
-Layout: [Rank#] [Avatar nhỏ] [Tên] [Số coin]
+| Trước | Sau |
+|-------|-----|
+| Like → chờ 5s | Like → UI update ngay lập tức |
+| Scroll về đầu trang | Giữ nguyên vị trí scroll |
+| Re-render toàn bộ list | Chỉ re-render 1 PostCard |
+| Realtime gây conflict | Realtime skip khi đang pending |
 
-Features:
-- Viền vàng kim loại 3D bao quanh
-- Số coin màu vàng đậm
-- Hover highlight
-- Click vào để xem profile
-```
+## Files cần chỉnh sửa
 
-### 4. Hiệu Ứng Animation
-
-- Logo trung tâm: pulse glow + rotating sparkles
-- Tiêu đề: shimmer effect (giống HonorBoard)
-- Avatar: subtle float animation
-- Viền vàng: glow tăng khi hover
-- Số coin: count-up animation khi load
-
-### 5. Màu Sắc
-
-- Nền: Gradient trắng-primary pale (sáng, thanh lịch)
-- Viền vàng: `yellow-200` → `amber-400` → `yellow-500`
-- Tiêu đề: Gradient vàng từ `yellow-300` → `amber-500`
-- Số coin: `text-amber-600` hoặc `text-green-600` (như mẫu)
-- Thứ hạng: `text-primary-deep` đậm
-
----
-
-## Kết Quả Mong Đợi
-
-1. **Bảng xếp hạng nổi bật** với thiết kế sang trọng, vinh danh Top 5 users
-2. **Avatar Top 5** được hiển thị ở vị trí trung tâm theo dạng pyramid/arc
-3. **Viền vàng kim loại 3D** sáng bóng cho tất cả avatar và hàng ranking
-4. **Hiệu ứng lấp lánh** cho tiêu đề và logo trung tâm
-5. **Responsive** - hiển thị đẹp trên cả mobile và desktop
-6. **Real-time updates** - cập nhật thứ hạng tự động
-7. **Navigation** - click avatar/tên để xem profile user
+1. **`src/hooks/useCommunityPosts.ts`**
+   - Cải tiến realtime subscription logic
+   - Thêm pending action tracking
+   - Tối ưu UPDATE event handling
