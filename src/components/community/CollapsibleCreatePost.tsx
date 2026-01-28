@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 import { motion, AnimatePresence } from "framer-motion";
+import { fullContentCheck, checkImageFilename } from "@/lib/contentModeration";
+import { ContentModerationDialog } from "./ContentModerationDialog";
 
 const MAX_IMAGES = 30;
 
@@ -24,6 +26,9 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [moderationDialogOpen, setModerationDialogOpen] = useState(false);
+  const [moderationMessage, setModerationMessage] = useState("");
+  const [moderationBlockedItems, setModerationBlockedItems] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -72,13 +77,23 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
     const validFiles: File[] = [];
     const newPreviews: string[] = [];
 
-    files.forEach((file) => {
+    for (const file of files) {
       if (file.size > 5 * 1024 * 1024) {
         alert(`Ảnh "${file.name}" vượt quá 5MB`);
-        return;
+        continue;
       }
+      
+      // Check image filename for harmful content
+      const imageCheck = checkImageFilename(file.name);
+      if (!imageCheck.isAllowed) {
+        setModerationMessage(imageCheck.gentleReminder);
+        setModerationBlockedItems(imageCheck.blockedItems || []);
+        setModerationDialogOpen(true);
+        continue;
+      }
+      
       validFiles.push(file);
-    });
+    }
 
     if (validFiles.length === 0) return;
 
@@ -145,6 +160,15 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
 
   const handleSubmit = async () => {
     if (!content.trim() && imageFiles.length === 0) return;
+
+    // Content moderation check before submitting
+    const moderationResult = fullContentCheck(content.trim(), imageFiles);
+    if (!moderationResult.isAllowed) {
+      setModerationMessage(moderationResult.gentleReminder);
+      setModerationBlockedItems(moderationResult.blockedItems || []);
+      setModerationDialogOpen(true);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -345,6 +369,14 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
           )}
         </AnimatePresence>
       </CardContent>
+      
+      {/* Content Moderation Dialog */}
+      <ContentModerationDialog
+        open={moderationDialogOpen}
+        onClose={() => setModerationDialogOpen(false)}
+        message={moderationMessage}
+        blockedItems={moderationBlockedItems}
+      />
     </Card>
   );
 }
