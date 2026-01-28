@@ -97,9 +97,10 @@ export function AvatarBadge({ rank, user, size, crown }: AvatarBadgeProps) {
         </div>
       </motion.div>
 
-      {/* User Name */}
+      {/* User Name - Full display without truncation */}
       <span
-        className={`${config.name} text-foreground max-w-16 truncate text-center group-hover:text-primary transition-colors`}
+        className={`${config.name} text-foreground text-center group-hover:text-primary transition-colors leading-tight max-w-24 ${size === 'lg' ? 'max-w-28' : size === 'md' ? 'max-w-24' : 'max-w-20'}`}
+        style={{ wordBreak: 'keep-all' }}
       >
         {user.display_name || "Ẩn danh"}
       </span>
