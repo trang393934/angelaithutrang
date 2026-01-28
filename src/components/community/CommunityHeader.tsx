@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Users, MessageCircle, ShoppingBag, Bell, Search, Plus } from "lucide-react";
+import { Home, Users, MessageCircle, ShoppingBag, Bell, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
-import { useStories, GroupedStories } from "@/hooks/useStories";
+import { useStories } from "@/hooks/useStories";
 import { StoryViewer } from "./StoryViewer";
 import { CreateStoryModal } from "./CreateStoryModal";
+import { GlobalSearch } from "@/components/GlobalSearch";
 import { motion, AnimatePresence } from "framer-motion";
 import angelAvatar from "@/assets/angel-avatar.png";
 import angelAiLogo from "@/assets/angel-ai-logo.png";
@@ -15,7 +15,6 @@ import angelAiLogo from "@/assets/angel-ai-logo.png";
 export function CommunityHeader() {
   const { user } = useAuth();
   const location = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
   const [showStoryViewer, setShowStoryViewer] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
   const [showCreateStory, setShowCreateStory] = useState(false);
@@ -75,14 +74,11 @@ export function CommunityHeader() {
                 </Link>
                 
                 {/* Search Bar */}
-                <div className="relative hidden sm:block max-w-xs">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
-                  <Input
-                    type="text"
+                <div className="hidden sm:block max-w-xs">
+                  <GlobalSearch 
+                    variant="community" 
                     placeholder="Tìm kiếm..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-4 h-10 bg-white/10 border-0 rounded-full text-sm text-white placeholder:text-white/50 focus:bg-white/20 focus:ring-2 focus:ring-white/30"
+                    className="w-full"
                   />
                 </div>
               </div>

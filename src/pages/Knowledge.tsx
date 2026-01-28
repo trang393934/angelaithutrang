@@ -27,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { GlobalSearch } from "@/components/GlobalSearch";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 interface KnowledgeFolder {
@@ -270,13 +271,23 @@ const Knowledge = () => {
 
           {/* Search and Filter */}
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            {/* Global Search with AI */}
+            <div className="flex-1">
+              <GlobalSearch 
+                variant="standalone" 
+                placeholder={t("knowledge.search")}
+                className="w-full"
+              />
+            </div>
+
+            {/* Local filter search */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-muted" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t("knowledge.search")}
+                placeholder="Lọc tài liệu..."
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>

@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { LogIn, LogOut, User, Users, MessageCircle } from "lucide-react";
+import { LogIn, LogOut, User, MessageCircle, Search } from "lucide-react";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { GlobalSearch } from "@/components/GlobalSearch";
 import angelAvatar from "@/assets/angel-avatar.png";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
@@ -115,6 +116,14 @@ export const Header = () => {
               ANGEL AI
             </span>
           </Link>
+
+          {/* Search Bar - Desktop */}
+          <div className="hidden lg:block w-48 xl:w-56">
+            <GlobalSearch 
+              variant="header" 
+              placeholder="Tìm kiếm..." 
+            />
+          </div>
 
           {/* Navigation - Styled with blue background and golden border */}
           <nav className="hidden lg:flex items-center gap-1 lg:gap-1.5 xl:gap-2 2xl:gap-3 flex-1 justify-center min-w-0 mx-1 xl:mx-3 overflow-x-auto scrollbar-hide">
