@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LeaderboardUser } from "@/hooks/useLeaderboard";
 import { motion } from "framer-motion";
 import angelAvatar from "@/assets/angel-avatar.png";
+import topRankingBg from "@/assets/top-ranking-bg.jpg";
 
 interface TopRankingHeroProps {
   topUsers: LeaderboardUser[];
@@ -20,18 +21,18 @@ function TrophyAvatar({ user, rank, size }: TrophyAvatarProps) {
 
   const sizeConfig = {
     lg: {
-      container: "w-28 md:w-32",
-      avatar: "w-20 h-20 md:w-24 md:h-24",
-      frame: "w-24 h-24 md:w-28 md:h-28",
-      base: "w-28 h-8 md:w-32 md:h-10",
+      container: "w-28 md:w-36",
+      avatar: "w-20 h-20 md:w-28 md:h-28",
+      frame: "w-24 h-24 md:w-32 md:h-32",
+      base: "w-28 h-8 md:w-36 md:h-10",
       rank: "text-lg md:text-xl",
       name: "text-sm md:text-base",
     },
     md: {
-      container: "w-22 md:w-26",
-      avatar: "w-16 h-16 md:w-20 md:h-20",
-      frame: "w-20 h-20 md:w-24 md:h-24",
-      base: "w-22 h-6 md:w-26 md:h-8",
+      container: "w-24 md:w-28",
+      avatar: "w-16 h-16 md:w-22 md:h-22",
+      frame: "w-20 h-20 md:w-26 md:h-26",
+      base: "w-24 h-6 md:w-28 md:h-8",
       rank: "text-base",
       name: "text-xs md:text-sm",
     },
@@ -47,15 +48,21 @@ function TrophyAvatar({ user, rank, size }: TrophyAvatarProps) {
 
   const config = sizeConfig[size];
 
+  // Use user_id as key ensures re-render when user changes position
+  const avatarKey = `${user.user_id}-${rank}`;
+
   return (
     <Link
       to={`/user/${user.user_id}`}
       className="flex flex-col items-center group"
     >
       <motion.div
+        key={avatarKey}
         className={`relative ${config.container} flex flex-col items-center`}
         whileHover={{ scale: 1.05, y: -5 }}
         transition={{ type: "spring", stiffness: 300 }}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
       >
         {/* Crown for Top 1 */}
         {rank === 1 && (
@@ -75,9 +82,9 @@ function TrophyAvatar({ user, rank, size }: TrophyAvatarProps) {
             className={`absolute inset-0 ${config.frame} rounded-full`}
             animate={{
               boxShadow: [
-                "0 0 20px rgba(255,215,0,0.4)",
-                "0 0 35px rgba(255,215,0,0.6)",
-                "0 0 20px rgba(255,215,0,0.4)",
+                "0 0 15px rgba(255,215,0,0.5)",
+                "0 0 30px rgba(255,215,0,0.7)",
+                "0 0 15px rgba(255,215,0,0.5)",
               ],
             }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -96,10 +103,11 @@ function TrophyAvatar({ user, rank, size }: TrophyAvatarProps) {
 
             {/* Avatar container */}
             <div className="absolute inset-[9px] rounded-full overflow-hidden bg-white shadow-inner">
-              <Avatar className="w-full h-full">
+              <Avatar className="w-full h-full" key={user.avatar_url}>
                 <AvatarImage
                   src={user.avatar_url || angelAvatar}
                   className="object-cover"
+                  key={`img-${user.user_id}-${user.avatar_url}`}
                 />
                 <AvatarFallback className="text-lg bg-primary/10 text-primary font-semibold">
                   {user.display_name?.charAt(0) || "U"}
@@ -144,8 +152,8 @@ function TrophyAvatar({ user, rank, size }: TrophyAvatarProps) {
       </motion.div>
 
       {/* User Name - Full display */}
-      <div className="mt-2 text-center max-w-[120px] md:max-w-[140px]">
-        <p className={`${config.name} font-semibold text-primary-deep group-hover:text-primary transition-colors leading-tight`}>
+      <div className="mt-2 text-center max-w-[120px] md:max-w-[160px]">
+        <p className={`${config.name} font-semibold text-amber-800 group-hover:text-amber-600 transition-colors leading-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]`}>
           {user.display_name || "Ẩn danh"}
         </p>
       </div>
@@ -158,36 +166,86 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
 
   if (top5.length < 5) {
     return (
-      <div className="flex justify-center gap-4 flex-wrap py-6">
-        {top5.map((user, index) => (
-          <TrophyAvatar
-            key={user.user_id}
-            user={user}
-            rank={index + 1}
-            size={index === 0 ? "lg" : "md"}
-          />
-        ))}
+      <div 
+        className="relative rounded-2xl overflow-hidden py-8 px-4"
+        style={{
+          backgroundImage: `url(${topRankingBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="flex justify-center gap-4 flex-wrap">
+          {top5.map((user, index) => (
+            <TrophyAvatar
+              key={`${user.user_id}-${index}`}
+              user={user}
+              rank={index + 1}
+              size={index === 0 ? "lg" : "md"}
+            />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 md:gap-4 py-4">
-      {/* Row 1: Top 1 (Center, Largest) */}
-      <div className="flex justify-center">
-        <TrophyAvatar user={top5[0]} rank={1} size="lg" />
+    <div 
+      className="relative rounded-2xl overflow-hidden py-6 md:py-8 px-4"
+      style={{
+        backgroundImage: `url(${topRankingBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* Title overlay */}
+      <div className="text-center mb-4">
+        <h3 className="text-2xl md:text-3xl font-bold tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 via-amber-600 to-yellow-500 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+          TOP RANKING
+        </h3>
       </div>
 
-      {/* Row 2: Top 2 and 3 */}
-      <div className="flex justify-center gap-8 md:gap-16 -mt-2">
-        <TrophyAvatar user={top5[1]} rank={2} size="md" />
-        <TrophyAvatar user={top5[2]} rank={3} size="md" />
-      </div>
+      <div className="flex flex-col items-center gap-2 md:gap-4">
+        {/* Row 1: Top 1 (Center, Largest) */}
+        <div className="flex justify-center">
+          <TrophyAvatar 
+            key={`top1-${top5[0].user_id}`}
+            user={top5[0]} 
+            rank={1} 
+            size="lg" 
+          />
+        </div>
 
-      {/* Row 3: Top 4 and 5 */}
-      <div className="flex justify-center gap-10 md:gap-20 -mt-2">
-        <TrophyAvatar user={top5[3]} rank={4} size="sm" />
-        <TrophyAvatar user={top5[4]} rank={5} size="sm" />
+        {/* Row 2: Top 2 and 3 */}
+        <div className="flex justify-center gap-8 md:gap-16 -mt-2">
+          <TrophyAvatar 
+            key={`top2-${top5[1].user_id}`}
+            user={top5[1]} 
+            rank={2} 
+            size="md" 
+          />
+          <TrophyAvatar 
+            key={`top3-${top5[2].user_id}`}
+            user={top5[2]} 
+            rank={3} 
+            size="md" 
+          />
+        </div>
+
+        {/* Row 3: Top 4 and 5 */}
+        <div className="flex justify-center gap-10 md:gap-20 -mt-2">
+          <TrophyAvatar 
+            key={`top4-${top5[3].user_id}`}
+            user={top5[3]} 
+            rank={4} 
+            size="sm" 
+          />
+          <TrophyAvatar 
+            key={`top5-${top5[4].user_id}`}
+            user={top5[4]} 
+            rank={5} 
+            size="sm" 
+          />
+        </div>
       </div>
     </div>
   );
