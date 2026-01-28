@@ -1138,6 +1138,39 @@ export type Database = {
           },
         ]
       }
+      image_history: {
+        Row: {
+          created_at: string
+          id: string
+          image_type: string
+          image_url: string
+          prompt: string
+          response_text: string | null
+          style: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_type: string
+          image_url: string
+          prompt: string
+          response_text?: string | null
+          style?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_type?: string
+          image_url?: string
+          prompt?: string
+          response_text?: string | null
+          style?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       knowledge_chunks: {
         Row: {
           category: string | null
