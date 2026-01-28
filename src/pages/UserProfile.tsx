@@ -4,8 +4,9 @@ import {
   ArrowLeft, UserPlus, UserCheck, UserX, MessageCircle, Loader2, Clock, 
   Users, Award, FileText, ShieldAlert, Ban, AlertTriangle, Camera, 
   Pencil, MapPin, Calendar, MoreHorizontal, ThumbsUp, Share2, 
-  ImageIcon, Smile, Globe, Briefcase, GraduationCap, Heart
+  ImageIcon, Smile, Globe, Briefcase, GraduationCap, Heart, Maximize2
 } from "lucide-react";
+import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -52,6 +53,10 @@ const UserProfile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
+  
+  // Lightbox state
+  const [avatarLightboxOpen, setAvatarLightboxOpen] = useState(false);
+  const [coverLightboxOpen, setCoverLightboxOpen] = useState(false);
   
   // Suspension dialog state
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
@@ -391,13 +396,26 @@ const UserProfile = () => {
       <div className="bg-white shadow-sm">
         <div className="max-w-[1100px] mx-auto">
           {/* Cover Image */}
-          <div className="relative h-[200px] sm:h-[300px] md:h-[350px] rounded-b-lg overflow-hidden">
+          <div className="relative h-[200px] sm:h-[300px] md:h-[350px] rounded-b-lg overflow-hidden group">
             {profile?.cover_photo_url ? (
-              <img 
-                src={profile.cover_photo_url} 
-                alt="Cover photo" 
-                className="w-full h-full object-cover"
-              />
+              <>
+                <img 
+                  src={profile.cover_photo_url} 
+                  alt="Cover photo" 
+                  className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-[1.02]"
+                  onClick={() => setCoverLightboxOpen(true)}
+                />
+                {/* Hover overlay for cover */}
+                <div 
+                  className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 cursor-pointer flex items-center justify-center opacity-0 group-hover:opacity-100"
+                  onClick={() => setCoverLightboxOpen(true)}
+                >
+                  <div className="bg-black/60 text-white px-4 py-2 rounded-full flex items-center gap-2">
+                    <Maximize2 className="w-4 h-4" />
+                    <span className="text-sm font-medium">Xem ảnh bìa</span>
+                  </div>
+                </div>
+              </>
             ) : (
               <>
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10" />
@@ -407,7 +425,7 @@ const UserProfile = () => {
             
             {/* Overlay for better text visibility on cover photo */}
             {profile?.cover_photo_url && (
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 pointer-events-none" />
             )}
             
             {/* Back button */}
@@ -421,7 +439,7 @@ const UserProfile = () => {
             {isOwnProfile && (
               <Link 
                 to="/profile"
-                className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white rounded-lg text-sm font-medium transition-colors"
+                className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white rounded-lg text-sm font-medium transition-colors z-10"
               >
                 <Camera className="w-4 h-4" />
                 {profile?.cover_photo_url ? 'Đổi ảnh bìa' : 'Thêm ảnh bìa'}
@@ -433,17 +451,28 @@ const UserProfile = () => {
           <div className="px-4 pb-4">
             <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-[85px] md:-mt-[40px]">
               {/* Avatar */}
-              <div className="relative">
-                <Avatar className="w-[168px] h-[168px] border-4 border-white shadow-xl ring-4 ring-white">
-                  <AvatarImage src={profile?.avatar_url || angelAvatar} alt={profile?.display_name || "User"} />
-                  <AvatarFallback className="text-5xl bg-gradient-to-br from-primary to-primary/70 text-white">
-                    {profile?.display_name?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
+              <div className="relative group">
+                <div 
+                  className="cursor-pointer"
+                  onClick={() => profile?.avatar_url && setAvatarLightboxOpen(true)}
+                >
+                  <Avatar className="w-[168px] h-[168px] border-4 border-white shadow-xl ring-4 ring-white transition-transform duration-300 group-hover:scale-[1.02]">
+                    <AvatarImage src={profile?.avatar_url || angelAvatar} alt={profile?.display_name || "User"} />
+                    <AvatarFallback className="text-5xl bg-gradient-to-br from-primary to-primary/70 text-white">
+                      {profile?.display_name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* Avatar hover overlay */}
+                  {profile?.avatar_url && (
+                    <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <Maximize2 className="w-6 h-6 text-white drop-shadow-lg" />
+                    </div>
+                  )}
+                </div>
                 {isOwnProfile && (
                   <Link 
                     to="/profile"
-                    className="absolute bottom-2 right-2 p-2 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors"
+                    className="absolute bottom-2 right-2 p-2 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors z-10"
                   >
                     <Camera className="w-5 h-5 text-gray-700" />
                   </Link>
@@ -877,6 +906,27 @@ const UserProfile = () => {
           </div>
         </div>
       </div>
+      {/* Avatar Lightbox */}
+      {profile?.avatar_url && (
+        <ProfileImageLightbox
+          imageUrl={profile.avatar_url}
+          alt={profile?.display_name || "Avatar"}
+          isOpen={avatarLightboxOpen}
+          onClose={() => setAvatarLightboxOpen(false)}
+          type="avatar"
+        />
+      )}
+
+      {/* Cover Lightbox */}
+      {profile?.cover_photo_url && (
+        <ProfileImageLightbox
+          imageUrl={profile.cover_photo_url}
+          alt="Cover photo"
+          isOpen={coverLightboxOpen}
+          onClose={() => setCoverLightboxOpen(false)}
+          type="cover"
+        />
+      )}
     </div>
   );
 };
