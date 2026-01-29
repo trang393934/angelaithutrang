@@ -302,6 +302,65 @@ const translations: Record<string, string> = {
   
   // Platform descriptions
   "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. Plataforma 5D de agricultura – consumo – logística no FUN Ecosystem",
+  "about.platform.play": "Plataforma Video Web3. Jogue e Ganhe. Brilhe Sua Luz!",
+  "about.platform.planet": "Jogo infantil – Jogue e Ganhe",
+  
+  // Withdrawal
+  "withdrawal.title": "Sacar Camly Coin",
+  "withdrawal.subtitle": "Transferir para sua carteira Web3",
+  "withdrawal.minAmount": "Mínimo 200.000 Camly Coin",
+  "withdrawal.maxDaily": "Máximo 500.000/dia",
+  "withdrawal.availableBalance": "Saldo disponível",
+  "withdrawal.totalWithdrawn": "Total sacado",
+  "withdrawal.dailyLimit": "Limite de hoje",
+  "withdrawal.remaining": "Restante",
+  "withdrawal.pendingWarning": "Solicitação de saque pendente",
+  "withdrawal.withdrawToWallet": "Sacar para carteira Web3",
+  "withdrawal.connectWallet": "Conectar carteira",
+  "withdrawal.installMetaMask": "Instalar MetaMask",
+  "withdrawal.walletConnected": "Carteira conectada",
+  "withdrawal.enterAmount": "Quantia para sacar",
+  "withdrawal.max": "Máx",
+  "withdrawal.processingTime": "Solicitações de saque são processadas em 24-48 horas",
+  "withdrawal.confirm": "Confirmar saque",
+  "withdrawal.processing": "Processando...",
+  "withdrawal.history": "Saques recentes",
+  "withdrawal.statusCompleted": "Concluído",
+  "withdrawal.statusPending": "Pendente",
+  "withdrawal.statusProcessing": "Processando",
+  "withdrawal.statusFailed": "Falhou",
+  "withdrawal.statusRejected": "Rejeitado",
+  "withdrawal.viewTx": "Ver TX",
+  
+  // Chat Extended
+  "chat.mode.edit": "Editar Imagem",
+  "chat.placeholderEdit": "Descreva como editar a imagem...",
+  "chat.editImage": "Editar imagem",
+  "chat.editingImage": "Editando imagem...",
+  "chat.imageEdited": "Imagem editada com sucesso!",
+  "chat.editError": "Não foi possível editar a imagem.",
+  "chat.editInstruction": "Digite instruções de edição...",
+  "chat.selectImageAction": "O que você quer fazer com esta imagem?",
+  "chat.analyzeDescription": "IA descreve e responde perguntas sobre a imagem",
+  "chat.editDescription": "IA edita a imagem diretamente conforme suas instruções",
+  "chat.selectFromGallery": "Selecionar da galeria",
+  "chat.capturePhoto": "Tirar foto",
+  
+  // Profile Extended
+  "profile.poplScore": "Pontuação de Amor Puro",
+  "profile.poplScoreDesc": "Sua pontuação de Prova de Amor Puro",
+  "profile.soulTags": "Tags da Alma",
+  "profile.soulTagsDesc": "Palavras-chave que representam sua alma",
+  
+  // Circles
+  "circles.title": "Círculos de Amor",
+  "circles.joinNow": "Entrar",
+  "circles.leave": "Sair",
+  "circles.members": "membros",
+  "circles.official": "Oficial",
+  
+  // Earn Extended
+  "earn.totalWithdrawn": "Total Sacado",
 };
 
 export default translations;

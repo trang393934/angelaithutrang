@@ -302,6 +302,65 @@ const translations: Record<string, string> = {
   
   // Platform descriptions
   "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. FUN Ecosystem의 5D 농업 – 소비 – 물류 플랫폼",
+  "about.platform.play": "비디오 Web3 플랫폼. 플레이 앤 언. 빛을 발하세요!",
+  "about.platform.planet": "키즈 게임 – 플레이 앤 언",
+  
+  // Withdrawal
+  "withdrawal.title": "Camly Coin 출금",
+  "withdrawal.subtitle": "Web3 지갑으로 전송",
+  "withdrawal.minAmount": "최소 200,000 Camly Coin",
+  "withdrawal.maxDaily": "일일 최대 500,000",
+  "withdrawal.availableBalance": "사용 가능 잔액",
+  "withdrawal.totalWithdrawn": "총 출금액",
+  "withdrawal.dailyLimit": "오늘 한도",
+  "withdrawal.remaining": "남은 금액",
+  "withdrawal.pendingWarning": "대기 중인 출금 요청",
+  "withdrawal.withdrawToWallet": "Web3 지갑으로 출금",
+  "withdrawal.connectWallet": "지갑 연결",
+  "withdrawal.installMetaMask": "MetaMask 설치",
+  "withdrawal.walletConnected": "지갑 연결됨",
+  "withdrawal.enterAmount": "출금 금액",
+  "withdrawal.max": "최대",
+  "withdrawal.processingTime": "출금 요청은 24-48시간 내에 처리됩니다",
+  "withdrawal.confirm": "출금 확인",
+  "withdrawal.processing": "처리 중...",
+  "withdrawal.history": "최근 출금",
+  "withdrawal.statusCompleted": "완료",
+  "withdrawal.statusPending": "대기 중",
+  "withdrawal.statusProcessing": "처리 중",
+  "withdrawal.statusFailed": "실패",
+  "withdrawal.statusRejected": "거부됨",
+  "withdrawal.viewTx": "TX 보기",
+  
+  // Chat Extended
+  "chat.mode.edit": "이미지 편집",
+  "chat.placeholderEdit": "이미지 편집 방법을 설명하세요...",
+  "chat.editImage": "이미지 편집",
+  "chat.editingImage": "이미지 편집 중...",
+  "chat.imageEdited": "이미지가 성공적으로 편집되었습니다!",
+  "chat.editError": "이미지를 편집할 수 없습니다.",
+  "chat.editInstruction": "편집 지침 입력...",
+  "chat.selectImageAction": "이 이미지로 무엇을 하시겠습니까?",
+  "chat.analyzeDescription": "AI가 이미지에 대해 설명하고 질문에 답변합니다",
+  "chat.editDescription": "AI가 지시에 따라 이미지를 직접 편집합니다",
+  "chat.selectFromGallery": "갤러리에서 선택",
+  "chat.capturePhoto": "사진 촬영",
+  
+  // Profile Extended
+  "profile.poplScore": "순수한 사랑 점수",
+  "profile.poplScoreDesc": "순수한 사랑 증명 점수",
+  "profile.soulTags": "영혼 태그",
+  "profile.soulTagsDesc": "영혼을 나타내는 키워드",
+  
+  // Circles
+  "circles.title": "사랑의 서클",
+  "circles.joinNow": "참여",
+  "circles.leave": "탈퇴",
+  "circles.members": "멤버",
+  "circles.official": "공식",
+  
+  // Earn Extended
+  "earn.totalWithdrawn": "총 출금액",
 };
 
 export default translations;

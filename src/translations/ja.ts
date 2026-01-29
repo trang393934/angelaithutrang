@@ -302,6 +302,65 @@ const translations: Record<string, string> = {
   
   // Platform descriptions
   "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. FUN Ecosystemの5D農業・消費・物流プラットフォーム",
+  "about.platform.play": "Video Web3プラットフォーム。プレイ＆アーン。あなたの光を輝かせよう！",
+  "about.platform.planet": "キッズゲーム – プレイ＆アーン",
+  
+  // Withdrawal
+  "withdrawal.title": "Camly Coinを引き出す",
+  "withdrawal.subtitle": "Web3ウォレットに送金",
+  "withdrawal.minAmount": "最低200,000 Camly Coin",
+  "withdrawal.maxDaily": "1日最大500,000",
+  "withdrawal.availableBalance": "利用可能残高",
+  "withdrawal.totalWithdrawn": "引き出し総額",
+  "withdrawal.dailyLimit": "今日の上限",
+  "withdrawal.remaining": "残り",
+  "withdrawal.pendingWarning": "保留中の引き出しリクエスト",
+  "withdrawal.withdrawToWallet": "Web3ウォレットに引き出す",
+  "withdrawal.connectWallet": "ウォレット接続",
+  "withdrawal.installMetaMask": "MetaMaskをインストール",
+  "withdrawal.walletConnected": "ウォレット接続済み",
+  "withdrawal.enterAmount": "引き出し金額",
+  "withdrawal.max": "最大",
+  "withdrawal.processingTime": "引き出しリクエストは24-48時間以内に処理されます",
+  "withdrawal.confirm": "引き出しを確認",
+  "withdrawal.processing": "処理中...",
+  "withdrawal.history": "最近の引き出し",
+  "withdrawal.statusCompleted": "完了",
+  "withdrawal.statusPending": "保留中",
+  "withdrawal.statusProcessing": "処理中",
+  "withdrawal.statusFailed": "失敗",
+  "withdrawal.statusRejected": "拒否",
+  "withdrawal.viewTx": "TXを表示",
+  
+  // Chat Extended
+  "chat.mode.edit": "画像編集",
+  "chat.placeholderEdit": "画像の編集方法を説明...",
+  "chat.editImage": "画像を編集",
+  "chat.editingImage": "画像を編集中...",
+  "chat.imageEdited": "画像の編集に成功しました！",
+  "chat.editError": "画像を編集できません。",
+  "chat.editInstruction": "編集指示を入力...",
+  "chat.selectImageAction": "この画像で何をしますか？",
+  "chat.analyzeDescription": "AIが画像について説明し質問に回答",
+  "chat.editDescription": "AIがあなたの指示に従って直接画像を編集",
+  "chat.selectFromGallery": "ギャラリーから選択",
+  "chat.capturePhoto": "写真を撮る",
+  
+  // Profile Extended
+  "profile.poplScore": "ピュアラブスコア",
+  "profile.poplScoreDesc": "あなたのピュアラブ証明スコア",
+  "profile.soulTags": "ソウルタグ",
+  "profile.soulTagsDesc": "あなたの魂を表すキーワード",
+  
+  // Circles
+  "circles.title": "ラブサークル",
+  "circles.joinNow": "参加",
+  "circles.leave": "退出",
+  "circles.members": "メンバー",
+  "circles.official": "公式",
+  
+  // Earn Extended
+  "earn.totalWithdrawn": "引き出し総額",
 };
 
 export default translations;

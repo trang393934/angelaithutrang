@@ -294,6 +294,65 @@ const translations: Record<string, string> = {
   
   // Platform descriptions
   "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. منصة 5D للزراعة والاستهلاك والخدمات اللوجستية في FUN Ecosystem",
+  "about.platform.play": "منصة فيديو Web3. العب واربح. أشع نورك!",
+  "about.platform.planet": "لعبة أطفال – العب واربح",
+  
+  // Withdrawal
+  "withdrawal.title": "سحب Camly Coin",
+  "withdrawal.subtitle": "التحويل إلى محفظة Web3 الخاصة بك",
+  "withdrawal.minAmount": "الحد الأدنى 200,000 Camly Coin",
+  "withdrawal.maxDaily": "الحد الأقصى 500,000/يوم",
+  "withdrawal.availableBalance": "الرصيد المتاح",
+  "withdrawal.totalWithdrawn": "إجمالي السحب",
+  "withdrawal.dailyLimit": "حد اليوم",
+  "withdrawal.remaining": "المتبقي",
+  "withdrawal.pendingWarning": "طلب سحب قيد الانتظار",
+  "withdrawal.withdrawToWallet": "سحب إلى محفظة Web3",
+  "withdrawal.connectWallet": "ربط المحفظة",
+  "withdrawal.installMetaMask": "تثبيت MetaMask",
+  "withdrawal.walletConnected": "المحفظة متصلة",
+  "withdrawal.enterAmount": "المبلغ للسحب",
+  "withdrawal.max": "الحد الأقصى",
+  "withdrawal.processingTime": "تتم معالجة طلبات السحب خلال 24-48 ساعة",
+  "withdrawal.confirm": "تأكيد السحب",
+  "withdrawal.processing": "جاري المعالجة...",
+  "withdrawal.history": "السحوبات الأخيرة",
+  "withdrawal.statusCompleted": "مكتمل",
+  "withdrawal.statusPending": "قيد الانتظار",
+  "withdrawal.statusProcessing": "جاري المعالجة",
+  "withdrawal.statusFailed": "فشل",
+  "withdrawal.statusRejected": "مرفوض",
+  "withdrawal.viewTx": "عرض TX",
+  
+  // Chat Extended
+  "chat.mode.edit": "تعديل الصورة",
+  "chat.placeholderEdit": "صف كيف تريد تعديل الصورة...",
+  "chat.editImage": "تعديل الصورة",
+  "chat.editingImage": "جاري تعديل الصورة...",
+  "chat.imageEdited": "تم تعديل الصورة بنجاح!",
+  "chat.editError": "لا يمكن تعديل الصورة.",
+  "chat.editInstruction": "أدخل تعليمات التعديل...",
+  "chat.selectImageAction": "ماذا تريد أن تفعل بهذه الصورة؟",
+  "chat.analyzeDescription": "AI يصف ويجيب على أسئلة حول الصورة",
+  "chat.editDescription": "AI يعدل الصورة مباشرة حسب تعليماتك",
+  "chat.selectFromGallery": "اختر من المعرض",
+  "chat.capturePhoto": "التقاط صورة",
+  
+  // Profile Extended
+  "profile.poplScore": "نقاط الحب النقي",
+  "profile.poplScoreDesc": "نقاط إثبات الحب النقي الخاصة بك",
+  "profile.soulTags": "علامات الروح",
+  "profile.soulTagsDesc": "كلمات مفتاحية تمثل روحك",
+  
+  // Circles
+  "circles.title": "دوائر الحب",
+  "circles.joinNow": "انضم",
+  "circles.leave": "مغادرة",
+  "circles.members": "أعضاء",
+  "circles.official": "رسمي",
+  
+  // Earn Extended
+  "earn.totalWithdrawn": "إجمالي السحب",
 };
 
 export default translations;
