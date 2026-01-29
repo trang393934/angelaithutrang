@@ -15,22 +15,51 @@ export function ImageLightbox({ imageUrl, alt = "Image", isOpen, onClose }: Imag
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      let blob: Blob;
+      let filename = `angel-ai-image-${Date.now()}.png`;
+
+      // Check if it's a data URL
+      if (imageUrl.startsWith("data:")) {
+        // Convert data URL to blob
+        const response = await fetch(imageUrl);
+        blob = await response.blob();
+      } else {
+        // Regular URL - fetch the image
+        const response = await fetch(imageUrl);
+        blob = await response.blob();
+        // Try to extract filename from URL
+        const urlFilename = imageUrl.split("/").pop()?.split("?")[0];
+        if (urlFilename && urlFilename.includes(".")) {
+          filename = urlFilename;
+        }
+      }
+
+      // Create object URL from blob
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Create download link
       const link = document.createElement("a");
-      link.href = url;
-      // Extract filename from URL or use default
-      const filename = imageUrl.split("/").pop() || "image.jpg";
+      link.href = blobUrl;
       link.download = filename;
+      link.style.display = "none";
+      
+      // Add to DOM, click, and remove
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      
+      // Cleanup after a short delay
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      }, 100);
     } catch (error) {
       console.error("Error downloading image:", error);
-      // Fallback: open in new tab
-      window.open(imageUrl, "_blank");
+      // Fallback: try to open in new tab
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`<img src="${imageUrl}" alt="Download" style="max-width:100%"/>`);
+        newWindow.document.title = "Tải về hình ảnh";
+      }
     }
   };
 
