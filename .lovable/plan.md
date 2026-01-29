@@ -1,95 +1,131 @@
 
+# Kế hoạch: Thêm tính năng Chỉnh sửa ảnh trực tiếp (Edit Image)
 
-## Kế hoạch khắc phục: Cho phép user mobile chọn ảnh từ kho hình ảnh
+## Phân tích vấn đề
 
-### Vấn đề phát hiện
+**Hiện tại Angel AI có:**
+1. ✅ **Tạo ảnh mới** (`generate-image`): Nhập prompt → Tạo ảnh mới hoàn toàn
+2. ✅ **Phân tích ảnh** (`analyze-image`): Upload ảnh → AI mô tả nội dung
 
-Hiện tại nút phân tích ảnh (Camera icon 📷) trên trang Chat sử dụng thuộc tính `capture="environment"` trong thẻ `<input type="file">`. Điều này khiến trên điện thoại, khi nhấn nút sẽ **chỉ mở camera** thay vì cho phép chọn từ thư viện ảnh.
+**Còn thiếu:**
+3. ❌ **Chỉnh sửa ảnh** (`edit-image`): Upload ảnh có sẵn + nhập lệnh chỉnh sửa → Trả về ảnh đã được chỉnh sửa trực tiếp
 
-**Code hiện tại (dòng 959-966 trong Chat.tsx):**
-```tsx
-<input
-  ref={fileInputRef}
-  type="file"
-  accept="image/*"
-  capture="environment"  // ← Vấn đề: Chỉ mở camera
-  onChange={handleImageUpload}
-  className="hidden"
-/>
+## Giải pháp
+
+Thêm chế độ **"edit-image"** mới cho phép user:
+- Upload ảnh gốc
+- Nhập lệnh chỉnh sửa (VD: "Thêm mũ phù thủy cho mèo", "Đổi nền thành hoàng hôn")
+- AI sẽ **chỉnh sửa trực tiếp trên ảnh gốc** thay vì tạo ảnh mới hoàn toàn
+
+## Chi tiết kỹ thuật
+
+### 1. Tạo Edge Function mới: `edit-image`
+
+**File:** `supabase/functions/edit-image/index.ts`
+
+```typescript
+// Nhận vào:
+// - imageUrl: ảnh gốc (base64 hoặc URL)
+// - instruction: lệnh chỉnh sửa từ user
+// - style: phong cách (spiritual/realistic/artistic)
+
+// Gọi Gemini API với cấu trúc multimodal:
+messages: [
+  {
+    role: "user",
+    content: [
+      { type: "text", text: "Chỉnh sửa hình ảnh này: [instruction]" },
+      { type: "image_url", image_url: { url: imageUrl } }
+    ]
+  }
+]
+modalities: ["image", "text"]
 ```
 
-### Giải pháp
+### 2. Tạo Hook mới: `useImageEdit`
 
-Tạo **2 input file riêng biệt** và **2 nút riêng biệt**:
-1. **Nút Camera** → Mở camera trực tiếp (giữ `capture="environment"`)
-2. **Nút Thư viện ảnh** → Cho phép chọn từ gallery (KHÔNG có `capture`)
+**File:** `src/hooks/useImageEdit.ts`
 
-### Chi tiết thay đổi
+```typescript
+export function useImageEdit() {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedImage, setEditedImage] = useState(null);
+  
+  const editImage = async (imageUrl: string, instruction: string, style?: string) => {
+    // Gọi edge function edit-image
+    // Trả về ảnh đã chỉnh sửa
+  };
+  
+  return { isEditing, editedImage, editImage, clearEdit };
+}
+```
 
-**File cần chỉnh sửa:** `src/pages/Chat.tsx`
+### 3. Cập nhật Chat.tsx
 
-1. **Thêm ref mới** cho input file thư viện:
-   ```tsx
-   const fileInputRef = useRef<HTMLInputElement>(null);      // Camera
-   const galleryInputRef = useRef<HTMLInputElement>(null);   // Gallery (MỚI)
-   ```
+**Thay đổi:**
 
-2. **Thêm input file thứ 2** không có `capture`:
-   ```tsx
-   {/* Camera input - mở camera trực tiếp */}
-   <input
-     ref={fileInputRef}
-     type="file"
-     accept="image/*"
-     capture="environment"
-     onChange={handleImageUpload}
-     className="hidden"
-   />
-   
-   {/* Gallery input - chọn từ thư viện ảnh */}
-   <input
-     ref={galleryInputRef}
-     type="file"
-     accept="image/*"
-     onChange={handleImageUpload}
-     className="hidden"
-   />
-   ```
+| Mục | Hiện tại | Sau khi cập nhật |
+|-----|----------|------------------|
+| ChatMode | `"chat" \| "generate-image" \| "analyze-image"` | `"chat" \| "generate-image" \| "analyze-image" \| "edit-image"` |
+| Nút Upload ảnh | Chỉ vào mode `analyze-image` | Hiện dialog chọn: Phân tích hay Chỉnh sửa? |
+| Xử lý submit | `handleAnalyzeImage()` | Thêm `handleEditImage()` |
 
-3. **Cập nhật UI nút bấm** trong khu vực input:
-   - Nút Camera 📷 → Mở camera trực tiếp
-   - Nút thư viện ảnh (ImagePlus/Image icon) → Chọn từ gallery
+**Luồng UI mới:**
 
-   ```tsx
-   {/* Nút mở camera */}
-   <button
-     type="button"
-     onClick={() => fileInputRef.current?.click()}
-     className="p-1.5 sm:p-2 rounded-full hover:bg-blue-100 transition-colors"
-     title="Chụp ảnh mới"
-   >
-     <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-   </button>
-   
-   {/* Nút chọn từ thư viện */}
-   <button
-     type="button"
-     onClick={() => galleryInputRef.current?.click()}
-     className="p-1.5 sm:p-2 rounded-full hover:bg-green-100 transition-colors"
-     title="Chọn ảnh từ thư viện"
-   >
-     <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-   </button>
-   ```
+```
+[User upload ảnh]
+       ↓
+[Dialog popup: "Bạn muốn làm gì với ảnh này?"]
+    ├── 🔍 Phân tích ảnh (analyze-image) 
+    └── ✏️ Chỉnh sửa ảnh (edit-image) ← MỚI
+       ↓
+[Nếu chọn Chỉnh sửa]
+       ↓
+[Nhập lệnh: "Thêm nền galaxy phía sau"]
+       ↓
+[AI chỉnh sửa trực tiếp trên ảnh gốc]
+       ↓
+[Hiển thị ảnh đã chỉnh sửa]
+```
 
-### Kết quả mong đợi
+### 4. Cập nhật UI Mode Indicator
 
-| Thiết bị | Nút Camera 📷 | Nút Thư viện 🖼️ |
-|----------|--------------|-----------------|
-| Laptop   | Mở file picker | Mở file picker |
-| Mobile   | Mở camera trực tiếp | Mở gallery để chọn ảnh có sẵn |
+Khi ở mode `edit-image`:
+- Hiển thị ảnh gốc ở preview area
+- Placeholder: "Mô tả cách bạn muốn chỉnh sửa ảnh..."
+- Có dropdown chọn style (như mode generate-image)
 
-### Giao diện mới
+### 5. Lưu vào Image History
 
-Khu vực input sẽ có thêm 1 icon cho thư viện ảnh bên cạnh icon camera hiện tại, giúp user dễ dàng lựa chọn cách tải ảnh lên để phân tích.
+Lưu với `image_type: 'edited'` vào bảng `image_history`:
+- `prompt`: Lệnh chỉnh sửa
+- `image_url`: Ảnh sau khi chỉnh sửa
+- `response_text`: Mô tả từ AI về những gì đã thay đổi
 
+## Các file cần tạo/sửa
+
+| File | Hành động |
+|------|-----------|
+| `supabase/functions/edit-image/index.ts` | **TẠO MỚI** |
+| `src/hooks/useImageEdit.ts` | **TẠO MỚI** |
+| `src/pages/Chat.tsx` | Sửa: thêm mode, dialog, handler |
+| `src/translations/*.ts` | Thêm các key dịch mới |
+
+## Giao diện so sánh
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Thanh chế độ (Mode buttons)                         │
+├──────────┬──────────┬──────────┬───────────────────┤
+│ 💬 Chat  │ 🎨 Tạo   │ 🔍 Phân  │ ✏️ Chỉnh sửa     │
+│          │ ảnh mới  │ tích ảnh │ ảnh (MỚI)        │
+└──────────┴──────────┴──────────┴───────────────────┘
+```
+
+## Kết quả mong đợi
+
+Sau khi hoàn thành, Angel AI sẽ có đầy đủ 3 tính năng ảnh:
+
+1. **Tạo ảnh mới** 🎨: Prompt → Ảnh mới
+2. **Phân tích ảnh** 🔍: Ảnh → Mô tả chi tiết
+3. **Chỉnh sửa ảnh** ✏️: Ảnh + Lệnh → Ảnh đã chỉnh sửa (giữ nguyên bố cục gốc)
