@@ -302,6 +302,46 @@ const translations: Record<string, string> = {
   
   // Platform descriptions
   "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. FUN Ecosystem में 5D कृषि – उपभोग – लॉजिस्टिक्स प्लेटफॉर्म",
+  "about.platform.play": "वीडियो Web3 प्लेटफॉर्म। खेलें और कमाएं। अपनी रोशनी चमकाएं!",
+  "about.platform.planet": "बच्चों का खेल – खेलें और कमाएं",
+  
+  // Withdrawal
+  "withdrawal.title": "Camly Coin निकासी",
+  "withdrawal.subtitle": "अपने Web3 वॉलेट में ट्रांसफर करें",
+  "withdrawal.minAmount": "न्यूनतम 200,000 Camly Coin",
+  "withdrawal.maxDaily": "अधिकतम 500,000/दिन",
+  "withdrawal.availableBalance": "उपलब्ध शेष",
+  "withdrawal.totalWithdrawn": "कुल निकासी",
+  "withdrawal.dailyLimit": "आज की सीमा",
+  "withdrawal.remaining": "शेष",
+  "withdrawal.confirm": "निकासी की पुष्टि करें",
+  "withdrawal.processing": "प्रोसेसिंग...",
+  
+  // Chat Extended
+  "chat.mode.edit": "छवि संपादित करें",
+  "chat.placeholderEdit": "छवि को कैसे संपादित करें वर्णन करें...",
+  "chat.editImage": "छवि संपादित करें",
+  "chat.editingImage": "छवि संपादित हो रही है...",
+  "chat.imageEdited": "छवि सफलतापूर्वक संपादित!",
+  "chat.selectImageAction": "इस छवि के साथ क्या करना चाहते हैं?",
+  "chat.selectFromGallery": "गैलरी से चुनें",
+  "chat.capturePhoto": "फोटो लें",
+  
+  // Profile Extended  
+  "profile.poplScore": "शुद्ध प्रेम स्कोर",
+  "profile.poplScoreDesc": "आपका शुद्ध प्रेम प्रमाण स्कोर",
+  "profile.soulTags": "आत्मा टैग",
+  "profile.soulTagsDesc": "आपकी आत्मा का प्रतिनिधित्व करने वाले कीवर्ड",
+  
+  // Circles
+  "circles.title": "प्रेम मंडल",
+  "circles.joinNow": "शामिल हों",
+  "circles.leave": "छोड़ें",
+  "circles.members": "सदस्य",
+  "circles.official": "आधिकारिक",
+  
+  // Earn Extended
+  "earn.totalWithdrawn": "कुल निकासी",
 };
 
 export default translations;
