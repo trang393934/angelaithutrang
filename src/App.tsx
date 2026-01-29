@@ -21,6 +21,7 @@ import AdminWithdrawals from "./pages/AdminWithdrawals";
 import AdminEarlyAdopters from "./pages/AdminEarlyAdopters";
 import AdminStatistics from "./pages/AdminStatistics";
 import AdminActivityHistory from "./pages/AdminActivityHistory";
+import AdminAIUsage from "./pages/AdminAIUsage";
 import CommunityQuestions from "./pages/CommunityQuestions";
 import Community from "./pages/Community";
 import Earn from "./pages/Earn";
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="/admin/early-adopters" element={<AdminEarlyAdopters />} />
               <Route path="/admin/statistics" element={<AdminStatistics />} />
               <Route path="/admin/activity-history" element={<AdminActivityHistory />} />
+              <Route path="/admin/ai-usage" element={<AdminAIUsage />} />
               <Route path="/community-questions" element={<ProfileCompletionGate><CommunityQuestions /></ProfileCompletionGate>} />
               <Route path="/community" element={<ProfileCompletionGate><Community /></ProfileCompletionGate>} />
               <Route path="/user/:userId" element={<UserProfile />} />

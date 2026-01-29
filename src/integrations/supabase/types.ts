@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          usage_count: number
+          usage_date: string
+          usage_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          usage_count?: number
+          usage_date?: string
+          usage_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          usage_count?: number
+          usage_date?: string
+          usage_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bounty_submissions: {
         Row: {
           admin_feedback: string | null
@@ -1946,6 +1976,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      check_and_increment_ai_usage: {
+        Args: { _daily_limit?: number; _usage_type: string; _user_id: string }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          daily_limit: number
+          message: string
+        }[]
+      }
       check_withdrawal_eligibility: {
         Args: { _user_id: string }
         Returns: {
@@ -1956,6 +1995,14 @@ export type Database = {
         }[]
       }
       cleanup_expired_stories: { Args: never; Returns: undefined }
+      get_daily_ai_usage: {
+        Args: { _user_id: string }
+        Returns: {
+          daily_limit: number
+          usage_count: number
+          usage_type: string
+        }[]
+      }
       get_daily_reward_status: {
         Args: { _user_id: string }
         Returns: {

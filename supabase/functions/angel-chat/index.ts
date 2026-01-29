@@ -620,6 +620,27 @@ serve(async (req) => {
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
       
+      // Track chat usage (no limit, just tracking)
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader) {
+        try {
+          const token = authHeader.replace('Bearer ', '');
+          const { data: claimsData } = await supabase.auth.getClaims(token);
+          const userId = claimsData?.claims?.sub as string || null;
+          
+          if (userId) {
+            await supabase.rpc('check_and_increment_ai_usage', {
+              _user_id: userId,
+              _usage_type: 'chat',
+              _daily_limit: null
+            });
+            console.log(`Tracked chat usage for user ${userId}`);
+          }
+        } catch (trackError) {
+          console.error("Usage tracking error:", trackError);
+        }
+      }
+      
       // OPTIMIZATION 3: Check database cache for similar questions
       const cachedResponse = await checkDatabaseCache(supabase, userQuestion);
       if (cachedResponse) {

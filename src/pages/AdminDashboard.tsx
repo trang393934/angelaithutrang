@@ -34,7 +34,8 @@ import {
   Eye,
   Loader2,
   Wallet,
-  History
+  History,
+  BarChart3
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 
@@ -358,6 +359,13 @@ const AdminDashboard = () => {
               >
                 <History className="w-4 h-4" />
                 Lịch sử chat
+              </Link>
+              <Link
+                to="/admin/ai-usage"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
+              >
+                <BarChart3 className="w-4 h-4" />
+                AI Usage
               </Link>
               <button
                 onClick={() => signOut().then(() => navigate("/"))}

@@ -1,9 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const DAILY_EDIT_LIMIT = 5;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -24,6 +27,48 @@ serve(async (req) => {
 
     if (!LOVABLE_API_KEY) {
       throw new Error("AI service is not configured");
+    }
+
+    // Initialize Supabase client for usage tracking
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authHeader = req.headers.get("Authorization");
+    
+    let userId: string | null = null;
+    
+    if (authHeader) {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claimsData } = await supabase.auth.getClaims(token);
+      userId = claimsData?.claims?.sub as string || null;
+      
+      if (userId) {
+        // Check and increment usage with daily limit
+        const { data: usageCheck, error: usageError } = await supabase.rpc(
+          'check_and_increment_ai_usage',
+          { _user_id: userId, _usage_type: 'edit_image', _daily_limit: DAILY_EDIT_LIMIT }
+        );
+        
+        if (usageError) {
+          console.error("Usage check error:", usageError);
+        } else if (usageCheck && usageCheck.length > 0 && !usageCheck[0].allowed) {
+          console.log("User reached daily limit for image editing:", usageCheck[0]);
+          return new Response(
+            JSON.stringify({ 
+              error: `Đã đạt giới hạn ${DAILY_EDIT_LIMIT} lần chỉnh sửa ảnh/ngày. Vui lòng quay lại vào ngày mai! 🌙`,
+              limit_reached: true,
+              current_count: usageCheck[0].current_count,
+              daily_limit: usageCheck[0].daily_limit
+            }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else if (usageCheck && usageCheck.length > 0) {
+          console.log(`User ${userId} image editing: ${usageCheck[0].current_count}/${DAILY_EDIT_LIMIT}`);
+        }
+      }
     }
 
     console.log("Editing image with instruction:", instruction);
