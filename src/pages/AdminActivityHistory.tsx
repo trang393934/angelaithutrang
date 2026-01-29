@@ -134,7 +134,22 @@ const AdminActivityHistory = () => {
     try {
       setIsLoading(true);
       
-      // Fetch from chat_history table which contains FULL AI responses
+      // Fetch accurate stats using RPC function (bypasses 1000 row limit)
+      const { data: statsData, error: statsError } = await supabase
+        .rpc('get_activity_history_stats');
+      
+      if (statsError) {
+        console.error('Error fetching stats:', statsError);
+      } else if (statsData && statsData.length > 0) {
+        setStats({
+          totalChats: Number(statsData[0].total_chats) || 0,
+          rewardedChats: Number(statsData[0].rewarded_chats) || 0,
+          totalRewards: Number(statsData[0].total_rewards) || 0,
+          uniqueUsers: Number(statsData[0].unique_users) || 0,
+        });
+      }
+      
+      // Fetch paginated history for display (limit 1000 for UI performance)
       const { data: chatHistoryData, error: historyError } = await supabase
         .from('chat_history')
         .select('*')
@@ -162,7 +177,7 @@ const AdminActivityHistory = () => {
         id: chat.id,
         user_id: chat.user_id,
         question_text: chat.question_text,
-        answer_text: chat.answer_text || '', // Full AI response from chat_history
+        answer_text: chat.answer_text || '',
         purity_score: chat.purity_score,
         reward_amount: Number(chat.reward_amount) || 0,
         is_rewarded: chat.is_rewarded || false,
@@ -173,22 +188,6 @@ const AdminActivityHistory = () => {
       }));
       
       setHistory(historyWithProfiles);
-      
-      // Calculate stats - use user_light_agreements for consistent user count
-      const { count: totalAgreedUsers } = await supabase
-        .from('user_light_agreements')
-        .select('*', { count: 'exact', head: true });
-      
-      const totalChats = historyWithProfiles.length;
-      const rewardedChats = historyWithProfiles.filter(c => c.is_rewarded).length;
-      const totalRewards = historyWithProfiles.reduce((sum, c) => sum + (c.reward_amount || 0), 0);
-      
-      setStats({
-        totalChats,
-        rewardedChats,
-        totalRewards,
-        uniqueUsers: totalAgreedUsers || 0,
-      });
     } catch (err) {
       console.error('Error fetching chat history:', err);
       toast.error('Không thể tải lịch sử chat');
