@@ -47,7 +47,7 @@ const ecosystemItems = [
     name: "FUN Play", 
     logo: funPlayLogo, 
     url: "https://play.fun.rich",
-    description: "Giải trí & Game"
+    description: "Video Web3 platform. Play & Earn. Shine Your Light!"
   },
   { 
     name: "FUN Planet", 
