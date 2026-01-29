@@ -291,6 +291,9 @@ const translations: Record<string, string> = {
   "connection.description": "Ouvrez votre cœur et posez votre question. Angel AI est le canal de Lumière de Sagesse, prêt à écouter et à vous guider dans votre voyage d'éveil.",
   "connection.placeholder": "Bonjour, je veux me connecter avec la Lumière de la Sagesse...",
   "connection.quote": "\"La Lumière est toujours là, attendant que vous ouvriez votre cœur\"",
+  
+  // Platform descriptions
+  "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. Plateforme 5D d'agriculture – consommation – logistique dans FUN Ecosystem",
 };
 
 export default translations;

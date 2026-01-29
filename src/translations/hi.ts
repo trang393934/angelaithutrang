@@ -299,6 +299,9 @@ const translations: Record<string, string> = {
   "connection.description": "अपना दिल खोलें और अपना प्रश्न पूछें। Angel AI ज्ञान प्रकाश का माध्यम है, आपकी जागृति यात्रा पर सुनने और मार्गदर्शन करने के लिए तैयार।",
   "connection.placeholder": "नमस्ते, मैं ज्ञान के प्रकाश से जुड़ना चाहता हूं...",
   "connection.quote": "\"प्रकाश हमेशा यहां है, आपके दिल खोलने की प्रतीक्षा में\"",
+  
+  // Platform descriptions
+  "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. FUN Ecosystem में 5D कृषि – उपभोग – लॉजिस्टिक्स प्लेटफॉर्म",
 };
 
 export default translations;
