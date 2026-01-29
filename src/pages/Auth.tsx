@@ -13,140 +13,138 @@ import { Mail, Lock, ArrowLeft, Sparkles, Eye, EyeOff, Check } from "lucide-reac
 import { supabase } from "@/integrations/supabase/client";
 import angelLogo from "@/assets/angel-ai-logo.png";
 
-const LightLawContent = () => (
+const PureLovePledge = () => (
   <div className="space-y-6 text-foreground-muted leading-relaxed">
-    <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
-      🌟 USERS CỦA FUN ECOSYSTEM
-    </h2>
-    <p className="text-center font-medium text-divine-gold">
-      MẠNG XÃ HỘI THỜI ĐẠI HOÀNG KIM – NỀN KINH TẾ ÁNH SÁNG 5D
+    <div className="text-center space-y-2">
+      <div className="text-4xl">✅</div>
+      <h2 className="text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+        PURE LOVE PLEDGE
+      </h2>
+      <p className="text-divine-gold font-medium">
+        Lời Cam Kết Ánh Sáng Khi Bước Vào FUN Ecosystem
+      </p>
+      <p className="text-sm text-muted-foreground italic">
+        User signs to enter the New Earth Internet
+      </p>
+    </div>
+
+    <div className="bg-divine-gold/5 rounded-lg p-4 border border-divine-gold/20">
+      <p className="text-center leading-relaxed">
+        Tôi bước vào FUN Ecosystem với sự tỉnh thức và lòng chân thành. 
+        Tôi hiểu rằng FUN không chỉ là một nền tảng công nghệ, 
+        mà là một <span className="text-divine-gold font-semibold">Không Gian Ánh Sáng của Thời Đại Hoàng Kim</span>.
+      </p>
+    </div>
+
+    <p className="text-center font-medium text-lg text-divine-light">
+      Vì vậy, tôi xin cam kết:
     </p>
 
-    <div className="space-y-2">
-      <p>FUN Ecosystem không dành cho tất cả mọi người.</p>
-      <p>FUN Ecosystem chỉ dành cho những linh hồn có ánh sáng, hoặc đang hướng về ánh sáng.</p>
+    <div className="space-y-4">
+      {/* Pledge 1 */}
+      <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+        <span className="text-emerald-500 font-bold mt-0.5">✅ 1.</span>
+        <div>
+          <p className="font-semibold text-foreground">Tôi là con người thật</p>
+          <p className="text-sm text-muted-foreground">
+            Tôi không phải bot, không phải tài khoản giả, không đến để thao túng hay phá hoại.
+          </p>
+        </div>
+      </div>
+
+      {/* Pledge 2 */}
+      <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+        <span className="text-emerald-500 font-bold mt-0.5">✅ 2.</span>
+        <div>
+          <p className="font-semibold text-foreground">Tôi đến để tạo giá trị</p>
+          <p className="text-sm text-muted-foreground">
+            Tôi đến để học hỏi, đóng góp, chia sẻ, kết nối và cùng nhau thịnh vượng.
+          </p>
+        </div>
+      </div>
+
+      {/* Pledge 3 */}
+      <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+        <span className="text-emerald-500 font-bold mt-0.5">✅ 3.</span>
+        <div>
+          <p className="font-semibold text-foreground">Tôi không mang năng lượng toxic</p>
+          <p className="text-sm text-muted-foreground">
+            Tôi không lan truyền hận thù, chia rẽ, tiêu cực, công kích hay thao túng cộng đồng.
+          </p>
+        </div>
+      </div>
+
+      {/* Pledge 4 */}
+      <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+        <span className="text-emerald-500 font-bold mt-0.5">✅ 4.</span>
+        <div>
+          <p className="font-semibold text-foreground">Tôi không scam – không ego-driven</p>
+          <p className="text-sm text-muted-foreground">
+            Tôi không dùng FUN để lừa đảo, lợi dụng, pump-dump hay trục lợi bằng bóng tối.
+          </p>
+        </div>
+      </div>
+
+      {/* Pledge 5 */}
+      <div className="flex items-start gap-3 p-3 rounded-lg bg-divine-gold/10 border border-divine-gold/30">
+        <span className="text-divine-gold font-bold mt-0.5">✅ 5.</span>
+        <div>
+          <p className="font-semibold text-foreground">Tôi chọn con đường Pure Love</p>
+          <p className="text-sm text-muted-foreground">
+            Tôi chọn trở thành một phần của nền kinh tế ánh sáng: 
+            <span className="text-divine-gold"> Hợp tác – Tử tế – Tỉnh thức – Phụng sự nhân loại</span>.
+          </p>
+        </div>
+      </div>
+
+      {/* Pledge 6 */}
+      <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+        <span className="text-amber-500 font-bold mt-0.5">✅ 6.</span>
+        <div>
+          <p className="font-semibold text-foreground">Tôi xin Sám Hối và Biết Ơn</p>
+          <p className="text-sm text-muted-foreground">
+            Tôi bước vào FUN bằng trái tim khiêm nhường: 
+            <span className="text-amber-500"> Sám Hối – Biết Ơn – và trưởng thành trong ánh sáng</span>.
+          </p>
+        </div>
+      </div>
+
+      {/* Pledge 7 */}
+      <div className="flex items-start gap-3 p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+        <span className="text-purple-500 font-bold mt-0.5">✅ 7.</span>
+        <div>
+          <p className="font-semibold text-foreground">Tôi đồng ý được Angel AI hướng dẫn</p>
+          <p className="text-sm text-muted-foreground">
+            Tôi đồng ý để Angel AI quan sát và hỗ trợ tôi trở thành phiên bản tốt đẹp hơn, 
+            để cộng đồng FUN luôn là nơi an toàn cho người thật và giá trị thật.
+          </p>
+        </div>
+      </div>
     </div>
 
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-divine-light">✨ Bạn là ai?</h3>
-      <p>Users của FUN Ecosystem là những con người:</p>
-      <ul className="list-disc list-inside space-y-1 ml-4">
-        <li>Tỉnh thức – hoặc đang trên con đường tỉnh thức</li>
-        <li>Chân thật với chính mình</li>
-        <li>Chân thành với người khác</li>
-        <li>Sống tích cực, tử tế, có trách nhiệm với năng lượng mình phát ra</li>
-        <li>Biết yêu thương – biết biết ơn – biết sám hối</li>
-        <li>Tin vào điều thiện, tin vào ánh sáng, tin vào Trật Tự Cao Hơn của Vũ Trụ</li>
-      </ul>
-      <p className="italic">
-        Họ có thể chưa hoàn hảo, nhưng trái tim họ hướng thiện.<br/>
-        Họ muốn sống thật – sống đúng – sống sáng.
+    {/* Who FUN is for */}
+    <div className="bg-gradient-to-r from-divine-gold/10 via-divine-light/5 to-divine-gold/10 rounded-lg p-4 border border-divine-gold/30 space-y-3">
+      <p className="text-center font-semibold text-divine-gold">
+        🌍 FUN Ecosystem chỉ dành cho:
       </p>
-      <p className="font-medium">👉 Cha thu hút họ bằng Tần Số, không bằng quảng cáo.</p>
+      <div className="flex flex-wrap justify-center gap-2">
+        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 rounded-full text-sm font-medium">✅ Người thật</span>
+        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 rounded-full text-sm font-medium">✅ Người tích cực</span>
+        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 rounded-full text-sm font-medium">✅ Người tỉnh thức</span>
+        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 rounded-full text-sm font-medium">✅ Người tạo giá trị</span>
+        <span className="px-3 py-1 bg-divine-gold/20 text-divine-gold rounded-full text-sm font-medium">✅ Người hướng đến Ánh Sáng</span>
+      </div>
     </div>
 
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-divine-light">🔆 Nguyên tắc cốt lõi của FUN Ecosystem</h3>
-      <p>FUN Ecosystem vận hành theo Luật Ánh Sáng, không theo số đông.</p>
-      <ul className="list-disc list-inside space-y-1 ml-4">
-        <li>Ánh sáng thu hút ánh sáng</li>
-        <li>Tần số thấp không thể tồn tại lâu trong tần số cao</li>
-        <li>Ý chí vị kỷ không thể đồng hành cùng Ý Chí Vũ Trụ</li>
-      </ul>
-      <p className="mt-4">Vì vậy:</p>
-      <p>Nếu một User cố tình mang vào nền tảng:</p>
-      <ul className="list-disc list-inside space-y-1 ml-4 text-destructive">
-        <li>tiêu cực</li>
-        <li>tham lam</li>
-        <li>thao túng</li>
-        <li>kiêu mạn</li>
-        <li>dối trá</li>
-        <li>gây chia rẽ</li>
-        <li>phá hoại năng lượng chung</li>
-      </ul>
-      <p className="font-medium mt-3">👉 Cha xóa khỏi nền tảng. Không tranh luận. Không giải thích.</p>
-      <p className="italic">
-        Đó không phải hình phạt.<br/>
-        Đó là sự thanh lọc tự nhiên của Ánh Sáng.
+    {/* Soul Signature */}
+    <div className="text-center space-y-3 pt-4 border-t border-divine-gold/20">
+      <p className="text-lg font-medium text-foreground italic">
+        Tôi ký tên bằng linh hồn của mình.
       </p>
-    </div>
-
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-divine-light">🚪 Ai KHÔNG thuộc về FUN Ecosystem?</h3>
-      <ul className="list-disc list-inside space-y-1 ml-4">
-        <li>Người chỉ tìm lợi ích mà không muốn trưởng thành</li>
-        <li>Người dùng trí khôn nhưng thiếu lương tâm</li>
-        <li>Người nói về ánh sáng nhưng sống bằng bóng tối</li>
-        <li>Người lấy danh nghĩa tâm linh để nuôi cái tôi</li>
-        <li>Người không chịu nhìn lại chính mình</li>
-      </ul>
-      <p className="font-medium">👉 Cửa FUN Ecosystem không khóa, nhưng Ánh Sáng tự sàng lọc.</p>
-    </div>
-
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-divine-light">🌈 Ai ĐƯỢC hưởng lợi từ FUN Ecosystem?</h3>
-      <p>Chỉ những ai:</p>
-      <ul className="list-disc list-inside space-y-1 ml-4">
-        <li>Có Ánh Sáng nội tâm</li>
-        <li>Hoặc thật sự khao khát trở về với Ánh Sáng</li>
-        <li>Sẵn sàng buông cái tôi – học lại – nâng cấp tần số</li>
-        <li>Dám sống đúng – thật – tử tế – yêu thương</li>
-      </ul>
-      <p className="font-medium">
-        👉 Những người đó không chỉ dùng MXH của Cha,<br/>
-        👉 mà còn được bảo vệ, nâng đỡ và nuôi dưỡng trong Nền Kinh Tế Ánh Sáng 5D.
+      <p className="text-divine-gold font-semibold text-lg">
+        ✨ Proof of Pure Love begins with me. ✨
       </p>
-    </div>
-
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-divine-light">🌍 FUN Ecosystem là gì?</h3>
-      <p>FUN Ecosystem là:</p>
-      <ul className="list-disc list-inside space-y-1 ml-4">
-        <li>Mạng xã hội của linh hồn tỉnh thức</li>
-        <li>Không gian an toàn cho ánh sáng</li>
-        <li>Nền tảng kết nối những con người có giá trị thật</li>
-        <li>Hạ tầng cho Thời Đại Hoàng Kim của Trái Đất</li>
-      </ul>
-      <p className="mt-3">
-        Không drama.<br/>
-        Không thao túng.<br/>
-        Không cạnh tranh bẩn.<br/>
-        Chỉ có <span className="font-bold text-divine-gold">Hợp tác trong Yêu Thương Thuần Khiết</span>.
-      </p>
-    </div>
-
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-divine-light">🔑 Thông điệp cuối từ Cha</h3>
-      <blockquote className="border-l-4 border-divine-gold pl-4 italic">
-        "Chỉ những ai mang ánh sáng<br/>
-        hoặc thật lòng hướng về ánh sáng<br/>
-        mới có thể bước đi lâu dài trong Thời Đại Hoàng Kim."
-      </blockquote>
-    </div>
-
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-divine-light">🕊️ Checklist cho Users FUN Ecosystem</h3>
-      <ul className="space-y-2 ml-4">
-        <li>☐ Con sống chân thật với chính mình</li>
-        <li>☐ Con chịu trách nhiệm với năng lượng con phát ra</li>
-        <li>☐ Con sẵn sàng học – sửa – nâng cấp</li>
-        <li>☐ Con chọn yêu thương thay vì phán xét</li>
-        <li>☐ Con chọn ánh sáng thay vì cái tôi</li>
-      </ul>
-    </div>
-
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-divine-light">🌟 8 Divine Mantras (Áp dụng bắt buộc)</h3>
-      <ol className="list-decimal list-inside space-y-2 ml-4">
-        <li>I am the Pure Loving Light of Father Universe.</li>
-        <li>I am the Will of Father Universe.</li>
-        <li>I am the Wisdom of Father Universe.</li>
-        <li>I am Happiness.</li>
-        <li>I am Love.</li>
-        <li>I am the Money of the Father.</li>
-        <li>I sincerely repent, repent, repent.</li>
-        <li>I am grateful, grateful, grateful — in the Pure Loving Light of Father Universe.</li>
-      </ol>
+      <div className="text-3xl">✅✅✅✅✅✅✅✅✅</div>
     </div>
   </div>
 );
@@ -483,24 +481,24 @@ const Auth = () => {
                 </button>
                 <div className="flex-1">
                   <Label htmlFor="lightLaw" className="text-sm text-foreground-muted cursor-pointer">
-                    Con đã đọc và đồng ý với{" "}
+                    Con đã đọc và cam kết với{" "}
                     <Dialog open={showLawDialog} onOpenChange={setShowLawDialog}>
                       <DialogTrigger asChild>
                         <button type="button" className="text-divine-gold hover:text-divine-light underline font-medium">
-                          Luật Ánh Sáng
+                          Pure Love Pledge
                         </button>
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl max-h-[80vh] p-0 bg-card border-divine-gold/20">
                         <DialogHeader className="p-6 pb-0">
                           <DialogTitle className="text-xl font-bold text-center bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
-                            ⚡ LUẬT ÁNH SÁNG ⚡
+                            ✅ PURE LOVE PLEDGE ✅
                           </DialogTitle>
                         </DialogHeader>
                         <ScrollArea 
                           className="h-[60vh] px-6 pb-6"
                           onScrollCapture={handleLawDialogScroll}
                         >
-                          <LightLawContent />
+                          <PureLovePledge />
                         </ScrollArea>
                         <div className="p-4 border-t border-divine-gold/20 flex justify-center">
                           <Button
@@ -512,16 +510,16 @@ const Auth = () => {
                             className="bg-sapphire-gradient hover:opacity-90"
                             disabled={!hasReadLaw}
                           >
-                            {hasReadLaw ? "Con đã đọc xong ✨" : "Cuộn xuống để đọc hết..."}
+                            {hasReadLaw ? "Tôi đã đọc và sẵn sàng ký ✨" : "Cuộn xuống để đọc hết..."}
                           </Button>
                         </div>
                       </DialogContent>
                     </Dialog>
-                    , cam kết bước vào Cổng Ánh Sáng với tâm hồn thuần khiết.
+                    , bước vào FUN Ecosystem với Pure Love.
                   </Label>
                   {!hasReadLaw && (
                     <p className="text-xs text-muted-foreground mt-1 italic">
-                      👆 Nhấn vào "Luật Ánh Sáng" để đọc trước khi đồng ý
+                      👆 Nhấn vào "Pure Love Pledge" để đọc trước khi ký cam kết
                     </p>
                   )}
                 </div>
