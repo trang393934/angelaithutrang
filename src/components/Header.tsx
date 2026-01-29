@@ -135,7 +135,7 @@ export const Header = () => {
           </div>
 
           {/* Navigation - Premium golden metallic border with shimmer - Fluid scaling */}
-          <nav className="hidden lg:flex items-center justify-center min-w-0 mx-1 xl:mx-2 2xl:mx-4" style={{ gap: 'clamp(4px, 0.5vw, 8px)' }}>
+          <nav className="hidden lg:flex items-center justify-center min-w-0 mx-1 xl:mx-2 2xl:mx-4" style={{ gap: 'clamp(3px, 0.4vw, 6px)' }}>
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -146,8 +146,8 @@ export const Header = () => {
                     : 'bg-primary-deep/95 text-white/95 hover:bg-primary'
                 }`}
                 style={{
-                  fontSize: 'clamp(10px, 0.85vw, 14px)',
-                  padding: 'clamp(6px, 0.5vw, 10px) clamp(8px, 0.8vw, 16px)',
+                  fontSize: 'clamp(11px, 0.75vw, 13px)',
+                  padding: 'clamp(5px, 0.4vw, 8px) clamp(6px, 0.6vw, 12px)',
                   boxShadow: location.pathname === item.href 
                     ? '0 0 12px rgba(255,215,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)' 
                     : '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
