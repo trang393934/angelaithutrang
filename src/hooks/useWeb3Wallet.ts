@@ -357,11 +357,28 @@ export function useWeb3Wallet() {
       const silentReconnect = async () => {
         try {
           const ethereum = (window as any).ethereum;
-          const accounts = await ethereum.request({ method: "eth_accounts" });
+          
+          // Check if ethereum provider is ready
+          if (!ethereum || typeof ethereum.request !== "function") {
+            console.log("Ethereum provider not ready");
+            localStorage.removeItem("wallet_connected");
+            return;
+          }
+          
+          // Use Promise.race with timeout to prevent hanging
+          const timeoutPromise = new Promise<string[]>((_, reject) => 
+            setTimeout(() => reject(new Error("Timeout")), 5000)
+          );
+          
+          const accounts = await Promise.race([
+            ethereum.request({ method: "eth_accounts" }),
+            timeoutPromise
+          ]).catch(() => [] as string[]);
           
           if (accounts.length > 0) {
             const address = accounts[0];
-            const chainId = parseInt(await ethereum.request({ method: "eth_chainId" }), 16);
+            const chainIdHex = await ethereum.request({ method: "eth_chainId" }).catch(() => "0x0");
+            const chainId = parseInt(chainIdHex, 16);
             const isCorrectChain = chainId === BSC_CHAIN_ID;
             
             if (isCorrectChain) {
@@ -385,7 +402,9 @@ export function useWeb3Wallet() {
         }
       };
       
-      silentReconnect();
+      // Delay reconnect to ensure MetaMask is fully initialized
+      const timer = setTimeout(silentReconnect, 500);
+      return () => clearTimeout(timer);
     }
   }, [hasWallet]);
 
