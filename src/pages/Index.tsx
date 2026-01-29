@@ -28,9 +28,9 @@ const Index = () => {
           {user && <DailyLoginReward />}
           
           {/* Content area with fixed sidebars and scrollable center */}
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex min-h-0">
             {/* Center Content - Scrollable */}
-            <main className="flex-1 min-w-0 overflow-y-auto">
+            <main className="flex-1 min-w-0 overflow-y-auto scrollbar-hide">
               <HeroSection />
               <CamlyCoinPriceChart />
               <MissionSection />
@@ -39,9 +39,11 @@ const Index = () => {
               <Footer />
             </main>
             
-            {/* Right Sidebar - Leaderboard (fixed, hidden on mobile) */}
-            <aside className="hidden xl:flex xl:flex-col w-80 2xl:w-96 shrink-0 h-full overflow-y-auto scrollbar-sacred p-4 border-l border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
-              <Leaderboard />
+            {/* Right Sidebar - Leaderboard (sticky with own scroll) */}
+            <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 overflow-y-auto scrollbar-sacred border-l border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
+              <div className="p-4">
+                <Leaderboard />
+              </div>
             </aside>
           </div>
         </div>
