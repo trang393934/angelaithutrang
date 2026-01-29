@@ -1995,6 +1995,22 @@ export type Database = {
         }[]
       }
       cleanup_expired_stories: { Args: never; Returns: undefined }
+      get_admin_statistics: {
+        Args: {
+          _date_filter?: string
+          _today_start?: string
+          _week_start?: string
+        }
+        Returns: {
+          average_per_transaction: number
+          today_coins: number
+          total_coins_distributed: number
+          total_transactions: number
+          total_users: number
+          unique_recipients: number
+          week_coins: number
+        }[]
+      }
       get_daily_ai_usage: {
         Args: { _user_id: string }
         Returns: {
@@ -2011,6 +2027,14 @@ export type Database = {
           journals_rewarded: number
           questions_remaining: number
           questions_rewarded: number
+        }[]
+      }
+      get_daily_trends: {
+        Args: { _date_filter?: string }
+        Returns: {
+          total_coins: number
+          transaction_count: number
+          trend_date: string
         }[]
       }
       get_early_adopter_rank: { Args: { p_user_id: string }; Returns: number }
@@ -2035,6 +2059,24 @@ export type Database = {
           shares_remaining: number
           shares_rewarded: number
           total_coins_today: number
+        }[]
+      }
+      get_top_recipients: {
+        Args: { _date_filter?: string; _limit?: number }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          total_earned: number
+          transaction_count: number
+          user_id: string
+        }[]
+      }
+      get_transaction_type_stats: {
+        Args: { _date_filter?: string }
+        Returns: {
+          total_amount: number
+          transaction_count: number
+          transaction_type: string
         }[]
       }
       get_user_withdrawal_status: {

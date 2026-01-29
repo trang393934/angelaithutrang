@@ -179,37 +179,21 @@ const AdminStatistics = () => {
   const fetchTransactionTypeStats = async () => {
     const dateFilter = getDateFilter();
     
-    let query = supabase
-      .from("camly_coin_transactions")
-      .select("transaction_type, amount")
-      .gt("amount", 0); // Only count earnings, not spending
-    
-    if (dateFilter) {
-      query = query.gte("created_at", dateFilter);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    // Aggregate by transaction type
-    const aggregated: Record<string, { total_amount: number; transaction_count: number }> = {};
-    
-    data?.forEach(tx => {
-      if (!aggregated[tx.transaction_type]) {
-        aggregated[tx.transaction_type] = { total_amount: 0, transaction_count: 0 };
-      }
-      aggregated[tx.transaction_type].total_amount += tx.amount;
-      aggregated[tx.transaction_type].transaction_count += 1;
+    // Use RPC function to bypass 1000 row limit
+    const { data, error } = await supabase.rpc('get_transaction_type_stats', {
+      _date_filter: dateFilter
     });
     
-    const stats = Object.entries(aggregated)
-      .map(([type, data]) => ({
-        transaction_type: type,
-        total_amount: data.total_amount,
-        transaction_count: data.transaction_count
-      }))
-      .sort((a, b) => b.total_amount - a.total_amount);
+    if (error) {
+      console.error("Error fetching transaction type stats:", error);
+      throw error;
+    }
+    
+    const stats = (data || []).map((row: any) => ({
+      transaction_type: row.transaction_type,
+      total_amount: Number(row.total_amount),
+      transaction_count: Number(row.transaction_count)
+    }));
     
     setTypeStats(stats);
   };
@@ -217,38 +201,21 @@ const AdminStatistics = () => {
   const fetchDailyTrends = async () => {
     const dateFilter = getDateFilter();
     
-    let query = supabase
-      .from("camly_coin_transactions")
-      .select("created_at, amount")
-      .gt("amount", 0);
-    
-    if (dateFilter) {
-      query = query.gte("created_at", dateFilter);
-    }
-    
-    const { data, error } = await query.order("created_at", { ascending: true });
-    
-    if (error) throw error;
-    
-    // Aggregate by date
-    const dailyData: Record<string, { total_coins: number; transaction_count: number }> = {};
-    
-    data?.forEach(tx => {
-      const date = tx.created_at.split("T")[0];
-      if (!dailyData[date]) {
-        dailyData[date] = { total_coins: 0, transaction_count: 0 };
-      }
-      dailyData[date].total_coins += tx.amount;
-      dailyData[date].transaction_count += 1;
+    // Use RPC function to bypass 1000 row limit
+    const { data, error } = await supabase.rpc('get_daily_trends', {
+      _date_filter: dateFilter
     });
     
-    const trends = Object.entries(dailyData)
-      .map(([date, data]) => ({
-        date,
-        total_coins: data.total_coins,
-        transaction_count: data.transaction_count
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    if (error) {
+      console.error("Error fetching daily trends:", error);
+      throw error;
+    }
+    
+    const trends = (data || []).map((row: any) => ({
+      date: row.trend_date,
+      total_coins: Number(row.total_coins),
+      transaction_count: Number(row.transaction_count)
+    }));
     
     setDailyTrends(trends);
   };
@@ -256,55 +223,26 @@ const AdminStatistics = () => {
   const fetchTopRecipients = async () => {
     const dateFilter = getDateFilter();
     
-    // Fetch transactions
-    let query = supabase
-      .from("camly_coin_transactions")
-      .select("user_id, amount")
-      .gt("amount", 0);
+    // Use RPC function to bypass 1000 row limit
+    const { data, error } = await supabase.rpc('get_top_recipients', {
+      _date_filter: dateFilter,
+      _limit: 10
+    });
     
-    if (dateFilter) {
-      query = query.gte("created_at", dateFilter);
+    if (error) {
+      console.error("Error fetching top recipients:", error);
+      throw error;
     }
     
-    const { data: transactions, error: txError } = await query;
+    const recipients = (data || []).map((row: any) => ({
+      user_id: row.user_id,
+      display_name: row.display_name,
+      avatar_url: row.avatar_url,
+      total_earned: Number(row.total_earned),
+      transaction_count: Number(row.transaction_count)
+    }));
     
-    if (txError) throw txError;
-    
-    // Aggregate by user
-    const userTotals: Record<string, { total: number; count: number }> = {};
-    
-    transactions?.forEach(tx => {
-      if (!userTotals[tx.user_id]) {
-        userTotals[tx.user_id] = { total: 0, count: 0 };
-      }
-      userTotals[tx.user_id].total += tx.amount;
-      userTotals[tx.user_id].count += 1;
-    });
-    
-    // Sort and get top 10
-    const topUserIds = Object.entries(userTotals)
-      .sort((a, b) => b[1].total - a[1].total)
-      .slice(0, 10)
-      .map(([id]) => id);
-    
-    // Fetch profiles for top users
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, display_name, avatar_url")
-      .in("user_id", topUserIds);
-    
-    const topRecipients = topUserIds.map(userId => {
-      const profile = profiles?.find(p => p.user_id === userId);
-      return {
-        user_id: userId,
-        display_name: profile?.display_name || null,
-        avatar_url: profile?.avatar_url || null,
-        total_earned: userTotals[userId].total,
-        transaction_count: userTotals[userId].count
-      };
-    });
-    
-    setTopRecipients(topRecipients);
+    setTopRecipients(recipients);
   };
 
   const fetchOverviewStats = async () => {
@@ -313,48 +251,30 @@ const AdminStatistics = () => {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
     
-    // Total stats with date filter
-    let totalQuery = supabase
-      .from("camly_coin_transactions")
-      .select("amount, user_id")
-      .gt("amount", 0);
+    // Use RPC function to bypass 1000 row limit
+    const { data, error } = await supabase.rpc('get_admin_statistics', {
+      _date_filter: dateFilter,
+      _today_start: todayStart,
+      _week_start: weekStart
+    });
     
-    if (dateFilter) {
-      totalQuery = totalQuery.gte("created_at", dateFilter);
+    if (error) {
+      console.error("Error fetching overview stats:", error);
+      throw error;
     }
     
-    const { data: totalData } = await totalQuery;
+    const stats = data?.[0];
     
-    // Today stats
-    const { data: todayData } = await supabase
-      .from("camly_coin_transactions")
-      .select("amount")
-      .gt("amount", 0)
-      .gte("created_at", todayStart);
-    
-    // Week stats
-    const { data: weekData } = await supabase
-      .from("camly_coin_transactions")
-      .select("amount")
-      .gt("amount", 0)
-      .gte("created_at", weekStart);
-    
-    // Get total users who agreed to Law of Light for consistent count
-    const { count: totalAgreedUsers } = await supabase
-      .from("user_light_agreements")
-      .select("*", { count: "exact", head: true });
-    
-    const totalCoins = totalData?.reduce((sum, tx) => sum + tx.amount, 0) || 0;
-    const totalTx = totalData?.length || 0;
-    
-    setOverviewStats({
-      totalCoinsDistributed: totalCoins,
-      totalTransactions: totalTx,
-      uniqueRecipients: totalAgreedUsers || 0,
-      averagePerTransaction: totalTx > 0 ? Math.floor(totalCoins / totalTx) : 0,
-      todayCoins: todayData?.reduce((sum, tx) => sum + tx.amount, 0) || 0,
-      weekCoins: weekData?.reduce((sum, tx) => sum + tx.amount, 0) || 0
-    });
+    if (stats) {
+      setOverviewStats({
+        totalCoinsDistributed: Number(stats.total_coins_distributed) || 0,
+        totalTransactions: Number(stats.total_transactions) || 0,
+        uniqueRecipients: Number(stats.total_users) || 0,
+        averagePerTransaction: Number(stats.average_per_transaction) || 0,
+        todayCoins: Number(stats.today_coins) || 0,
+        weekCoins: Number(stats.week_coins) || 0
+      });
+    }
   };
 
   const formatNumber = (num: number) => {
