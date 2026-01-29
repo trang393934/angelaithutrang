@@ -141,6 +141,7 @@ const Chat = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const { isGenerating, generateImage } = useImageGeneration();
   const { isAnalyzing, analyzeImage } = useImageAnalysis();
@@ -948,19 +949,38 @@ const Chat = () => {
                 >
                   <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
+                {/* Nút chọn ảnh từ thư viện */}
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-green-100 transition-colors"
+                  title={t("chat.selectFromGallery") || "Chọn ảnh từ thư viện"}
+                >
+                  <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                </button>
+                {/* Nút mở camera trực tiếp */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="p-1.5 sm:p-2 rounded-full hover:bg-blue-100 transition-colors"
-                  title={t("chat.analyzeImage")}
+                  title={t("chat.capturePhoto") || "Chụp ảnh mới"}
                 >
                   <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                 </button>
+                {/* Camera input - mở camera trực tiếp trên mobile */}
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                {/* Gallery input - chọn từ thư viện ảnh */}
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
                 />
