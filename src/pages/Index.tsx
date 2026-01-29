@@ -17,7 +17,7 @@ const Index = () => {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen bg-background flex w-full">
-        {/* Left Sidebar - Navigation */}
+        {/* Left Sidebar - Navigation (sticky via Sidebar component) */}
         <MainSidebar />
         
         {/* Main Content Area */}
@@ -27,24 +27,23 @@ const Index = () => {
           {/* Daily Login Reward - shows popup when user logs in */}
           {user && <DailyLoginReward />}
           
-          <main className="flex-1">
-            <div className="flex">
-              {/* Center Content */}
-              <div className="flex-1 min-w-0">
-                <HeroSection />
-                <CamlyCoinPriceChart />
-                <MissionSection />
-                <CoreValuesSection />
-                <ConnectionSection />
-              </div>
-              
-              {/* Right Sidebar - Leaderboard (hidden on mobile, sticky on desktop) */}
-              <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 p-4 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
-                <Leaderboard />
-              </aside>
-            </div>
-          </main>
-          <Footer />
+          {/* Content area with fixed sidebars and scrollable center */}
+          <div className="flex-1 flex">
+            {/* Center Content - Scrollable */}
+            <main className="flex-1 min-w-0 overflow-y-auto">
+              <HeroSection />
+              <CamlyCoinPriceChart />
+              <MissionSection />
+              <CoreValuesSection />
+              <ConnectionSection />
+              <Footer />
+            </main>
+            
+            {/* Right Sidebar - Leaderboard (fixed position, hidden on mobile) */}
+            <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 sticky top-0 h-screen overflow-y-auto p-4 border-l border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
+              <Leaderboard />
+            </aside>
+          </div>
         </div>
       </div>
     </SidebarProvider>
