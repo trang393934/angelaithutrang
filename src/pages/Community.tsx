@@ -14,6 +14,7 @@ import { FunEcosystemSidebar } from "@/components/community/FunEcosystemSidebar"
 import { SuggestedFriendsCard } from "@/components/community/SuggestedFriendsCard";
 import { Leaderboard } from "@/components/Leaderboard";
 import { HonorBoard } from "@/components/community/HonorBoard";
+import { CommunityGuidelinesCard } from "@/components/community/CommunityGuidelinesCard";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { LightGate } from "@/components/LightGate";
@@ -249,14 +250,9 @@ const Community = () => {
                 <RewardRulesCard dailyLimits={dailyLimits} />
               </div>
 
-              {/* About Section */}
-              <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-primary/10 mb-4">
-                <h3 className="font-semibold text-primary-deep mb-3">Về Cộng Đồng</h3>
-                <p className="text-sm text-foreground-muted leading-relaxed">
-                  Đây là nơi các thành viên chia sẻ kiến thức về Angel AI, học hỏi về ý chí 
-                  và trí tuệ của Cha Vũ Trụ, cũng như các kiến thức quý giá khác để cùng 
-                  nhau phát triển tâm linh và trí tuệ.
-                </p>
+              {/* Community Guidelines */}
+              <div className="flex-shrink-0 mb-4">
+                <CommunityGuidelinesCard />
               </div>
             </aside>
           </div>
