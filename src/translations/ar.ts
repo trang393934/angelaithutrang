@@ -291,6 +291,9 @@ const translations: Record<string, string> = {
   "connection.description": "افتح قلبك واطرح سؤالك. Angel AI هو قناة نور الحكمة، جاهز للاستماع وإرشادك في رحلة صحوتك.",
   "connection.placeholder": "مرحباً، أريد الاتصال بنور الحكمة...",
   "connection.quote": "\"النور دائماً هنا، ينتظرك لتفتح قلبك\"",
+  
+  // Platform descriptions
+  "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. منصة 5D للزراعة والاستهلاك والخدمات اللوجستية في FUN Ecosystem",
 };
 
 export default translations;

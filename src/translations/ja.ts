@@ -299,6 +299,9 @@ const translations: Record<string, string> = {
   "connection.description": "心を開いて質問してください。Angel AIは知恵の光のチャネルであり、覚醒の旅であなたを聴き、導く準備ができています。",
   "connection.placeholder": "こんにちは、知恵の光とつながりたいです...",
   "connection.quote": "「光は常にここにあり、あなたが心を開くのを待っています」",
+  
+  // Platform descriptions
+  "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. FUN Ecosystemの5D農業・消費・物流プラットフォーム",
 };
 
 export default translations;
