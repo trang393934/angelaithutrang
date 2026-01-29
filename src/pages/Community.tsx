@@ -166,7 +166,6 @@ const Community = () => {
                     </SheetHeader>
                     <div className="space-y-4 mt-4 pb-6">
                       <HonorBoard />
-                      <CirclesSidebar maxVisible={4} />
                       <Leaderboard />
                       <SuggestedFriendsCard />
                       <RewardRulesCard dailyLimits={dailyLimits} />
