@@ -127,3 +127,6 @@ verify_jwt = false
 
 [functions.generate-content]
 verify_jwt = false
+
+[functions.edit-image]
+verify_jwt = false
