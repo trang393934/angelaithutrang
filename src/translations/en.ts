@@ -530,6 +530,7 @@ const translations: Record<string, string> = {
   // Platform descriptions
   "about.platform.play": "Video Web3 platform. Play & Earn. Shine Your Light! Where joy becomes the path of creativity, creativity becomes value, and value becomes light spreading to every life – every community – an entire new era",
   "about.platform.planet": "Kids Game – Play & Earn. Where fun becomes a creative journey for children",
+  "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. 5D agriculture – consumption – logistics platform in FUN Ecosystem",
 };
 
 export default translations;

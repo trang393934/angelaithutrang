@@ -30,7 +30,7 @@ const ecosystemItems = [
     name: "FUN Farm", 
     logo: funFarmLogo, 
     url: "https://farm.fun.rich",
-    description: "Nông trại số"
+    description: "Farm to Table – Fair & Fast – Free-Fee & Earn"
   },
   { 
     name: "FUN Charity", 
