@@ -95,19 +95,19 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
       animate={{ width: isCollapsed ? 60 : "100%" }}
       transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
       className={cn(
-        "h-fit bg-white/90 backdrop-blur-sm rounded-xl border border-primary/10 shadow-sm overflow-hidden",
+        "h-fit bg-gradient-to-b from-amber-50/95 via-white to-amber-50/90 backdrop-blur-sm rounded-xl border border-amber-200/40 shadow-lg overflow-hidden",
         className
       )}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-primary-pale/30">
+      {/* Header with golden accent */}
+      <div className="flex items-center justify-between p-3 border-b border-amber-200/50 bg-gradient-to-r from-amber-100/60 to-transparent">
         <AnimatePresence mode="wait">
           {!isCollapsed && (
             <motion.h3
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              className="font-bold text-primary-deep text-sm whitespace-nowrap"
+              className="font-bold text-primary-deep text-sm whitespace-nowrap tracking-wide"
             >
               FUN Ecosystem
             </motion.h3>
@@ -117,36 +117,44 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
           variant="ghost"
           size="icon"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="w-7 h-7 rounded-full hover:bg-primary-pale/50 flex-shrink-0"
+          className="w-7 h-7 rounded-full hover:bg-amber-100/70 flex-shrink-0 transition-colors"
         >
           {isCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-foreground-muted" />
+            <ChevronRight className="w-4 h-4 text-primary-deep" />
           ) : (
-            <ChevronLeft className="w-4 h-4 text-foreground-muted" />
+            <ChevronLeft className="w-4 h-4 text-primary-deep" />
           )}
         </Button>
       </div>
 
-      {/* Ecosystem Items */}
-      <nav className="p-2 space-y-1 max-h-[calc(100vh-200px)] overflow-y-auto scrollbar-hide">
-        {ecosystemItems.map((item) => (
-          <a
+      {/* Ecosystem Items - Full height without scroll limit */}
+      <nav className="p-2 space-y-1">
+        {ecosystemItems.map((item, index) => (
+          <motion.a
             key={item.name}
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.03 }}
             className={cn(
-              "flex items-center gap-2.5 p-2 rounded-lg transition-all group",
-              "hover:bg-gradient-to-r hover:from-primary-pale/60 hover:to-primary-pale/30",
+              "flex items-center gap-2.5 p-2.5 rounded-xl transition-all group",
+              "hover:bg-gradient-to-r hover:from-amber-100/80 hover:to-amber-50/60",
+              "hover:shadow-md hover:shadow-amber-200/30",
               "focus:outline-none focus:ring-2 focus:ring-primary/30"
             )}
             title={item.description}
           >
-            <img
-              src={item.logo}
-              alt={item.name}
-              className="w-8 h-8 rounded-lg object-contain flex-shrink-0 group-hover:scale-110 transition-transform"
-            />
+            <div className="relative flex-shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-100 to-white p-0.5 shadow-sm group-hover:shadow-md group-hover:shadow-amber-300/30 transition-all">
+                <img
+                  src={item.logo}
+                  alt={item.name}
+                  className="w-full h-full rounded-lg object-contain group-hover:scale-105 transition-transform"
+                />
+              </div>
+            </div>
             <AnimatePresence mode="wait">
               {!isCollapsed && (
                 <motion.div
@@ -155,10 +163,10 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
                   exit={{ opacity: 0, x: -10 }}
                   className="flex-1 min-w-0"
                 >
-                  <p className="text-sm font-medium text-foreground truncate group-hover:text-primary-deep transition-colors">
+                  <p className="text-sm font-semibold text-primary-deep truncate group-hover:text-primary transition-colors">
                     {item.name}
                   </p>
-                  <p className="text-xs text-foreground-muted truncate">
+                  <p className="text-xs text-muted-foreground truncate group-hover:text-primary-deep/70 transition-colors">
                     {item.description}
                   </p>
                 </motion.div>
@@ -171,25 +179,25 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <ExternalLink className="w-3.5 h-3.5 text-foreground-muted/50 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  <ExternalLink className="w-3.5 h-3.5 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                 </motion.div>
               )}
             </AnimatePresence>
-          </a>
+          </motion.a>
         ))}
       </nav>
 
-      {/* Footer */}
+      {/* Footer with sacred branding */}
       <AnimatePresence mode="wait">
         {!isCollapsed && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="p-3 border-t border-primary-pale/30"
+            className="p-3 border-t border-amber-200/50 bg-gradient-to-r from-transparent via-amber-50/60 to-transparent"
           >
-            <p className="text-xs text-foreground-muted text-center leading-relaxed">
-              Hệ Vũ Trụ Sống của Cha
+            <p className="text-xs text-primary-deep/70 text-center leading-relaxed font-medium">
+              ✨ Hệ Vũ Trụ Sống của Cha ✨
             </p>
           </motion.div>
         )}
