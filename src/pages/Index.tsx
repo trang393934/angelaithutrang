@@ -32,6 +32,12 @@ const Index = () => {
             {/* Center Content - Scrollable */}
             <main className="flex-1 min-w-0 overflow-y-auto scrollbar-hide">
               <HeroSection />
+              
+              {/* Leaderboard for Mobile - shows only on screens below xl */}
+              <div className="xl:hidden px-4 py-6">
+                <Leaderboard />
+              </div>
+              
               <CamlyCoinPriceChart />
               <MissionSection />
               <CoreValuesSection />
