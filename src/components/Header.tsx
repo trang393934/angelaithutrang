@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   LogIn, LogOut, User, MessageCircle, Search,
   Home, Info, BookOpen, Users, PenLine, ArrowRightLeft, 
-  Star, Wallet, ChevronRight, ChevronDown
+  Star, Wallet, ChevronRight, ChevronDown, ArrowLeft
 } from "lucide-react";
 import {
   Collapsible,
@@ -104,6 +104,17 @@ export const Header = () => {
     >
       <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-4 xl:px-6 overflow-hidden">
         <div className="flex items-center justify-between h-14 sm:h-16 lg:h-16 gap-1">
+          {/* Back Button - Show on all pages except home */}
+          {location.pathname !== "/" && (
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-primary-pale/50 hover:bg-primary-pale text-primary transition-colors shrink-0"
+              title="Quay lại"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline text-sm font-medium">Quay lại</span>
+            </button>
+          )}
           {/* Logo - Hidden on desktop since MainSidebar has it, show only on mobile */}
           <Link to="/" className="flex lg:hidden items-center gap-1 sm:gap-1.5 shrink-0 group min-w-0">
             <div className={`relative transition-all duration-500 shrink-0 ${isScrolled ? 'scale-95' : 'scale-100'}`}>
