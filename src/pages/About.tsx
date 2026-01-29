@@ -1,6 +1,7 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import beLyFounder from "@/assets/be-ly-founder.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
@@ -90,6 +91,11 @@ const About = () => {
           <p className="text-lg md:text-xl text-primary-medium max-w-3xl mx-auto">
             {t("about.subtitle")}
           </p>
+        </div>
+        
+        {/* Light Constitution Banner */}
+        <div className="container mx-auto px-6 mt-8">
+          <LightConstitutionBanner className="max-w-2xl mx-auto" />
         </div>
       </section>
 

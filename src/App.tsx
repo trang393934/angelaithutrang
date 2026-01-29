@@ -34,6 +34,7 @@ import Swap from "./pages/Swap";
 import Knowledge from "./pages/Knowledge";
 import NotFound from "./pages/NotFound";
 import PlatformDocs from "./pages/docs/Platform";
+import LightConstitution from "./pages/docs/LightConstitution";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
 import ActivityHistory from "./pages/ActivityHistory";
@@ -119,6 +120,7 @@ const App = () => (
               <Route path="/messages" element={<ProfileCompletionGate><Messages /></ProfileCompletionGate>} />
               <Route path="/messages/:userId" element={<ProfileCompletionGate><Messages /></ProfileCompletionGate>} />
               <Route path="/docs/platform" element={<PlatformDocs />} />
+              <Route path="/docs/light-constitution" element={<LightConstitution />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
