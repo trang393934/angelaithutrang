@@ -16,19 +16,19 @@ const Index = () => {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen bg-background flex w-full">
+      <div className="h-screen bg-background flex w-full overflow-hidden">
         {/* Left Sidebar - Navigation (sticky via Sidebar component) */}
         <MainSidebar />
         
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
           <Header />
           
           {/* Daily Login Reward - shows popup when user logs in */}
           {user && <DailyLoginReward />}
           
           {/* Content area with fixed sidebars and scrollable center */}
-          <div className="flex-1 flex">
+          <div className="flex-1 flex overflow-hidden">
             {/* Center Content - Scrollable */}
             <main className="flex-1 min-w-0 overflow-y-auto">
               <HeroSection />
@@ -39,8 +39,8 @@ const Index = () => {
               <Footer />
             </main>
             
-            {/* Right Sidebar - Leaderboard (fixed position, hidden on mobile) */}
-            <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 sticky top-0 h-screen overflow-y-auto p-4 border-l border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
+            {/* Right Sidebar - Leaderboard (fixed, hidden on mobile) */}
+            <aside className="hidden xl:flex xl:flex-col w-80 2xl:w-96 shrink-0 h-full overflow-y-auto p-4 border-l border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
               <Leaderboard />
             </aside>
           </div>
