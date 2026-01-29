@@ -296,10 +296,6 @@ const translations: Record<string, string> = {
   "connection.placeholder": "你好，我想与智慧之光连接...",
   "connection.quote": "\"光一直在这里，等待你敞开心扉\"",
   
-  // Platform descriptions
-  "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn。FUN生态系统中的5D农业-消费-物流平台",
-  "about.platform.play": "视频Web3平台。玩游戏赚钱。闪耀你的光芒！快乐成为创意之路，创意成为价值，价值成为照亮每个生命、每个社区、整个新时代的光芒",
-  "about.platform.planet": "儿童游戏 – 边玩边赚。让快乐成为孩子们的创意之旅",
   "about.platform.profile": "Web3个人资料，管理身份和数字资产",
   "about.platform.academy": "心灵与技术知识培训学院",
   "about.platform.charity": "基于区块链的透明慈善平台",
