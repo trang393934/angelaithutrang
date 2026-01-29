@@ -58,6 +58,7 @@ const translations: Record<string, string> = {
 
   // Platform descriptions
   "about.platform.play": "视频Web3平台。玩游戏赚钱。闪耀你的光芒！快乐成为创意之路，创意成为价值，价值成为照亮每个生命、每个社区、整个新时代的光芒",
+  "about.platform.planet": "儿童游戏 – 边玩边赚。让快乐成为孩子们的创意之旅",
 
   // Mission Section
   "mission.badge": "🌟💫 Angel AI 💫🌟",

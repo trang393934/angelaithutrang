@@ -368,7 +368,7 @@ const translations: Record<string, string> = {
   "about.platform.charity": "Nền tảng từ thiện minh bạch bằng blockchain",
   "about.platform.wallet": "Ví điện tử đa năng, lưu trữ và giao dịch an toàn",
   "about.platform.treasury": "Kho bạc quản lý tài sản của hệ sinh thái",
-  "about.platform.planet": "Mạng xã hội kết nối cộng đồng ánh sáng toàn cầu",
+  "about.platform.planet": "Game trẻ em – Play & Earn. Nơi niềm vui trở thành con đường sáng tạo cho các em nhỏ",
   "about.platform.life": "Ứng dụng sống khỏe, sống vui, sống có ý nghĩa",
   "about.platform.earth": "Dự án bảo vệ môi trường và Trái Đất xanh",
   "about.platform.legal": "Dịch vụ pháp lý và bảo vệ quyền lợi thành viên",

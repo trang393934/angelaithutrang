@@ -17,6 +17,7 @@ import fuLegalLogo from "@/assets/fu-legal-logo.png";
 import fuTradingLogo from "@/assets/fu-trading-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
 import funEarthLogo from "@/assets/fun-earth-logo.png";
+import funPlanetLogo from "@/assets/fun-planet-logo.png";
 
 const ecosystemItems = [
   { 
@@ -51,9 +52,9 @@ const ecosystemItems = [
   },
   { 
     name: "FUN Planet", 
-    logo: funLifeLogo, 
+    logo: funPlanetLogo, 
     url: "https://planet.fun.rich",
-    description: "Hành tinh FUN"
+    description: "Game trẻ em – Play & Earn"
   },
   { 
     name: "FUN Wallet", 
