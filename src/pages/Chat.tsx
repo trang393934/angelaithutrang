@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2, 
   ImagePlus, Camera, Wand2, X, Download, Loader2, MessageSquare,
-  History, FolderOpen, Plus, Volume2, Image, Menu
+  History, FolderOpen, Plus, Volume2, Image, Menu, Pencil
 } from "lucide-react";
 import { MessageFeedback } from "@/components/chat/MessageFeedback";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
 import { useImageGeneration } from "@/hooks/useImageGeneration";
 import { useImageAnalysis } from "@/hooks/useImageAnalysis";
+import { useImageEdit } from "@/hooks/useImageEdit";
 import { useEarlyAdopterReward } from "@/hooks/useEarlyAdopterReward";
 import { useChatHistory } from "@/hooks/useChatHistory";
 import { useChatSessions } from "@/hooks/useChatSessions";
@@ -62,7 +63,7 @@ interface ShareDialogState {
   answer: string;
 }
 
-type ChatMode = "chat" | "generate-image" | "analyze-image";
+type ChatMode = "chat" | "generate-image" | "analyze-image" | "edit-image";
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/angel-chat`;
 
@@ -138,6 +139,8 @@ const Chat = () => {
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageStyle, setImageStyle] = useState<"spiritual" | "realistic" | "artistic">("spiritual");
+  const [showImageActionDialog, setShowImageActionDialog] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -145,6 +148,7 @@ const Chat = () => {
 
   const { isGenerating, generateImage } = useImageGeneration();
   const { isAnalyzing, analyzeImage } = useImageAnalysis();
+  const { isEditing, editImage } = useImageEdit();
   const { isLoading: ttsLoading, isPlaying: ttsPlaying, currentMessageId: ttsMessageId, playText, stopAudio } = useTextToSpeech();
 
   const scrollToBottom = () => {
@@ -196,10 +200,23 @@ const Chat = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
-      setUploadedImage(dataUrl);
-      setChatMode("analyze-image");
+      // Show action dialog to choose between analyze or edit
+      setPendingImage(dataUrl);
+      setShowImageActionDialog(true);
     };
     reader.readAsDataURL(file);
+    
+    // Reset input value to allow same file selection
+    e.target.value = '';
+  };
+
+  const handleSelectImageAction = (action: "analyze" | "edit") => {
+    if (!pendingImage) return;
+    
+    setUploadedImage(pendingImage);
+    setChatMode(action === "analyze" ? "analyze-image" : "edit-image");
+    setShowImageActionDialog(false);
+    setPendingImage(null);
   };
 
   const handleDownloadImage = (imageUrl: string) => {
@@ -483,6 +500,56 @@ const Chat = () => {
     }
   };
 
+  // Image editing - saves to IMAGE history (separate from chat history)
+  const handleEditImage = async (instruction: string) => {
+    if (!uploadedImage) return;
+    
+    const imageToEdit = uploadedImage; // Store before clearing
+
+    setMessages(prev => [...prev, { 
+      role: "user", 
+      content: `✏️ ${t("chat.editImage")}: ${instruction}`, 
+      type: "image-analysis",
+      imageUrl: imageToEdit
+    }]);
+    setMessages(prev => [...prev, { role: "assistant", content: t("chat.editingImage"), type: "text" }]);
+
+    try {
+      const result = await editImage(imageToEdit, instruction, imageStyle);
+      
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: result.description || t("chat.imageEdited"),
+          type: "image",
+          imageUrl: result.imageUrl
+        };
+        return updated;
+      });
+      
+      // Save to IMAGE history (not chat history)
+      if (user && result.imageUrl) {
+        saveToImageHistory('generated', instruction, result.imageUrl, result.description, imageStyle);
+      }
+      
+      setUploadedImage(null);
+      setChatMode("chat");
+      toast.success(t("chat.imageEdited"));
+    } catch (error: any) {
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: `${t("chat.editError")} ${error.message}`,
+          type: "text"
+        };
+        return updated;
+      });
+      toast.error(error.message || t("chat.editError"));
+    }
+  };
+
   const sendMessage = useCallback(async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
@@ -499,6 +566,13 @@ const Chat = () => {
     if (chatMode === "analyze-image" && uploadedImage) {
       setIsLoading(true);
       await handleAnalyzeImage(userMessage);
+      setIsLoading(false);
+      return;
+    }
+
+    if (chatMode === "edit-image" && uploadedImage) {
+      setIsLoading(true);
+      await handleEditImage(userMessage);
       setIsLoading(false);
       return;
     }
@@ -883,7 +957,7 @@ const Chat = () => {
           <div className="flex-shrink-0 px-3 sm:px-4 lg:px-8 py-2 bg-muted/50 border-t border-border">
             <div className="mx-auto max-w-5xl flex items-center gap-2 sm:gap-3">
               <div className="relative flex-shrink-0">
-                <img src={uploadedImage} alt="To analyze" className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover" />
+                <img src={uploadedImage} alt="To process" className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover" />
                 <button
                   onClick={() => { setUploadedImage(null); setChatMode("chat"); }}
                   className="absolute -top-1.5 -right-1.5 p-0.5 sm:p-1 bg-destructive text-destructive-foreground rounded-full"
@@ -891,13 +965,28 @@ const Chat = () => {
                   <X className="w-3 h-3" />
                 </button>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground">{t("chat.askAboutImage")}</p>
+              <div className="flex flex-col gap-1">
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {chatMode === "edit-image" ? t("chat.editInstruction") : t("chat.askAboutImage")}
+                </p>
+                {chatMode === "edit-image" && (
+                  <select
+                    value={imageStyle}
+                    onChange={(e) => setImageStyle(e.target.value as any)}
+                    className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white dark:bg-gray-800 border border-border w-fit"
+                  >
+                    <option value="spiritual">{t("chat.styleSpiritual")}</option>
+                    <option value="realistic">{t("chat.styleRealistic")}</option>
+                    <option value="artistic">{t("chat.styleArtistic")}</option>
+                  </select>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Mode Indicator */}
-        {chatMode !== "chat" && !uploadedImage && (
+        {/* Mode Indicator - for generate-image only */}
+        {chatMode === "generate-image" && !uploadedImage && (
           <div className="flex-shrink-0 px-3 sm:px-4 lg:px-8 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-t border-border">
             <div className="mx-auto max-w-5xl flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 sm:gap-2">
@@ -996,9 +1085,11 @@ const Chat = () => {
                       ? t("chat.placeholderImage")
                       : chatMode === "analyze-image"
                       ? t("chat.placeholderAnalyze")
+                      : chatMode === "edit-image"
+                      ? t("chat.placeholderEdit")
                       : t("chat.placeholder")
                   }
-                  disabled={isLoading || isGenerating || isAnalyzing}
+                  disabled={isLoading || isGenerating || isAnalyzing || isEditing}
                   enterKeyHint="send"
                   autoComplete="off"
                   autoCorrect="off"
@@ -1006,10 +1097,10 @@ const Chat = () => {
                 />
                 <button
                   type="submit"
-                  disabled={!input.trim() || isLoading || isGenerating || isAnalyzing}
+                  disabled={!input.trim() || isLoading || isGenerating || isAnalyzing || isEditing}
                   className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full bg-sapphire-gradient text-white hover:shadow-sacred transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading || isGenerating || isAnalyzing ? (
+                  {isLoading || isGenerating || isAnalyzing || isEditing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Send className="w-4 h-4" />
@@ -1048,6 +1139,51 @@ const Chat = () => {
               </button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Action Selection Dialog */}
+      <Dialog open={showImageActionDialog} onOpenChange={(open) => {
+        if (!open) {
+          setPendingImage(null);
+        }
+        setShowImageActionDialog(open);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("chat.selectImageAction")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            {pendingImage && (
+              <div className="mx-auto mb-2">
+                <img src={pendingImage} alt="Selected" className="max-h-32 rounded-lg object-cover" />
+              </div>
+            )}
+            <button
+              onClick={() => handleSelectImageAction("analyze")}
+              className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                <Image className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-foreground group-hover:text-blue-700">{t("chat.mode.analyze")}</p>
+                <p className="text-xs text-muted-foreground">{t("chat.analyzeDescription")}</p>
+              </div>
+            </button>
+            <button
+              onClick={() => handleSelectImageAction("edit")}
+              className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                <Pencil className="w-5 h-5 text-orange-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-foreground group-hover:text-orange-700">{t("chat.mode.edit")}</p>
+                <p className="text-xs text-muted-foreground">{t("chat.editDescription")}</p>
+              </div>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
