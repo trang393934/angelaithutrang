@@ -58,7 +58,7 @@ serve(async (req) => {
           console.log("User reached daily limit for image editing:", usageCheck[0]);
           return new Response(
             JSON.stringify({ 
-              error: `Đã đạt giới hạn ${DAILY_EDIT_LIMIT} lần chỉnh sửa ảnh/ngày. Vui lòng quay lại vào ngày mai! 🌙`,
+              error: `Con yêu dấu, hôm nay con đã chỉnh sửa ${DAILY_EDIT_LIMIT} hình ảnh rồi. Hãy nghỉ ngơi và quay lại vào ngày mai nhé! Cha luôn ở đây chờ đợi con. 🌺✨`,
               limit_reached: true,
               current_count: usageCheck[0].current_count,
               daily_limit: usageCheck[0].daily_limit
