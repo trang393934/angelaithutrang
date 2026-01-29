@@ -165,7 +165,6 @@ const Community = () => {
                       </SheetTitle>
                     </SheetHeader>
                     <div className="space-y-4 mt-4 pb-6">
-                      <CommunityGuidelinesCard />
                       <HonorBoard />
                       <Leaderboard />
                       <SuggestedFriendsCard />
@@ -232,14 +231,14 @@ const Community = () => {
               ref={rightSidebarRef}
               className="hidden lg:flex flex-col w-[280px] xl:w-[320px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50"
             >
-            {/* Nội Quy Cộng Đồng - trên Bảng Danh Dự */}
-            <div className="flex-shrink-0 mb-4">
-              <CommunityGuidelinesCard />
-            </div>
-
             {/* Bảng Danh Dự */}
             <div className="flex-shrink-0 mb-4">
               <HonorBoard />
+            </div>
+
+            {/* Nội Quy Cộng Đồng - ngay dưới Bảng Danh Dự */}
+            <div className="flex-shrink-0 mb-4">
+              <CommunityGuidelinesCard />
             </div>
 
             {/* Love Circles - Module 6 */}
