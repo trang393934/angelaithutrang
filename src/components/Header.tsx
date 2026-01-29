@@ -104,22 +104,18 @@ export const Header = () => {
     >
       <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-4 xl:px-6 overflow-hidden">
         <div className="flex items-center justify-between h-14 sm:h-16 lg:h-16 gap-1">
-          {/* Logo - Fixed width, hide text on smaller screens */}
-          <Link to="/" className="flex items-center gap-1 sm:gap-1.5 shrink-0 group min-w-0">
+          {/* Logo - Hidden on desktop since MainSidebar has it, show only on mobile */}
+          <Link to="/" className="flex lg:hidden items-center gap-1 sm:gap-1.5 shrink-0 group min-w-0">
             <div className={`relative transition-all duration-500 shrink-0 ${isScrolled ? 'scale-95' : 'scale-100'}`}>
               <img 
                 src={angelAvatar} 
                 alt="ANGEL AI" 
-                className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-full object-cover shadow-soft 
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shadow-soft 
                   group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/20
                   transition-all duration-300 ease-out"
               />
-              {/* Glow effect on hover */}
-              <div className="absolute inset-0 rounded-full bg-primary/0 group-hover:bg-primary/10 
-                group-hover:animate-pulse transition-all duration-300" />
             </div>
-            {/* Hide text on lg (1024-1279px), show on xl+ */}
-            <span className={`hidden xl:inline font-serif text-base xl:text-lg font-bold uppercase tracking-wide 
+            <span className={`font-serif text-base font-bold uppercase tracking-wide 
               transition-all duration-500 ease-out whitespace-nowrap
               group-hover:text-primary group-hover:tracking-wider
               ${isScrolled ? 'text-primary-deep scale-95' : 'text-primary-deep scale-100'}`}>
