@@ -2,7 +2,16 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { LogIn, LogOut, User, MessageCircle, Search } from "lucide-react";
+import { 
+  LogIn, LogOut, User, MessageCircle, Search,
+  Home, Info, BookOpen, Users, PenLine, ArrowRightLeft, 
+  Star, Wallet, ChevronRight, ChevronDown
+} from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
@@ -75,14 +84,14 @@ export const Header = () => {
   };
 
   const navItems = [
-    { label: t("nav.home"), href: "/" },
-    { label: t("nav.about"), href: "/about" },
-    { label: t("nav.knowledge"), href: "/knowledge" },
-    { label: t("nav.connect"), href: "/chat" },
-    { label: t("nav.community") || "Cộng đồng", href: "/community" },
-    { label: t("nav.contentWriter"), href: "/content-writer" },
-    { label: t("nav.swap"), href: "/swap" },
-    { label: t("nav.earn"), href: "/earn" },
+    { label: t("nav.home"), href: "/", icon: Home },
+    { label: t("nav.about"), href: "/about", icon: Info },
+    { label: t("nav.knowledge"), href: "/knowledge", icon: BookOpen },
+    { label: t("nav.connect"), href: "/chat", icon: MessageCircle },
+    { label: t("nav.community") || "Cộng đồng", href: "/community", icon: Users },
+    { label: t("nav.contentWriter"), href: "/content-writer", icon: PenLine },
+    { label: t("nav.swap"), href: "/swap", icon: ArrowRightLeft },
+    { label: t("nav.earn"), href: "/earn", icon: Star },
   ];
 
   return (
@@ -261,76 +270,135 @@ export const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - Redesigned */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-primary-pale/30 bg-background-pure/95 backdrop-blur-lg animate-in slide-in-from-top-2 duration-200">
-            <nav className="flex flex-col gap-2">
-              {/* Navigation Items - Mobile with same styling */}
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center justify-center px-4 py-3 rounded-md text-base font-semibold transition-all duration-300 border mx-2 ${
-                    location.pathname === item.href 
-                      ? 'bg-primary text-white border-amber-400/80 shadow-[0_0_8px_rgba(251,191,36,0.4)]' 
-                      : 'bg-primary-deep/90 text-white/90 border-amber-500/40 hover:bg-primary hover:border-amber-400/70'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              
-              {/* Divider */}
-              <div className="border-t border-primary-pale/30 my-3" />
+          <div className="lg:hidden py-4 border-t border-primary-pale/30 bg-background-pure/95 backdrop-blur-xl animate-in slide-in-from-top-2 duration-200 max-h-[85vh] overflow-y-auto">
+            <nav className="flex flex-col gap-4">
+              {/* Navigation Grid - 2 columns */}
+              <div className="grid grid-cols-2 gap-3 px-4">
+                {navItems.map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`mobile-nav-item flex flex-col items-center justify-center p-4 rounded-xl
+                        bg-gradient-to-br from-primary-deep/90 to-primary-deep
+                        border shadow-md transition-all duration-300 active:scale-95 ${
+                        location.pathname === item.href 
+                          ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)]' 
+                          : 'border-amber-500/30 hover:border-amber-400/70'
+                      }`}
+                      style={{ 
+                        animationDelay: `${index * 0.05}s`,
+                        opacity: 0,
+                        animation: 'slideUp 0.3s ease-out forwards'
+                      }}
+                    >
+                      <Icon className="w-6 h-6 mb-2 text-white/90" />
+                      <span className="text-sm font-medium text-white text-center leading-tight">
+                        {item.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
               
               {/* User Section */}
               {!isLoading && (
                 <>
                   {user ? (
-                    <div className="space-y-2">
-                      {/* Web3 Wallet for Mobile */}
-                      <div className="px-4 py-2">
-                        <p className="text-xs text-foreground-muted mb-2 uppercase tracking-wide">{t("header.web3Wallet")}</p>
-                        <Web3WalletButton />
-                      </div>
-                      
-                      {/* Camly Coin Balance */}
-                      <Link 
-                        to="/earn"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center justify-between px-4 py-3 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors mx-2"
-                      >
-                        <div className="flex items-center gap-2">
-                          <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
-                          <span className="text-sm font-medium text-foreground">{t("header.camlyCoin")}</span>
-                        </div>
-                        <span className="text-base font-bold text-amber-700 dark:text-amber-400">
-                          {Math.floor(balance).toLocaleString()}
-                        </span>
-                      </Link>
-                      
-                      {/* Profile Link */}
-                      <Link 
-                        to="/profile"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-primary-pale/30 transition-colors mx-2"
-                      >
-                        {userProfile?.avatar_url ? (
-                          <img 
-                            src={userProfile.avatar_url} 
-                            alt="Avatar" 
-                            className="w-10 h-10 rounded-full object-cover border-2 border-primary/20"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-primary-pale flex items-center justify-center">
-                            <User className="w-5 h-5 text-primary" />
+                    <div className="space-y-3 mt-2">
+                      {/* Web3 Wallet - Collapsible */}
+                      <Collapsible className="mx-4">
+                        <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl 
+                          bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 
+                          border border-blue-200/50 dark:border-blue-800/50 transition-all hover:shadow-md">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                              <Wallet className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <span className="font-semibold text-foreground">{t("header.web3Wallet")}</span>
                           </div>
-                        )}
-                        <div>
-                          <p className="text-base font-semibold text-foreground">{getDisplayName()}</p>
-                          <p className="text-xs text-foreground-muted">{t("header.viewProfile")}</p>
+                          <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform duration-200 
+                            [[data-state=open]>&]:rotate-180" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-3 px-2">
+                          <Web3WalletButton />
+                        </CollapsibleContent>
+                      </Collapsible>
+                      
+                      {/* Premium User Profile Card */}
+                      <div className="mx-4 rounded-2xl overflow-hidden 
+                        bg-gradient-to-r from-amber-100/50 via-white to-amber-100/50 
+                        dark:from-amber-950/30 dark:via-gray-900 dark:to-amber-950/30
+                        border border-amber-300/50 dark:border-amber-700/50 shadow-lg">
+                        
+                        {/* Profile row */}
+                        <Link 
+                          to="/profile" 
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center gap-4 p-4 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-colors"
+                        >
+                          <div className="relative">
+                            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 opacity-75 blur-sm animate-pulse" />
+                            {userProfile?.avatar_url ? (
+                              <img 
+                                src={userProfile.avatar_url} 
+                                alt="Avatar" 
+                                className="relative w-14 h-14 rounded-full border-2 border-white object-cover shadow-md"
+                              />
+                            ) : (
+                              <div className="relative w-14 h-14 rounded-full bg-primary-pale border-2 border-white flex items-center justify-center shadow-md">
+                                <User className="w-7 h-7 text-primary" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-lg text-foreground truncate">{getDisplayName()}</p>
+                            <p className="text-sm text-muted-foreground">{t("header.viewProfile")}</p>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        </Link>
+                        
+                        {/* Camly Coin row */}
+                        <Link 
+                          to="/earn"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center justify-between px-4 py-3 border-t border-amber-200/50 dark:border-amber-800/50
+                            hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8" />
+                            <span className="font-semibold text-foreground">{t("header.camlyCoin")}</span>
+                          </div>
+                          <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                            {Math.floor(balance).toLocaleString()}
+                          </span>
+                        </Link>
+                      </div>
+
+                      {/* Messages Button */}
+                      <Link 
+                        to="/messages"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="mx-4 flex items-center justify-between p-4 rounded-xl 
+                          bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30
+                          border border-purple-200/50 dark:border-purple-800/50 transition-all hover:shadow-md"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
+                            <MessageCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            {unreadCount > 0 && (
+                              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                                {unreadCount > 9 ? "9+" : unreadCount}
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-semibold text-foreground">{t("nav.messages") || "Tin nhắn"}</span>
                         </div>
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
                       </Link>
                       
                       {/* Sign Out Button */}
@@ -339,8 +407,10 @@ export const Header = () => {
                           handleSignOut();
                           setIsMobileMenuOpen(false);
                         }}
-                        className="w-full flex items-center gap-2 px-6 py-3 text-base font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors mx-2"
-                        style={{ width: 'calc(100% - 16px)' }}
+                        className="mx-4 flex items-center justify-center gap-3 p-4 rounded-xl
+                          bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30
+                          border border-red-200/50 dark:border-red-800/50 text-destructive font-semibold
+                          transition-all hover:shadow-md active:scale-95"
                       >
                         <LogOut className="w-5 h-5" />
                         {t("nav.logout")}
@@ -350,9 +420,11 @@ export const Header = () => {
                     <Link
                       to="/auth"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center justify-center gap-2 mx-4 py-3 text-base font-semibold text-primary-foreground bg-sapphire-gradient rounded-full shadow-sacred hover:shadow-divine transition-all"
+                      className="mx-4 flex items-center justify-center gap-3 p-4 text-lg font-bold 
+                        text-primary-foreground bg-sapphire-gradient rounded-xl shadow-sacred 
+                        hover:shadow-divine transition-all active:scale-95"
                     >
-                      <LogIn className="w-5 h-5" />
+                      <LogIn className="w-6 h-6" />
                       {t("nav.login")}
                     </Link>
                   )}
