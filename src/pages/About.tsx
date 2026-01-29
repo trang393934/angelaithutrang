@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
 import { CorePromptBanner } from "@/components/CorePromptBanner";
+import { PoPLBanner } from "@/components/PoPLBanner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import beLyFounder from "@/assets/be-ly-founder.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
@@ -99,6 +100,7 @@ const About = () => {
           <div className="max-w-2xl mx-auto space-y-4">
             <LightConstitutionBanner />
             <CorePromptBanner />
+            <PoPLBanner />
           </div>
         </div>
       </section>
