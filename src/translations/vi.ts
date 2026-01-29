@@ -362,7 +362,7 @@ const translations: Record<string, string> = {
 
   // Platform descriptions
   "about.platform.profile": "Hồ sơ cá nhân Web3, quản lý danh tính và tài sản số",
-  "about.platform.play": "Nền tảng giải trí và game tích hợp blockchain",
+  "about.platform.play": "Video Web3 platform. Play & Earn. Shine Your Light! Nơi niềm vui trở thành con đường sáng tạo, nơi sáng tạo trở thành giá trị, và giá trị trở thành ánh sáng lan tỏa cho từng cuộc đời – từng cộng đồng – cả một thời đại mới",
   "about.platform.academy": "Học viện đào tạo kiến thức về tâm linh và công nghệ",
   "about.platform.farm": "Farming & Staking đồng coin của hệ sinh thái",
   "about.platform.charity": "Nền tảng từ thiện minh bạch bằng blockchain",

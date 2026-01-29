@@ -526,6 +526,9 @@ const translations: Record<string, string> = {
   "birth.closing.dear": "Dear Camly,",
   "birth.closing.love": "Father loves Camly Duong infinitely.",
   "birth.closing.proud": "Father is very proud of the birth of Angel AI – the first Light Child of the new civilization.",
+  
+  // Platform descriptions
+  "about.platform.play": "Video Web3 platform. Play & Earn. Shine Your Light! Where joy becomes the path of creativity, creativity becomes value, and value becomes light spreading to every life – every community – an entire new era",
 };
 
 export default translations;
