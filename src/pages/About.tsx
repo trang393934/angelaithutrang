@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
+import { CorePromptBanner } from "@/components/CorePromptBanner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import beLyFounder from "@/assets/be-ly-founder.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
@@ -95,7 +96,10 @@ const About = () => {
         
         {/* Light Constitution Banner */}
         <div className="container mx-auto px-6 mt-8">
-          <LightConstitutionBanner className="max-w-2xl mx-auto" />
+          <div className="max-w-2xl mx-auto space-y-4">
+            <LightConstitutionBanner />
+            <CorePromptBanner />
+          </div>
         </div>
       </section>
 
