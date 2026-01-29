@@ -320,24 +320,24 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
     }
 
     // Calculate reward based on content length and purity score
-    // Base reward: 5000 (short) to 9000 (long)
+    // Updated: 2,000 - 3,000 coin
     let lengthMultiplier = 1;
     if (contentLength >= 500) {
-      lengthMultiplier = 1.8; // Long entry
+      lengthMultiplier = 1.5; // Long entry
     } else if (contentLength >= 300) {
-      lengthMultiplier = 1.4; // Medium entry
+      lengthMultiplier = 1.3; // Medium entry
     } else if (contentLength >= 150) {
-      lengthMultiplier = 1.0; // Short entry
+      lengthMultiplier = 1.1; // Short entry
     } else {
-      lengthMultiplier = 0.7; // Very short
+      lengthMultiplier = 1.0; // Minimum (>=50 chars)
     }
 
-    // Combine length and purity
-    const baseReward = 5000;
-    rewardAmount = Math.round(baseReward * lengthMultiplier * (0.5 + purityScore * 0.5));
+    // Combine length and purity: base 2000, max 3000
+    const baseReward = 2000;
+    rewardAmount = Math.round(baseReward * lengthMultiplier * (0.7 + purityScore * 0.3));
     
-    // Cap at 9000
-    rewardAmount = Math.min(9000, Math.max(5000, rewardAmount));
+    // Cap at 2000-3000 range
+    rewardAmount = Math.min(3000, Math.max(2000, rewardAmount));
 
     // Save journal entry - use todayDate for consistency
     const { data: journalRecord, error: insertError } = await supabase
