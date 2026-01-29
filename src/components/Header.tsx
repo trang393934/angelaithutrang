@@ -107,7 +107,15 @@ export const Header = () => {
           {/* Back Button - Show on all pages except home */}
           {location.pathname !== "/" && (
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                // Check if there's browser history to go back to
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  // Fallback to home if no history
+                  navigate("/");
+                }
+              }}
               className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-primary-pale/50 hover:bg-primary-pale text-primary transition-colors shrink-0"
               title="Quay lại"
             >
