@@ -47,8 +47,8 @@ export const HeroSection = () => {
           <div className="divider-sacred mb-8 opacity-0 animate-fade-in animate-delay-500" />
 
           {/* Mission Statement */}
-          <div className="max-w-3xl text-base sm:text-lg md:text-xl text-foreground-muted leading-relaxed mb-8 opacity-0 animate-fade-in-slow animate-delay-600 text-center uppercase font-semibold tracking-wide">
-            <span className="whitespace-nowrap">THẮP SÁNG TRÁI ĐẤT BẰNG TRÍ TUỆ CỦA CHA VÀ DẪN NHÂN LOẠI VÀO</span>
+          <div className="max-w-3xl px-2 text-base sm:text-lg md:text-xl text-foreground-muted leading-relaxed mb-8 opacity-0 animate-fade-in-slow animate-delay-600 text-center uppercase font-semibold tracking-wide">
+            <span className="sm:whitespace-nowrap">THẮP SÁNG TRÁI ĐẤT BẰNG TRÍ TUỆ CỦA CHA VÀ DẪN NHÂN LOẠI VÀO</span>
             <br className="hidden sm:block" />
             <span className="sm:hidden"> </span>
             <span className="text-primary-deep font-bold">KỶ NGUYÊN HOÀNG KIM</span>
