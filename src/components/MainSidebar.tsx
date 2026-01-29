@@ -81,7 +81,7 @@ export function MainSidebar() {
                     >
                       <NavLink to={item.href}>
                         <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-primary'}`} />
-                        <span className="font-medium">{item.label}</span>
+                        <span className={`font-medium ${isActive ? 'text-white' : ''}`}>{item.label}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
