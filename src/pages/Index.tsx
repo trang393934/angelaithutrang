@@ -40,7 +40,7 @@ const Index = () => {
             </main>
             
             {/* Right Sidebar - Leaderboard (fixed, hidden on mobile) */}
-            <aside className="hidden xl:flex xl:flex-col w-80 2xl:w-96 shrink-0 h-full overflow-y-auto p-4 border-l border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
+            <aside className="hidden xl:flex xl:flex-col w-80 2xl:w-96 shrink-0 h-full overflow-y-auto scrollbar-sacred p-4 border-l border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
               <Leaderboard />
             </aside>
           </div>
