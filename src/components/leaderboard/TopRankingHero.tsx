@@ -223,11 +223,7 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
             textShadow: "0 1px 1px rgba(255,255,255,0.8)"
           }}
         >
-          {user.lifetime_earned >= 1000000 
-            ? `${(user.lifetime_earned / 1000000).toFixed(1)}M`
-            : user.lifetime_earned >= 1000 
-              ? `${(user.lifetime_earned / 1000).toFixed(1)}K`
-              : user.lifetime_earned.toLocaleString()}
+          {user.lifetime_earned.toLocaleString()}
         </span>
       </div>
     </motion.div>
