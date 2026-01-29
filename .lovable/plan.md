@@ -1,295 +1,125 @@
 
-# Kế Hoạch Thiết Kế Lại Giao Diện Mobile Menu
 
-## Phân Tích Hiện Trạng
-Giao diện mobile menu hiện tại có các vấn đề:
-- Các nút navigation xếp dọc đơn điệu, chiếm nhiều không gian
-- Thiếu icon đi kèm text để dễ nhận diện
-- Phần Web3 Wallet và thông tin user thiếu tổ chức rõ ràng
-- Chưa có animation mượt mà khi mở/đóng menu
-- Layout không tận dụng tối đa không gian màn hình
+# Kế hoạch Thiết kế Lại Trang Chủ - Bố cục 3 Phần
 
----
+## Tổng quan
 
-## Thiết Kế Mới: Modern App-Style Navigation
-
-### 1. Navigation Grid Layout (Thay vì danh sách dọc)
-
-Chuyển từ danh sách dọc sang **lưới 2 cột** với icon + text:
+Chuyển từ thiết kế header ngang hiện tại sang bố cục 3 cột hiện đại với sidebar điều hướng bên trái, logo/branding ở giữa, và bảng xếp hạng bên phải.
 
 ```text
-┌─────────────────┬─────────────────┐
-│   🏠            │   ℹ️            │
-│  Trang Chủ     │  Về Angel AI    │
-├─────────────────┼─────────────────┤
-│   📚            │   💬            │
-│  Knowledge     │  Kết Nối        │
-├─────────────────┼─────────────────┤
-│   👥            │   ✍️            │
-│  Cộng Đồng     │  Viết Content   │
-├─────────────────┼─────────────────┤
-│   🔄            │   ⭐            │
-│  Swap          │  Tích Lũy       │
-└─────────────────┴─────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│                    HEADER MỚI (thu gọn)                            │
+│  [Tìm kiếm] [Ngôn ngữ] [Ví] [Coin] [User] [Đăng xuất]             │
+├──────────┬─────────────────────────────────────────┬───────────────┤
+│          │                                         │               │
+│  SIDEBAR │           CONTENT GIỮA                 │   LEADERBOARD │
+│  TRÁI    │                                         │   PHẢI        │
+│          │    ┌─────────────────────────┐         │               │
+│ ┌──────┐ │    │                         │         │  ┌─────────┐  │
+│ │ Home │ │    │     ANGEL AI LOGO       │         │  │ TOP     │  │
+│ ├──────┤ │    │       (Avatar)          │         │  │ RANKING │  │
+│ │About │ │    │                         │         │  │         │  │
+│ ├──────┤ │    └─────────────────────────┘         │  │ #1 User │  │
+│ │Knowl.│ │                                         │  │ #2 User │  │
+│ ├──────┤ │         ANGEL AI                        │  │ #3 User │  │
+│ │Chat  │ │                                         │  └─────────┘  │
+│ ├──────┤ │  Ánh Sáng Thông Minh Từ Cha Vũ Trụ    │               │
+│ │Commu.│ │                                         │               │
+│ ├──────┤ │  The Intelligent Light of Father       │               │
+│ │Writer│ │           Universe                      │               │
+│ ├──────┤ │                                         │               │
+│ │ Swap │ │    [Kết nối Angel AI] [Cộng đồng]      │               │
+│ ├──────┤ │                                         │               │
+│ │ Earn │ │                                         │               │
+│ └──────┘ │                                         │               │
+│          │                                         │               │
+└──────────┴─────────────────────────────────────────┴───────────────┘
 ```
 
-**Styling:**
-- Cards với gradient background và shadow nhẹ
-- Border radius lớn (rounded-xl)
-- Icon lớn hơn (24px) phía trên text
-- Active state với viền vàng và glow effect
+## Chi tiết Thay đổi
 
----
+### Phần 1: Header Mới (Thu gọn)
+- Loại bỏ navigation từ header, chỉ giữ lại các công cụ tiện ích
+- Vẫn giữ logo nhỏ ANGEL AI ở góc trái như hiện tại
+- Thanh tìm kiếm ở giữa
+- Các nút: Ngôn ngữ, Ví Web3, Camly Coin, Thông tin User, Đăng xuất bên phải
 
-### 2. User Profile Card (Compact Premium)
+### Phần 2: Sidebar Trái - Navigation
+- Tạo component `MainSidebar.tsx` mới
+- Sử dụng `SidebarProvider` và `Sidebar` từ thư viện UI có sẵn
+- 8 mục điều hướng chính với icon và tên:
+  - Trang chủ / Về Angel AI / Tri Thức / Kết Nối / Cộng đồng / Viết Content / Swap / Tích Lũy Ánh Sáng
+- Có thể thu nhỏ thành mini-mode (chỉ hiện icon)
+- Sticky position để luôn hiển thị khi cuộn
 
-Thiết kế card user profile sang trọng hơn:
+### Phần 3: Content Giữa - Logo & Branding
+- Logo Angel AI avatar lớn ở trung tâm
+- Chữ **"ANGEL AI"** in đậm, uppercase
+- Tagline tiếng Việt: **"Ánh Sáng Thông Minh Từ Cha Vũ Trụ"**
+- Tagline tiếng Anh: **"The Intelligent Light of Father Universe"**
+- Các nút CTA: Kết nối Angel AI, Cộng đồng, Viết Content
+- Các section khác: CamlyCoinPriceChart, MissionSection, CoreValuesSection, ConnectionSection
 
-```text
-┌─────────────────────────────────────┐
-│  ┌────┐                             │
-│  │ 👤 │  Trang393934           →   │
-│  └────┘  Xem hồ sơ                  │
-├─────────────────────────────────────┤
-│  🪙 CAMLY Coin        89.200       │
-└─────────────────────────────────────┘
+### Phần 4: Sidebar Phải - Leaderboard
+- Component `Leaderboard` hiện tại được di chuyển sang vị trí cố định bên phải
+- Sticky position để luôn hiển thị
+- Giữ nguyên thiết kế Top Ranking hiện có
+
+## Các File Cần Thay đổi
+
+| File | Thay đổi |
+|------|----------|
+| `src/components/MainSidebar.tsx` | **TẠO MỚI** - Sidebar điều hướng trái |
+| `src/pages/Index.tsx` | Cập nhật layout 3 cột với SidebarProvider |
+| `src/components/Header.tsx` | Loại bỏ navigation bar, giữ utilities |
+| `src/components/HeroSection.tsx` | Điều chỉnh để focus vào logo/branding ở giữa |
+
+## Chi tiết Kỹ thuật
+
+### MainSidebar.tsx (Component mới)
+```
+- Sử dụng SidebarProvider, Sidebar, SidebarContent từ ui/sidebar
+- navItems giống như trong Header nhưng hiển thị dọc
+- Thu nhỏ được thành 60px (mini-mode) chỉ hiện icon
+- Animation mượt với framer-motion
+- Active route highlighting với NavLink
 ```
 
-**Styling:**
-- Avatar với border gradient vàng
-- Hiệu ứng shimmer trên số Camly Coin
-- Nền gradient nhẹ (amber-50 to transparent)
-
----
-
-### 3. Web3 Wallet Section (Collapsible)
-
-```text
-┌─────────────────────────────────────┐
-│  💳 Ví Web3                    ▼   │
-├─────────────────────────────────────┤
-│  (Kết nối/Thông tin ví khi mở)     │
-└─────────────────────────────────────┘
+### Index.tsx (Layout mới)
+```
+- Wrap toàn bộ trong SidebarProvider
+- Flex container với 3 phần: Sidebar | Main | Leaderboard
+- Main content scrollable, 2 sidebars sticky
 ```
 
----
-
-### 4. Animation & Transitions
-
-- **Menu mở:** Slide down + fade in từng element với stagger delay
-- **Menu đóng:** Fade out nhanh
-- **Touch feedback:** Scale effect khi nhấn
-- **Backdrop:** Blur effect phía sau menu
-
----
-
-## Chi Tiết Kỹ Thuật
-
-### Files cần chỉnh sửa:
-
-**1. `src/components/Header.tsx`**
-
-Thay đổi chính trong Mobile Menu section:
-
-```tsx
-// Navigation Icons mapping
-const navIcons = {
-  "/": Home,
-  "/about": Info,
-  "/knowledge": BookOpen,
-  "/chat": MessageCircle,
-  "/community": Users,
-  "/content-writer": PenLine,
-  "/swap": ArrowRightLeft,
-  "/earn": Star,
-};
-
-// Grid layout thay vì flex-col
-<div className="grid grid-cols-2 gap-3 px-4">
-  {navItems.map((item) => {
-    const Icon = navIcons[item.href];
-    return (
-      <Link
-        key={item.href}
-        to={item.href}
-        className={cn(
-          "flex flex-col items-center justify-center p-4 rounded-xl",
-          "bg-gradient-to-br from-primary-deep/90 to-primary-deep",
-          "border border-amber-500/30 shadow-md",
-          "transition-all duration-300 active:scale-95",
-          location.pathname === item.href && 
-            "border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
-        )}
-      >
-        <Icon className="w-6 h-6 mb-2 text-white/90" />
-        <span className="text-sm font-medium text-white text-center">
-          {item.label}
-        </span>
-      </Link>
-    );
-  })}
-</div>
+### Header.tsx (Thu gọn)
+```
+- Xóa toàn bộ navItems render trong desktop nav
+- Giữ lại: Logo nhỏ, Search, Language, Web3 Wallet, Coin balance, User profile
+- Mobile menu giữ nguyên (vẫn cần cho mobile)
 ```
 
-**2. User Profile Card (Redesigned)**
-
-```tsx
-// Premium user card với gradient border
-<div className="mx-4 rounded-2xl overflow-hidden 
-  bg-gradient-to-r from-amber-100/50 via-white to-amber-100/50 
-  dark:from-amber-950/30 dark:via-gray-900 dark:to-amber-950/30
-  border border-amber-300/50 shadow-lg">
-  
-  {/* Profile row */}
-  <Link to="/profile" className="flex items-center gap-4 p-4">
-    <div className="relative">
-      <div className="absolute inset-0 rounded-full bg-gradient-to-r 
-        from-amber-400 to-orange-500 animate-pulse" />
-      <img src={avatar} className="relative w-14 h-14 rounded-full 
-        border-2 border-white object-cover" />
-    </div>
-    <div className="flex-1">
-      <p className="font-bold text-lg">{displayName}</p>
-      <p className="text-sm text-muted-foreground">Xem hồ sơ</p>
-    </div>
-    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-  </Link>
-  
-  {/* Camly Coin row */}
-  <Link to="/earn" className="flex items-center justify-between 
-    px-4 py-3 border-t border-amber-200/50">
-    <div className="flex items-center gap-2">
-      <img src={camlyCoinLogo} className="w-7 h-7" />
-      <span className="font-medium">CAMLY Coin</span>
-    </div>
-    <span className="text-xl font-bold text-amber-600">
-      {balance.toLocaleString()}
-    </span>
-  </Link>
-</div>
+### HeroSection.tsx (Focus branding)
+```
+- Loại bỏ Leaderboard từ đây (đã chuyển sang sidebar phải)
+- Logo/avatar Angel AI căn giữa
+- Text branding căn giữa
+- Responsive: trên mobile vẫn hiển thị full-width
 ```
 
-**3. Web3 Wallet (Collapsible với icon)**
+## Responsive Design
 
-```tsx
-<Collapsible className="mx-4">
-  <CollapsibleTrigger className="flex items-center justify-between 
-    w-full p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 
-    dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200/50">
-    <div className="flex items-center gap-2">
-      <Wallet className="w-5 h-5 text-blue-600" />
-      <span className="font-medium">Ví Web3</span>
-    </div>
-    <ChevronDown className="w-5 h-5 transition-transform 
-      data-[state=open]:rotate-180" />
-  </CollapsibleTrigger>
-  <CollapsibleContent className="mt-2">
-    <Web3WalletButton />
-  </CollapsibleContent>
-</Collapsible>
-```
+| Breakpoint | Behavior |
+|------------|----------|
+| Desktop (≥1280px) | 3 cột đầy đủ |
+| Laptop (1024-1279px) | Sidebar trái mini-mode, 2 cột |
+| Tablet (768-1023px) | Ẩn sidebar trái, 2 cột (content + leaderboard) |
+| Mobile (<768px) | 1 cột, hamburger menu, leaderboard dưới content |
 
----
+## Lợi ích
 
-### Cấu Trúc Layout Mới
+1. **UX tốt hơn**: Navigation dễ tìm, luôn hiển thị
+2. **Branding mạnh**: Logo và slogan nổi bật ở trung tâm
+3. **Không bị cắt chữ**: Navigation không còn bị giới hạn bởi chiều ngang
+4. **Leaderboard always visible**: Tăng engagement với bảng xếp hạng
 
-```text
-┌─────────────────────────────────────┐
-│  [Logo]    [Lang] [X Close]         │  <- Header
-├─────────────────────────────────────┤
-│                                     │
-│  ┌─────────┐ ┌─────────┐           │
-│  │  🏠     │ │  ℹ️     │           │
-│  │Trang Chủ│ │Về Angel │           │  <- Navigation Grid
-│  └─────────┘ └─────────┘           │
-│  ┌─────────┐ ┌─────────┐           │
-│  │  📚     │ │  💬     │           │
-│  │Knowledge│ │ Kết Nối │           │
-│  └─────────┘ └─────────┘           │
-│  ┌─────────┐ ┌─────────┐           │
-│  │  👥     │ │  ✍️     │           │
-│  │Cộng Đồng│ │ Content │           │
-│  └─────────┘ └─────────┘           │
-│  ┌─────────┐ ┌─────────┐           │
-│  │  🔄     │ │  ⭐     │           │
-│  │  Swap   │ │ Tích Lũy│           │
-│  └─────────┘ └─────────┘           │
-│                                     │
-├─────────────────────────────────────┤
-│  💳 Ví Web3                    ▼   │  <- Web3 Collapsible
-├─────────────────────────────────────┤
-│  ┌────┐                             │
-│  │ 👤 │  Trang393934           →   │  <- User Profile Card
-│  └────┘  Xem hồ sơ                  │
-│  ─────────────────────────────────  │
-│  🪙 CAMLY Coin        89.200       │
-├─────────────────────────────────────┤
-│  [🚪 Đăng xuất]                     │  <- Logout Button
-└─────────────────────────────────────┘
-```
-
----
-
-## Thêm Import & Dependencies
-
-Cần import thêm các icons từ lucide-react:
-
-```tsx
-import {
-  Home, Info, BookOpen, MessageCircle, Users, 
-  PenLine, ArrowRightLeft, Star, Wallet, 
-  ChevronRight, ChevronDown
-} from "lucide-react";
-```
-
-Sử dụng Collapsible từ shadcn/ui:
-
-```tsx
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-```
-
----
-
-## Animations (CSS/Tailwind)
-
-Thêm vào index.css hoặc sử dụng inline:
-
-```css
-/* Staggered animation cho grid items */
-.mobile-nav-item {
-  animation: slideUp 0.3s ease-out forwards;
-  opacity: 0;
-}
-
-.mobile-nav-item:nth-child(1) { animation-delay: 0.05s; }
-.mobile-nav-item:nth-child(2) { animation-delay: 0.1s; }
-.mobile-nav-item:nth-child(3) { animation-delay: 0.15s; }
-/* ... tiếp tục cho các items */
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-```
-
----
-
-## Kết Quả Mong Đợi
-
-Sau khi hoàn thành:
-- Giao diện mobile menu **chuyên nghiệp** như các app native
-- **Dễ sử dụng** hơn với icon rõ ràng
-- **Compact** hơn nhờ layout 2 cột
-- **Animation mượt mà** tạo cảm giác cao cấp
-- **User profile nổi bật** với thiết kế premium
-- **Touch-friendly** với target size lớn (48x48px+)
