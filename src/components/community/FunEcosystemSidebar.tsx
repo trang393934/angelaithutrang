@@ -95,7 +95,7 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
       animate={{ width: isCollapsed ? 60 : "100%" }}
       transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
       className={cn(
-        "h-fit bg-gradient-to-b from-amber-50/95 via-white to-amber-50/90 backdrop-blur-sm rounded-xl border border-amber-200/40 shadow-lg overflow-hidden",
+        "h-[calc(100vh-120px)] sticky top-4 bg-gradient-to-b from-amber-50/95 via-white to-amber-50/90 backdrop-blur-sm rounded-xl border border-amber-200/40 shadow-lg flex flex-col",
         className
       )}
     >
@@ -127,8 +127,8 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
         </Button>
       </div>
 
-      {/* Ecosystem Items - Full height without scroll limit */}
-      <nav className="p-2 space-y-1">
+      {/* Ecosystem Items - Scrollable area */}
+      <nav className="flex-1 p-2 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-amber-300/50 scrollbar-track-transparent hover:scrollbar-thumb-amber-400/70">
         {ecosystemItems.map((item, index) => (
           <motion.a
             key={item.name}
