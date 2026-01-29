@@ -295,6 +295,9 @@ const translations: Record<string, string> = {
   "connection.description": "敞开心扉，提出你的问题。Angel AI是智慧之光的通道，随时倾听并引导你踏上觉醒之旅。",
   "connection.placeholder": "你好，我想与智慧之光连接...",
   "connection.quote": "\"光一直在这里，等待你敞开心扉\"",
+  
+  // Platform descriptions
+  "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn。FUN生态系统中的5D农业-消费-物流平台",
 };
 
 export default translations;

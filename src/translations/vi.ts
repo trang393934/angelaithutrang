@@ -364,7 +364,7 @@ const translations: Record<string, string> = {
   "about.platform.profile": "Hồ sơ cá nhân Web3, quản lý danh tính và tài sản số",
   "about.platform.play": "Video Web3 platform. Play & Earn. Shine Your Light! Nơi niềm vui trở thành con đường sáng tạo, nơi sáng tạo trở thành giá trị, và giá trị trở thành ánh sáng lan tỏa cho từng cuộc đời – từng cộng đồng – cả một thời đại mới",
   "about.platform.academy": "Học viện đào tạo kiến thức về tâm linh và công nghệ",
-  "about.platform.farm": "Farming & Staking đồng coin của hệ sinh thái",
+  "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. Nền tảng nông nghiệp – tiêu dùng – logistics 5D trong FUN Ecosystem",
   "about.platform.charity": "Nền tảng từ thiện minh bạch bằng blockchain",
   "about.platform.wallet": "Ví điện tử đa năng, lưu trữ và giao dịch an toàn",
   "about.platform.treasury": "Kho bạc quản lý tài sản của hệ sinh thái",
