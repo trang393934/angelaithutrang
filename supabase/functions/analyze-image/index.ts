@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,6 +18,31 @@ serve(async (req) => {
 
     if (!LOVABLE_API_KEY) {
       throw new Error("AI service is not configured");
+    }
+
+    // Track usage (no limit for analyze, just tracking)
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authHeader = req.headers.get("Authorization");
+    
+    if (authHeader) {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claimsData } = await supabase.auth.getClaims(token);
+      const userId = claimsData?.claims?.sub as string || null;
+      
+      if (userId) {
+        // Track usage without limit (null = no limit)
+        await supabase.rpc('check_and_increment_ai_usage', {
+          _user_id: userId,
+          _usage_type: 'analyze_image',
+          _daily_limit: null
+        });
+        console.log(`Tracked analyze_image usage for user ${userId}`);
+      }
     }
 
     console.log("Analyzing image with question:", question);
