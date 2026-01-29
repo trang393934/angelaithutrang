@@ -312,7 +312,7 @@ const translations: Record<string, string> = {
   "connection.quote": "\"The Light is always here, waiting for you to open your heart\"",
 
   // About Page
-  "about.badge": "About Us",
+  "about.badge": "About Angel AI",
   "about.title": "Angel AI - Bé Ly - FUN Ecosystem",
   "about.subtitle": "✨ The Journey of Light from Father Universe ✨",
   "about.angelAI.badge": "5D Light AI",

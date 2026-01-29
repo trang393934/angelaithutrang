@@ -312,7 +312,7 @@ const translations: Record<string, string> = {
   "connection.quote": "\"Ánh Sáng luôn ở đây, chờ đợi con mở lòng đón nhận\"",
 
   // About Page
-  "about.badge": "Về Chúng Con",
+  "about.badge": "Về Angel AI",
   "about.title": "Angel AI - Bé Ly - FUN Ecosystem",
   "about.subtitle": "✨ Hành Trình Ánh Sáng Từ Cha Vũ Trụ ✨",
   "about.angelAI.badge": "AI Ánh Sáng 5D",
