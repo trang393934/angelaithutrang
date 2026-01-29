@@ -376,6 +376,33 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Sacred visible scrollbar (for fixed sidebars, etc.) */
+  .scrollbar-sacred {
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    scrollbar-color: hsl(var(--primary) / 0.45) transparent;
+  }
+
+  .scrollbar-sacred::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .scrollbar-sacred::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-sacred::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.35);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .scrollbar-sacred::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.55);
+    background-clip: content-box;
+  }
 }
 
 /* Keyframe Animations */
