@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLightAgreement } from "@/hooks/useLightAgreement";
+import { usePoPLScore } from "@/hooks/usePoPLScore";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,9 @@ import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon, MessageCircle, Move, Maximize2 } from "lucide-react";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { CoverPositionEditor } from "@/components/profile/CoverPositionEditor";
+import { PoPLScoreCard } from "@/components/profile/PoPLScoreCard";
+import { PoPLBadge } from "@/components/profile/PoPLBadge";
+import { SoulTagsEditor } from "@/components/profile/SoulTagsEditor";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import angelAvatar from "@/assets/angel-avatar.png";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
@@ -68,9 +72,13 @@ const Profile = () => {
   const [searchParams] = useSearchParams();
   const { user, isLoading: authLoading, signOut } = useAuth();
   const { hasAgreed, isChecking: isCheckingAgreement } = useLightAgreement();
+  const poplScore = usePoPLScore();
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  
+  // Soul Tags state
+  const [soulTags, setSoulTags] = useState<string[]>([]);
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [hasAgreedToLightLaw, setHasAgreedToLightLaw] = useState(false);
@@ -1207,6 +1215,42 @@ const Profile = () => {
                   </span>
                 )}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* PoPL Score Card - Pure Love Score */}
+          <PoPLScoreCard 
+            score={poplScore.score}
+            positiveActions={poplScore.positiveActions}
+            negativeActions={poplScore.negativeActions}
+            isVerified={poplScore.isVerified}
+            badgeLevel={poplScore.badgeLevel}
+          />
+
+          {/* Soul Tags Card */}
+          <Card className="border-divine-gold/20 shadow-soft">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Sparkles className="w-5 h-5 text-divine-gold" />
+                Soul Tags
+              </CardTitle>
+              <CardDescription>
+                Những từ khóa đại diện cho linh hồn và giá trị của bạn
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SoulTagsEditor 
+                tags={soulTags} 
+                onTagsChange={async (newTags) => {
+                  setSoulTags(newTags);
+                  if (user) {
+                    await supabase
+                      .from("profiles")
+                      .update({ soul_tags: newTags })
+                      .eq("user_id", user.id);
+                  }
+                }}
+              />
             </CardContent>
           </Card>
 

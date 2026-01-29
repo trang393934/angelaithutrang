@@ -504,6 +504,16 @@ const translations: Record<string, string> = {
   "earlyAdopter.progress": "Tiến độ Early Adopter",
   "earlyAdopter.questionsNeeded": "câu hỏi để nhận thưởng",
   "earlyAdopter.claimed": "Đã nhận thưởng!",
+  // FUN Profile Phase 1
+  "profile.poplScore": "Pure Love Score",
+  "profile.poplScoreDesc": "Điểm Proof of Pure Love của bạn",
+  "profile.soulTags": "Soul Tags",
+  "profile.soulTagsDesc": "Những từ khóa đại diện cho linh hồn của bạn",
+  "circles.title": "Love Circles",
+  "circles.joinNow": "Tham gia",
+  "circles.leave": "Rời khỏi",
+  "circles.members": "thành viên",
+  "circles.official": "Chính thức",
 };
 
 export default translations;

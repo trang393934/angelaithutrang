@@ -543,6 +543,16 @@ const translations: Record<string, string> = {
   "about.platform.play": "Video Web3 platform. Play & Earn. Shine Your Light! Where joy becomes the path of creativity, creativity becomes value, and value becomes light spreading to every life – every community – an entire new era",
   "about.platform.planet": "Kids Game – Play & Earn. Where fun becomes a creative journey for children",
   "about.platform.farm": "Farm to Table – Fair & Fast – Free-Fee & Earn. 5D agriculture – consumption – logistics platform in FUN Ecosystem",
+  // FUN Profile Phase 1
+  "profile.poplScore": "Pure Love Score",
+  "profile.poplScoreDesc": "Your Proof of Pure Love score",
+  "profile.soulTags": "Soul Tags",
+  "profile.soulTagsDesc": "Keywords representing your soul",
+  "circles.title": "Love Circles",
+  "circles.joinNow": "Join",
+  "circles.leave": "Leave",
+  "circles.members": "members",
+  "circles.official": "Official",
 };
 
 export default translations;
