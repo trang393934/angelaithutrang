@@ -230,30 +230,30 @@ const Community = () => {
               ref={rightSidebarRef}
               className="hidden lg:flex flex-col w-[280px] xl:w-[320px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50"
             >
-              {/* Bảng Danh Dự */}
-              <div className="flex-shrink-0 mb-4">
-                <HonorBoard />
-              </div>
+            {/* Bảng Danh Dự */}
+            <div className="flex-shrink-0 mb-4">
+              <HonorBoard />
+            </div>
 
-              {/* Gợi ý kết bạn */}
-              <div className="flex-shrink-0 mb-4">
-                <SuggestedFriendsCard />
-              </div>
+            {/* Nội Quy Cộng Đồng - ngay dưới Bảng Danh Dự */}
+            <div className="flex-shrink-0 mb-4">
+              <CommunityGuidelinesCard />
+            </div>
 
-              {/* Bảng Xếp Hạng */}
-              <div className="flex-shrink-0 mb-4">
-                <Leaderboard />
-              </div>
-              
-              {/* Quy tắc thưởng */}
-              <div className="flex-shrink-0 mb-4">
-                <RewardRulesCard dailyLimits={dailyLimits} />
-              </div>
+            {/* Gợi ý kết bạn */}
+            <div className="flex-shrink-0 mb-4">
+              <SuggestedFriendsCard />
+            </div>
 
-              {/* Community Guidelines */}
-              <div className="flex-shrink-0 mb-4">
-                <CommunityGuidelinesCard />
-              </div>
+            {/* Bảng Xếp Hạng */}
+            <div className="flex-shrink-0 mb-4">
+              <Leaderboard />
+            </div>
+            
+            {/* Quy tắc thưởng */}
+            <div className="flex-shrink-0 mb-4">
+              <RewardRulesCard dailyLimits={dailyLimits} />
+            </div>
             </aside>
           </div>
         </div>
