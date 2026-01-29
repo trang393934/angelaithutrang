@@ -506,6 +506,41 @@ export type Database = {
         }
         Relationships: []
       }
+      circle_members: {
+        Row: {
+          circle_id: string
+          id: string
+          invited_by: string | null
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          circle_id: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          circle_id?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_members_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "community_circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coin_withdrawals: {
         Row: {
           admin_notes: string | null
@@ -554,6 +589,48 @@ export type Database = {
           updated_at?: string
           user_id?: string
           wallet_address?: string
+        }
+        Relationships: []
+      }
+      community_circles: {
+        Row: {
+          circle_type: string
+          color: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_official: boolean | null
+          max_members: number | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          circle_type?: string
+          color?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_official?: boolean | null
+          max_members?: number | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          circle_type?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_official?: boolean | null
+          max_members?: number | null
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1423,7 +1500,11 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          popl_badge_level: string | null
+          popl_verified: boolean | null
+          popl_verified_at: string | null
           response_style: string | null
+          soul_tags: string[] | null
           updated_at: string
           user_id: string
         }
@@ -1434,7 +1515,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          popl_badge_level?: string | null
+          popl_verified?: boolean | null
+          popl_verified_at?: string | null
           response_style?: string | null
+          soul_tags?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -1445,7 +1530,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          popl_badge_level?: string | null
+          popl_verified?: boolean | null
+          popl_verified_at?: string | null
           response_style?: string | null
+          soul_tags?: string[] | null
           updated_at?: string
           user_id?: string
         }
@@ -1691,7 +1780,11 @@ export type Database = {
         Row: {
           current_level: number | null
           id: string
+          last_score_update: string | null
           lifetime_points: number | null
+          negative_actions: number | null
+          popl_score: number | null
+          positive_actions: number | null
           total_points: number | null
           updated_at: string
           user_id: string
@@ -1699,7 +1792,11 @@ export type Database = {
         Insert: {
           current_level?: number | null
           id?: string
+          last_score_update?: string | null
           lifetime_points?: number | null
+          negative_actions?: number | null
+          popl_score?: number | null
+          positive_actions?: number | null
           total_points?: number | null
           updated_at?: string
           user_id: string
@@ -1707,7 +1804,11 @@ export type Database = {
         Update: {
           current_level?: number | null
           id?: string
+          last_score_update?: string | null
           lifetime_points?: number | null
+          negative_actions?: number | null
+          popl_score?: number | null
+          positive_actions?: number | null
           total_points?: number | null
           updated_at?: string
           user_id?: string
@@ -2140,6 +2241,10 @@ export type Database = {
           success: boolean
           withdrawal_id: string
         }[]
+      }
+      update_popl_score: {
+        Args: { _action_type: string; _is_positive: boolean; _user_id: string }
+        Returns: number
       }
     }
     Enums: {

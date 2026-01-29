@@ -12,6 +12,7 @@ import { RewardRulesCard } from "@/components/community/RewardRulesCard";
 import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { FunEcosystemSidebar } from "@/components/community/FunEcosystemSidebar";
 import { SuggestedFriendsCard } from "@/components/community/SuggestedFriendsCard";
+import { CirclesSidebar } from "@/components/community/CirclesSidebar";
 import { Leaderboard } from "@/components/Leaderboard";
 import { HonorBoard } from "@/components/community/HonorBoard";
 import { CommunityGuidelinesCard } from "@/components/community/CommunityGuidelinesCard";
@@ -238,6 +239,11 @@ const Community = () => {
             {/* Nội Quy Cộng Đồng - ngay dưới Bảng Danh Dự */}
             <div className="flex-shrink-0 mb-4">
               <CommunityGuidelinesCard />
+            </div>
+
+            {/* Love Circles - Module 6 */}
+            <div className="flex-shrink-0 mb-4">
+              <CirclesSidebar maxVisible={3} />
             </div>
 
             {/* Gợi ý kết bạn */}
