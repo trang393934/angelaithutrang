@@ -502,15 +502,15 @@ serve(async (req) => {
       }
     }
 
-    // Calculate reward based on purity score
+    // Calculate reward based on purity score (Updated: 1,000 - 3,500 coin)
     if (purityScore >= 0.9) {
-      rewardAmount = 5000;
+      rewardAmount = 3500;
     } else if (purityScore >= 0.75) {
-      rewardAmount = 4000;
-    } else if (purityScore >= 0.6) {
       rewardAmount = 3000;
-    } else if (purityScore >= 0.4) {
+    } else if (purityScore >= 0.6) {
       rewardAmount = 2000;
+    } else if (purityScore >= 0.4) {
+      rewardAmount = 1500;
     } else {
       rewardAmount = 1000;
     }

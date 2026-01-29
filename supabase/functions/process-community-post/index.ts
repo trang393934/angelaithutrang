@@ -7,7 +7,8 @@ const corsHeaders = {
 };
 
 const LIKES_THRESHOLD = 5;
-const POST_REWARD = 3000;
+const POST_CREATION_REWARD = 1000;  // Đăng bài mới: 1000 coin
+const POST_ENGAGEMENT_REWARD = 500; // Bài đạt 5+ like: +500 coin
 const SHARE_REWARD = 500;
 const COMMENT_REWARD = 500;
 const COMMENT_MIN_LENGTH = 50;
@@ -160,9 +161,7 @@ serve(async (req) => {
       let coinsEarned = 0;
       let rewarded = false;
       
-      // Award immediate post creation reward (e.g., 100 coins for posting)
-      const POST_CREATION_REWARD = 100;
-      
+      // Award immediate post creation reward: 1000 coins for posting
       if (postsRewarded < MAX_POSTS_REWARDED_PER_DAY) {
         await supabase.rpc("add_camly_coins", {
           _user_id: userId,
@@ -246,10 +245,10 @@ serve(async (req) => {
           const postsRewarded = tracking?.posts_rewarded || 0;
 
           if (postsRewarded < MAX_POSTS_REWARDED_PER_DAY) {
-            // Award post owner
+            // Award post owner: 500 coin for 5+ likes
             await supabase.rpc("add_camly_coins", {
               _user_id: post.user_id,
-              _amount: POST_REWARD,
+              _amount: POST_ENGAGEMENT_REWARD,
               _transaction_type: "engagement_reward",
               _description: `Bài viết đạt ${LIKES_THRESHOLD}+ lượt thích`,
             });
@@ -257,7 +256,7 @@ serve(async (req) => {
             // Mark post as rewarded
             await supabase
               .from("community_posts")
-              .update({ is_rewarded: true, reward_amount: POST_REWARD })
+              .update({ is_rewarded: true, reward_amount: POST_ENGAGEMENT_REWARD })
               .eq("id", postId);
 
             // Update daily tracking
@@ -265,11 +264,11 @@ serve(async (req) => {
               .from("daily_reward_tracking")
               .update({
                 posts_rewarded: postsRewarded + 1,
-                total_coins_today: (tracking?.total_coins_today || 0) + POST_REWARD,
+                total_coins_today: (tracking?.total_coins_today || 0) + POST_ENGAGEMENT_REWARD,
               })
               .eq("id", tracking.id);
 
-            console.log(`Post reward given to user ${post.user_id}`);
+            console.log(`Post engagement reward given to user ${post.user_id}`);
 
             return new Response(
               JSON.stringify({
@@ -277,7 +276,7 @@ serve(async (req) => {
                 liked: true,
                 newLikesCount,
                 postRewarded: true,
-                message: `Bài viết đã đạt ${LIKES_THRESHOLD} like! Tác giả nhận ${POST_REWARD} Camly Coin`,
+                message: `Bài viết đã đạt ${LIKES_THRESHOLD} like! Tác giả nhận ${POST_ENGAGEMENT_REWARD} Camly Coin`,
               }),
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
