@@ -96,10 +96,10 @@ export const Header = () => {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`sticky top-0 z-40 transition-all duration-500 ${
         isScrolled 
           ? 'bg-background-pure/90 backdrop-blur-lg shadow-soft' 
-          : 'bg-transparent'
+          : 'bg-background-pure/80 backdrop-blur-sm'
       }`}
     >
       <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-4 xl:px-6 overflow-hidden">
@@ -123,11 +123,13 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* Search Bar - Desktop - smaller on lg screens */}
-          <div className="hidden lg:block w-32 xl:w-44 2xl:w-56 shrink-0">
-            <GlobalSearch 
-              variant="header" 
-            />
+          {/* Search Bar - Desktop - centered */}
+          <div className="hidden lg:flex flex-1 justify-center">
+            <div className="w-64 xl:w-80 2xl:w-96">
+              <GlobalSearch 
+                variant="header" 
+              />
+            </div>
           </div>
 
           {/* Navigation removed - now in MainSidebar */}
