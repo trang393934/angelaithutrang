@@ -23,18 +23,23 @@ serve(async (req) => {
 
     console.log("Generating image with prompt:", prompt);
 
+    // Quality enhancement keywords for sharper, higher resolution images
+    const qualityBoost = "ultra sharp, high resolution, 8K UHD, crystal clear, highly detailed, professional quality, sharp focus, intricate details";
+
     // Enhance prompt with style
     let enhancedPrompt = prompt;
     if (style === "spiritual") {
-      enhancedPrompt = `${prompt}, divine light, ethereal, spiritual, peaceful, heavenly atmosphere, golden rays, angelic`;
+      enhancedPrompt = `${prompt}, divine light, ethereal, spiritual, peaceful, heavenly atmosphere, golden rays, angelic, ${qualityBoost}`;
     } else if (style === "realistic") {
-      enhancedPrompt = `${prompt}, photorealistic, highly detailed, professional photography, 8k resolution`;
+      enhancedPrompt = `${prompt}, photorealistic, professional photography, DSLR quality, ${qualityBoost}`;
     } else if (style === "artistic") {
-      enhancedPrompt = `${prompt}, artistic, oil painting style, masterpiece, beautiful composition`;
+      enhancedPrompt = `${prompt}, artistic, oil painting style, masterpiece, beautiful composition, ${qualityBoost}`;
+    } else {
+      // Default style also gets quality boost
+      enhancedPrompt = `${prompt}, ${qualityBoost}`;
     }
 
     // Vietnamese text reliability: strongly instruct exact typography.
-    // Note: Image models can still hallucinate text; this reduces the error rate.
     if (containsVietnamese) {
       enhancedPrompt = `${enhancedPrompt}
 
@@ -43,10 +48,8 @@ IMPORTANT (Vietnamese text): If the image includes any Vietnamese words provided
 Typography: clean, high-contrast, readable Vietnamese diacritics; avoid stylized fonts that distort accents.`;
     }
 
-    // Prefer stronger image model when Vietnamese text is involved.
-    const model = containsVietnamese
-      ? "google/gemini-3-pro-image-preview"
-      : "google/gemini-2.5-flash-image";
+    // Always use the higher quality model for sharper images
+    const model = "google/gemini-3-pro-image-preview";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
