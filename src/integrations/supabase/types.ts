@@ -1995,6 +1995,15 @@ export type Database = {
         }[]
       }
       cleanup_expired_stories: { Args: never; Returns: undefined }
+      get_activity_history_stats: {
+        Args: never
+        Returns: {
+          rewarded_chats: number
+          total_chats: number
+          total_rewards: number
+          unique_users: number
+        }[]
+      }
       get_admin_statistics: {
         Args: {
           _date_filter?: string
