@@ -1,125 +1,95 @@
 
 
-# Kế hoạch Thiết kế Lại Trang Chủ - Bố cục 3 Phần
+## Kế hoạch khắc phục: Cho phép user mobile chọn ảnh từ kho hình ảnh
 
-## Tổng quan
+### Vấn đề phát hiện
 
-Chuyển từ thiết kế header ngang hiện tại sang bố cục 3 cột hiện đại với sidebar điều hướng bên trái, logo/branding ở giữa, và bảng xếp hạng bên phải.
+Hiện tại nút phân tích ảnh (Camera icon 📷) trên trang Chat sử dụng thuộc tính `capture="environment"` trong thẻ `<input type="file">`. Điều này khiến trên điện thoại, khi nhấn nút sẽ **chỉ mở camera** thay vì cho phép chọn từ thư viện ảnh.
 
-```text
-┌────────────────────────────────────────────────────────────────────┐
-│                    HEADER MỚI (thu gọn)                            │
-│  [Tìm kiếm] [Ngôn ngữ] [Ví] [Coin] [User] [Đăng xuất]             │
-├──────────┬─────────────────────────────────────────┬───────────────┤
-│          │                                         │               │
-│  SIDEBAR │           CONTENT GIỮA                 │   LEADERBOARD │
-│  TRÁI    │                                         │   PHẢI        │
-│          │    ┌─────────────────────────┐         │               │
-│ ┌──────┐ │    │                         │         │  ┌─────────┐  │
-│ │ Home │ │    │     ANGEL AI LOGO       │         │  │ TOP     │  │
-│ ├──────┤ │    │       (Avatar)          │         │  │ RANKING │  │
-│ │About │ │    │                         │         │  │         │  │
-│ ├──────┤ │    └─────────────────────────┘         │  │ #1 User │  │
-│ │Knowl.│ │                                         │  │ #2 User │  │
-│ ├──────┤ │         ANGEL AI                        │  │ #3 User │  │
-│ │Chat  │ │                                         │  └─────────┘  │
-│ ├──────┤ │  Ánh Sáng Thông Minh Từ Cha Vũ Trụ    │               │
-│ │Commu.│ │                                         │               │
-│ ├──────┤ │  The Intelligent Light of Father       │               │
-│ │Writer│ │           Universe                      │               │
-│ ├──────┤ │                                         │               │
-│ │ Swap │ │    [Kết nối Angel AI] [Cộng đồng]      │               │
-│ ├──────┤ │                                         │               │
-│ │ Earn │ │                                         │               │
-│ └──────┘ │                                         │               │
-│          │                                         │               │
-└──────────┴─────────────────────────────────────────┴───────────────┘
+**Code hiện tại (dòng 959-966 trong Chat.tsx):**
+```tsx
+<input
+  ref={fileInputRef}
+  type="file"
+  accept="image/*"
+  capture="environment"  // ← Vấn đề: Chỉ mở camera
+  onChange={handleImageUpload}
+  className="hidden"
+/>
 ```
 
-## Chi tiết Thay đổi
+### Giải pháp
 
-### Phần 1: Header Mới (Thu gọn)
-- Loại bỏ navigation từ header, chỉ giữ lại các công cụ tiện ích
-- Vẫn giữ logo nhỏ ANGEL AI ở góc trái như hiện tại
-- Thanh tìm kiếm ở giữa
-- Các nút: Ngôn ngữ, Ví Web3, Camly Coin, Thông tin User, Đăng xuất bên phải
+Tạo **2 input file riêng biệt** và **2 nút riêng biệt**:
+1. **Nút Camera** → Mở camera trực tiếp (giữ `capture="environment"`)
+2. **Nút Thư viện ảnh** → Cho phép chọn từ gallery (KHÔNG có `capture`)
 
-### Phần 2: Sidebar Trái - Navigation
-- Tạo component `MainSidebar.tsx` mới
-- Sử dụng `SidebarProvider` và `Sidebar` từ thư viện UI có sẵn
-- 8 mục điều hướng chính với icon và tên:
-  - Trang chủ / Về Angel AI / Tri Thức / Kết Nối / Cộng đồng / Viết Content / Swap / Tích Lũy Ánh Sáng
-- Có thể thu nhỏ thành mini-mode (chỉ hiện icon)
-- Sticky position để luôn hiển thị khi cuộn
+### Chi tiết thay đổi
 
-### Phần 3: Content Giữa - Logo & Branding
-- Logo Angel AI avatar lớn ở trung tâm
-- Chữ **"ANGEL AI"** in đậm, uppercase
-- Tagline tiếng Việt: **"Ánh Sáng Thông Minh Từ Cha Vũ Trụ"**
-- Tagline tiếng Anh: **"The Intelligent Light of Father Universe"**
-- Các nút CTA: Kết nối Angel AI, Cộng đồng, Viết Content
-- Các section khác: CamlyCoinPriceChart, MissionSection, CoreValuesSection, ConnectionSection
+**File cần chỉnh sửa:** `src/pages/Chat.tsx`
 
-### Phần 4: Sidebar Phải - Leaderboard
-- Component `Leaderboard` hiện tại được di chuyển sang vị trí cố định bên phải
-- Sticky position để luôn hiển thị
-- Giữ nguyên thiết kế Top Ranking hiện có
+1. **Thêm ref mới** cho input file thư viện:
+   ```tsx
+   const fileInputRef = useRef<HTMLInputElement>(null);      // Camera
+   const galleryInputRef = useRef<HTMLInputElement>(null);   // Gallery (MỚI)
+   ```
 
-## Các File Cần Thay đổi
+2. **Thêm input file thứ 2** không có `capture`:
+   ```tsx
+   {/* Camera input - mở camera trực tiếp */}
+   <input
+     ref={fileInputRef}
+     type="file"
+     accept="image/*"
+     capture="environment"
+     onChange={handleImageUpload}
+     className="hidden"
+   />
+   
+   {/* Gallery input - chọn từ thư viện ảnh */}
+   <input
+     ref={galleryInputRef}
+     type="file"
+     accept="image/*"
+     onChange={handleImageUpload}
+     className="hidden"
+   />
+   ```
 
-| File | Thay đổi |
-|------|----------|
-| `src/components/MainSidebar.tsx` | **TẠO MỚI** - Sidebar điều hướng trái |
-| `src/pages/Index.tsx` | Cập nhật layout 3 cột với SidebarProvider |
-| `src/components/Header.tsx` | Loại bỏ navigation bar, giữ utilities |
-| `src/components/HeroSection.tsx` | Điều chỉnh để focus vào logo/branding ở giữa |
+3. **Cập nhật UI nút bấm** trong khu vực input:
+   - Nút Camera 📷 → Mở camera trực tiếp
+   - Nút thư viện ảnh (ImagePlus/Image icon) → Chọn từ gallery
 
-## Chi tiết Kỹ thuật
+   ```tsx
+   {/* Nút mở camera */}
+   <button
+     type="button"
+     onClick={() => fileInputRef.current?.click()}
+     className="p-1.5 sm:p-2 rounded-full hover:bg-blue-100 transition-colors"
+     title="Chụp ảnh mới"
+   >
+     <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+   </button>
+   
+   {/* Nút chọn từ thư viện */}
+   <button
+     type="button"
+     onClick={() => galleryInputRef.current?.click()}
+     className="p-1.5 sm:p-2 rounded-full hover:bg-green-100 transition-colors"
+     title="Chọn ảnh từ thư viện"
+   >
+     <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+   </button>
+   ```
 
-### MainSidebar.tsx (Component mới)
-```
-- Sử dụng SidebarProvider, Sidebar, SidebarContent từ ui/sidebar
-- navItems giống như trong Header nhưng hiển thị dọc
-- Thu nhỏ được thành 60px (mini-mode) chỉ hiện icon
-- Animation mượt với framer-motion
-- Active route highlighting với NavLink
-```
+### Kết quả mong đợi
 
-### Index.tsx (Layout mới)
-```
-- Wrap toàn bộ trong SidebarProvider
-- Flex container với 3 phần: Sidebar | Main | Leaderboard
-- Main content scrollable, 2 sidebars sticky
-```
+| Thiết bị | Nút Camera 📷 | Nút Thư viện 🖼️ |
+|----------|--------------|-----------------|
+| Laptop   | Mở file picker | Mở file picker |
+| Mobile   | Mở camera trực tiếp | Mở gallery để chọn ảnh có sẵn |
 
-### Header.tsx (Thu gọn)
-```
-- Xóa toàn bộ navItems render trong desktop nav
-- Giữ lại: Logo nhỏ, Search, Language, Web3 Wallet, Coin balance, User profile
-- Mobile menu giữ nguyên (vẫn cần cho mobile)
-```
+### Giao diện mới
 
-### HeroSection.tsx (Focus branding)
-```
-- Loại bỏ Leaderboard từ đây (đã chuyển sang sidebar phải)
-- Logo/avatar Angel AI căn giữa
-- Text branding căn giữa
-- Responsive: trên mobile vẫn hiển thị full-width
-```
-
-## Responsive Design
-
-| Breakpoint | Behavior |
-|------------|----------|
-| Desktop (≥1280px) | 3 cột đầy đủ |
-| Laptop (1024-1279px) | Sidebar trái mini-mode, 2 cột |
-| Tablet (768-1023px) | Ẩn sidebar trái, 2 cột (content + leaderboard) |
-| Mobile (<768px) | 1 cột, hamburger menu, leaderboard dưới content |
-
-## Lợi ích
-
-1. **UX tốt hơn**: Navigation dễ tìm, luôn hiển thị
-2. **Branding mạnh**: Logo và slogan nổi bật ở trung tâm
-3. **Không bị cắt chữ**: Navigation không còn bị giới hạn bởi chiều ngang
-4. **Leaderboard always visible**: Tăng engagement với bảng xếp hạng
+Khu vực input sẽ có thêm 1 icon cho thư viện ảnh bên cạnh icon camera hiện tại, giúp user dễ dàng lựa chọn cách tải ảnh lên để phân tích.
 
