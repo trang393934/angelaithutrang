@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { MainSidebar } from "@/components/MainSidebar";
 import Leaderboard from "@/components/Leaderboard";
+import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
 
 const Index = () => {
   const { user } = useAuth();
@@ -36,6 +37,11 @@ const Index = () => {
               {/* Leaderboard for Mobile - shows only on screens below xl */}
               <div className="xl:hidden px-4 py-6">
                 <Leaderboard />
+              </div>
+              
+              {/* Light Constitution Banner */}
+              <div className="px-4 sm:px-6 lg:px-8 py-6">
+                <LightConstitutionBanner />
               </div>
               
               <CamlyCoinPriceChart />
