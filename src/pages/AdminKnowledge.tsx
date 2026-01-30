@@ -9,7 +9,7 @@ import {
   FileType, AlertCircle, FolderPlus, Folder,
   Edit2, X, ChevronDown, ChevronRight, GripVertical,
   Search, Filter, XCircle, Link as LinkIcon, ExternalLink, Eye,
-  History
+  History, RefreshCw
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 
@@ -26,6 +26,7 @@ interface KnowledgeDocument {
   description: string | null;
   file_name: string;
   file_type: string;
+  file_url: string;
   file_size: number;
   is_processed: boolean;
   created_at: string;
@@ -75,6 +76,7 @@ const AdminKnowledge = () => {
   });
   const [isFetchingGoogle, setIsFetchingGoogle] = useState(false);
   const [googlePreview, setGooglePreview] = useState<{ content: string; sourceType: string } | null>(null);
+  const [syncingDocId, setSyncingDocId] = useState<string | null>(null);
 
   // Filtered documents based on search and filters
   const filteredDocuments = useMemo(() => {
@@ -587,6 +589,61 @@ const AdminKnowledge = () => {
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Không thể xóa tài liệu");
+    }
+  };
+
+  // Handle sync Google document
+  const handleSyncDocument = async (doc: KnowledgeDocument) => {
+    // Check if this is a Google URL
+    const isGoogleUrl = doc.file_url.includes('docs.google.com/document') || 
+                        doc.file_url.includes('docs.google.com/spreadsheets');
+    
+    if (!isGoogleUrl) {
+      toast.error("Chỉ có thể đồng bộ tài liệu từ Google Docs/Sheets");
+      return;
+    }
+
+    setSyncingDocId(doc.id);
+
+    try {
+      const response = await supabase.functions.invoke('fetch-google-content', {
+        body: { url: doc.file_url }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to fetch content');
+      }
+
+      const data = response.data;
+      
+      if (data.error) {
+        toast.error(data.error);
+        if (data.hint) {
+          toast.info(data.hint, { duration: 5000 });
+        }
+        return;
+      }
+
+      // Update the document with new content
+      const { error: updateError } = await supabase
+        .from("knowledge_documents")
+        .update({
+          extracted_content: data.content,
+          file_size: new Blob([data.content]).size,
+          is_processed: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", doc.id);
+
+      if (updateError) throw updateError;
+
+      toast.success(`Đã đồng bộ "${doc.title}" thành công! ✨`);
+      fetchDocuments();
+    } catch (error) {
+      console.error("Sync error:", error);
+      toast.error(error instanceof Error ? error.message : 'Không thể đồng bộ tài liệu');
+    } finally {
+      setSyncingDocId(null);
     }
   };
 
@@ -1174,6 +1231,8 @@ const AdminKnowledge = () => {
                     key={doc.id} 
                     doc={doc} 
                     onDelete={handleDelete}
+                    onSync={handleSyncDocument}
+                    isSyncing={syncingDocId === doc.id}
                     formatFileSize={formatFileSize}
                     getFileIcon={getFileIcon}
                     onDragStart={handleDragStart}
@@ -1240,6 +1299,8 @@ const AdminKnowledge = () => {
                               key={doc.id} 
                               doc={doc} 
                               onDelete={handleDelete}
+                              onSync={handleSyncDocument}
+                              isSyncing={syncingDocId === doc.id}
                               formatFileSize={formatFileSize}
                               getFileIcon={getFileIcon}
                               onDragStart={handleDragStart}
@@ -1290,6 +1351,8 @@ const AdminKnowledge = () => {
                         key={doc.id} 
                         doc={doc} 
                         onDelete={handleDelete}
+                        onSync={handleSyncDocument}
+                        isSyncing={syncingDocId === doc.id}
                         formatFileSize={formatFileSize}
                         getFileIcon={getFileIcon}
                         onDragStart={handleDragStart}
@@ -1314,6 +1377,7 @@ const AdminKnowledge = () => {
             <li>• <strong>Kéo thả:</strong> Giữ và kéo tài liệu để di chuyển giữa các thư mục</li>
             <li>• <strong>File TXT/MD/CSV/Excel:</strong> Nội dung sẽ được trích xuất tự động và Angel AI có thể sử dụng ngay</li>
             <li>• <strong>Google Docs/Sheets:</strong> Paste URL và nhấn "Lấy & Xem Trước" để import nội dung (file phải được chia sẻ công khai)</li>
+            <li>• <strong className="text-blue-600">🔄 Đồng bộ lại:</strong> Với tài liệu Google, nhấn nút <RefreshCw className="w-3 h-3 inline mx-1" /> để cập nhật nội dung mới nhất từ bản gốc</li>
             <li>• <strong>File PDF/DOCX:</strong> Cần được xử lý thêm để trích xuất nội dung</li>
             <li>• <strong>Không giới hạn dung lượng:</strong> Upload bất kỳ file nào bạn muốn</li>
             <li>• Nội dung trong các tài liệu sẽ được Angel AI sử dụng như nguồn kiến thức bổ sung</li>
@@ -1328,6 +1392,8 @@ const AdminKnowledge = () => {
 const DocumentItem = ({ 
   doc, 
   onDelete, 
+  onSync,
+  isSyncing,
   formatFileSize, 
   getFileIcon,
   onDragStart,
@@ -1338,6 +1404,8 @@ const DocumentItem = ({
 }: { 
   doc: KnowledgeDocument; 
   onDelete: (doc: KnowledgeDocument) => void;
+  onSync?: (doc: KnowledgeDocument) => void;
+  isSyncing?: boolean;
   formatFileSize: (bytes: number) => string;
   getFileIcon: (type: string, fileName: string) => string;
   onDragStart: (e: DragEvent<HTMLDivElement>, doc: KnowledgeDocument) => void;
@@ -1346,6 +1414,10 @@ const DocumentItem = ({
   showFolder?: boolean;
   folderName?: string;
 }) => {
+  // Check if this is a Google URL that can be synced
+  const isGoogleUrl = doc.file_url?.includes('docs.google.com/document') || 
+                      doc.file_url?.includes('docs.google.com/spreadsheets');
+
   return (
     <div 
       className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
@@ -1361,7 +1433,14 @@ const DocumentItem = ({
         <GripVertical className="w-4 h-4 text-foreground-muted/50 flex-shrink-0" />
         <span className="text-xl flex-shrink-0">{getFileIcon(doc.file_type, doc.file_name)}</span>
         <div className="min-w-0">
-          <h3 className="font-medium text-foreground truncate">{doc.title}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-foreground truncate">{doc.title}</h3>
+            {isGoogleUrl && (
+              <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                Google
+              </span>
+            )}
+          </div>
           {doc.description && (
             <p className="text-sm text-foreground-muted truncate">{doc.description}</p>
           )}
@@ -1391,13 +1470,29 @@ const DocumentItem = ({
           </div>
         </div>
       </div>
-      <button
-        onClick={(e) => { e.stopPropagation(); onDelete(doc); }}
-        className="p-2 rounded-full text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-        title="Xóa tài liệu"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {isGoogleUrl && onSync && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onSync(doc); }}
+            disabled={isSyncing}
+            className={`p-2 rounded-full transition-colors ${
+              isSyncing 
+                ? "text-primary bg-primary/10 cursor-not-allowed" 
+                : "text-blue-600 hover:bg-blue-50"
+            }`}
+            title="Đồng bộ lại từ Google"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+          </button>
+        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(doc); }}
+          className="p-2 rounded-full text-red-500 hover:bg-red-50 transition-colors"
+          title="Xóa tài liệu"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
