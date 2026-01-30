@@ -71,6 +71,106 @@ const UserProfile = () => {
 
   const isOwnProfile = user?.id === userId;
 
+  // Wrapper functions to update local userPosts state after interactions
+  const handleLike = async (postId: string) => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để thích bài viết");
+      return { success: false };
+    }
+    const result = await toggleLike(postId);
+    if (result.success) {
+      // Update local userPosts state
+      setUserPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                is_liked_by_me: !p.is_liked_by_me,
+                likes_count: p.is_liked_by_me 
+                  ? Math.max(0, (p.likes_count || 1) - 1) 
+                  : (p.likes_count || 0) + 1,
+              }
+            : p
+        )
+      );
+      if (result.postRewarded) {
+        toast.success(result.message, { duration: 5000 });
+      }
+    }
+    return result;
+  };
+
+  const handleShare = async (postId: string) => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để chia sẻ");
+      return { success: false };
+    }
+    const result = await sharePost(postId);
+    if (result.success) {
+      // Update local userPosts state
+      setUserPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                is_shared_by_me: true,
+                shares_count: (p.shares_count || 0) + 1,
+              }
+            : p
+        )
+      );
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
+    return result;
+  };
+
+  const handleComment = async (postId: string, content: string) => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để bình luận");
+      return { success: false };
+    }
+    const result = await addComment(postId, content);
+    if (result.success) {
+      // Update local userPosts state
+      setUserPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                comments_count: (p.comments_count || 0) + 1,
+              }
+            : p
+        )
+      );
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
+    return result;
+  };
+
+  const handleEditPost = async (postId: string, newContent: string) => {
+    const result = await editPost(postId, newContent);
+    if (result.success) {
+      setUserPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, content: newContent } : p
+        )
+      );
+    }
+    return result;
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    const result = await deletePost(postId);
+    if (result.success) {
+      setUserPosts((prev) => prev.filter((p) => p.id !== postId));
+    }
+    return result;
+  };
+
   // Check if current user is admin
   useEffect(() => {
     const checkAdminRole = async () => {
@@ -807,11 +907,11 @@ const UserProfile = () => {
                         <PostCard
                           post={post}
                           currentUserId={user?.id}
-                          onLike={toggleLike}
-                          onShare={sharePost}
-                          onComment={addComment}
-                          onEdit={isOwnProfile ? editPost : undefined}
-                          onDelete={isOwnProfile ? deletePost : undefined}
+                          onLike={handleLike}
+                          onShare={handleShare}
+                          onComment={handleComment}
+                          onEdit={isOwnProfile ? handleEditPost : undefined}
+                          onDelete={isOwnProfile ? handleDeletePost : undefined}
                           fetchComments={fetchComments}
                         />
                       </motion.div>
