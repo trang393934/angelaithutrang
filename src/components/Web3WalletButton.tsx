@@ -61,10 +61,29 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
     return token.logo;
   };
 
+  const handleConnect = async () => {
+    if (!hasWallet) {
+      toast.info(
+        <div className="space-y-2">
+          <p className="font-medium">Chưa có ví Web3</p>
+          <p className="text-sm text-muted-foreground">
+            Con cần cài đặt MetaMask để kết nối ví. Đang mở trang tải...
+          </p>
+        </div>,
+        { duration: 5000 }
+      );
+      setTimeout(() => {
+        window.open("https://metamask.io/download/", "_blank");
+      }, 1000);
+      return;
+    }
+    connect();
+  };
+
   if (!isConnected) {
     return (
       <button
-        onClick={connect}
+        onClick={handleConnect}
         disabled={isConnecting}
         className={`flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 ${
           compact 
