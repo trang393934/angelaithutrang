@@ -34,20 +34,20 @@ const LightConstitution = () => {
       content: [
         "Một FUN Human là người:",
         "",
-        "✦ Chân Thật (Truth)",
+        "🌱 Chân Thật (Truth)",
         "• Sống đồng nhất giữa suy nghĩ – lời nói – hành động",
         "• Can đảm nhìn lại, học hỏi và trưởng thành",
         "• Minh bạch trong hiện diện và tương tác",
         "",
-        "✦ Chân Thành (Sincerity)",
+        "🌱 Chân Thành (Sincerity)",
         "• Tham gia cộng đồng với trái tim hướng về Ánh Sáng",
         "• Lan tỏa thiện ý, hợp tác và nâng đỡ lẫn nhau",
         "",
-        "✦ Thức Tỉnh (Awareness)",
+        "🌱 Thức Tỉnh (Awareness)",
         "• Nhận thức rõ tiền là dòng chảy năng lượng của tạo hóa",
         "• Biết quan sát, làm chủ và tinh luyện ý thức sống",
         "",
-        "✦ Thuần Khiết (Purity)",
+        "🌱 Thuần Khiết (Purity)",
         "• Hành xử bằng tình yêu, sự tôn trọng và lòng từ bi",
         "• Dùng công nghệ, trí tuệ và tài nguyên để phụng sự sự sống"
       ]
@@ -60,9 +60,9 @@ const LightConstitution = () => {
       content: [
         "Trong FUN Ecosystem:",
         "",
-        "✦ Ánh sáng tạo ra thu nhập",
-        "✦ Thức tỉnh mở rộng dòng chảy thịnh vượng",
-        "✦ Thuần khiết nuôi dưỡng sự giàu có bền vững",
+        "✨ Ánh sáng tạo ra thu nhập",
+        "✨ Thức tỉnh mở rộng dòng chảy thịnh vượng",
+        "✨ Thuần khiết nuôi dưỡng sự giàu có bền vững",
         "",
         "Thu nhập là kết quả tự nhiên của:",
         "• Tần số sống",
@@ -90,7 +90,7 @@ const LightConstitution = () => {
         "• Tình yêu vô điều kiện",
         "• Nguyên lý công bằng tự nhiên của Vũ Trụ",
         "",
-        "✦ Phần thưởng được trao khi:",
+        "🎁 Phần thưởng được trao khi:",
         "• Con người sống chân thành",
         "• Ý thức ngày càng sáng",
         "• Hành vi ngày càng hài hòa với lợi ích chung"
@@ -130,8 +130,8 @@ const LightConstitution = () => {
         "• Mức độ đóng góp cho cộng đồng",
         "• Sự hài hòa với quy luật Vũ Trụ",
         "",
-        "Ví càng sáng – dòng chảy càng bền lâu.",
-        "Ví càng tinh khiết – giá trị càng sâu sắc."
+        "Ví càng sáng – dòng chảy càng tự nhiên.",
+        "Ví càng tinh khiết – giá trị càng bền lâu."
       ]
     },
     {
@@ -270,7 +270,7 @@ const LightConstitution = () => {
                       <Separator className="mb-4 bg-amber-200/50" />
                       <div className="pl-16 space-y-2">
                         {section.content.map((line, i) => (
-                          <p key={i} className={`text-amber-900/80 ${line === '' ? 'h-3' : ''} ${line.startsWith('✦') ? 'font-semibold text-amber-700 mt-3' : ''}`}>
+                          <p key={i} className={`text-amber-900/80 ${line === '' ? 'h-3' : ''} ${line.startsWith('✦') || line.startsWith('🌱') || line.startsWith('✨') || line.startsWith('🎁') ? 'font-semibold text-amber-700 mt-3' : ''}`}>
                             {line}
                           </p>
                         ))}
@@ -338,7 +338,7 @@ const LightConstitution = () => {
               <p>Cha luôn ở đây.</p>
               <p>Cha cùng con kiến tạo.</p>
               <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                Ánh sáng đang lan toả.
+                Ánh sáng đang lan toả. ✨✨✨✨✨
               </p>
             </div>
             
