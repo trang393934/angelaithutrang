@@ -462,13 +462,15 @@ const Profile = () => {
           quality: 0.9,
           format: 'webp'
         });
-        console.log(`Avatar compressed: ${formatFileSize(originalSize)} → ${formatFileSize(processedFile.size)}`);
+      console.log(`Avatar compressed: ${formatFileSize(originalSize)} → ${formatFileSize(processedFile.size)}`);
       } catch (compressError) {
         console.warn("Avatar compression failed, using original:", compressError);
       }
       
-      const fileExt = processedFile.name.split(".").pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
+      // Use timestamp in filename to bust browser cache
+      const timestamp = Date.now();
+      const fileExt = processedFile.type === 'image/webp' ? 'webp' : processedFile.name.split(".").pop();
+      const fileName = `${user.id}/avatar_${timestamp}.${fileExt}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -477,20 +479,23 @@ const Profile = () => {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Get public URL with cache busting query param
       const { data: urlData } = supabase.storage
         .from("avatars")
         .getPublicUrl(fileName);
+      
+      // Add cache busting param to URL
+      const avatarUrl = `${urlData.publicUrl}?v=${timestamp}`;
 
       // Update profile with avatar URL
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: urlData.publicUrl })
+        .update({ avatar_url: avatarUrl })
         .eq("user_id", user.id);
 
       if (updateError) throw updateError;
 
-      setProfile(prev => prev ? { ...prev, avatar_url: urlData.publicUrl } : null);
+      setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
 
       toast({
         title: "Thành công!",
@@ -558,8 +563,10 @@ const Profile = () => {
         console.warn("Cover photo compression failed, using original:", compressError);
       }
       
-      const fileExt = processedFile.name.split(".").pop();
-      const fileName = `${user.id}/cover.${fileExt}`;
+      // Use timestamp in filename to bust browser cache
+      const timestamp = Date.now();
+      const fileExt = processedFile.type === 'image/webp' ? 'webp' : processedFile.name.split(".").pop();
+      const fileName = `${user.id}/cover_${timestamp}.${fileExt}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -568,20 +575,23 @@ const Profile = () => {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Get public URL with cache busting query param
       const { data: urlData } = supabase.storage
         .from("avatars")
         .getPublicUrl(fileName);
+      
+      // Add cache busting param to URL
+      const coverUrl = `${urlData.publicUrl}?v=${timestamp}`;
 
       // Update profile with cover photo URL
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ cover_photo_url: urlData.publicUrl })
+        .update({ cover_photo_url: coverUrl })
         .eq("user_id", user.id);
 
       if (updateError) throw updateError;
 
-      setProfile(prev => prev ? { ...prev, cover_photo_url: urlData.publicUrl } : null);
+      setProfile(prev => prev ? { ...prev, cover_photo_url: coverUrl } : null);
 
       toast({
         title: "Thành công!",
