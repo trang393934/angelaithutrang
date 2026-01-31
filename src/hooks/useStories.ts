@@ -137,7 +137,7 @@ export function useStories() {
           processedFile = await compressImage(file, {
             maxWidth: 1080,
             maxHeight: 1920,
-            quality: 0.85,
+            quality: 0.9,
             format: 'webp'
           });
           console.log(`Story image compressed: ${formatFileSize(originalSize)} → ${formatFileSize(processedFile.size)}`);

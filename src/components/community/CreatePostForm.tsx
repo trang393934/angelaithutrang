@@ -146,7 +146,7 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
           file = await compressImage(file, {
             maxWidth: 1920,
             maxHeight: 1920,
-            quality: 0.8,
+            quality: 0.9,
             format: 'webp'
           });
           console.log(`Image compressed: ${formatFileSize(originalSize)} → ${formatFileSize(file.size)}`);
