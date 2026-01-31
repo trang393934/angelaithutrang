@@ -59,59 +59,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
-    // Set up auth state listener FIRST
+    // Listener for ONGOING auth changes (does NOT control isLoading)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (!mounted) return;
+        if (!isMounted) return;
         
         setSession(session);
         setUser(session?.user ?? null);
-        
+
+        // Fire and forget - don't await, don't set loading
         if (session?.user) {
-          // Use setTimeout to prevent deadlock
-          setTimeout(async () => {
-            if (!mounted) return;
-            const adminStatus = await checkAdminRole(session.user.id);
-            if (mounted) {
+          checkAdminRole(session.user.id).then(adminStatus => {
+            if (isMounted) {
               setIsAdmin(adminStatus);
               setIsAdminChecked(true);
-              setIsLoading(false);
             }
-          }, 0);
+          });
         } else {
           setIsAdmin(false);
           setIsAdminChecked(true);
-          setIsLoading(false);
         }
       }
     );
 
-    // THEN get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const adminStatus = await checkAdminRole(session.user.id);
-        if (mounted) {
-          setIsAdmin(adminStatus);
+    // INITIAL load (controls isLoading)
+    const initializeAuth = async () => {
+      try {
+        // Explicitly get session for initial load
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+
+        // Fetch role BEFORE setting loading false
+        if (initialSession?.user) {
+          const adminStatus = await checkAdminRole(initialSession.user.id);
+          if (isMounted) {
+            setIsAdmin(adminStatus);
+            setIsAdminChecked(true);
+          }
+        } else {
+          if (isMounted) {
+            setIsAdminChecked(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error during initial auth setup:", error);
+        if (isMounted) {
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
           setIsAdminChecked(true);
         }
-      } else {
-        setIsAdminChecked(true);
+      } finally {
+        // Only set loading to false after initial checks are done or failed
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-      
-      if (mounted) {
-        setIsLoading(false);
-      }
-    });
+    };
 
+    initializeAuth();
+
+    // Cleanup function
     return () => {
-      mounted = false;
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [checkAdminRole]);
