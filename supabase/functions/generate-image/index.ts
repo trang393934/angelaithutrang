@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,8 +25,9 @@ serve(async (req) => {
       throw new Error("AI service is not configured");
     }
 
-    // Initialize Supabase client for usage tracking
+    // Initialize Supabase client for usage tracking and storage
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const authHeader = req.headers.get("Authorization");
     
@@ -137,16 +139,66 @@ Typography: clean, high-contrast, readable Vietnamese diacritics; avoid stylized
     const data = await response.json();
     console.log("Image generation response received");
 
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const base64ImageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     const textResponse = data.choices?.[0]?.message?.content || "";
 
-    if (!imageUrl) {
+    if (!base64ImageUrl) {
       throw new Error("No image generated");
+    }
+
+    // Extract base64 data from data URI and upload to storage
+    let finalImageUrl = base64ImageUrl;
+    
+    if (base64ImageUrl.startsWith('data:image/')) {
+      try {
+        // Use service role key for storage operations
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+        
+        // Parse base64 data URI
+        const matches = base64ImageUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+        if (matches) {
+          const imageType = matches[1]; // png, jpeg, webp, etc.
+          const base64Data = matches[2];
+          
+          // Decode base64 to binary
+          const binaryData = decode(base64Data);
+          
+          // Generate unique filename
+          const timestamp = Date.now();
+          const randomId = crypto.randomUUID().slice(0, 8);
+          const userFolder = userId || 'anonymous';
+          const fileName = `${userFolder}/${timestamp}-${randomId}.${imageType}`;
+          
+          // Upload to storage bucket
+          const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+            .from('ai-images')
+            .upload(fileName, binaryData, {
+              contentType: `image/${imageType}`,
+              upsert: false
+            });
+          
+          if (uploadError) {
+            console.error("Storage upload error:", uploadError);
+            // Fall back to base64 if upload fails
+          } else {
+            // Get public URL
+            const { data: publicUrlData } = supabaseAdmin.storage
+              .from('ai-images')
+              .getPublicUrl(fileName);
+            
+            finalImageUrl = publicUrlData.publicUrl;
+            console.log("Image uploaded to storage:", finalImageUrl);
+          }
+        }
+      } catch (storageError) {
+        console.error("Storage operation error:", storageError);
+        // Fall back to base64 if storage fails
+      }
     }
 
     return new Response(
       JSON.stringify({ 
-        imageUrl,
+        imageUrl: finalImageUrl,
         description: textResponse,
         prompt: enhancedPrompt
       }),
