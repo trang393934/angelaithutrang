@@ -459,7 +459,7 @@ const Profile = () => {
         processedFile = await compressImage(file, {
           maxWidth: 512,
           maxHeight: 512,
-          quality: 0.85,
+          quality: 0.9,
           format: 'webp'
         });
         console.log(`Avatar compressed: ${formatFileSize(originalSize)} → ${formatFileSize(processedFile.size)}`);
@@ -550,7 +550,7 @@ const Profile = () => {
         processedFile = await compressImage(file, {
           maxWidth: 1920,
           maxHeight: 1080,
-          quality: 0.8,
+          quality: 0.9,
           format: 'webp'
         });
         console.log(`Cover photo compressed: ${formatFileSize(originalSize)} → ${formatFileSize(processedFile.size)}`);
