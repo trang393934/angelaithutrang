@@ -26,6 +26,7 @@ import HealingMessagesPanel from "@/components/HealingMessagesPanel";
 import CamlyCoinDisplay from "@/components/CamlyCoinDisplay";
 import CoinWithdrawal from "@/components/CoinWithdrawal";
 import GratitudeJournal from "@/components/GratitudeJournal";
+import { compressImage, formatFileSize } from "@/lib/imageCompression";
 
 interface Profile {
   id: string;
@@ -451,13 +452,28 @@ const Profile = () => {
 
     setIsUploadingAvatar(true);
     try {
-      const fileExt = file.name.split(".").pop();
+      // Compress avatar before upload
+      let processedFile = file;
+      try {
+        const originalSize = file.size;
+        processedFile = await compressImage(file, {
+          maxWidth: 512,
+          maxHeight: 512,
+          quality: 0.85,
+          format: 'webp'
+        });
+        console.log(`Avatar compressed: ${formatFileSize(originalSize)} → ${formatFileSize(processedFile.size)}`);
+      } catch (compressError) {
+        console.warn("Avatar compression failed, using original:", compressError);
+      }
+      
+      const fileExt = processedFile.name.split(".").pop();
       const fileName = `${user.id}/avatar.${fileExt}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, processedFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 
@@ -527,13 +543,28 @@ const Profile = () => {
 
     setIsUploadingCover(true);
     try {
-      const fileExt = file.name.split(".").pop();
+      // Compress cover photo before upload
+      let processedFile = file;
+      try {
+        const originalSize = file.size;
+        processedFile = await compressImage(file, {
+          maxWidth: 1920,
+          maxHeight: 1080,
+          quality: 0.8,
+          format: 'webp'
+        });
+        console.log(`Cover photo compressed: ${formatFileSize(originalSize)} → ${formatFileSize(processedFile.size)}`);
+      } catch (compressError) {
+        console.warn("Cover photo compression failed, using original:", compressError);
+      }
+      
+      const fileExt = processedFile.name.split(".").pop();
       const fileName = `${user.id}/cover.${fileExt}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, processedFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 

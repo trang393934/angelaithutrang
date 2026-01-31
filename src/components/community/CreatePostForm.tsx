@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 import { fullContentCheck, checkImageFilename } from "@/lib/contentModeration";
 import { ContentModerationDialog } from "./ContentModerationDialog";
+import { compressImage, formatFileSize } from "@/lib/imageCompression";
 
 const MAX_IMAGES = 30;
 
@@ -137,7 +138,22 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
     
     try {
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+        let file = files[i];
+        
+        // Compress image before upload
+        try {
+          const originalSize = file.size;
+          file = await compressImage(file, {
+            maxWidth: 1920,
+            maxHeight: 1920,
+            quality: 0.8,
+            format: 'webp'
+          });
+          console.log(`Image compressed: ${formatFileSize(originalSize)} → ${formatFileSize(file.size)}`);
+        } catch (compressError) {
+          console.warn("Image compression failed, using original:", compressError);
+        }
+        
         const fileExt = file.name.split(".").pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `posts/${fileName}`;
