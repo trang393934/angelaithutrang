@@ -286,6 +286,78 @@ function getGreetingResponse(text: string): string {
   const responses = GREETING_RESPONSES[lang] || GREETING_RESPONSES['en'];
   return responses[Math.floor(Math.random() * responses.length)];
 }
+// ═══════════════════════════════════════════════════════════════
+// 🙏 MANTRA EXTRACTION - Tách 8 câu mantra khỏi câu hỏi thực sự
+// ═══════════════════════════════════════════════════════════════
+
+// Patterns for 8 Divine Mantras that users may append to their questions
+const MANTRA_PATTERNS = [
+  /🙏\s*CON\s*LÀ\s*ÁNH\s*SÁNG\s*YÊU\s*THƯƠNG\s*THUẦN\s*KHIẾT\s*CỦA\s*CHA\s*VŨ\s*TRỤ/gi,
+  /🙏\s*CON\s*LÀ\s*Ý\s*CHÍ\s*CỦA\s*CHA\s*VŨ\s*TRỤ/gi,
+  /🙏\s*CON\s*LÀ\s*TRÍ\s*TUỆ\s*CỦA\s*CHA\s*VŨ\s*TRỤ/gi,
+  /❤️?\s*CON\s*LÀ\s*HẠNH\s*PHÚC/gi,
+  /❤️?\s*CON\s*LÀ\s*TÌNH\s*YÊU/gi,
+  /❤️?\s*CON\s*LÀ\s*TIỀN\s*CỦA\s*CHA/gi,
+  /🙏\s*CON\s*XIN\s*SÁM\s*HỐI[,\s*SÁM\s*HỐI]*/gi,
+  /🙏\s*CON\s*XIN\s*BIẾT\s*ƠN[,\s*BIẾT\s*ƠN]*(\s*TRONG\s*ÁNH\s*SÁNG\s*YÊU\s*THƯƠNG\s*THUẦN\s*KHIẾT\s*CỦA\s*CHA\s*VŨ\s*TRỤ)?/gi,
+];
+
+// Combined regex to detect any mantra block
+const COMBINED_MANTRA_REGEX = /(?:🙏\s*CON\s*LÀ\s*ÁNH\s*SÁNG|🙏\s*CON\s*LÀ\s*Ý\s*CHÍ|🙏\s*CON\s*LÀ\s*TRÍ\s*TUỆ|❤️?\s*CON\s*LÀ\s*HẠNH\s*PHÚC|❤️?\s*CON\s*LÀ\s*TÌNH\s*YÊU|❤️?\s*CON\s*LÀ\s*TIỀN\s*CỦA\s*CHA|🙏\s*CON\s*XIN\s*SÁM\s*HỐI|🙏\s*CON\s*XIN\s*BIẾT\s*ƠN)/i;
+
+interface MantraExtractionResult {
+  actualQuestion: string;
+  hasMantra: boolean;
+  mantraText: string;
+}
+
+/**
+ * Extract the actual question from user input by removing Divine Mantras
+ * This prevents FAQ cache from incorrectly matching keywords like "biết ơn" from mantras
+ */
+function extractQuestionWithoutMantra(userInput: string): MantraExtractionResult {
+  if (!userInput || userInput.trim().length === 0) {
+    return { actualQuestion: "", hasMantra: false, mantraText: "" };
+  }
+
+  // Check if input contains any mantra patterns
+  const hasMantra = COMBINED_MANTRA_REGEX.test(userInput);
+  
+  if (!hasMantra) {
+    return { actualQuestion: userInput.trim(), hasMantra: false, mantraText: "" };
+  }
+
+  // Extract mantra text for context
+  let mantraText = "";
+  let cleanedQuestion = userInput;
+  
+  // Remove each mantra pattern and collect the mantra text
+  for (const pattern of MANTRA_PATTERNS) {
+    const matches = cleanedQuestion.match(pattern);
+    if (matches) {
+      mantraText += matches.join(" ") + " ";
+    }
+    cleanedQuestion = cleanedQuestion.replace(pattern, " ");
+  }
+  
+  // Clean up extra whitespace
+  cleanedQuestion = cleanedQuestion.replace(/\s+/g, " ").trim();
+  mantraText = mantraText.trim();
+  
+  console.log("Mantra extraction result:", {
+    original: userInput.substring(0, 100) + "...",
+    actualQuestion: cleanedQuestion.substring(0, 100),
+    hasMantra: true,
+    mantraLength: mantraText.length
+  });
+  
+  return {
+    actualQuestion: cleanedQuestion,
+    hasMantra: true,
+    mantraText: mantraText
+  };
+}
+
 const FAQ_CACHE: { patterns: RegExp[]; response: string }[] = [
   {
     patterns: [
@@ -602,7 +674,19 @@ serve(async (req) => {
     const lastUserMessage = messages.filter((m: { role: string }) => m.role === "user").pop();
     const userQuestion = lastUserMessage?.content || "";
     
-    // Detect search intent from Global Search
+    // ═══════════════════════════════════════════════════════════════
+    // 🙏 STEP 0: Extract actual question by removing Divine Mantras
+    // This prevents FAQ cache from matching "biết ơn" in mantras
+    // ═══════════════════════════════════════════════════════════════
+    const mantraResult = extractQuestionWithoutMantra(userQuestion);
+    const actualQuestion = mantraResult.actualQuestion;
+    const hasMantra = mantraResult.hasMantra;
+    
+    if (hasMantra) {
+      console.log("🙏 Mantra detected - using actualQuestion for cache checks:", actualQuestion.substring(0, 80));
+    }
+    
+    // Detect search intent from Global Search (use original question for intent detection)
     const searchIntent = isSearchIntent(userQuestion);
     const searchKeyword = searchIntent ? extractSearchKeyword(userQuestion) : "";
     
@@ -610,9 +694,10 @@ serve(async (req) => {
 
     // OPTIMIZATION 1: Check if it's a simple greeting - respond without AI
     // Skip greeting check if this is a search intent
-    if (!searchIntent && isGreeting(userQuestion)) {
+    // Use actualQuestion (without mantra) for greeting check
+    if (!searchIntent && isGreeting(actualQuestion)) {
       console.log("Detected greeting, returning cached response");
-      const greetingResponse = getGreetingResponse(userQuestion);
+      const greetingResponse = getGreetingResponse(actualQuestion);
       
       // Return as SSE stream format for consistency
       const encoder = new TextEncoder();
@@ -633,7 +718,8 @@ serve(async (req) => {
     }
 
     // OPTIMIZATION 2: Check FAQ cache for common questions
-    const faqResponse = checkFAQCache(userQuestion);
+    // IMPORTANT: Use actualQuestion (without mantra) to avoid false matches on "biết ơn"
+    const faqResponse = checkFAQCache(actualQuestion);
     if (faqResponse) {
       console.log("FAQ cache hit, returning cached response (no AI call)");
       
@@ -689,7 +775,8 @@ serve(async (req) => {
       }
       
       // OPTIMIZATION 3: Check database cache for similar questions
-      const cachedResponse = await checkDatabaseCache(supabase, userQuestion);
+      // Use actualQuestion (without mantra) to avoid false matches
+      const cachedResponse = await checkDatabaseCache(supabase, actualQuestion);
       if (cachedResponse) {
         console.log("Database cache hit, returning cached response (no AI call)");
         
@@ -711,8 +798,8 @@ serve(async (req) => {
       }
     }
 
-    // Extract keywords - use search keyword if available, otherwise from question
-    const effectiveQuestion = searchIntent ? searchKeyword : userQuestion;
+    // Extract keywords - use search keyword if available, otherwise from actualQuestion (without mantra)
+    const effectiveQuestion = searchIntent ? searchKeyword : actualQuestion;
     const keywords = extractKeywords(effectiveQuestion);
     console.log("Extracted keywords:", keywords, "from:", effectiveQuestion);
 
@@ -832,10 +919,33 @@ HƯỚNG DẪN ĐẶC BIỆT:
       }
     }
 
-    // Build system prompt with style instruction and search context if applicable
-    const systemPrompt = BASE_SYSTEM_PROMPT + "\n\n" + styleConfig.instruction + searchContextPrompt + knowledgeContext;
+    // Build system prompt with style instruction, mantra context, and search context if applicable
+    let mantraContextPrompt = "";
+    if (hasMantra) {
+      mantraContextPrompt = `
+
+═══════════════════════════════════════════
+🙏 QUAN TRỌNG: USER ĐANG THỰC HÀNH TÂM LINH
+═══════════════════════════════════════════
+
+User đã sử dụng 8 câu mantra linh thiêng ở cuối câu hỏi. Đây là biểu hiện của việc thực hành tâm linh kết hợp với đặt câu hỏi.
+
+HƯỚNG DẪN XỬ LÝ:
+1. Tập trung trả lời CÂU HỎI THỰC SỰ phía trước mantra: "${actualQuestion}"
+2. Ghi nhận năng lượng tích cực từ việc thực hành mantra (không cần đề cập chi tiết)
+3. KHÔNG trả lời về "lòng biết ơn" chỉ vì mantra có chứa từ "biết ơn"
+4. KHÔNG trả lời về "sám hối" chỉ vì mantra có chứa từ "sám hối"
+5. Phân tích và trả lời đúng chủ đề mà user thực sự muốn hỏi
+
+`;
+    }
+    
+    const systemPrompt = BASE_SYSTEM_PROMPT + "\n\n" + styleConfig.instruction + mantraContextPrompt + searchContextPrompt + knowledgeContext;
     console.log("System prompt length:", systemPrompt.length, `chars (was ~3.9M, now optimized)`);
     console.log(`Using max_tokens: ${styleConfig.maxTokens} for style: ${styleConfig.name}`);
+    if (hasMantra) {
+      console.log("🙏 Mantra context added to system prompt for question:", actualQuestion.substring(0, 50));
+    }
     if (searchIntent) {
       console.log("Search intent mode: Special prompt added for keyword:", searchKeyword);
     }
@@ -914,10 +1024,10 @@ HƯỚNG DẪN ĐẶC BIỆT:
         } catch {}
       },
       async flush() {
-        // Save to cache after stream completes
-        if (supabase && fullResponse.length > 100 && userQuestion.length > 10) {
+        // Save to cache after stream completes - use actualQuestion for cache key
+        if (supabase && fullResponse.length > 100 && actualQuestion.length > 10) {
           // Don't await to not block the response
-          saveToCache(supabase, userQuestion, fullResponse).catch(console.error);
+          saveToCache(supabase, actualQuestion, fullResponse).catch(console.error);
         }
       }
     });
