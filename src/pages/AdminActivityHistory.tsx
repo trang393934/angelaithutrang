@@ -21,7 +21,10 @@ import {
   ChevronRight,
   RefreshCw,
   Copy,
-  Check
+  Check,
+  Image,
+  Wand2,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,6 +72,7 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ChatHistoryWithUser {
   id: string;
@@ -86,11 +90,31 @@ interface ChatHistoryWithUser {
   } | null;
 }
 
+interface ImageHistoryWithUser {
+  id: string;
+  user_id: string;
+  image_type: 'generated' | 'analyzed';
+  prompt: string;
+  response_text: string | null;
+  image_url: string;
+  style: string | null;
+  created_at: string;
+  profiles?: {
+    display_name: string | null;
+  } | null;
+}
+
 interface Stats {
   totalChats: number;
   rewardedChats: number;
   totalRewards: number;
   uniqueUsers: number;
+}
+
+interface ImageStats {
+  totalImages: number;
+  generatedImages: number;
+  analyzedImages: number;
 }
 
 const ITEMS_PER_PAGE = 20;
@@ -100,35 +124,57 @@ const AdminActivityHistory = () => {
   const { user, isAdmin, isLoading: authLoading, isAdminChecked, signOut } = useAuth();
   
   const [history, setHistory] = useState<ChatHistoryWithUser[]>([]);
+  const [imageHistory, setImageHistory] = useState<ImageHistoryWithUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [stats, setStats] = useState<Stats>({
     totalChats: 0,
     rewardedChats: 0,
     totalRewards: 0,
     uniqueUsers: 0,
   });
+  const [imageStats, setImageStats] = useState<ImageStats>({
+    totalImages: 0,
+    generatedImages: 0,
+    analyzedImages: 0,
+  });
+  
+  const [activeTab, setActiveTab] = useState<'chat' | 'images'>('chat');
   
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
     itemId: string | null;
-  }>({ isOpen: false, itemId: null });
+    type: 'chat' | 'image';
+  }>({ isOpen: false, itemId: null, type: 'chat' });
   
   const [viewDialog, setViewDialog] = useState<{
     isOpen: boolean;
     item: ChatHistoryWithUser | null;
   }>({ isOpen: false, item: null });
+
+  const [viewImageDialog, setViewImageDialog] = useState<{
+    isOpen: boolean;
+    item: ImageHistoryWithUser | null;
+  }>({ isOpen: false, item: null });
   
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [copiedField, setCopiedField] = useState<'question' | 'answer' | null>(null);
+  const [copiedField, setCopiedField] = useState<'question' | 'answer' | 'prompt' | null>(null);
   
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState("");
+  const [imageSearchQuery, setImageSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
   }>({ from: undefined, to: undefined });
+  const [imageDateRange, setImageDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({ from: undefined, to: undefined });
   const [showFilters, setShowFilters] = useState(false);
+  const [showImageFilters, setShowImageFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [imageCurrentPage, setImageCurrentPage] = useState(1);
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -196,6 +242,64 @@ const AdminActivityHistory = () => {
     }
   }, []);
 
+  const fetchImageHistory = useCallback(async () => {
+    try {
+      setIsLoadingImages(true);
+      
+      // Fetch all image history
+      const { data: imageData, error: imageError } = await supabase
+        .from('image_history')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1000);
+
+      if (imageError) throw imageError;
+      
+      // Get unique user IDs from image history
+      const imageUserIds = [...new Set(imageData?.map(i => i.user_id) || [])];
+      
+      // Fetch profiles for these users
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', imageUserIds);
+      
+      // Create a map of user_id to profile
+      const profilesMap = new Map(
+        profilesData?.map(p => [p.user_id, { display_name: p.display_name }]) || []
+      );
+      
+      // Combine image history with profiles
+      const imageWithProfiles: ImageHistoryWithUser[] = (imageData || []).map(img => ({
+        id: img.id,
+        user_id: img.user_id,
+        image_type: img.image_type as 'generated' | 'analyzed',
+        prompt: img.prompt,
+        response_text: img.response_text,
+        image_url: img.image_url,
+        style: img.style,
+        created_at: img.created_at,
+        profiles: profilesMap.get(img.user_id) || null
+      }));
+      
+      setImageHistory(imageWithProfiles);
+      
+      // Calculate stats
+      const generated = imageWithProfiles.filter(i => i.image_type === 'generated').length;
+      const analyzed = imageWithProfiles.filter(i => i.image_type === 'analyzed').length;
+      setImageStats({
+        totalImages: imageWithProfiles.length,
+        generatedImages: generated,
+        analyzedImages: analyzed,
+      });
+    } catch (err) {
+      console.error('Error fetching image history:', err);
+      toast.error('Không thể tải lịch sử hình ảnh');
+    } finally {
+      setIsLoadingImages(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!authLoading && isAdminChecked) {
       if (!user) {
@@ -205,9 +309,10 @@ const AdminActivityHistory = () => {
         navigate("/");
       } else {
         fetchHistory();
+        fetchImageHistory();
       }
     }
-  }, [user, isAdmin, authLoading, isAdminChecked, navigate, fetchHistory]);
+  }, [user, isAdmin, authLoading, isAdminChecked, navigate, fetchHistory, fetchImageHistory]);
 
   // Filter history based on search and date
   const filteredHistory = useMemo(() => {
@@ -257,7 +362,71 @@ const AdminActivityHistory = () => {
     setDateRange({ from: undefined, to: undefined });
   };
 
+  const clearImageFilters = () => {
+    setImageSearchQuery("");
+    setImageDateRange({ from: undefined, to: undefined });
+  };
+
   const hasActiveFilters = searchQuery.trim() !== "" || dateRange.from || dateRange.to;
+  const hasActiveImageFilters = imageSearchQuery.trim() !== "" || imageDateRange.from || imageDateRange.to;
+
+  // Filter image history based on search and date
+  const filteredImageHistory = useMemo(() => {
+    return imageHistory.filter((item) => {
+      // Search filter
+      const searchLower = imageSearchQuery.toLowerCase();
+      const matchesSearch = imageSearchQuery.trim() === "" || 
+        item.prompt.toLowerCase().includes(searchLower) ||
+        item.response_text?.toLowerCase().includes(searchLower) ||
+        item.profiles?.display_name?.toLowerCase().includes(searchLower) ||
+        item.user_id.toLowerCase().includes(searchLower);
+      
+      // Date filter
+      let matchesDate = true;
+      if (imageDateRange.from || imageDateRange.to) {
+        const itemDate = parseISO(item.created_at);
+        if (imageDateRange.from && imageDateRange.to) {
+          matchesDate = isWithinInterval(itemDate, {
+            start: startOfDay(imageDateRange.from),
+            end: endOfDay(imageDateRange.to)
+          });
+        } else if (imageDateRange.from) {
+          matchesDate = itemDate >= startOfDay(imageDateRange.from);
+        } else if (imageDateRange.to) {
+          matchesDate = itemDate <= endOfDay(imageDateRange.to);
+        }
+      }
+      
+      return matchesSearch && matchesDate;
+    });
+  }, [imageHistory, imageSearchQuery, imageDateRange]);
+
+  // Image Pagination
+  const totalImagePages = Math.ceil(filteredImageHistory.length / ITEMS_PER_PAGE);
+  const paginatedImageHistory = useMemo(() => {
+    const start = (imageCurrentPage - 1) * ITEMS_PER_PAGE;
+    return filteredImageHistory.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredImageHistory, imageCurrentPage]);
+
+  // Reset image page when filters change
+  useEffect(() => {
+    setImageCurrentPage(1);
+  }, [imageSearchQuery, imageDateRange]);
+
+  const getUserDisplayImage = (item: ImageHistoryWithUser) => {
+    if (item.profiles?.display_name) return item.profiles.display_name;
+    return item.user_id.substring(0, 8) + '...';
+  };
+
+  const handleDownloadImage = (imageUrl: string, prompt: string) => {
+    const link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = `angel-ai-${prompt.slice(0, 20).replace(/\s+/g, '-')}-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Đang tải xuống...");
+  };
 
   const handleDelete = async () => {
     if (!deleteDialog.itemId) return;
@@ -265,22 +434,34 @@ const AdminActivityHistory = () => {
     setDeletingId(deleteDialog.itemId);
     
     try {
-      const { error } = await supabase
-        .from('chat_history')
-        .delete()
-        .eq('id', deleteDialog.itemId);
+      if (deleteDialog.type === 'image') {
+        const { error } = await supabase
+          .from('image_history')
+          .delete()
+          .eq('id', deleteDialog.itemId);
 
-      if (error) throw error;
-      
-      setHistory(prev => prev.filter(item => item.id !== deleteDialog.itemId));
-      toast.success("Đã xóa khỏi lịch sử");
+        if (error) throw error;
+        
+        setImageHistory(prev => prev.filter(item => item.id !== deleteDialog.itemId));
+        toast.success("Đã xóa hình ảnh");
+      } else {
+        const { error } = await supabase
+          .from('chat_history')
+          .delete()
+          .eq('id', deleteDialog.itemId);
+
+        if (error) throw error;
+        
+        setHistory(prev => prev.filter(item => item.id !== deleteDialog.itemId));
+        toast.success("Đã xóa khỏi lịch sử");
+      }
     } catch (err) {
       console.error('Error deleting:', err);
       toast.error("Không thể xóa. Vui lòng thử lại.");
     }
     
     setDeletingId(null);
-    setDeleteDialog({ isOpen: false, itemId: null });
+    setDeleteDialog({ isOpen: false, itemId: null, type: 'chat' });
   };
 
   const formatDate = (dateStr: string) => {
@@ -414,349 +595,725 @@ const AdminActivityHistory = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="border-primary/20">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <MessageSquare className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{stats.totalChats.toLocaleString()}</p>
-                  <p className="text-xs text-foreground-muted">Tổng chat</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'chat' | 'images')} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Lịch sử Chat
+            </TabsTrigger>
+            <TabsTrigger value="images" className="flex items-center gap-2">
+              <Image className="w-4 h-4" />
+              Lịch sử Ảnh
+            </TabsTrigger>
+          </TabsList>
 
-          <Card className="border-amber-500/20">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/10">
-                  <Award className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-amber-600">{stats.rewardedChats.toLocaleString()}</p>
-                  <p className="text-xs text-foreground-muted">Đã thưởng</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Chat History Tab */}
+          <TabsContent value="chat" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="border-primary/20">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <MessageSquare className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">{stats.totalChats.toLocaleString()}</p>
+                      <p className="text-xs text-foreground-muted">Tổng chat</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className="border-green-500/20">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-500/10">
-                  <Coins className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-green-600">{stats.totalRewards.toLocaleString()}</p>
-                  <p className="text-xs text-foreground-muted">Tổng Camly Coin</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="border-amber-500/20">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-amber-500/10">
+                      <Award className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-amber-600">{stats.rewardedChats.toLocaleString()}</p>
+                      <p className="text-xs text-foreground-muted">Đã thưởng</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className="border-blue-500/20">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-500/10">
-                  <Users className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-blue-600">{stats.uniqueUsers.toLocaleString()}</p>
-                  <p className="text-xs text-foreground-muted">Tổng users</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              <Card className="border-green-500/20">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-500/10">
+                      <Coins className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-green-600">{stats.totalRewards.toLocaleString()}</p>
+                      <p className="text-xs text-foreground-muted">Tổng Camly Coin</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-        {/* Search and Filter Section */}
-        <Card className="mb-6 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Search Input */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Tìm theo nội dung, tên user, email..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-10"
-                />
-                {searchQuery && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    onClick={() => setSearchQuery("")}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-
-              {/* Filter and Refresh Buttons */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={showFilters ? "border-primary text-primary" : ""}
-                >
-                  <Filter className="w-4 h-4 mr-2" />
-                  Bộ lọc
-                  {hasActiveFilters && (
-                    <span className="ml-2 w-2 h-2 rounded-full bg-primary" />
-                  )}
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={fetchHistory}
-                  disabled={isLoading}
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                  Làm mới
-                </Button>
-                
-                {hasActiveFilters && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="text-muted-foreground"
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Xóa bộ lọc
-                  </Button>
-                )}
-              </div>
+              <Card className="border-blue-500/20">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-blue-600">{stats.uniqueUsers.toLocaleString()}</p>
+                      <p className="text-xs text-foreground-muted">Tổng users</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Date Range Filter */}
-            {showFilters && (
-              <div className="mt-4 p-4 rounded-lg bg-muted/50 border border-border">
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">Lọc theo ngày</span>
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="justify-start">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {dateRange.from ? format(dateRange.from, "dd/MM/yyyy", { locale: vi }) : "Từ ngày"}
+            {/* Search and Filter Section */}
+            <Card className="border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Tìm theo nội dung, tên user..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 pr-10"
+                    />
+                    {searchQuery && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                        onClick={() => setSearchQuery("")}
+                      >
+                        <X className="w-4 h-4" />
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={dateRange.from}
-                        onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
-                        initialFocus
-                        locale={vi}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                    )}
+                  </div>
 
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="justify-start">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {dateRange.to ? format(dateRange.to, "dd/MM/yyyy", { locale: vi }) : "Đến ngày"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={dateRange.to}
-                        onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
-                        initialFocus
-                        locale={vi}
-                      />
-                    </PopoverContent>
-                  </Popover>
-
-                  {(dateRange.from || dateRange.to) && (
+                  <div className="flex items-center gap-2">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => setDateRange({ from: undefined, to: undefined })}
+                      onClick={() => setShowFilters(!showFilters)}
+                      className={showFilters ? "border-primary text-primary" : ""}
                     >
-                      <X className="w-4 h-4 mr-1" />
-                      Xóa
+                      <Filter className="w-4 h-4 mr-2" />
+                      Bộ lọc
+                      {hasActiveFilters && (
+                        <span className="ml-2 w-2 h-2 rounded-full bg-primary" />
+                      )}
                     </Button>
-                  )}
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchHistory}
+                      disabled={isLoading}
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                      Làm mới
+                    </Button>
+                    
+                    {hasActiveFilters && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearFilters}
+                        className="text-muted-foreground"
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Xóa bộ lọc
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Results Count */}
-        {!isLoading && history.length > 0 && (
-          <div className="mb-4 text-sm text-muted-foreground">
-            {hasActiveFilters ? (
-              <>
-                Tìm thấy <span className="font-medium text-foreground">{filteredHistory.length}</span> kết quả
-                {filteredHistory.length !== history.length && (
-                  <> trong tổng số <span className="font-medium text-foreground">{history.length}</span> hoạt động</>
+                {showFilters && (
+                  <div className="mt-4 p-4 rounded-lg bg-muted/50 border border-border">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Lọc theo ngày</span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="justify-start">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {dateRange.from ? format(dateRange.from, "dd/MM/yyyy", { locale: vi }) : "Từ ngày"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={dateRange.from}
+                            onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                            initialFocus
+                            locale={vi}
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="justify-start">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {dateRange.to ? format(dateRange.to, "dd/MM/yyyy", { locale: vi }) : "Đến ngày"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={dateRange.to}
+                            onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                            initialFocus
+                            locale={vi}
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      {(dateRange.from || dateRange.to) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDateRange({ from: undefined, to: undefined })}
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Xóa
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 )}
-              </>
-            ) : (
-              <>Hiển thị <span className="font-medium text-foreground">{paginatedHistory.length}</span> / <span className="font-medium text-foreground">{history.length}</span> hoạt động</>
-            )}
-          </div>
-        )}
-
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-            <p className="text-foreground-muted">Đang tải lịch sử...</p>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!isLoading && history.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <History className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="text-lg font-medium mb-2">Chưa có hoạt động nào</h3>
-            <p className="text-foreground-muted">
-              Lịch sử chat của users sẽ xuất hiện ở đây
-            </p>
-          </div>
-        )}
-
-        {/* No Results after filtering */}
-        {!isLoading && history.length > 0 && filteredHistory.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Search className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium mb-2">Không tìm thấy kết quả</h3>
-            <p className="text-foreground-muted mb-6">
-              Thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh bộ lọc
-            </p>
-            <Button variant="outline" onClick={clearFilters}>
-              <X className="w-4 h-4 mr-2" />
-              Xóa bộ lọc
-            </Button>
-          </div>
-        )}
-
-        {/* History Table */}
-        {!isLoading && paginatedHistory.length > 0 && (
-          <>
-            <Card className="border-primary/20 overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[150px]">User</TableHead>
-                    <TableHead>Câu hỏi</TableHead>
-                    <TableHead className="w-[100px] text-center">Thưởng</TableHead>
-                    <TableHead className="w-[140px]">Thời gian</TableHead>
-                    <TableHead className="w-[100px] text-center">Hành động</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedHistory.map((item) => (
-                    <TableRow key={item.id} className={item.is_rewarded ? 'bg-amber-50/30' : ''}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="w-7 h-7">
-                            <AvatarFallback className="text-xs">
-                              {getUserDisplay(item).charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm font-medium truncate max-w-[100px]">
-                            {getUserDisplay(item)}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <p className="text-sm line-clamp-2">{item.question_text}</p>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {item.is_rewarded ? (
-                          <div className="flex items-center justify-center gap-1 text-amber-600 text-sm">
-                            <Coins className="w-4 h-4" />
-                            <span>+{item.reward_amount}</span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(item.created_at)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setViewDialog({ isOpen: true, item })}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                            onClick={() => setDeleteDialog({ isOpen: true, itemId: item.id })}
-                            disabled={deletingId === item.id}
-                          >
-                            {deletingId === item.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              </CardContent>
             </Card>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-6">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                      />
-                    </PaginationItem>
-                    
-                    {renderPaginationItems()}
-                    
-                    <PaginationItem>
-                      <PaginationNext 
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+            {/* Results Count */}
+            {!isLoading && history.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                {hasActiveFilters ? (
+                  <>
+                    Tìm thấy <span className="font-medium text-foreground">{filteredHistory.length}</span> kết quả
+                    {filteredHistory.length !== history.length && (
+                      <> trong tổng số <span className="font-medium text-foreground">{history.length}</span> hoạt động</>
+                    )}
+                  </>
+                ) : (
+                  <>Hiển thị <span className="font-medium text-foreground">{paginatedHistory.length}</span> / <span className="font-medium text-foreground">{history.length}</span> hoạt động</>
+                )}
               </div>
             )}
-          </>
-        )}
+
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+                <p className="text-foreground-muted">Đang tải lịch sử...</p>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && history.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <History className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">Chưa có hoạt động nào</h3>
+                <p className="text-foreground-muted">
+                  Lịch sử chat của users sẽ xuất hiện ở đây
+                </p>
+              </div>
+            )}
+
+            {/* No Results after filtering */}
+            {!isLoading && history.length > 0 && filteredHistory.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Search className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">Không tìm thấy kết quả</h3>
+                <p className="text-foreground-muted mb-6">
+                  Thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh bộ lọc
+                </p>
+                <Button variant="outline" onClick={clearFilters}>
+                  <X className="w-4 h-4 mr-2" />
+                  Xóa bộ lọc
+                </Button>
+              </div>
+            )}
+
+            {/* History Table */}
+            {!isLoading && paginatedHistory.length > 0 && (
+              <>
+                <Card className="border-primary/20 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[150px]">User</TableHead>
+                        <TableHead>Câu hỏi</TableHead>
+                        <TableHead className="w-[100px] text-center">Thưởng</TableHead>
+                        <TableHead className="w-[140px]">Thời gian</TableHead>
+                        <TableHead className="w-[100px] text-center">Hành động</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedHistory.map((item) => (
+                        <TableRow key={item.id} className={item.is_rewarded ? 'bg-amber-50/30' : ''}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="w-7 h-7">
+                                <AvatarFallback className="text-xs">
+                                  {getUserDisplay(item).charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm font-medium truncate max-w-[100px]">
+                                {getUserDisplay(item)}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-sm line-clamp-2">{item.question_text}</p>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {item.is_rewarded ? (
+                              <div className="flex items-center justify-center gap-1 text-amber-600 text-sm">
+                                <Coins className="w-4 h-4" />
+                                <span>+{item.reward_amount}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(item.created_at)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setViewDialog({ isOpen: true, item })}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                onClick={() => setDeleteDialog({ isOpen: true, itemId: item.id, type: 'chat' })}
+                                disabled={deletingId === item.id}
+                              >
+                                {deletingId === item.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Card>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-6">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                        
+                        {renderPaginationItems()}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+
+          {/* Image History Tab */}
+          <TabsContent value="images" className="space-y-6">
+            {/* Image Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Card className="border-primary/20">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Image className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">{imageStats.totalImages.toLocaleString()}</p>
+                      <p className="text-xs text-foreground-muted">Tổng hình ảnh</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-purple-500/20">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-purple-500/10">
+                      <Wand2 className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-purple-600">{imageStats.generatedImages.toLocaleString()}</p>
+                      <p className="text-xs text-foreground-muted">Ảnh tạo</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-500/20">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <Eye className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-blue-600">{imageStats.analyzedImages.toLocaleString()}</p>
+                      <p className="text-xs text-foreground-muted">Ảnh phân tích</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Image Search and Filter Section */}
+            <Card className="border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Tìm theo câu lệnh, tên user..."
+                      value={imageSearchQuery}
+                      onChange={(e) => setImageSearchQuery(e.target.value)}
+                      className="pl-10 pr-10"
+                    />
+                    {imageSearchQuery && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                        onClick={() => setImageSearchQuery("")}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowImageFilters(!showImageFilters)}
+                      className={showImageFilters ? "border-primary text-primary" : ""}
+                    >
+                      <Filter className="w-4 h-4 mr-2" />
+                      Bộ lọc
+                      {hasActiveImageFilters && (
+                        <span className="ml-2 w-2 h-2 rounded-full bg-primary" />
+                      )}
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchImageHistory}
+                      disabled={isLoadingImages}
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingImages ? 'animate-spin' : ''}`} />
+                      Làm mới
+                    </Button>
+                    
+                    {hasActiveImageFilters && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearImageFilters}
+                        className="text-muted-foreground"
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Xóa bộ lọc
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {showImageFilters && (
+                  <div className="mt-4 p-4 rounded-lg bg-muted/50 border border-border">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Lọc theo ngày</span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="justify-start">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {imageDateRange.from ? format(imageDateRange.from, "dd/MM/yyyy", { locale: vi }) : "Từ ngày"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={imageDateRange.from}
+                            onSelect={(date) => setImageDateRange(prev => ({ ...prev, from: date }))}
+                            initialFocus
+                            locale={vi}
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="justify-start">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {imageDateRange.to ? format(imageDateRange.to, "dd/MM/yyyy", { locale: vi }) : "Đến ngày"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={imageDateRange.to}
+                            onSelect={(date) => setImageDateRange(prev => ({ ...prev, to: date }))}
+                            initialFocus
+                            locale={vi}
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      {(imageDateRange.from || imageDateRange.to) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setImageDateRange({ from: undefined, to: undefined })}
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Xóa
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Image Results Count */}
+            {!isLoadingImages && imageHistory.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                {hasActiveImageFilters ? (
+                  <>
+                    Tìm thấy <span className="font-medium text-foreground">{filteredImageHistory.length}</span> kết quả
+                    {filteredImageHistory.length !== imageHistory.length && (
+                      <> trong tổng số <span className="font-medium text-foreground">{imageHistory.length}</span> hình ảnh</>
+                    )}
+                  </>
+                ) : (
+                  <>Hiển thị <span className="font-medium text-foreground">{paginatedImageHistory.length}</span> / <span className="font-medium text-foreground">{imageHistory.length}</span> hình ảnh</>
+                )}
+              </div>
+            )}
+
+            {/* Image Loading State */}
+            {isLoadingImages && (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+                <p className="text-foreground-muted">Đang tải lịch sử hình ảnh...</p>
+              </div>
+            )}
+
+            {/* Image Empty State */}
+            {!isLoadingImages && imageHistory.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Image className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">Chưa có hình ảnh nào</h3>
+                <p className="text-foreground-muted">
+                  Lịch sử tạo/phân tích ảnh của users sẽ xuất hiện ở đây
+                </p>
+              </div>
+            )}
+
+            {/* Image No Results after filtering */}
+            {!isLoadingImages && imageHistory.length > 0 && filteredImageHistory.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Search className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">Không tìm thấy kết quả</h3>
+                <p className="text-foreground-muted mb-6">
+                  Thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh bộ lọc
+                </p>
+                <Button variant="outline" onClick={clearImageFilters}>
+                  <X className="w-4 h-4 mr-2" />
+                  Xóa bộ lọc
+                </Button>
+              </div>
+            )}
+
+            {/* Image History Table */}
+            {!isLoadingImages && paginatedImageHistory.length > 0 && (
+              <>
+                <Card className="border-primary/20 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">Ảnh</TableHead>
+                        <TableHead className="w-[150px]">User</TableHead>
+                        <TableHead>Câu lệnh</TableHead>
+                        <TableHead className="w-[100px] text-center">Loại</TableHead>
+                        <TableHead className="w-[140px]">Thời gian</TableHead>
+                        <TableHead className="w-[120px] text-center">Hành động</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedImageHistory.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            <div 
+                              className="w-12 h-12 rounded-lg overflow-hidden border border-primary/20 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => setViewImageDialog({ isOpen: true, item })}
+                            >
+                              <img
+                                src={item.image_url}
+                                alt={item.prompt}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="w-7 h-7">
+                                <AvatarFallback className="text-xs">
+                                  {getUserDisplayImage(item).charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm font-medium truncate max-w-[100px]">
+                                {getUserDisplayImage(item)}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-sm line-clamp-2">{item.prompt}</p>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                              item.image_type === 'generated' 
+                                ? 'bg-purple-100 text-purple-700' 
+                                : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {item.image_type === 'generated' ? (
+                                <>
+                                  <Wand2 className="w-3 h-3" />
+                                  Tạo
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="w-3 h-3" />
+                                  Phân tích
+                                </>
+                              )}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(item.created_at)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setViewImageDialog({ isOpen: true, item })}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleDownloadImage(item.image_url, item.prompt)}
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                onClick={() => setDeleteDialog({ isOpen: true, itemId: item.id, type: 'image' })}
+                                disabled={deletingId === item.id}
+                              >
+                                {deletingId === item.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Card>
+
+                {/* Image Pagination */}
+                {totalImagePages > 1 && (
+                  <div className="mt-6">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setImageCurrentPage(p => Math.max(1, p - 1))}
+                            className={imageCurrentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                        
+                        <PaginationItem>
+                          <PaginationLink isActive>{imageCurrentPage}</PaginationLink>
+                        </PaginationItem>
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setImageCurrentPage(p => Math.min(totalImagePages, p + 1))}
+                            className={imageCurrentPage === totalImagePages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* View Dialog */}
@@ -861,13 +1418,130 @@ const AdminActivityHistory = () => {
         </DialogContent>
       </Dialog>
 
+      {/* View Image Dialog */}
+      <Dialog open={viewImageDialog.isOpen} onOpenChange={(open) => !open && setViewImageDialog({ isOpen: false, item: null })}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0">
+          {viewImageDialog.item && (
+            <div className="flex flex-col">
+              {/* Image */}
+              <div className="relative bg-black/5 max-h-[60vh] overflow-hidden">
+                <img
+                  src={viewImageDialog.item.image_url}
+                  alt={viewImageDialog.item.prompt}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              
+              {/* Info */}
+              <div className="p-4 space-y-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
+                    viewImageDialog.item.image_type === 'generated'
+                      ? "bg-purple-100 text-purple-700"
+                      : "bg-blue-100 text-blue-700"
+                  }`}>
+                    {viewImageDialog.item.image_type === 'generated' ? (
+                      <>
+                        <Wand2 className="w-3 h-3" />
+                        Tạo ảnh
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-3 h-3" />
+                        Phân tích
+                      </>
+                    )}
+                  </span>
+                  {viewImageDialog.item.style && (
+                    <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs">
+                      {viewImageDialog.item.style}
+                    </span>
+                  )}
+                  <span className="text-xs text-foreground-muted ml-auto">
+                    {formatFullDate(viewImageDialog.item.created_at)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Avatar className="w-6 h-6">
+                    <AvatarFallback className="text-xs">
+                      {getUserDisplayImage(viewImageDialog.item).charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium">{getUserDisplayImage(viewImageDialog.item)}</span>
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-medium">Câu lệnh:</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => {
+                        navigator.clipboard.writeText(viewImageDialog.item?.prompt || '');
+                        setCopiedField('prompt');
+                        toast.success('Đã sao chép câu lệnh');
+                        setTimeout(() => setCopiedField(null), 2000);
+                      }}
+                    >
+                      {copiedField === 'prompt' ? (
+                        <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 mr-1" />
+                      )}
+                      Copy
+                    </Button>
+                  </div>
+                  <p className="text-sm text-foreground-muted">{viewImageDialog.item.prompt}</p>
+                </div>
+                
+                {viewImageDialog.item.response_text && (
+                  <div>
+                    <p className="text-sm font-medium mb-1">Kết quả phân tích:</p>
+                    <p className="text-sm text-foreground-muted whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      {viewImageDialog.item.response_text}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Actions */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleDownloadImage(viewImageDialog.item!.image_url, viewImageDialog.item!.prompt)}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Tải xuống
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setDeleteDialog({ isOpen: true, itemId: viewImageDialog.item!.id, type: 'image' });
+                      setViewImageDialog({ isOpen: false, item: null });
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Dialog */}
-      <AlertDialog open={deleteDialog.isOpen} onOpenChange={(open) => !open && setDeleteDialog({ isOpen: false, itemId: null })}>
+      <AlertDialog open={deleteDialog.isOpen} onOpenChange={(open) => !open && setDeleteDialog({ isOpen: false, itemId: null, type: 'chat' })}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa cuộc trò chuyện này? Hành động này không thể hoàn tác.
+              {deleteDialog.type === 'image' 
+                ? 'Bạn có chắc chắn muốn xóa hình ảnh này? Hành động này không thể hoàn tác.'
+                : 'Bạn có chắc chắn muốn xóa cuộc trò chuyện này? Hành động này không thể hoàn tác.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
