@@ -147,14 +147,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [checkAdminRole, clearLocalSession]);
 
   const signIn = async (email: string, password: string) => {
-    setIsLoading(true);
+    // IMPORTANT: `isLoading` is reserved for the initial auth bootstrap only.
+    // Setting it to true here can permanently lock the app in a loading state
+    // because onAuthStateChange intentionally does not control isLoading.
     setIsAdminChecked(false);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setIsAdminChecked(true);
+      }
+      return { error: error as Error | null };
+    } finally {
+      // Ensure we never leave the provider stuck in a loading state after a manual auth action.
       setIsLoading(false);
-      setIsAdminChecked(true);
     }
-    return { error: error as Error | null };
   };
 
   const signUp = async (email: string, password: string) => {
