@@ -20,8 +20,8 @@ export function useChatFolders() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all folders for user
-  const fetchFolders = useCallback(async () => {
+  // Fetch all folders for user with retry logic
+  const fetchFolders = useCallback(async (retryCount = 0) => {
     if (!user) {
       setFolders([]);
       setIsLoading(false);
@@ -32,18 +32,34 @@ export function useChatFolders() {
       setIsLoading(true);
       setError(null);
 
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const { data, error: fetchError } = await supabase
         .from('chat_folders')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(controller.signal);
+
+      clearTimeout(timeoutId);
 
       if (fetchError) throw fetchError;
 
       setFolders(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching chat folders:', err);
+      
+      // Retry once after 3 seconds if first attempt
+      if (retryCount < 1 && (err.name === 'AbortError' || err.message?.includes('timeout'))) {
+        console.log('Retrying fetch folders...');
+        setTimeout(() => fetchFolders(retryCount + 1), 3000);
+        return;
+      }
+      
       setError('Không thể tải danh sách thư mục');
+      setFolders([]); // Fallback: allow creating new folders
     } finally {
       setIsLoading(false);
     }
