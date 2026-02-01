@@ -573,6 +573,16 @@ const translations: Record<string, string> = {
   "circles.leave": "Rời khỏi",
   "circles.members": "thành viên",
   "circles.official": "Chính thức",
+
+  // Gate translations
+  "loading": "Đang tải...",
+  "loginRequired": "Vui lòng đăng nhập",
+  "loginRequiredDesc": "Bạn cần đăng nhập để sử dụng tính năng này.",
+  "login": "Đăng nhập",
+  "lightGateClosed": "Cổng Ánh Sáng Đang Đóng",
+  "lightGateDesc": "Bạn cần đồng ý với Luật Ánh Sáng để sử dụng tính năng này. Đây là cam kết thiêng liêng để duy trì năng lượng tích cực trong cộng đồng.",
+  "agreeToLawOfLight": "Đồng ý Luật Ánh Sáng",
+  "backToHome": "Quay về Trang chủ",
 };
 
 export default translations;
