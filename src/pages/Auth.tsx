@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { Mail, Lock, ArrowLeft, Sparkles, Eye, EyeOff, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import angelLogo from "@/assets/angel-ai-logo.png";
 
 const PureLovePledge = () => (
@@ -251,21 +252,23 @@ const Auth = () => {
     setIsGoogleLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth`,
-        }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
       });
 
-      if (error) {
-        if (error.message?.toLowerCase().includes("failed to fetch")) {
+      if (result.redirected) {
+        // Page is redirecting to OAuth provider
+        return;
+      }
+
+      if (result.error) {
+        if (result.error.message?.toLowerCase().includes("failed to fetch")) {
           showAuthNetworkToast();
           return;
         }
         toast({
           title: "Lỗi đăng nhập Google",
-          description: error.message,
+          description: result.error.message,
           variant: "destructive",
         });
       }
