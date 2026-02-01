@@ -130,3 +130,9 @@ verify_jwt = false
 
 [functions.edit-image]
 verify_jwt = false
+
+[functions.process-share-reward]
+verify_jwt = false
+
+[functions.process-vision-reward]
+verify_jwt = false

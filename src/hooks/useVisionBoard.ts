@@ -109,8 +109,8 @@ export function useVisionBoard(): UseVisionBoardReturn {
         images: JSON.parse(JSON.stringify(data.images || [])),
         is_public: data.is_public || false,
         is_first_board: isFirst,
-        is_rewarded: isFirst,
-        reward_amount: isFirst ? 1000 : 0,
+        is_rewarded: false, // Server will set this to true after reward
+        reward_amount: 0, // Server will set the actual amount
         total_goals_count: goals.length,
         completed_goals_count: 0,
       };
@@ -123,24 +123,22 @@ export function useVisionBoard(): UseVisionBoardReturn {
 
       if (error) throw error;
 
-      // If this is the first board, add reward
-      if (isFirst) {
-        const { error: coinError } = await supabase.rpc("add_camly_coins", {
-          _user_id: user.id,
-          _amount: 1000,
-          _transaction_type: "vision_reward",
-          _description: "Phần thưởng tạo Vision Board đầu tiên!",
-          _purity_score: null,
-          _metadata: { vision_board_id: newBoard.id },
-        });
+      // If this is the first board, process reward via secure edge function
+      if (isFirst && newBoard) {
+        const { data: rewardData, error: rewardError } = await supabase.functions.invoke(
+          'process-vision-reward',
+          { body: { visionBoardId: newBoard.id } }
+        );
 
-        if (coinError) {
-          console.error("Error adding coin reward:", coinError);
-        } else {
+        if (rewardError) {
+          console.error("Error processing vision reward:", rewardError);
+        } else if (rewardData?.success) {
           toast({
             title: "🎉 Chúc mừng!",
-            description: "Bạn đã nhận 1000 Camly Coin cho Vision Board đầu tiên!",
+            description: rewardData.message,
           });
+        } else if (rewardData?.error) {
+          console.log("Vision reward not given:", rewardData.message);
         }
       }
 
