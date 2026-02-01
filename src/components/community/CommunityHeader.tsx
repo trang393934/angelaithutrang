@@ -12,9 +12,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 import angelAiLogo from "@/assets/angel-ai-logo.png";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function CommunityHeader() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const location = useLocation();
   const [showStoryViewer, setShowStoryViewer] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
@@ -31,10 +33,10 @@ export function CommunityHeader() {
 
   // Navigation items similar to Fun.rich
   const navItems = [
-    { icon: Home, href: "/community", label: "Trang chủ" },
-    { icon: Users, href: "/community-questions", label: "Câu hỏi" },
-    { icon: MessageCircle, href: "/messages", label: "Tin nhắn" },
-    { icon: ShoppingBag, href: "/earn", label: "Kiếm xu" },
+    { icon: Home, href: "/community", label: t("community.navHome") },
+    { icon: Users, href: "/community-questions", label: t("community.navQuestions") },
+    { icon: MessageCircle, href: "/messages", label: t("community.navMessages") },
+    { icon: ShoppingBag, href: "/earn", label: t("community.navEarn") },
   ];
 
   const isActive = (href: string) => location.pathname === href;
@@ -102,7 +104,7 @@ export function CommunityHeader() {
                 <div className="hidden sm:block max-w-xs">
                   <GlobalSearch 
                     variant="community" 
-                    placeholder="Tìm kiếm..."
+                    placeholder={t("community.search")}
                     className="w-full"
                   />
                 </div>
@@ -224,7 +226,7 @@ export function CommunityHeader() {
                     <span className={`text-xs truncate max-w-[72px] text-center ${
                       hasUnviewed ? "text-gray-900 font-medium" : "text-gray-600"
                     }`}>
-                      {isCurrentUser ? "Tin của bạn" : group.display_name.split(" ").slice(-2).join(" ")}
+                      {isCurrentUser ? t("community.yourStory") : group.display_name.split(" ").slice(-2).join(" ")}
                     </span>
                   </button>
                 );
@@ -234,9 +236,9 @@ export function CommunityHeader() {
               {groupedStories.length === 0 && !isLoading && (
                 <div className="flex-1 flex items-center justify-center py-2">
                   <p className="text-gray-600 text-sm">
-                    {user ? "Chưa có tin nào. Hãy tạo tin đầu tiên!" : (
+                    {user ? t("community.noStoriesYet") : (
                       <Link to="/auth" className="text-primary-deep font-medium hover:underline">
-                        Đăng nhập để xem và tạo tin
+                        {t("community.loginToViewStories")}
                       </Link>
                     )}
                   </p>
