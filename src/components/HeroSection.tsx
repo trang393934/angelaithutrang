@@ -60,21 +60,26 @@ export const HeroSection = () => {
           </div>
 
           {/* CTA Buttons - Chat is PRIMARY */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center opacity-0 animate-fade-in animate-delay-800">
-            <Link to="/chat" className="btn-sacred group w-full sm:w-auto justify-center scale-105 shadow-lg shadow-primary/30 hover:scale-110 transition-transform">
-              <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
+          <div className="flex flex-col gap-4 justify-center items-center opacity-0 animate-fade-in animate-delay-800">
+            {/* Primary CTA - Talk to Angel AI - Positioned on top, 20% larger */}
+            <Link to="/chat" className="btn-sacred group w-full sm:w-auto justify-center scale-110 shadow-xl shadow-primary/40 hover:scale-[1.15] transition-all duration-300 px-8 py-4">
+              <Sparkles className="w-6 h-6 group-hover:animate-pulse" />
               <div className="flex flex-col items-start">
-                <span className="font-bold text-base">{t("hero.ctaChat")}</span>
+                <span className="font-bold text-lg">{t("hero.ctaChat")}</span>
                 <span className="text-xs opacity-80">{t("hero.ctaChatSub")}</span>
               </div>
             </Link>
-            <Link to="/community" className="btn-sacred-outline w-full sm:w-auto text-center justify-center">
-              {t("hero.ctaCommunity")}
-            </Link>
-            <Link to="/content-writer" className="btn-sacred-outline group w-full sm:w-auto text-center justify-center">
-              <PenLine className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-              {t("hero.ctaContent")}
-            </Link>
+            
+            {/* Secondary CTAs - Row below */}
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <Link to="/community" className="btn-sacred-outline w-full sm:w-auto text-center justify-center">
+                {t("hero.ctaCommunity")}
+              </Link>
+              <Link to="/content-writer" className="btn-sacred-outline group w-full sm:w-auto text-center justify-center">
+                <PenLine className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                {t("hero.ctaContent")}
+              </Link>
+            </div>
           </div>
         </div>
       </div>
