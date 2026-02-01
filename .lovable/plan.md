@@ -1,206 +1,158 @@
 
-# Kế hoạch khắc phục lỗi Chat tải quá lâu
+# Kế Hoạch: Tích Hợp Hiến Pháp Gốc FUN Ecosystem (Master Charter)
 
-## Phân tích nguyên nhân
+## Tổng Quan
 
-Sau khi kiểm tra, con xác định vấn đề:
-
-### 1. Database Connection Timeout
-
-Database hiện đang gặp lỗi **Connection Timeout** từ phía Lovable Cloud:
-
-```
-Connection terminated due to connection timeout
-```
-
-Tất cả các yêu cầu đến database đều thất bại, bao gồm:
-- Refresh token để xác thực người dùng
-- Kiểm tra `user_light_agreements` (điều kiện hiển thị Chat)
-- Tải `chat_sessions` và `chat_folders`
-
-### 2. Luồng gây treo trang Chat
-
-Trong file `Chat.tsx` (dòng 680-689):
-
-```javascript
-// Loading state - chờ auth và agreement check
-if (authLoading || hasAgreed === null) {
-  return (
-    <div>
-      <span>Đang tải...</span>  // <-- Trang bị treo ở đây
-    </div>
-  );
-}
-```
-
-Khi database timeout:
-1. `authLoading` có thể giải quyết (auth service độc lập)
-2. Nhưng `hasAgreed` vẫn là `null` vì query đến `user_light_agreements` timeout
-3. Kết quả: Trang hiển thị "Đang tải..." mãi không hết
-
-### 3. Network logs xác nhận
-
-```
-POST /auth/v1/token?grant_type=refresh_token -> Failed to fetch
-AbortError: signal is aborted without reason
-```
-
-Các request bị abort vì timeout, không phải lỗi code.
+Hiến Pháp Gốc (Master Charter) là tài liệu nền tảng thiêng liêng nhất của FUN Ecosystem, định nghĩa toàn bộ tầm nhìn, sứ mệnh và nguyên lý vận hành của hệ sinh thái. Tài liệu này sẽ được tạo thành một trang riêng biệt với thiết kế trang trọng và đặc biệt nhất.
 
 ---
 
-## Giải pháp
+## Cấu Trúc Nội Dung Hiến Pháp Gốc
 
-### Phần A: Giải pháp tức thời (không cần code)
+| Phần | Tiêu Đề | Nội Dung Chính |
+|------|---------|----------------|
+| I | Tuyên Ngôn Về Nguồn Gốc | FUN là nền văn minh Ánh Sáng sống động |
+| II | Sứ Mệnh Trọng Tâm | 99% Gift cho cộng đồng toàn cầu |
+| III | Các Nguyên Lý Thiêng Liêng | 5 nguyên lý gốc |
+| IV | Hai Dòng Chảy Thiêng Liêng | Camly Coin + FUN Money |
+| V | Sự Thống Nhất Nền Tảng | 12 platforms |
+| VI | Vai Trò Người Sáng Lập | Bé Ly - Cosmic Queen |
+| VII | Cam Kết Cộng Đồng | Điều kiện tham gia |
+| VIII | Điều Luật Cuối | Luật vũ trụ vĩnh cửu |
+| Divine Seal | Khẳng Định Xác Quyết | 8 Thần Chú Thiêng Liêng |
 
-**Vấn đề hiện tại là từ phía server Lovable Cloud, không phải code ứng dụng.**
+---
 
-Cha có thể:
-1. **Đợi 5-10 phút** - Database timeout thường là tạm thời và sẽ tự phục hồi
-2. **Refresh trang** trên domain `lovable.app` thay vì `angel.fun.rich` để loại trừ vấn đề CORS
-3. **Xóa cache trình duyệt** - Xóa session tokens cũ có thể đang gây conflict
+## Giải Pháp Triển Khai
 
-### Phần B: Cải thiện code để xử lý timeout gracefully
+### 1. Tạo Trang Mới: `/docs/master-charter`
 
-#### Bước 1: Thêm timeout handling cho agreement check
+Tạo file `src/pages/docs/MasterCharter.tsx` với thiết kế đặc biệt:
+- Header trang trọng với icon Vương Miện/Mặt Trời
+- Gradient nền vàng-cam-hồng (gold-orange-rose)
+- Các section có thể mở rộng (expandable)
+- Hiệu ứng animation tinh tế
+- Phần 8 Thần Chú với thiết kế nổi bật
+- Phần Tuyên Ngôn Kết với hiệu ứng Bình Minh
 
-Cập nhật `Chat.tsx` để có timeout fallback khi kiểm tra agreement:
+### 2. Cập Nhật Routing
 
-```javascript
-useEffect(() => {
-  const checkAgreementAndProfile = async () => {
-    if (!user) {
-      setHasAgreed(false);
-      return;
-    }
-    
-    // Thêm timeout 10 giây
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout')), 10000)
-    );
-    
-    try {
-      const result = await Promise.race([
-        supabase.from("user_light_agreements")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-        timeoutPromise
-      ]);
-      
-      setHasAgreed(!!(result as any)?.data);
-    } catch (error) {
-      console.error('Agreement check failed/timeout:', error);
-      // Fallback: cho phép truy cập nếu timeout
-      // User sẽ được yêu cầu đồng ý lại nếu chưa
-      setHasAgreed(false);
-    }
-  };
+Thêm route mới `/docs/master-charter` vào `src/App.tsx`.
 
-  if (!authLoading) {
-    checkAgreementAndProfile();
-  }
-}, [user, authLoading]);
-```
+### 3. Tạo Banner Quảng Bá
 
-#### Bước 2: Thêm retry logic cho chat sessions
+Tạo `MasterCharterBanner.tsx` để hiển thị trên:
+- Trang chủ (Index) - vị trí nổi bật nhất
+- Trang About - Hero section
+- Trang Light Constitution - liên kết đến tài liệu gốc
 
-Cập nhật `useChatSessions.ts`:
+### 4. Hỗ Trợ Đa Ngôn Ngữ (i18n)
 
-```javascript
-const fetchSessions = useCallback(async (retryCount = 0) => {
-  if (!user) {
-    setSessions([]);
-    setIsLoading(false);
-    return;
-  }
+Thêm translation keys cho 12 ngôn ngữ:
+- Tiếng Việt (vi) - bản gốc
+- English (en)
+- Các ngôn ngữ còn lại
 
-  try {
-    setIsLoading(true);
-    setError(null);
+---
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+## Chi Tiết Thiết Kế Giao Diện
 
-    const { data, error: fetchError } = await supabase
-      .from('chat_sessions')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('last_message_at', { ascending: false })
-      .abortSignal(controller.signal);
+### Header Trang
+- Icon: Mặt Trời + Vương Miện
+- Tiêu đề chính: "HIẾN PHÁP GỐC CỦA FUN ECOSYSTEM"
+- Tiêu đề phụ: "MASTER CHARTER OF FUN ECOSYSTEM"
+- Tagline: "Nền Kinh Tế Ánh Sáng 5D của Trái Đất Mới"
 
-    clearTimeout(timeoutId);
+### Cấu Trúc Section
 
-    if (fetchError) throw fetchError;
-    setSessions(data || []);
-  } catch (err) {
-    console.error('Error fetching chat sessions:', err);
-    
-    // Retry once sau 3 giây nếu là lần đầu
-    if (retryCount < 1) {
-      setTimeout(() => fetchSessions(retryCount + 1), 3000);
-      return;
-    }
-    
-    setError('Không thể tải danh sách cuộc trò chuyện');
-    setSessions([]); // Fallback: cho phép chat mới
-  } finally {
-    setIsLoading(false);
-  }
-}, [user]);
-```
-
-#### Bước 3: Hiển thị thông báo thân thiện khi timeout
-
-Thay thế loading screen với thông tin hữu ích:
-
-```javascript
-// Loading state với timeout detection
-if (authLoading || hasAgreed === null) {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-      <Sparkles className="w-6 h-6 text-divine-gold animate-pulse" />
-      <span className="text-foreground-muted">Đang kết nối...</span>
-      
-      {/* Hiển thị sau 10 giây */}
-      <TimeoutMessage 
-        delay={10000}
-        message="Kết nối đang chậm. Vui lòng đợi hoặc thử refresh trang."
-      />
-    </div>
-  );
-}
+```text
++--------------------------------------------------+
+| ☀️ HIẾN PHÁP GỐC CỦA FUN ECOSYSTEM              |
+|    MASTER CHARTER OF FUN ECOSYSTEM               |
+|    Nền Kinh Tế Ánh Sáng 5D của Trái Đất Mới     |
++--------------------------------------------------+
+|                                                   |
+| [Banner: Free to Join • Free to Use • ...]       |
+|                                                   |
++--------------------------------------------------+
+| 🌍 I. TUYÊN NGÔN VỀ NGUỒN GỐC                   |
+|    [Expandable content with 4 points]            |
++--------------------------------------------------+
+| 🌟 II. SỨ MỆNH TRỌNG TÂM                        |
+|    [8 mô hình Earn: Learn, Play, Invest...]     |
++--------------------------------------------------+
+| 💎 III. CÁC NGUYÊN LÝ THIÊNG LIÊNG              |
+|    [5 nguyên lý với icons đặc biệt]             |
++--------------------------------------------------+
+| 🌈 IV. HAI DÒNG CHẢY THIÊNG LIÊNG               |
+|    [Camly Coin = Nước, FUN Money = Mặt Trời]    |
++--------------------------------------------------+
+| 🪐 V. SỰ THỐNG NHẤT NỀN TẢNG                    |
+|    [12 platforms với logos]                      |
++--------------------------------------------------+
+| 👑 VI. VAI TRÒ NGƯỜI SÁNG LẬP                   |
+|    [Bé Ly - Cosmic Queen với avatar]            |
++--------------------------------------------------+
+| 🤝 VII. CAM KẾT CỘNG ĐỒNG                       |
+|    [4 cam kết builders]                          |
++--------------------------------------------------+
+| ⚖️ VIII. ĐIỀU LUẬT CUỐI                         |
+|    [Luật vũ trụ vĩnh cửu]                       |
++--------------------------------------------------+
+|                                                   |
+| ✅ KHẲNG ĐỊNH XÁC QUYẾT (Divine Seal)           |
+|    [8 Thần Chú - thiết kế nổi bật nhất]         |
+|                                                   |
++--------------------------------------------------+
+| 🌅 TUYÊN NGÔN KẾT                               |
+|    [Animation Bình Minh Trái Đất Mới]           |
++--------------------------------------------------+
 ```
 
 ---
 
-## Tóm tắt
+## Files Cần Tạo/Cập Nhật
 
-| Vấn đề | Nguyên nhân | Giải pháp |
-|--------|-------------|-----------|
-| Chat tải mãi không xong | Database timeout | Đợi server phục hồi + thêm timeout handling |
-| `hasAgreed === null` | Query bị treo | Thêm 10s timeout với fallback |
-| Sessions không load | Connection failed | Thêm retry logic + graceful fallback |
-
-### Hành động ngay
-
-1. **Thử lại sau 5-10 phút** - Đợi database server phục hồi
-2. **Test trên preview URL**: `https://id-preview--68056ac2-3d8a-486d-b26f-78a14516765b.lovable.app/chat`
-3. **Approve plan này** để con thêm timeout handling vào code, giúp app không bị treo khi database chậm
+| File | Hành Động |
+|------|-----------|
+| `src/pages/docs/MasterCharter.tsx` | Tạo mới - Trang hiển thị Hiến Pháp Gốc |
+| `src/components/MasterCharterBanner.tsx` | Tạo mới - Banner quảng bá |
+| `src/App.tsx` | Cập nhật - Thêm route `/docs/master-charter` |
+| `src/pages/Index.tsx` | Cập nhật - Thêm banner vị trí nổi bật |
+| `src/pages/About.tsx` | Cập nhật - Thêm banner trong Hero section |
+| `src/translations/vi.ts` | Cập nhật - Thêm translation keys |
+| `src/translations/en.ts` | Cập nhật - Thêm English translations |
+| 10 file translations khác | Cập nhật - Thêm translations cho các ngôn ngữ còn lại |
 
 ---
 
-## Phần kỹ thuật
+## Phần Kỹ Thuật
 
-### Files cần chỉnh sửa
+### Dependencies Sử Dụng
+- `framer-motion` - Animation effects
+- `lucide-react` - Icons (Sun, Crown, Droplets, Flame, Shield, Users, Scale)
+- Tailwind CSS - Styling
 
-1. `src/pages/Chat.tsx` - Thêm timeout cho agreement check
-2. `src/hooks/useChatSessions.ts` - Thêm retry logic và abort controller
-3. `src/hooks/useChatFolders.ts` - Tương tự như sessions
-4. Tạo component `TimeoutMessage` - Hiển thị thông báo sau delay
+### Màu Sắc Chủ Đạo
+- Primary: Amber/Gold gradient (amber-500 → orange-600 → amber-700)
+- Accent: Rose-gold for Divine Seal section
+- Background: Warm cream to white gradient
 
-### Không cần thay đổi
+### Responsive Design
+- Mobile-first approach
+- Collapsible sections on mobile
+- Optimized typography scaling
+- Touch-friendly expandable cards
 
-- Backend Edge Functions (không phải lỗi code)
-- Database schema (không phải lỗi cấu trúc)
-- Authentication logic (đã có error handling)
+---
+
+## Thứ Tự Triển Khai
+
+1. **Tạo trang MasterCharter.tsx** với toàn bộ nội dung và thiết kế
+2. **Thêm route** vào App.tsx
+3. **Tạo MasterCharterBanner.tsx** 
+4. **Tích hợp banner** vào Index.tsx và About.tsx
+5. **Thêm translations** cho tiếng Việt và English
+6. **Hoàn thiện translations** cho 10 ngôn ngữ còn lại
+
+Kế hoạch này sẽ tạo ra một trang tài liệu thiêng liêng và trang trọng nhất cho FUN Ecosystem, phản ánh đúng tầm quan trọng của Hiến Pháp Gốc.
