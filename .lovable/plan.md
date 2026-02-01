@@ -1,146 +1,47 @@
 
-# Kế Hoạch Xử Lý Mantra Trong Câu Hỏi
+# Kế hoạch sửa lỗi Google OAuth 404 trên Custom Domain
 
-## Vấn Đề Hiện Tại
+## Phân tích vấn đề
 
-Khi user kết thúc câu hỏi bằng 8 câu mantra ("🙏CON LÀ ÁNH SÁNG YÊU THƯƠNG THUẦN KHIẾT CỦA CHA VŨ TRỤ..."):
+Khi đăng nhập Google trên custom domain `angel.fun.rich`:
+- Lovable Cloud OAuth redirect đến `angel.fun.rich/~oauth/initiate`
+- Route `/~oauth` không tồn tại trong React app
+- Kết quả: hiển thị trang 404
 
-```text
-Câu hỏi thực sự: "Khi con người sáng tạo ra công nghệ, trái tim có được đặt ngang hàng với trí tuệ không?"
-+ 
-8 câu mantra: "🙏CON LÀ ÁNH SÁNG YÊU THƯƠNG... 🙏 CON XIN BIẾT ƠN, BIẾT ƠN..."
-```
+Đây là vấn đề **cấu hình OAuth** với custom domain, không phải lỗi code.
 
-**Kết quả hiện tại**: Hệ thống bắt keyword "biết ơn" từ mantra → Trả lời template về lòng biết ơn (FAQ cache)
+## Giải pháp
 
-**Kết quả mong muốn**: Tách riêng mantra → Phân tích câu hỏi thực sự phía trước → Trả lời về "công nghệ và trái tim"
+### Bước 1: Cấu hình OAuth cho Custom Domain trong Lovable Cloud
 
----
+Cha cần vào **Lovable Cloud Dashboard** để thêm custom domain `https://angel.fun.rich` vào:
+1. **Site URL** 
+2. **Redirect URLs**
 
-## Giải Pháp
+Để mở Dashboard, nhấn nút **View Cloud Dashboard** bên dưới.
 
-### Bước 1: Tạo Regex Nhận Diện 8 Câu Mantra
+### Bước 2: Thay thế tạm thời - Sử dụng Lovable App Domain
 
-Thêm pattern để nhận diện block mantra ở cuối câu hỏi:
+Trong khi chờ cấu hình, cha có thể đăng nhập Google qua:
+- **Preview URL**: `https://id-preview--68056ac2-3d8a-486d-b26f-78a14516765b.lovable.app`
+- **Published URL**: `https://angelaithutrang.lovable.app`
 
-```text
-Pattern nhận diện:
-🙏CON LÀ ÁNH SÁNG YÊU THƯƠNG THUẦN KHIẾT CỦA CHA VŨ TRỤ
-🙏CON LÀ Ý CHÍ CỦA CHA VŨ TRỤ  
-🙏CON LÀ TRÍ TUỆ CỦA CHA VŨ TRỤ
-❤️CON LÀ HẠNH PHÚC
-❤️CON LÀ TÌNH YÊU
-❤️CON LÀ TIỀN CỦA CHA
-🙏 CON XIN SÁM HỐI, SÁM HỐI, SÁM HỐI
-🙏 CON XIN BIẾT ƠN, BIẾT ƠN, BIẾT ƠN TRONG ÁNH SÁNG YÊU THƯƠNG THUẦN KHIẾT CỦA CHA VŨ TRỤ
-```
+Đăng nhập trên các domain này sẽ hoạt động bình thường.
 
-### Bước 2: Thêm Hàm Tách Mantra
+## Tại sao lỗi này xảy ra?
 
-Tạo function `extractQuestionWithoutMantra()`:
+| Domain | OAuth Status |
+|--------|--------------|
+| `*.lovable.app` | Tự động hỗ trợ |
+| `*.lovableproject.com` | Hỗ trợ trong iframe |
+| Custom domain (`angel.fun.rich`) | Cần cấu hình thủ công |
 
-```text
-Input: "Câu hỏi về công nghệ? 🙏CON LÀ ÁNH SÁNG... 🙏CON XIN BIẾT ƠN..."
-Output: {
-  actualQuestion: "Câu hỏi về công nghệ?",
-  hasMantra: true
-}
-```
+Lovable Cloud OAuth chỉ tự động hỗ trợ các domain `*.lovable.app`. Custom domain cần được thêm vào whitelist trong Authentication Settings.
 
-### Bước 3: Cập Nhật Logic Xử Lý
+## Hành động cần làm
 
-Thay đổi flow trong `angel-chat/index.ts`:
-
-1. **Trước khi check FAQ/Greeting**: Tách mantra ra khỏi câu hỏi
-2. **Dùng actualQuestion** để check FAQ cache (không bị match "biết ơn" từ mantra)
-3. **Gửi actualQuestion** cho AI để phân tích câu hỏi thực sự
-4. **Giữ nguyên mantra** trong system context để AI biết user đang thực hành tâm linh
-
-### Bước 4: Cập Nhật System Prompt
-
-Thêm hướng dẫn cho AI:
-
-```text
-Khi user sử dụng 8 câu mantra cuối câu hỏi, đây là biểu hiện user đang thực hành 
-tâm linh kết hợp với đặt câu hỏi. Hãy:
-1. Tập trung trả lời câu hỏi THỰC SỰ phía trước mantra
-2. Ghi nhận năng lượng tích cực từ việc thực hành mantra
-3. Không trả lời về "lòng biết ơn" chỉ vì mantra có chứa từ "biết ơn"
-```
-
----
-
-## Luồng Xử Lý Mới
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ User Input: "Câu hỏi về công nghệ? 🙏CON LÀ ÁHNH SÁNG..."   │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Step 1: extractQuestionWithoutMantra()                      │
-│ → actualQuestion: "Câu hỏi về công nghệ?"                   │
-│ → hasMantra: true                                           │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Step 2: Check FAQ với actualQuestion                        │
-│ → Không match "biết ơn" → Tiếp tục                          │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Step 3: Gửi actualQuestion cho AI                           │
-│ → System prompt có thêm context về mantra                   │
-│ → AI trả lời về "công nghệ và trái tim"                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Ví Dụ Kết Quả
-
-**Trước khi sửa:**
-- Input: "Khi con người sáng tạo ra công nghệ, trái tim có được đặt ngang hàng với trí tuệ không? 🙏CON LÀ ÁHNH SÁNG... 🙏CON XIN BIẾT ƠN..."
-- Output: "Con thân yêu, lòng biết ơn là chìa khóa mở cánh cửa..." (SAI - trả lời về biết ơn)
-
-**Sau khi sửa:**
-- Input: (tương tự)
-- Output: "Con yêu dấu, câu hỏi về công nghệ và trái tim thật sâu sắc. Khi con người sáng tạo công nghệ, thường chỉ tập trung vào tốc độ và lợi nhuận... Trái tim cần được đặt ngang hàng với trí tuệ để tạo ra công nghệ phụng sự nhân loại..." (ĐÚNG)
-
----
-
-## Chi Tiết Kỹ Thuật
-
-### File cần sửa:
-`supabase/functions/angel-chat/index.ts`
-
-### Thay đổi:
-
-1. Thêm regex pattern nhận diện 8 câu mantra
-2. Thêm function `extractQuestionWithoutMantra()`
-3. Cập nhật logic xử lý trước khi check FAQ cache (line 635-655)
-4. Cập nhật logic xử lý trước khi check database cache
-5. Cập nhật system prompt với hướng dẫn về mantra
-6. Deploy edge function
-
-### Các pattern mantra cần nhận diện:
-- `🙏CON LÀ ÁNH SÁNG YÊU THƯƠNG THUẦN KHIẾT CỦA CHA VŨ TRỤ`
-- `🙏CON LÀ Ý CHÍ CỦA CHA VŨ TRỤ`
-- `🙏CON LÀ TRÍ TUỆ CỦA CHA VŨ TRỤ`
-- `❤️CON LÀ HẠNH PHÚC`
-- `❤️CON LÀ TÌNH YÊU`
-- `❤️CON LÀ TIỀN CỦA CHA`
-- `🙏 CON XIN SÁM HỐI` (có thể lặp nhiều lần)
-- `🙏 CON XIN BIẾT ƠN` (có thể lặp nhiều lần)
-
----
-
-## Lợi Ích
-
-1. **User experience tốt hơn**: Câu hỏi được phân tích chính xác
-2. **Không mất context mantra**: AI vẫn biết user đang thực hành tâm linh
-3. **Tiết kiệm AI credits**: Vẫn giữ được FAQ cache cho câu hỏi thật sự về "biết ơn"
-4. **Linh hoạt**: Hoạt động dù mantra ở đầu, giữa hay cuối câu
+1. Mở Lovable Cloud Dashboard
+2. Vào **Users > Authentication Settings**
+3. Thêm `https://angel.fun.rich` vào Site URL và Redirect URLs
+4. Lưu cấu hình
+5. Thử đăng nhập Google lại trên custom domain
