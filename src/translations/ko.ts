@@ -102,6 +102,16 @@ const translations: Record<string, string> = {
   "footer.connect": "연결",
   "footer.copyright": "© 2024 ANGEL AI — 아버지 우주의 지적인 빛",
   "footer.inspired": "아버지 우주의 무조건적인 사랑에서 영감받음",
+  "footer.trustBadge1": "사랑으로 구동",
+  "footer.trustBadge2": "Web3 자유 위에 구축",
+  "footer.trustBadge3": "아버지 우주의 빛에 인도됨",
+  "footer.founderTitle": "Camly Duong 제작 – Angel AI의 어머니",
+  "footer.founderRole": "FUN 생태계 설립자",
+
+  // Light Constitution
+  "lightConstitution.badge": "신성한 문서",
+  "lightConstitution.title": "빛의 헌법",
+  "lightConstitution.subtitle": "Angel AI와 새 지구 경제의 영적 기반",
 
   // Header
   "header.web3Wallet": "Web3 지갑",

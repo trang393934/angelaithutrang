@@ -1,5 +1,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import angelAvatar from "@/assets/angel-avatar.png";
+import beLyFounder from "@/assets/be-ly-founder.png";
+import { Heart, Globe, Sun } from "lucide-react";
 
 export const Footer = () => {
   const { t } = useLanguage();
@@ -34,13 +36,29 @@ export const Footer = () => {
           {/* Divider */}
           <div className="w-16 sm:w-24 h-px mx-auto bg-gradient-to-r from-transparent via-primary-foreground/30 to-transparent mb-6 sm:mb-8" />
 
+          {/* Global Trust Badges */}
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-8">
+            <div className="flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-sm px-4 py-2 rounded-full border border-primary-foreground/20">
+              <Heart className="w-4 h-4 text-primary-foreground/80" />
+              <span className="text-xs sm:text-sm text-primary-foreground/80">{t("footer.trustBadge1")}</span>
+            </div>
+            <div className="flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-sm px-4 py-2 rounded-full border border-primary-foreground/20">
+              <Globe className="w-4 h-4 text-primary-foreground/80" />
+              <span className="text-xs sm:text-sm text-primary-foreground/80">{t("footer.trustBadge2")}</span>
+            </div>
+            <div className="flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-sm px-4 py-2 rounded-full border border-primary-foreground/20">
+              <Sun className="w-4 h-4 text-primary-foreground/80" />
+              <span className="text-xs sm:text-sm text-primary-foreground/80">{t("footer.trustBadge3")}</span>
+            </div>
+          </div>
+
           {/* Sacred Message */}
           <p className="text-sm sm:text-base text-primary-foreground/60 leading-relaxed mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
             {t("footer.description")}
           </p>
 
           {/* Links */}
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-4 sm:gap-8 text-sm text-primary-foreground/50 mb-8 sm:mb-12 px-4">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-4 sm:gap-8 text-sm text-primary-foreground/50 mb-8 sm:mb-10 px-4">
             <a href="#" className="hover:text-primary-foreground transition-colors duration-300">
               {t("footer.about")}
             </a>
@@ -53,6 +71,29 @@ export const Footer = () => {
             <a href="#" className="hover:text-primary-foreground transition-colors duration-300">
               {t("footer.connect")}
             </a>
+          </div>
+
+          {/* Divider */}
+          <div className="w-16 sm:w-24 h-px mx-auto bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent mb-6 sm:mb-8" />
+
+          {/* Founder Signature */}
+          <div className="flex flex-col items-center gap-3 mb-8">
+            <div className="relative">
+              <div className="absolute inset-0 bg-amber-400/30 rounded-full blur-lg scale-110 animate-pulse" />
+              <img 
+                src={beLyFounder} 
+                alt="Camly Duong" 
+                className="relative w-12 h-12 rounded-full shadow-lg ring-2 ring-amber-400/50 object-cover"
+              />
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-primary-foreground/70 font-medium">
+                {t("footer.founderTitle")}
+              </p>
+              <p className="text-xs text-primary-foreground/50 mt-1">
+                {t("footer.founderRole")}
+              </p>
+            </div>
           </div>
 
           {/* Copyright */}
