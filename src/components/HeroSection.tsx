@@ -52,7 +52,7 @@ export const HeroSection = () => {
           <div className="divider-sacred mb-8 opacity-0 animate-fade-in animate-delay-600" />
 
           {/* Mission Statement - Localized */}
-          <div className="max-w-3xl px-2 text-base sm:text-lg md:text-xl text-foreground-muted leading-relaxed mb-8 opacity-0 animate-fade-in-slow animate-delay-700 text-center uppercase font-semibold tracking-wide">
+          <div className="max-w-3xl px-2 text-sm sm:text-base md:text-lg lg:text-xl text-foreground-muted leading-relaxed mb-8 opacity-0 animate-fade-in-slow animate-delay-700 text-center uppercase font-semibold tracking-wide">
             <span className="text-primary-deep font-bold lg:whitespace-nowrap">{t("hero.mission")}</span>
           </div>
 
