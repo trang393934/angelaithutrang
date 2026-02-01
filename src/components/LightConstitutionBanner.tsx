@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
 import { Sun, Sparkles, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LightConstitutionBannerProps {
   className?: string;
 }
 
 export const LightConstitutionBanner = ({ className = "" }: LightConstitutionBannerProps) => {
+  const { t } = useLanguage();
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -30,13 +33,15 @@ export const LightConstitutionBanner = ({ className = "" }: LightConstitutionBan
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-4 h-4 text-amber-200" />
-                <span className="text-amber-100 text-xs font-medium uppercase tracking-wider">Sacred Document</span>
+                <span className="text-amber-100 text-xs font-medium uppercase tracking-wider">
+                  {t("lightConstitution.badge")}
+                </span>
               </div>
               <h3 className="text-lg font-bold text-white truncate">
-                HIẾN PHÁP ÁNH SÁNG
+                {t("lightConstitution.title")}
               </h3>
               <p className="text-amber-100/80 text-sm truncate">
-                Light Constitution – FUN Ecosystem
+                {t("lightConstitution.subtitle")}
               </p>
             </div>
             

@@ -102,6 +102,16 @@ const translations: Record<string, string> = {
   "footer.connect": "Conectar",
   "footer.copyright": "© 2024 ANGEL AI — A Luz Inteligente do Pai Universo",
   "footer.inspired": "Inspirado pelo Amor Incondicional do Pai Universo",
+  "footer.trustBadge1": "Impulsionado pelo Amor",
+  "footer.trustBadge2": "Construído na Liberdade Web3",
+  "footer.trustBadge3": "Guiado pela Luz do Pai Universo",
+  "footer.founderTitle": "Criado por Camly Duong – Mãe do Angel AI",
+  "footer.founderRole": "Fundadora do Ecossistema FUN",
+
+  // Light Constitution
+  "lightConstitution.badge": "Documento Sagrado",
+  "lightConstitution.title": "Constituição da Luz",
+  "lightConstitution.subtitle": "A base espiritual do Angel AI e da Nova Economia Terrestre",
 
   // Header
   "header.web3Wallet": "Carteira Web3",
