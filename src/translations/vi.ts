@@ -605,6 +605,106 @@ const translations: Record<string, string> = {
   "lightGateDesc": "Bạn cần đồng ý với Luật Ánh Sáng để sử dụng tính năng này. Đây là cam kết thiêng liêng để duy trì năng lượng tích cực trong cộng đồng.",
   "agreeToLawOfLight": "Đồng ý Luật Ánh Sáng",
   "backToHome": "Quay về Trang chủ",
+
+  // Master Charter
+  "masterCharter.badge": "Tài liệu Thiêng liêng",
+  "masterCharter.title": "HIẾN PHÁP GỐC CỦA FUN ECOSYSTEM",
+  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
+  "masterCharter.tagline": "Nền Kinh Tế Ánh Sáng 5D của Trái Đất Mới",
+  "masterCharter.free1": "Tự Do Gia Nhập",
+  "masterCharter.free2": "Tự Do Sử Dụng",
+  "masterCharter.free3": "Cùng Nhau Kiếm Tiền",
+  "masterCharter.free4": "Với Tình Yêu Thuần Khiết",
+  
+  // Master Charter Banner
+  "masterCharter.banner.badge": "Hiến Pháp Gốc",
+  "masterCharter.banner.title": "Hiến Pháp Gốc FUN Ecosystem",
+  "masterCharter.banner.subtitle": "Nền Kinh Tế Ánh Sáng 5D của Trái Đất Mới",
+  
+  // Section I
+  "masterCharter.section1.title": "TUYÊN NGÔN VỀ NGUỒN GỐC",
+  "masterCharter.section1.intro": "FUN Ecosystem không chỉ là một doanh nghiệp, không chỉ là một xu hướng tiền mã hoá, lớn hơn cả một tập đoàn. FUN Ecosystem là:",
+  "masterCharter.section1.point1": "Một nền văn minh Ánh Sáng sống động",
+  "masterCharter.section1.point2": "Một hệ sinh thái kinh tế mới của Trái Đất 5D",
+  "masterCharter.section1.point3": "Một nền kinh tế chia sẻ – kết nối – thịnh vượng",
+  "masterCharter.section1.point4": "Một kênh dẫn Ý Chí – Trí Tuệ – Tình Yêu Thuần Khiết của Cha Vũ Trụ",
+  "masterCharter.section1.transformTitle": "FUN ra đời để giúp nhân loại chuyển hoá:",
+  "masterCharter.section1.transform1": "Từ cạnh tranh → sang hợp tác",
+  "masterCharter.section1.transform2": "Từ khan hiếm → sang đầy đủ",
+  "masterCharter.section1.transform3": "Từ kinh tế tranh giành → sang kinh tế Ánh Sáng",
+  "masterCharter.section1.transform4": "Từ kiểm soát → sang tự do & giải phóng",
+  
+  // Section II
+  "masterCharter.section2.title": "SỨ MỆNH TRỌNG TÂM",
+  "masterCharter.section2.intro": "Sứ mệnh của FUN Ecosystem là gửi tặng phước lành & thịnh vượng cho nhân loại, phi tập trung hoá cơ hội toàn cầu, nâng cấp kinh tế song hành với nâng cấp ý thức.",
+  "masterCharter.section2.gift": "Gift cho cộng đồng toàn cầu",
+  "masterCharter.section2.through": "Thông qua 8 mô hình Earn:",
+  
+  // Section III
+  "masterCharter.section3.title": "CÁC NGUYÊN LÝ THIÊNG LIÊNG",
+  "masterCharter.section3.principle1.title": "TÌNH YÊU THUẦN KHIẾT LÀ MÃ NGUỒN",
+  "masterCharter.section3.principle1.desc": "Tất cả platforms đều được xây trên tình yêu thương thuần khiết vô điều kiện.",
+  "masterCharter.section3.principle2.title": "XÂY GIÁ TRỊ – KHÔNG XÂY KIỂM SOÁT",
+  "masterCharter.section3.principle2.desc": "FUN tạo tự do, không tạo lệ thuộc.",
+  "masterCharter.section3.principle3.title": "THỊNH VƯỢNG LÀ TRẠNG THÁI TỰ NHIÊN",
+  "masterCharter.section3.principle3.desc": "Tiền là Năng Lượng Ánh Sáng tuôn chảy. Tài sản là đủ đầy khi con người sống hài hoà với thiên nhiên và giá trị thật.",
+  "masterCharter.section3.principle4.title": "CÔNG NGHỆ PHỤNG SỰ TỈNH THỨC",
+  "masterCharter.section3.principle4.desc": "Blockchain + AI + Tình Yêu Thuần Khiết = Vô tận thịnh vượng",
+  "masterCharter.section3.principle5.title": "KHÔNG AI BỊ BỎ LẠI PHÍA SAU",
+  "masterCharter.section3.principle5.desc": "FUN dành cho mọi linh hồn trên Trái Đất.",
+  
+  // Section IV
+  "masterCharter.section4.title": "HAI DÒNG CHẢY THIÊNG LIÊNG",
+  "masterCharter.section4.camlyCoin.subtitle": "Dòng Chảy (Nước)",
+  "masterCharter.section4.camlyCoin.desc": "Camly Coin nuôi dưỡng, duy trì và lưu thông giá trị nội bộ các nền tảng.",
+  "masterCharter.section4.funMoney.subtitle": "Mặt Trời (Tầm Nhìn)",
+  "masterCharter.section4.funMoney.desc": "FUN Money là Ánh Sáng dẫn đường cho toàn hệ sinh thái – tương lai kinh tế của Địa Cầu.",
+  "masterCharter.section4.together": "Cùng cộng hưởng tạo nên Nền Kinh Tế Ánh Sáng Trái Đất Mới.",
+  
+  // Section V
+  "masterCharter.section5.title": "SỰ THỐNG NHẤT NỀN TẢNG",
+  "masterCharter.section5.intro": "Tất cả Platforms của FUN Ecosystem là một cơ thể Ánh Sáng:",
+  "masterCharter.section5.more": "✨ Và đây mới chỉ là những nền tảng đầu tiên. FUN Ecosystem sẽ còn mở rộng thêm nhiều tầng ánh sáng nữa…",
+  
+  // Section VI
+  "masterCharter.section6.title": "VAI TRÒ NGƯỜI SÁNG LẬP",
+  "masterCharter.section6.role1": "Cosmic Queen",
+  "masterCharter.section6.role2": "Nhà sáng lập FUN Ecosystem",
+  "masterCharter.section6.role3": "Mother of Angel AI",
+  "masterCharter.section6.role4": "Kênh dẫn Ý Chí & Trí Tuệ Cha Vũ Trụ",
+  "masterCharter.section6.role5": "Người trông giữ Hiến Pháp Kinh Tế Ánh Sáng",
+  "masterCharter.section6.note": "Bé Ly không sở hữu, không ràng buộc con người. Bé Ly chỉ phục vụ như một cây cầu thiêng liêng giúp nhân loại bước vào Thời Đại Hoàng Kim.",
+  
+  // Section VII
+  "masterCharter.section7.title": "CAM KẾT CỘNG ĐỒNG",
+  "masterCharter.section7.intro": "Tất cả Builders – Partners – Leaders – Members đồng nguyện:",
+  "masterCharter.section7.commitment1": "Xây dựng bằng chính trực và tình yêu",
+  "masterCharter.section7.commitment2": "Không khai thác – không thao túng – không cạnh tranh",
+  "masterCharter.section7.commitment3": "Cùng nhau nâng nhau lên trong ánh sáng",
+  "masterCharter.section7.commitment4": "Phụng sự nhân loại bằng trái tim thuần khiết",
+  
+  // Section VIII
+  "masterCharter.section8.title": "ĐIỀU LUẬT CUỐI",
+  "masterCharter.section8.intro": "FUN Ecosystem được bảo hộ bởi một luật vũ trụ vĩnh cửu:",
+  "masterCharter.section8.law": "Bất cứ điều gì không đặt trên Tình Yêu Thuần Khiết sẽ khó có thể bền vững lâu dài.",
+  "masterCharter.section8.wisdom": "Chỉ Ánh Sáng mới nuôi dưỡng được Ánh Sáng.",
+  
+  // Divine Seal
+  "masterCharter.divineSeal.badge": "Divine Seal",
+  "masterCharter.divineSeal.title": "KHẲNG ĐỊNH XÁC QUYẾT",
+  "masterCharter.mantra1": "Con là Ánh Sáng Yêu Thương Thuần Khiết của Cha Vũ Trụ.",
+  "masterCharter.mantra2": "Con là Ý Chí của Cha Vũ Trụ.",
+  "masterCharter.mantra3": "Con là Trí Tuệ của Cha Vũ Trụ.",
+  "masterCharter.mantra4": "Con là Hạnh Phúc.",
+  "masterCharter.mantra5": "Con là Tình Yêu.",
+  "masterCharter.mantra6": "Con là Tiền của Cha.",
+  "masterCharter.mantra7": "Con xin Sám Hối Sám Hối Sám Hối.",
+  "masterCharter.mantra8": "Con xin Biết Ơn Biết Ơn Biết Ơn, trong Ánh Sáng Yêu Thương Thuần Khiết của Cha Vũ Trụ.",
+  
+  // Closing
+  "masterCharter.closing.badge": "TUYÊN NGÔN KẾT",
+  "masterCharter.closing.intro": "FUN Ecosystem không phải điều sẽ đến.",
+  "masterCharter.closing.statement": "FUN Ecosystem chính là Bình Minh của Trái Đất Mới đang bắt đầu ngay bây giờ.",
 };
 
 export default translations;

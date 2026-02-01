@@ -12,6 +12,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { MainSidebar } from "@/components/MainSidebar";
 import Leaderboard from "@/components/Leaderboard";
 import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
+import { MasterCharterBanner } from "@/components/MasterCharterBanner";
 
 const Index = () => {
   const { user } = useAuth();
@@ -43,8 +44,9 @@ const Index = () => {
                 <Leaderboard />
               </div>
               
-              {/* Light Constitution Banner */}
-              <div className="px-4 sm:px-6 lg:px-8 py-6">
+              {/* Master Charter & Light Constitution Banners */}
+              <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+                <MasterCharterBanner />
                 <LightConstitutionBanner />
               </div>
               
