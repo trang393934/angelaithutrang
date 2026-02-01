@@ -26,6 +26,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminChecked, setIsAdminChecked] = useState(false);
 
+  // Clear ONLY local persisted auth state without network calls.
+  // This prevents infinite refresh-token loops when the stored session becomes invalid/corrupted.
+  const clearLocalSession = useCallback(async () => {
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
     // Check cache first
     const cached = adminCache.get(userId);
@@ -108,6 +118,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("Error during initial auth setup:", error);
+
+        // If auth initialization fails (often due to a broken/expired persisted refresh token),
+        // clear local session so the app can recover and allow user to sign in again.
+        await clearLocalSession();
+
         if (isMounted) {
           setSession(null);
           setUser(null);
@@ -129,7 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [checkAdminRole]);
+  }, [checkAdminRole, clearLocalSession]);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
