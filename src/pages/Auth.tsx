@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { Mail, Lock, ArrowLeft, Sparkles, Eye, EyeOff, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import angelLogo from "@/assets/angel-ai-logo.png";
@@ -165,6 +166,47 @@ const Auth = () => {
   const [hasReadLaw, setHasReadLaw] = useState(false);
   const [showLawDialog, setShowLawDialog] = useState(false);
 
+  const getRecommendedPreviewUrl = () => {
+    const host = window.location.hostname;
+    const suffix = ".lovableproject.com";
+    if (host.endsWith(suffix)) {
+      const projectId = host.slice(0, -suffix.length);
+      return `https://id-preview--${projectId}.lovable.app`;
+    }
+    return window.location.origin;
+  };
+
+  const isNetworkFetchError = (err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    return msg.toLowerCase().includes("failed to fetch") || msg.toLowerCase().includes("networkerror");
+  };
+
+  const showAuthNetworkToast = () => {
+    toast({
+      title: "Không kết nối được máy chủ đăng nhập",
+      description: (
+        <div className="space-y-2">
+          <p>
+            Trình duyệt đang chặn/không kết nối được tới hệ thống đăng nhập (thường do domain preview trong iframe,
+            VPN/Adblock, hoặc mạng chặn).
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Gợi ý: mở bản Preview ở tab mới (đúng domain), tắt VPN/Adblock, hoặc đổi mạng rồi thử lại.
+          </p>
+        </div>
+      ),
+      variant: "destructive",
+      action: (
+        <ToastAction
+          altText="Mở bản Preview"
+          onClick={() => window.open(getRecommendedPreviewUrl(), "_blank", "noopener,noreferrer")}
+        >
+          Mở bản Preview
+        </ToastAction>
+      ),
+    });
+  };
+
   useEffect(() => {
     if (user && !authLoading) {
       // Check if user has agreed to light law
@@ -217,6 +259,10 @@ const Auth = () => {
       });
 
       if (error) {
+        if (error.message?.toLowerCase().includes("failed to fetch")) {
+          showAuthNetworkToast();
+          return;
+        }
         toast({
           title: "Lỗi đăng nhập Google",
           description: error.message,
@@ -224,6 +270,10 @@ const Auth = () => {
         });
       }
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        showAuthNetworkToast();
+        return;
+      }
       toast({
         title: "Đã có lỗi xảy ra",
         description: "Không thể kết nối với Google. Vui lòng thử lại.",
@@ -252,6 +302,10 @@ const Auth = () => {
       if (isSignUp) {
         const { error } = await signUp(email, password);
         if (error) {
+          if (error.message?.toLowerCase().includes("failed to fetch")) {
+            showAuthNetworkToast();
+            return;
+          }
           toast({
             title: "Lỗi đăng ký",
             description: error.message,
@@ -273,6 +327,10 @@ const Auth = () => {
       } else {
         const { error } = await signIn(email, password);
         if (error) {
+          if (error.message?.toLowerCase().includes("failed to fetch")) {
+            showAuthNetworkToast();
+            return;
+          }
           toast({
             title: "Lỗi đăng nhập",
             description: error.message,
@@ -305,6 +363,10 @@ const Auth = () => {
         }
       }
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        showAuthNetworkToast();
+        return;
+      }
       toast({
         title: "Đã có lỗi xảy ra",
         description: "Vui lòng thử lại sau.",
@@ -357,6 +419,10 @@ const Auth = () => {
       setShowForgotPassword(false);
       setForgotPasswordEmail("");
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        showAuthNetworkToast();
+        return;
+      }
       toast({
         title: "Lỗi",
         description: error instanceof Error ? error.message : "Không thể gửi email. Vui lòng thử lại.",
