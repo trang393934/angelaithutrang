@@ -81,17 +81,17 @@ export function Leaderboard() {
             </motion.div>
           </motion.div>
 
-          {/* Title with Golden Shimmer - Single Line */}
+        {/* Title with Golden Shimmer - Single Line */}
           <h2 className="text-lg md:text-xl font-bold tracking-wider uppercase relative whitespace-nowrap">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 via-amber-600 to-yellow-500 drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]">
-              TOP RANKING
+              {t("leaderboard.topRanking")}
             </span>
             <motion.span
               className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none"
               animate={{ x: ["-100%", "100%"] }}
               transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
             >
-              TOP RANKING
+              {t("leaderboard.topRanking")}
             </motion.span>
           </h2>
         </div>
@@ -115,7 +115,7 @@ export function Leaderboard() {
               <Coins className="w-3 h-3 text-white" />
             </div>
             <div className="text-left">
-              <p className="text-[10px] text-muted-foreground leading-tight">Camly Coin</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">{t("leaderboard.camlyCoin")}</p>
               <p className="text-sm font-bold text-amber-600">{stats.total_coins_distributed.toLocaleString()}</p>
             </div>
           </div>

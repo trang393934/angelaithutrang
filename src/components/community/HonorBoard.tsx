@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Users, FileText, Image, Video, Coins, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { useLanguage } from "@/contexts/LanguageContext";
 import angelLogo from "@/assets/angel-ai-logo.png";
 
 interface HonorStats {
@@ -72,6 +73,7 @@ const StatItem = ({
 export function HonorBoard() {
   // Use the same hook as Leaderboard for consistent stats
   const { stats: leaderboardStats, isLoading: leaderboardLoading } = useLeaderboard();
+  const { t } = useLanguage();
   
   const [stats, setStats] = useState<HonorStats>({
     totalMembers: 0,
@@ -223,7 +225,7 @@ export function HonorBoard() {
           
           <h2 className="text-2xl font-bold tracking-wider uppercase relative">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
-              Bảng Danh Dự
+              {t("leaderboard.honorBoard")}
             </span>
             {/* Sparkle overlay effect */}
             <motion.span
@@ -231,7 +233,7 @@ export function HonorBoard() {
               animate={{ opacity: [0, 0.8, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             >
-              Bảng Danh Dự
+              {t("leaderboard.honorBoard")}
             </motion.span>
           </h2>
         </div>
@@ -240,31 +242,31 @@ export function HonorBoard() {
         <div className="space-y-3">
           <StatItem
             icon={Users}
-            label="Tổng Thành Viên"
+            label={t("leaderboard.totalMembers")}
             value={stats.totalMembers}
             delay={0.1}
           />
           <StatItem
             icon={FileText}
-            label="Tổng Bài Viết"
+            label={t("leaderboard.totalPosts")}
             value={stats.totalPosts}
             delay={0.2}
           />
           <StatItem
             icon={Image}
-            label="Tổng Hình Ảnh"
+            label={t("leaderboard.totalImages")}
             value={stats.totalImages}
             delay={0.3}
           />
           <StatItem
             icon={Video}
-            label="Tổng Video"
+            label={t("leaderboard.totalVideos")}
             value={stats.totalVideos}
             delay={0.4}
           />
           <StatItem
             icon={Coins}
-            label="Tổng Phần Thưởng"
+            label={t("leaderboard.totalRewards")}
             value={leaderboardStats.total_coins_distributed}
             delay={0.5}
             isCoin

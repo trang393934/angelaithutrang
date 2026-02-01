@@ -261,14 +261,22 @@ const translations: Record<string, string> = {
 
   // Leaderboard
   "leaderboard.title": "Classificação",
+  "leaderboard.topRanking": "MELHOR CLASSIFICAÇÃO",
   "leaderboard.topCamlyCoin": "Top Camly Coin",
   "leaderboard.topQuestions": "Top Perguntas",
   "leaderboard.noQuestions": "Nenhuma pergunta curtida ainda",
   "leaderboard.viewCommunity": "Ver Comunidade",
   "leaderboard.viewAllQuestions": "Ver todas as perguntas",
   "leaderboard.members": "Membros",
+  "leaderboard.camlyCoin": "Camly Coin",
   "leaderboard.viewMore": "Ver mais",
   "leaderboard.collapse": "Recolher",
+  "leaderboard.honorBoard": "Quadro de Honra",
+  "leaderboard.totalMembers": "Total de Membros",
+  "leaderboard.totalPosts": "Total de Postagens",
+  "leaderboard.totalImages": "Total de Imagens",
+  "leaderboard.totalVideos": "Total de Vídeos",
+  "leaderboard.totalRewards": "Total de Recompensas",
 
   // Search
   "search.placeholder": "Pesquisar...",

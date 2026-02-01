@@ -257,14 +257,22 @@ const translations: Record<string, string> = {
 
   // Leaderboard
   "leaderboard.title": "排行榜",
+  "leaderboard.topRanking": "顶级排名",
   "leaderboard.topCamlyCoin": "Camly Coin榜",
   "leaderboard.topQuestions": "热门问题",
   "leaderboard.noQuestions": "暂无热门问题",
   "leaderboard.viewCommunity": "查看社区",
   "leaderboard.viewAllQuestions": "查看所有问题",
   "leaderboard.members": "成员",
+  "leaderboard.camlyCoin": "Camly Coin",
   "leaderboard.viewMore": "查看更多",
   "leaderboard.collapse": "收起",
+  "leaderboard.honorBoard": "荣誉榜",
+  "leaderboard.totalMembers": "总成员",
+  "leaderboard.totalPosts": "总帖子",
+  "leaderboard.totalImages": "总图片",
+  "leaderboard.totalVideos": "总视频",
+  "leaderboard.totalRewards": "总奖励",
 
   // Search
   "search.placeholder": "搜索...",

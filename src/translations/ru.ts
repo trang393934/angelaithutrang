@@ -261,14 +261,22 @@ const translations: Record<string, string> = {
 
   // Leaderboard
   "leaderboard.title": "Таблица лидеров",
+  "leaderboard.topRanking": "ЛУЧШИЙ РЕЙТИНГ",
   "leaderboard.topCamlyCoin": "Топ Camly Coin",
   "leaderboard.topQuestions": "Топ вопросов",
   "leaderboard.noQuestions": "Пока нет понравившихся вопросов",
   "leaderboard.viewCommunity": "Смотреть сообщество",
   "leaderboard.viewAllQuestions": "Смотреть все вопросы",
   "leaderboard.members": "Участников",
+  "leaderboard.camlyCoin": "Camly Coin",
   "leaderboard.viewMore": "Показать больше",
   "leaderboard.collapse": "Свернуть",
+  "leaderboard.honorBoard": "Доска почёта",
+  "leaderboard.totalMembers": "Всего участников",
+  "leaderboard.totalPosts": "Всего публикаций",
+  "leaderboard.totalImages": "Всего изображений",
+  "leaderboard.totalVideos": "Всего видео",
+  "leaderboard.totalRewards": "Всего наград",
 
   // Search
   "search.placeholder": "Поиск...",

@@ -253,14 +253,22 @@ const translations: Record<string, string> = {
 
   // Leaderboard
   "leaderboard.title": "لوحة المتصدرين",
+  "leaderboard.topRanking": "أفضل ترتيب",
   "leaderboard.topCamlyCoin": "أعلى Camly Coin",
   "leaderboard.topQuestions": "أفضل الأسئلة",
   "leaderboard.noQuestions": "لا توجد أسئلة شعبية بعد",
   "leaderboard.viewCommunity": "عرض المجتمع",
   "leaderboard.viewAllQuestions": "عرض كل الأسئلة",
   "leaderboard.members": "الأعضاء",
+  "leaderboard.camlyCoin": "كاملي كوين",
   "leaderboard.viewMore": "عرض المزيد",
   "leaderboard.collapse": "طي",
+  "leaderboard.honorBoard": "لوحة الشرف",
+  "leaderboard.totalMembers": "إجمالي الأعضاء",
+  "leaderboard.totalPosts": "إجمالي المنشورات",
+  "leaderboard.totalImages": "إجمالي الصور",
+  "leaderboard.totalVideos": "إجمالي الفيديوهات",
+  "leaderboard.totalRewards": "إجمالي المكافآت",
 
   // Search
   "search.placeholder": "بحث...",
