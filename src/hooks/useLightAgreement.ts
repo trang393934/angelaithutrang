@@ -8,9 +8,14 @@ export function useLightAgreement() {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
+    // Don't start checking until auth is done loading
+    if (authLoading) {
+      setIsChecking(true);
+      return;
+    }
+
     const checkAgreement = async () => {
-      if (authLoading) return;
-      
+      // If no user after auth loading is complete, mark as not agreed
       if (!user) {
         setHasAgreed(false);
         setIsChecking(false);
@@ -41,5 +46,8 @@ export function useLightAgreement() {
     checkAgreement();
   }, [user, authLoading]);
 
-  return { hasAgreed, isChecking, isLoading: authLoading || isChecking };
+  // Only consider checking done when auth is done AND we've finished our check
+  const isReallyChecking = authLoading || isChecking;
+  
+  return { hasAgreed, isChecking: isReallyChecking, isLoading: isReallyChecking };
 }
