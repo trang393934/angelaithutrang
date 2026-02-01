@@ -28,11 +28,11 @@ export const WelcomeBlock = () => {
           <div className="relative p-6 sm:p-8 lg:p-10">
             {/* Header with sparkle */}
             <div className="flex items-center justify-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-              <h2 className="font-serif text-xl sm:text-2xl font-bold text-primary-deep">
+              <Sparkles className="w-5 h-5 text-primary animate-pulse flex-shrink-0" />
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-primary-deep text-center">
                 {t("welcome.title")}
               </h2>
-              <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+              <Sparkles className="w-5 h-5 text-primary animate-pulse flex-shrink-0" />
             </div>
 
             {/* Description */}
