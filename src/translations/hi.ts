@@ -261,14 +261,22 @@ const translations: Record<string, string> = {
 
   // Leaderboard
   "leaderboard.title": "लीडरबोर्ड",
+  "leaderboard.topRanking": "शीर्ष रैंकिंग",
   "leaderboard.topCamlyCoin": "टॉप Camly Coin",
   "leaderboard.topQuestions": "टॉप प्रश्न",
   "leaderboard.noQuestions": "अभी तक कोई पसंद किए गए प्रश्न नहीं",
   "leaderboard.viewCommunity": "समुदाय देखें",
   "leaderboard.viewAllQuestions": "सभी प्रश्न देखें",
   "leaderboard.members": "सदस्य",
+  "leaderboard.camlyCoin": "कैमली कॉइन",
   "leaderboard.viewMore": "और देखें",
   "leaderboard.collapse": "संक्षिप्त",
+  "leaderboard.honorBoard": "सम्मान बोर्ड",
+  "leaderboard.totalMembers": "कुल सदस्य",
+  "leaderboard.totalPosts": "कुल पोस्ट",
+  "leaderboard.totalImages": "कुल छवियाँ",
+  "leaderboard.totalVideos": "कुल वीडियो",
+  "leaderboard.totalRewards": "कुल पुरस्कार",
 
   // Search
   "search.placeholder": "खोजें...",

@@ -261,14 +261,22 @@ const translations: Record<string, string> = {
 
   // Leaderboard
   "leaderboard.title": "리더보드",
+  "leaderboard.topRanking": "최고 순위",
   "leaderboard.topCamlyCoin": "탑 Camly Coin",
   "leaderboard.topQuestions": "탑 질문",
   "leaderboard.noQuestions": "아직 좋아요된 질문 없음",
   "leaderboard.viewCommunity": "커뮤니티 보기",
   "leaderboard.viewAllQuestions": "모든 질문 보기",
   "leaderboard.members": "멤버",
+  "leaderboard.camlyCoin": "캠리 코인",
   "leaderboard.viewMore": "더 보기",
   "leaderboard.collapse": "접기",
+  "leaderboard.honorBoard": "명예의 전당",
+  "leaderboard.totalMembers": "총 회원",
+  "leaderboard.totalPosts": "총 게시물",
+  "leaderboard.totalImages": "총 이미지",
+  "leaderboard.totalVideos": "총 동영상",
+  "leaderboard.totalRewards": "총 보상",
 
   // Search
   "search.placeholder": "검색...",

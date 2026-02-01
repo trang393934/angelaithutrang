@@ -284,14 +284,22 @@ const translations: Record<string, string> = {
 
   // Leaderboard
   "leaderboard.title": "Bảng Xếp Hạng",
+  "leaderboard.topRanking": "TOP XẾP HẠNG",
   "leaderboard.topCamlyCoin": "Top Camly Coin",
   "leaderboard.topQuestions": "Câu Hỏi Hay",
   "leaderboard.noQuestions": "Chưa có câu hỏi nào được yêu thích",
   "leaderboard.viewCommunity": "Xem Cộng Đồng",
   "leaderboard.viewAllQuestions": "Xem tất cả câu hỏi",
   "leaderboard.members": "Thành viên",
+  "leaderboard.camlyCoin": "Camly Coin",
   "leaderboard.viewMore": "Xem thêm",
   "leaderboard.collapse": "Thu gọn",
+  "leaderboard.honorBoard": "Bảng Danh Dự",
+  "leaderboard.totalMembers": "Tổng Thành Viên",
+  "leaderboard.totalPosts": "Tổng Bài Viết",
+  "leaderboard.totalImages": "Tổng Hình Ảnh",
+  "leaderboard.totalVideos": "Tổng Video",
+  "leaderboard.totalRewards": "Tổng Phần Thưởng",
 
   // Search
   "search.placeholder": "Tìm kiếm...",

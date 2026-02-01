@@ -261,14 +261,22 @@ const translations: Record<string, string> = {
 
   // Leaderboard
   "leaderboard.title": "リーダーボード",
+  "leaderboard.topRanking": "トップランキング",
   "leaderboard.topCamlyCoin": "トップCamly Coin",
   "leaderboard.topQuestions": "トップ質問",
   "leaderboard.noQuestions": "まだいいねされた質問がありません",
   "leaderboard.viewCommunity": "コミュニティを見る",
   "leaderboard.viewAllQuestions": "すべての質問を見る",
   "leaderboard.members": "メンバー",
+  "leaderboard.camlyCoin": "キャムリコイン",
   "leaderboard.viewMore": "もっと見る",
   "leaderboard.collapse": "折りたたむ",
+  "leaderboard.honorBoard": "名誉ボード",
+  "leaderboard.totalMembers": "総メンバー",
+  "leaderboard.totalPosts": "総投稿",
+  "leaderboard.totalImages": "総画像",
+  "leaderboard.totalVideos": "総動画",
+  "leaderboard.totalRewards": "総報酬",
 
   // Search
   "search.placeholder": "検索...",
