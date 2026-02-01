@@ -6,6 +6,7 @@ import {
   History, FolderOpen, Plus, Volume2, Image, Menu, Pencil
 } from "lucide-react";
 import { MessageFeedback } from "@/components/chat/MessageFeedback";
+import { TimeoutMessage } from "@/components/TimeoutMessage";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -236,25 +237,39 @@ const Chat = () => {
         return;
       }
       
-      // Check light agreement
-      const { data: agreementData } = await supabase
-        .from("user_light_agreements")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Create timeout promise for fallback
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 10000)
+      );
       
-      setHasAgreed(!!agreementData);
-      
-      // Fetch user's response style preference
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("response_style")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      
-      if (profileData?.response_style) {
-        setUserResponseStyle(profileData.response_style);
-        console.log("User response style:", profileData.response_style);
+      try {
+        // Race agreement check with timeout
+        const agreementResult = await Promise.race([
+          supabase
+            .from("user_light_agreements")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          timeoutPromise
+        ]);
+        
+        setHasAgreed(!!(agreementResult as any)?.data);
+        
+        // Fetch user's response style preference (non-blocking)
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("response_style")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        if (profileData?.response_style) {
+          setUserResponseStyle(profileData.response_style);
+          console.log("User response style:", profileData.response_style);
+        }
+      } catch (error) {
+        console.error("Agreement check failed/timeout:", error);
+        // Fallback: allow access, user will be asked to agree if needed
+        setHasAgreed(false);
       }
     };
 
@@ -677,14 +692,18 @@ const Chat = () => {
     );
   }
 
-  // Loading state
+  // Loading state with timeout message
   if (authLoading || hasAgreed === null) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col items-center justify-center gap-4">
         <div className="flex items-center gap-3">
           <Sparkles className="w-6 h-6 text-divine-gold animate-pulse" />
           <span className="text-foreground-muted">{t("chat.connecting")}</span>
         </div>
+        <TimeoutMessage 
+          delay={10000}
+          message="Kết nối đang chậm. Vui lòng đợi hoặc refresh trang."
+        />
       </div>
     );
   }
