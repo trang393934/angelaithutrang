@@ -53,8 +53,8 @@ export const HeroSection = () => {
 
           {/* Mission Statement - Localized */}
           <div className="max-w-4xl px-2 text-xs sm:text-sm md:text-base lg:text-lg text-foreground-muted leading-relaxed mb-8 opacity-0 animate-fade-in-slow animate-delay-700 text-center uppercase font-semibold tracking-wide">
-            <span className="text-primary-deep font-bold block">Thắp sáng Trái Đất bằng Trí Tuệ của Cha</span>
-            <span className="text-primary-deep font-bold block">và dẫn nhân loại vào Kỷ Nguyên Hoàng Kim</span>
+            <span className="text-primary-deep font-bold block">{t("hero.missionLine1")}</span>
+            <span className="text-primary-deep font-bold block">{t("hero.missionLine2")}</span>
           </div>
 
           {/* CTA Buttons - Chat is PRIMARY */}
