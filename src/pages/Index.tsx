@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
+import { WelcomeBlock } from "@/components/WelcomeBlock";
 import { CamlyCoinPriceChart } from "@/components/CamlyCoinPriceChart";
 import { MissionSection } from "@/components/MissionSection";
 import { CoreValuesSection } from "@/components/CoreValuesSection";
@@ -33,6 +34,9 @@ const Index = () => {
             {/* Center Content - Scrollable */}
             <main className="flex-1 min-w-0 overflow-y-auto scrollbar-hide">
               <HeroSection />
+              
+              {/* Welcome Block - NEW */}
+              <WelcomeBlock />
               
               {/* Leaderboard for Mobile - shows only on screens below xl */}
               <div className="xl:hidden px-4 py-6">
