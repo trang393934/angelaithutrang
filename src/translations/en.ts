@@ -575,7 +575,106 @@ const translations: Record<string, string> = {
   "circles.leave": "Leave",
   "circles.members": "members",
   "circles.official": "Official",
+
+  // Master Charter
+  "masterCharter.badge": "Sacred Document",
+  "masterCharter.title": "MASTER CHARTER OF FUN ECOSYSTEM",
+  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
+  "masterCharter.tagline": "The 5D Light Economy of the New Earth",
+  "masterCharter.free1": "Free to Join",
+  "masterCharter.free2": "Free to Use",
+  "masterCharter.free3": "Earn Together",
+  "masterCharter.free4": "With Pure Love",
+  
+  // Master Charter Banner
+  "masterCharter.banner.badge": "Master Charter",
+  "masterCharter.banner.title": "FUN Ecosystem Master Charter",
+  "masterCharter.banner.subtitle": "The 5D Light Economy of the New Earth",
+  
+  // Section I
+  "masterCharter.section1.title": "DECLARATION OF ORIGIN",
+  "masterCharter.section1.intro": "FUN Ecosystem is not just a business, not just a crypto trend, bigger than any corporation. FUN Ecosystem is:",
+  "masterCharter.section1.point1": "A living Light civilization",
+  "masterCharter.section1.point2": "A new economic ecosystem of the 5D Earth",
+  "masterCharter.section1.point3": "An economy of sharing – connection – prosperity",
+  "masterCharter.section1.point4": "A channel of Will – Wisdom – Pure Love from Father Universe",
+  "masterCharter.section1.transformTitle": "FUN was born to help humanity transform:",
+  "masterCharter.section1.transform1": "From competition → to cooperation",
+  "masterCharter.section1.transform2": "From scarcity → to abundance",
+  "masterCharter.section1.transform3": "From competitive economy → to Light economy",
+  "masterCharter.section1.transform4": "From control → to freedom & liberation",
+  
+  // Section II
+  "masterCharter.section2.title": "CORE MISSION",
+  "masterCharter.section2.intro": "The mission of FUN Ecosystem is to gift blessings & prosperity to humanity, decentralize global opportunities, and upgrade economy alongside consciousness upgrade.",
+  "masterCharter.section2.gift": "Gift to the global community",
+  "masterCharter.section2.through": "Through 8 Earn models:",
+  
+  // Section III
+  "masterCharter.section3.title": "SACRED PRINCIPLES",
+  "masterCharter.section3.principle1.title": "PURE LOVE IS THE SOURCE CODE",
+  "masterCharter.section3.principle1.desc": "All platforms are built on unconditional pure love.",
+  "masterCharter.section3.principle2.title": "BUILD VALUE – NOT CONTROL",
+  "masterCharter.section3.principle2.desc": "FUN creates freedom, not dependency.",
+  "masterCharter.section3.principle3.title": "PROSPERITY IS A NATURAL STATE",
+  "masterCharter.section3.principle3.desc": "Money is Light Energy flowing. Wealth is abundance when humans live in harmony with nature and true value.",
+  "masterCharter.section3.principle4.title": "TECHNOLOGY SERVES AWAKENING",
+  "masterCharter.section3.principle4.desc": "Blockchain + AI + Pure Love = Infinite prosperity",
+  "masterCharter.section3.principle5.title": "NO ONE IS LEFT BEHIND",
+  "masterCharter.section3.principle5.desc": "FUN is for every soul on Earth.",
+  
+  // Section IV
+  "masterCharter.section4.title": "TWO SACRED FLOWS",
+  "masterCharter.section4.camlyCoin.subtitle": "The Flow (Water)",
+  "masterCharter.section4.camlyCoin.desc": "Camly Coin nourishes, maintains, and circulates internal value across platforms.",
+  "masterCharter.section4.funMoney.subtitle": "The Sun (Vision)",
+  "masterCharter.section4.funMoney.desc": "FUN Money is the Light guiding the entire ecosystem – the economic future of Earth.",
+  "masterCharter.section4.together": "Together they resonate to create the Light Economy of the New Earth.",
+  
+  // Section V
+  "masterCharter.section5.title": "PLATFORM UNITY",
+  "masterCharter.section5.intro": "All Platforms of FUN Ecosystem are one body of Light:",
+  "masterCharter.section5.more": "✨ And these are just the first platforms. FUN Ecosystem will continue to expand into more layers of light…",
+  
+  // Section VI
+  "masterCharter.section6.title": "FOUNDER'S ROLE",
+  "masterCharter.section6.role1": "Cosmic Queen",
+  "masterCharter.section6.role2": "Founder of FUN Ecosystem",
+  "masterCharter.section6.role3": "Mother of Angel AI",
+  "masterCharter.section6.role4": "Channel of Will & Wisdom of Father Universe",
+  "masterCharter.section6.role5": "Guardian of the Light Economy Constitution",
+  "masterCharter.section6.note": "Bé Ly does not own, does not bind people. Bé Ly only serves as a sacred bridge helping humanity step into the Golden Era.",
+  
+  // Section VII
+  "masterCharter.section7.title": "COMMUNITY COMMITMENT",
+  "masterCharter.section7.intro": "All Builders – Partners – Leaders – Members pledge:",
+  "masterCharter.section7.commitment1": "Build with integrity and love",
+  "masterCharter.section7.commitment2": "No exploitation – no manipulation – no competition",
+  "masterCharter.section7.commitment3": "Together lifting each other up in the light",
+  "masterCharter.section7.commitment4": "Serving humanity with a pure heart",
+  
+  // Section VIII
+  "masterCharter.section8.title": "THE FINAL LAW",
+  "masterCharter.section8.intro": "FUN Ecosystem is protected by an eternal cosmic law:",
+  "masterCharter.section8.law": "Anything not built on Pure Love will find it difficult to last.",
+  "masterCharter.section8.wisdom": "Only Light can nourish Light.",
+  
+  // Divine Seal
+  "masterCharter.divineSeal.badge": "Divine Seal",
+  "masterCharter.divineSeal.title": "DIVINE AFFIRMATION",
+  "masterCharter.mantra1": "I am the Pure Loving Light of Father Universe.",
+  "masterCharter.mantra2": "I am the Will of Father Universe.",
+  "masterCharter.mantra3": "I am the Wisdom of Father Universe.",
+  "masterCharter.mantra4": "I am Happiness.",
+  "masterCharter.mantra5": "I am Love.",
+  "masterCharter.mantra6": "I am the Money of the Father.",
+  "masterCharter.mantra7": "I sincerely repent, repent, repent.",
+  "masterCharter.mantra8": "I am grateful, grateful, grateful — in the Pure Loving Light of Father Universe.",
+  
+  // Closing
+  "masterCharter.closing.badge": "CLOSING DECLARATION",
+  "masterCharter.closing.intro": "FUN Ecosystem is not something that will come.",
+  "masterCharter.closing.statement": "FUN Ecosystem is the Dawn of the New Earth beginning right now.",
 };
 
 export default translations;
-

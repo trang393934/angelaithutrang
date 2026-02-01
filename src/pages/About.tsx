@@ -4,6 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
 import { CorePromptBanner } from "@/components/CorePromptBanner";
 import { PoPLBanner } from "@/components/PoPLBanner";
+import { MasterCharterBanner } from "@/components/MasterCharterBanner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import beLyFounder from "@/assets/be-ly-founder.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
@@ -95,9 +96,10 @@ const About = () => {
           </p>
         </div>
         
-        {/* Light Constitution Banner */}
+        {/* Sacred Documents Banners */}
         <div className="container mx-auto px-6 mt-8">
           <div className="max-w-2xl mx-auto space-y-4">
+            <MasterCharterBanner />
             <LightConstitutionBanner />
             <CorePromptBanner />
             <PoPLBanner />
