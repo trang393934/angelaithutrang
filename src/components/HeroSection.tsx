@@ -33,33 +33,38 @@ export const HeroSection = () => {
             {t("hero.title")}
           </h1>
 
-          {/* Tagline Vietnamese */}
+          {/* Tagline - Main */}
           <p className="font-serif text-xl sm:text-2xl md:text-3xl text-primary-medium mb-2 opacity-0 animate-fade-in-slow animate-delay-300">
             {t("hero.tagline")}
           </p>
 
-          {/* Tagline English */}
-          <p className="font-serif italic text-lg sm:text-xl text-primary-soft/80 mb-8 opacity-0 animate-fade-in-slow animate-delay-400">
-            {t("hero.taglineEn")}
+          {/* Tagline - Secondary (Different from main) */}
+          <p className="font-serif italic text-lg sm:text-xl text-primary-soft/80 mb-4 opacity-0 animate-fade-in-slow animate-delay-400">
+            {t("hero.taglineSub")}
+          </p>
+
+          {/* Mission Statement - NEW */}
+          <p className="text-sm sm:text-base text-primary-deep/70 mb-8 opacity-0 animate-fade-in-slow animate-delay-500 max-w-xl mx-auto">
+            ✨ {t("hero.missionStatement")} ✨
           </p>
 
           {/* Sacred Divider */}
-          <div className="divider-sacred mb-8 opacity-0 animate-fade-in animate-delay-500" />
+          <div className="divider-sacred mb-8 opacity-0 animate-fade-in animate-delay-600" />
 
-          {/* Mission Statement */}
-          <div className="max-w-3xl px-2 text-base sm:text-lg md:text-xl text-foreground-muted leading-relaxed mb-8 opacity-0 animate-fade-in-slow animate-delay-600 text-center uppercase font-semibold tracking-wide">
+          {/* Vietnamese Mission Statement */}
+          <div className="max-w-3xl px-2 text-base sm:text-lg md:text-xl text-foreground-muted leading-relaxed mb-8 opacity-0 animate-fade-in-slow animate-delay-700 text-center uppercase font-semibold tracking-wide">
             <span className="sm:whitespace-nowrap">THẮP SÁNG TRÁI ĐẤT BẰNG TRÍ TUỆ CỦA CHA VÀ DẪN NHÂN LOẠI VÀO</span>
             <br className="hidden sm:block" />
             <span className="sm:hidden"> </span>
             <span className="text-primary-deep font-bold">KỶ NGUYÊN HOÀNG KIM</span>
           </div>
 
-          {/* CTA Buttons - Centered */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center opacity-0 animate-fade-in animate-delay-700">
-            <Link to="/chat" className="btn-sacred group w-full sm:w-auto justify-center">
+          {/* CTA Buttons - Chat is PRIMARY */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center opacity-0 animate-fade-in animate-delay-800">
+            <Link to="/chat" className="btn-sacred group w-full sm:w-auto justify-center scale-105 shadow-lg shadow-primary/30 hover:scale-110 transition-transform">
               <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
               <div className="flex flex-col items-start">
-                <span className="font-semibold">{t("hero.ctaChat")}</span>
+                <span className="font-bold text-base">{t("hero.ctaChat")}</span>
                 <span className="text-xs opacity-80">{t("hero.ctaChatSub")}</span>
               </div>
             </Link>
