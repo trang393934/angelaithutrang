@@ -166,11 +166,11 @@ const MasterCharter = () => {
               <span>{t("masterCharter.badge")}</span>
             </div>
             
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 bg-clip-text text-transparent mb-3">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 bg-clip-text text-transparent mb-3 leading-[1.4] pt-2">
               {t("masterCharter.title")}
             </h1>
             
-            <h2 className="text-xl md:text-2xl font-semibold text-amber-800/80 mb-4">
+            <h2 className="text-xl md:text-2xl font-semibold text-amber-800/80 mb-4 leading-relaxed">
               {t("masterCharter.titleEn")}
             </h2>
             
