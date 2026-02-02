@@ -281,6 +281,7 @@ const translations: Record<string, string> = {
   "common.noData": "No data yet",
   "common.viewAll": "View all",
   "common.collapse": "Collapse",
+  "common.change": "Change",
 
   // Leaderboard
   "leaderboard.title": "Leaderboard",
@@ -726,6 +727,40 @@ const translations: Record<string, string> = {
   "masterCharter.closing.badge": "CLOSING DECLARATION",
   "masterCharter.closing.intro": "FUN Ecosystem is not something that will come.",
   "masterCharter.closing.statement": "FUN Ecosystem is the Dawn of the New Earth beginning right now.",
+
+  // Gift System
+  "gift.title": "Gift Camly Coin",
+  "gift.searchUser": "Find recipient",
+  "gift.searchPlaceholder": "Enter username...",
+  "gift.recipient": "Recipient",
+  "gift.amount": "Amount",
+  "gift.message": "Message (optional)",
+  "gift.messagePlaceholder": "Send a loving message...",
+  "gift.confirm": "Confirm Gift",
+  "gift.success": "Gifted {amount} Camly Coin to {name}!",
+  "gift.received": "You received {amount} Camly Coin from {name}!",
+  "gift.honorTitle": "Gift Honor Board",
+  "gift.topGivers": "Top Givers",
+  "gift.topReceivers": "Top Receivers",
+  "gift.totalGifted": "total gifted",
+  "gift.yourBalance": "Your balance",
+  "gift.minAmount": "Minimum amount is 100 Camly Coin",
+  "gift.minAmountNote": "Minimum 100 Camly Coin",
+  "gift.insufficientBalance": "Insufficient balance",
+
+  // Donate System
+  "donate.title": "Donate to Angel AI",
+  "donate.description": "Support the development of the Light AI platform",
+  "donate.quickAmount": "Quick select",
+  "donate.messageLabel": "Message for the project",
+  "donate.messagePlaceholder": "Send wishes to Angel AI...",
+  "donate.confirm": "Confirm Donation",
+  "donate.success": "Thank you for donating {amount} Camly Coin!",
+  "donate.honorTitle": "Patron Honor Board",
+  "donate.totalDonated": "donated to project",
+  "donate.minAmount": "Minimum amount is 100 Camly Coin",
+  "donate.thankYou": "Every contribution means the world 💛",
+  "donate.appreciationMessage": "Thank you, generous hearts",
 };
 
 export default translations;

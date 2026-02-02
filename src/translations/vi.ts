@@ -281,6 +281,7 @@ const translations: Record<string, string> = {
   "common.noData": "Chưa có dữ liệu",
   "common.viewAll": "Xem tất cả",
   "common.collapse": "Thu gọn",
+  "common.change": "Thay đổi",
 
   // Leaderboard
   "leaderboard.title": "Bảng Xếp Hạng",
@@ -756,6 +757,40 @@ const translations: Record<string, string> = {
   "masterCharter.closing.badge": "TUYÊN NGÔN KẾT",
   "masterCharter.closing.intro": "FUN Ecosystem không phải điều sẽ đến.",
   "masterCharter.closing.statement": "FUN Ecosystem chính là Bình Minh của Trái Đất Mới đang bắt đầu ngay bây giờ.",
+
+  // Gift System
+  "gift.title": "Tặng Camly Coin",
+  "gift.searchUser": "Tìm người nhận",
+  "gift.searchPlaceholder": "Nhập tên người dùng...",
+  "gift.recipient": "Người nhận",
+  "gift.amount": "Số lượng",
+  "gift.message": "Lời nhắn (tùy chọn)",
+  "gift.messagePlaceholder": "Gửi kèm lời nhắn yêu thương...",
+  "gift.confirm": "Xác nhận tặng",
+  "gift.success": "Đã tặng {amount} Camly Coin cho {name}!",
+  "gift.received": "Bạn nhận được {amount} Camly Coin từ {name}!",
+  "gift.honorTitle": "Bảng Vinh Danh Tặng Quà",
+  "gift.topGivers": "Top Người Tặng",
+  "gift.topReceivers": "Top Người Nhận",
+  "gift.totalGifted": "đã được tặng",
+  "gift.yourBalance": "Số dư của bạn",
+  "gift.minAmount": "Số lượng tối thiểu là 100 Camly Coin",
+  "gift.minAmountNote": "Tối thiểu 100 Camly Coin",
+  "gift.insufficientBalance": "Số dư không đủ",
+
+  // Donate System
+  "donate.title": "Donate cho Angel AI",
+  "donate.description": "Ủng hộ dự án phát triển nền tảng AI Ánh Sáng",
+  "donate.quickAmount": "Chọn nhanh",
+  "donate.messageLabel": "Lời nhắn cho dự án",
+  "donate.messagePlaceholder": "Gửi lời chúc cho Angel AI...",
+  "donate.confirm": "Xác nhận donate",
+  "donate.success": "Cảm ơn bạn đã donate {amount} Camly Coin!",
+  "donate.honorTitle": "Bảng Vinh Danh Mạnh Thường Quân",
+  "donate.totalDonated": "đã donate cho dự án",
+  "donate.minAmount": "Số lượng tối thiểu là 100 Camly Coin",
+  "donate.thankYou": "Mỗi đóng góp đều mang ý nghĩa to lớn 💛",
+  "donate.appreciationMessage": "Cảm ơn những tấm lòng vàng",
 };
 
 export default translations;

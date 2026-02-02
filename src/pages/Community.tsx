@@ -16,6 +16,8 @@ import { CirclesSidebar } from "@/components/community/CirclesSidebar";
 import { Leaderboard } from "@/components/Leaderboard";
 import { HonorBoard } from "@/components/community/HonorBoard";
 import { CommunityGuidelinesCard } from "@/components/community/CommunityGuidelinesCard";
+import { GiftHonorBoard } from "@/components/community/GiftHonorBoard";
+import { DonationHonorBoard } from "@/components/community/DonationHonorBoard";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { LightGate } from "@/components/LightGate";
@@ -168,6 +170,8 @@ const Community = () => {
                     </SheetHeader>
                     <div className="space-y-4 mt-4 pb-6">
                       <HonorBoard />
+                      <GiftHonorBoard />
+                      <DonationHonorBoard />
                       <Leaderboard />
                       <SuggestedFriendsCard />
                       <RewardRulesCard dailyLimits={dailyLimits} />
@@ -243,7 +247,15 @@ const Community = () => {
               <CommunityGuidelinesCard />
             </div>
 
-            {/* Love Circles - Module 6 */}
+            {/* Bảng Vinh Danh Tặng Quà - MỚI */}
+            <div className="flex-shrink-0 mb-4">
+              <GiftHonorBoard />
+            </div>
+
+            {/* Bảng Vinh Danh Mạnh Thường Quân - MỚI */}
+            <div className="flex-shrink-0 mb-4">
+              <DonationHonorBoard />
+            </div>
             <div className="flex-shrink-0 mb-4">
               <CirclesSidebar maxVisible={3} />
             </div>

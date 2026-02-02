@@ -136,3 +136,9 @@ verify_jwt = false
 
 [functions.process-vision-reward]
 verify_jwt = false
+
+[functions.process-coin-gift]
+verify_jwt = false
+
+[functions.process-project-donation]
+verify_jwt = false
