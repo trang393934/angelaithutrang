@@ -509,7 +509,46 @@ const translations: Record<string, string> = {
   "community.fileTooLarge": "파일이 너무 큽니다. 최대",
   "community.pleaseSelectFile": "이미지 또는 동영상을 선택하세요",
   "community.imageMaxSlots": "{count}개의 이미지만 더 업로드할 수 있습니다 (최대 {max})",
-"community.imageTooLarge": "이미지가 5MB를 초과합니다",
+  "community.imageTooLarge": "이미지가 5MB를 초과합니다",
+  
+  // Gift System
+  "gift.title": "Camly Coin 선물",
+  "gift.searchUser": "받는 사람 찾기",
+  "gift.searchPlaceholder": "이름으로 검색...",
+  "gift.recipient": "받는 사람",
+  "gift.amount": "수량",
+  "gift.message": "메시지 (선택사항)",
+  "gift.messagePlaceholder": "따뜻한 메시지를 남겨주세요...",
+  "gift.confirm": "선물 확인",
+  "gift.yourBalance": "현재 잔액",
+  "gift.minAmount": "최소 100 코인",
+  "gift.minAmountNote": "최소 100 Camly Coin",
+  "gift.insufficientBalance": "잔액이 부족합니다",
+  "gift.success": "{name}님께 {amount} Camly Coin을 선물했습니다!",
+  "gift.received": "{name}님으로부터 {amount} Camly Coin을 받았습니다!",
+  "gift.honorTitle": "선물 명예의 전당",
+  "gift.topGivers": "Top 선물러",
+  "gift.topReceivers": "Top 수신자",
+  "gift.totalGifted": "총 선물된 코인",
+  
+  // Donate System
+  "donate.title": "Angel AI에 후원",
+  "donate.description": "프로젝트 개발 지원",
+  "donate.confirm": "후원 확인",
+  "donate.success": "{amount} Camly Coin 후원 감사합니다!",
+  "donate.honorTitle": "후원자 명예의 전당",
+  "donate.totalDonated": "총 후원액",
+  "donate.yourBalance": "현재 잔액",
+  "donate.amount": "후원 금액",
+  "donate.message": "응원 메시지 (선택사항)",
+  "donate.messagePlaceholder": "프로젝트에 응원 메시지를 남겨주세요...",
+  "donate.minAmount": "최소 100 코인",
+  "donate.insufficientBalance": "잔액이 부족합니다",
+  "donate.thankYou": "후원해 주셔서 감사합니다!",
+  
+  // Common additions
+  "common.change": "변경",
+  "userProfile.message": "메시지",
 };
 
 export default translations;

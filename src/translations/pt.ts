@@ -509,7 +509,46 @@ const translations: Record<string, string> = {
   "community.fileTooLarge": "Arquivo muito grande. Máximo",
   "community.pleaseSelectFile": "Por favor selecione uma imagem ou vídeo",
   "community.imageMaxSlots": "Você só pode enviar mais {count} imagens (máx {max})",
-"community.imageTooLarge": "Imagem excede 5MB",
+  "community.imageTooLarge": "Imagem excede 5MB",
+  
+  // Gift System
+  "gift.title": "Presentear Camly Coin",
+  "gift.searchUser": "Buscar destinatário",
+  "gift.searchPlaceholder": "Buscar por nome...",
+  "gift.recipient": "Destinatário",
+  "gift.amount": "Quantidade",
+  "gift.message": "Mensagem (opcional)",
+  "gift.messagePlaceholder": "Deixe uma mensagem carinhosa...",
+  "gift.confirm": "Confirmar presente",
+  "gift.yourBalance": "Seu saldo",
+  "gift.minAmount": "Mínimo 100 moedas",
+  "gift.minAmountNote": "Mínimo 100 Camly Coin",
+  "gift.insufficientBalance": "Saldo insuficiente",
+  "gift.success": "Você presenteou {amount} Camly Coin para {name}!",
+  "gift.received": "Você recebeu {amount} Camly Coin de {name}!",
+  "gift.honorTitle": "Quadro de Honra de Presentes",
+  "gift.topGivers": "Top Presenteadores",
+  "gift.topReceivers": "Top Recebedores",
+  "gift.totalGifted": "Total presenteado",
+  
+  // Donate System
+  "donate.title": "Doar para Angel AI",
+  "donate.description": "Apoiar o desenvolvimento do projeto",
+  "donate.confirm": "Confirmar doação",
+  "donate.success": "Obrigado pela doação de {amount} Camly Coin!",
+  "donate.honorTitle": "Quadro de Honra dos Padrinhos",
+  "donate.totalDonated": "Total doado",
+  "donate.yourBalance": "Seu saldo",
+  "donate.amount": "Valor da doação",
+  "donate.message": "Mensagem de apoio (opcional)",
+  "donate.messagePlaceholder": "Deixe uma mensagem de apoio...",
+  "donate.minAmount": "Mínimo 100 moedas",
+  "donate.insufficientBalance": "Saldo insuficiente",
+  "donate.thankYou": "Obrigado pelo seu apoio!",
+  
+  // Common additions
+  "common.change": "Alterar",
+  "userProfile.message": "Mensagem",
 };
 
 export default translations;

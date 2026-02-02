@@ -501,7 +501,46 @@ const translations: Record<string, string> = {
   "community.fileTooLarge": "Datei zu groß. Maximum",
   "community.pleaseSelectFile": "Bitte wählen Sie ein Bild oder Video",
   "community.imageMaxSlots": "Sie können nur noch {count} Bilder hochladen (max {max})",
-"community.imageTooLarge": "Bild überschreitet 5MB",
+  "community.imageTooLarge": "Bild überschreitet 5MB",
+  
+  // Gift System
+  "gift.title": "Camly Coin verschenken",
+  "gift.searchUser": "Empfänger suchen",
+  "gift.searchPlaceholder": "Nach Namen suchen...",
+  "gift.recipient": "Empfänger",
+  "gift.amount": "Betrag",
+  "gift.message": "Nachricht (optional)",
+  "gift.messagePlaceholder": "Hinterlassen Sie eine herzliche Nachricht...",
+  "gift.confirm": "Geschenk bestätigen",
+  "gift.yourBalance": "Ihr Guthaben",
+  "gift.minAmount": "Mindestens 100 Münzen",
+  "gift.minAmountNote": "Mindestens 100 Camly Coin",
+  "gift.insufficientBalance": "Unzureichendes Guthaben",
+  "gift.success": "Sie haben {amount} Camly Coin an {name} verschenkt!",
+  "gift.received": "Sie haben {amount} Camly Coin von {name} erhalten!",
+  "gift.honorTitle": "Geschenke-Ehrentafel",
+  "gift.topGivers": "Top Schenker",
+  "gift.topReceivers": "Top Empfänger",
+  "gift.totalGifted": "Insgesamt verschenkt",
+  
+  // Donate System
+  "donate.title": "An Angel AI spenden",
+  "donate.description": "Unterstützen Sie die Projektentwicklung",
+  "donate.confirm": "Spende bestätigen",
+  "donate.success": "Danke für Ihre Spende von {amount} Camly Coin!",
+  "donate.honorTitle": "Spender-Ehrentafel",
+  "donate.totalDonated": "Insgesamt gespendet",
+  "donate.yourBalance": "Ihr Guthaben",
+  "donate.amount": "Spendenbetrag",
+  "donate.message": "Ermutigungsnachricht (optional)",
+  "donate.messagePlaceholder": "Hinterlassen Sie eine Ermutigungsnachricht...",
+  "donate.minAmount": "Mindestens 100 Münzen",
+  "donate.insufficientBalance": "Unzureichendes Guthaben",
+  "donate.thankYou": "Danke für Ihre Unterstützung!",
+  
+  // Common additions
+  "common.change": "Ändern",
+  "userProfile.message": "Nachricht",
 };
 
 export default translations;

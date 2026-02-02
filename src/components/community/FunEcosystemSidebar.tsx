@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Gift } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { DonateProjectDialog } from "@/components/gifts/DonateProjectDialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 
 // Import logos
@@ -88,6 +90,8 @@ interface FunEcosystemSidebarProps {
 
 export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [donateDialogOpen, setDonateDialogOpen] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <motion.aside
@@ -187,6 +191,26 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
         ))}
       </nav>
 
+      {/* Donate Button Section */}
+      <AnimatePresence mode="wait">
+        {!isCollapsed && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="p-3 border-t border-amber-200/50"
+          >
+            <Button
+              onClick={() => setDonateDialogOpen(true)}
+              className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white shadow-md hover:shadow-lg transition-all"
+            >
+              <Gift className="w-4 h-4 mr-2" />
+              {t("donate.title")}
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Footer with sacred branding */}
       <AnimatePresence mode="wait">
         {!isCollapsed && (
@@ -202,6 +226,12 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Donate Dialog */}
+      <DonateProjectDialog
+        open={donateDialogOpen}
+        onOpenChange={setDonateDialogOpen}
+      />
     </motion.aside>
   );
 }

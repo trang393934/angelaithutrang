@@ -509,7 +509,46 @@ const translations: Record<string, string> = {
   "community.fileTooLarge": "Файл слишком большой. Максимум",
   "community.pleaseSelectFile": "Пожалуйста, выберите изображение или видео",
   "community.imageMaxSlots": "Вы можете загрузить ещё {count} изображений (макс {max})",
-"community.imageTooLarge": "Изображение превышает 5МБ",
+  "community.imageTooLarge": "Изображение превышает 5МБ",
+  
+  // Gift System
+  "gift.title": "Подарить Camly Coin",
+  "gift.searchUser": "Найти получателя",
+  "gift.searchPlaceholder": "Поиск по имени...",
+  "gift.recipient": "Получатель",
+  "gift.amount": "Количество",
+  "gift.message": "Сообщение (необязательно)",
+  "gift.messagePlaceholder": "Оставьте тёплое сообщение...",
+  "gift.confirm": "Подтвердить подарок",
+  "gift.yourBalance": "Ваш баланс",
+  "gift.minAmount": "Минимум 100 монет",
+  "gift.minAmountNote": "Минимум 100 Camly Coin",
+  "gift.insufficientBalance": "Недостаточно средств",
+  "gift.success": "Вы подарили {amount} Camly Coin для {name}!",
+  "gift.received": "Вы получили {amount} Camly Coin от {name}!",
+  "gift.honorTitle": "Доска почёта подарков",
+  "gift.topGivers": "Топ дарителей",
+  "gift.topReceivers": "Топ получателей",
+  "gift.totalGifted": "Всего подарено",
+  
+  // Donate System
+  "donate.title": "Пожертвовать Angel AI",
+  "donate.description": "Поддержать развитие проекта",
+  "donate.confirm": "Подтвердить пожертвование",
+  "donate.success": "Спасибо за пожертвование {amount} Camly Coin!",
+  "donate.honorTitle": "Доска почёта меценатов",
+  "donate.totalDonated": "Всего пожертвовано",
+  "donate.yourBalance": "Ваш баланс",
+  "donate.amount": "Сумма пожертвования",
+  "donate.message": "Сообщение поддержки (необязательно)",
+  "donate.messagePlaceholder": "Оставьте сообщение поддержки...",
+  "donate.minAmount": "Минимум 100 монет",
+  "donate.insufficientBalance": "Недостаточно средств",
+  "donate.thankYou": "Спасибо за вашу поддержку!",
+  
+  // Common additions
+  "common.change": "Изменить",
+  "userProfile.message": "Сообщение",
 };
 
 export default translations;

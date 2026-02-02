@@ -501,7 +501,46 @@ const translations: Record<string, string> = {
   "community.fileTooLarge": "الملف كبير جداً. الحد الأقصى",
   "community.pleaseSelectFile": "الرجاء اختيار صورة أو فيديو",
   "community.imageMaxSlots": "يمكنك رفع {count} صور إضافية فقط (الحد الأقصى {max})",
-"community.imageTooLarge": "الصورة تتجاوز 5 ميجابايت",
+  "community.imageTooLarge": "الصورة تتجاوز 5 ميجابايت",
+  
+  // Gift System
+  "gift.title": "إهداء Camly Coin",
+  "gift.searchUser": "البحث عن المستلم",
+  "gift.searchPlaceholder": "البحث بالاسم...",
+  "gift.recipient": "المستلم",
+  "gift.amount": "الكمية",
+  "gift.message": "رسالة (اختياري)",
+  "gift.messagePlaceholder": "اترك رسالة دافئة...",
+  "gift.confirm": "تأكيد الهدية",
+  "gift.yourBalance": "رصيدك",
+  "gift.minAmount": "الحد الأدنى 100 عملة",
+  "gift.minAmountNote": "الحد الأدنى 100 Camly Coin",
+  "gift.insufficientBalance": "رصيد غير كافٍ",
+  "gift.success": "لقد أهديت {amount} Camly Coin إلى {name}!",
+  "gift.received": "لقد استلمت {amount} Camly Coin من {name}!",
+  "gift.honorTitle": "لوحة شرف الهدايا",
+  "gift.topGivers": "أفضل المُهدين",
+  "gift.topReceivers": "أفضل المستلمين",
+  "gift.totalGifted": "إجمالي الهدايا",
+  
+  // Donate System
+  "donate.title": "التبرع لـ Angel AI",
+  "donate.description": "دعم تطوير المشروع",
+  "donate.confirm": "تأكيد التبرع",
+  "donate.success": "شكراً لتبرعك بـ {amount} Camly Coin!",
+  "donate.honorTitle": "لوحة شرف المتبرعين",
+  "donate.totalDonated": "إجمالي التبرعات",
+  "donate.yourBalance": "رصيدك",
+  "donate.amount": "مبلغ التبرع",
+  "donate.message": "رسالة تشجيع (اختياري)",
+  "donate.messagePlaceholder": "اترك رسالة تشجيع...",
+  "donate.minAmount": "الحد الأدنى 100 عملة",
+  "donate.insufficientBalance": "رصيد غير كافٍ",
+  "donate.thankYou": "شكراً لدعمك!",
+  
+  // Common additions
+  "common.change": "تغيير",
+  "userProfile.message": "رسالة",
 };
 
 export default translations;

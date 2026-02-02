@@ -501,7 +501,46 @@ const translations: Record<string, string> = {
   "community.fileTooLarge": "Fichier trop volumineux. Maximum",
   "community.pleaseSelectFile": "Veuillez sélectionner une image ou vidéo",
   "community.imageMaxSlots": "Vous ne pouvez télécharger que {count} images de plus (max {max})",
-"community.imageTooLarge": "L'image dépasse 5Mo",
+  "community.imageTooLarge": "L'image dépasse 5Mo",
+  
+  // Gift System
+  "gift.title": "Offrir des Camly Coin",
+  "gift.searchUser": "Rechercher un destinataire",
+  "gift.searchPlaceholder": "Rechercher par nom...",
+  "gift.recipient": "Destinataire",
+  "gift.amount": "Montant",
+  "gift.message": "Message (optionnel)",
+  "gift.messagePlaceholder": "Laissez un message chaleureux...",
+  "gift.confirm": "Confirmer le cadeau",
+  "gift.yourBalance": "Votre solde",
+  "gift.minAmount": "Minimum 100 pièces",
+  "gift.minAmountNote": "Minimum 100 Camly Coin",
+  "gift.insufficientBalance": "Solde insuffisant",
+  "gift.success": "Vous avez offert {amount} Camly Coin à {name} !",
+  "gift.received": "Vous avez reçu {amount} Camly Coin de {name} !",
+  "gift.honorTitle": "Tableau d'Honneur des Cadeaux",
+  "gift.topGivers": "Top Donateurs",
+  "gift.topReceivers": "Top Bénéficiaires",
+  "gift.totalGifted": "Total offert",
+  
+  // Donate System
+  "donate.title": "Faire un don à Angel AI",
+  "donate.description": "Soutenir le développement du projet",
+  "donate.confirm": "Confirmer le don",
+  "donate.success": "Merci pour votre don de {amount} Camly Coin !",
+  "donate.honorTitle": "Tableau d'Honneur des Mécènes",
+  "donate.totalDonated": "Total donné",
+  "donate.yourBalance": "Votre solde",
+  "donate.amount": "Montant du don",
+  "donate.message": "Message d'encouragement (optionnel)",
+  "donate.messagePlaceholder": "Laissez un message d'encouragement...",
+  "donate.minAmount": "Minimum 100 pièces",
+  "donate.insufficientBalance": "Solde insuffisant",
+  "donate.thankYou": "Merci pour votre soutien !",
+  
+  // Common additions
+  "common.change": "Modifier",
+  "userProfile.message": "Message",
 };
 
 export default translations;

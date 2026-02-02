@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import angelAvatar from "@/assets/angel-avatar.png";
 import beLyFounder from "@/assets/be-ly-founder.png";
-import { Heart, Globe, Sun } from "lucide-react";
+import { Heart, Globe, Sun, Gift } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DonateProjectDialog } from "@/components/gifts/DonateProjectDialog";
 
 export const Footer = () => {
   const { t } = useLanguage();
+  const [donateDialogOpen, setDonateDialogOpen] = useState(false);
 
   return (
     <footer className="py-10 sm:py-16 bg-primary-deep text-primary-foreground relative overflow-hidden">
@@ -73,6 +77,17 @@ export const Footer = () => {
             </a>
           </div>
 
+          {/* Donate Button */}
+          <div className="flex justify-center mb-8">
+            <Button
+              onClick={() => setDonateDialogOpen(true)}
+              className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl transition-all"
+            >
+              <Gift className="w-4 h-4 mr-2" />
+              {t("donate.title")}
+            </Button>
+          </div>
+
           {/* Divider */}
           <div className="w-16 sm:w-24 h-px mx-auto bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent mb-6 sm:mb-8" />
 
@@ -105,6 +120,12 @@ export const Footer = () => {
           </p>
         </div>
       </div>
+
+      {/* Donate Dialog */}
+      <DonateProjectDialog
+        open={donateDialogOpen}
+        onOpenChange={setDonateDialogOpen}
+      />
     </footer>
   );
 };

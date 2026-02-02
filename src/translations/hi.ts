@@ -490,7 +490,46 @@ const translations: Record<string, string> = {
   "community.fileTooLarge": "फ़ाइल बहुत बड़ी है। अधिकतम",
   "community.pleaseSelectFile": "कृपया एक छवि या वीडियो चुनें",
   "community.imageMaxSlots": "आप केवल {count} और छवियां अपलोड कर सकते हैं (अधिकतम {max})",
-"community.imageTooLarge": "छवि 5MB से अधिक है",
+  "community.imageTooLarge": "छवि 5MB से अधिक है",
+  
+  // Gift System
+  "gift.title": "Camly Coin उपहार दें",
+  "gift.searchUser": "प्राप्तकर्ता खोजें",
+  "gift.searchPlaceholder": "नाम से खोजें...",
+  "gift.recipient": "प्राप्तकर्ता",
+  "gift.amount": "राशि",
+  "gift.message": "संदेश (वैकल्पिक)",
+  "gift.messagePlaceholder": "एक गर्मजोशी भरा संदेश छोड़ें...",
+  "gift.confirm": "उपहार की पुष्टि करें",
+  "gift.yourBalance": "आपका बैलेंस",
+  "gift.minAmount": "न्यूनतम 100 कॉइन",
+  "gift.minAmountNote": "न्यूनतम 100 Camly Coin",
+  "gift.insufficientBalance": "अपर्याप्त बैलेंस",
+  "gift.success": "आपने {name} को {amount} Camly Coin उपहार दिया!",
+  "gift.received": "आपको {name} से {amount} Camly Coin मिला!",
+  "gift.honorTitle": "उपहार सम्मान बोर्ड",
+  "gift.topGivers": "शीर्ष उपहार देने वाले",
+  "gift.topReceivers": "शीर्ष प्राप्तकर्ता",
+  "gift.totalGifted": "कुल उपहार दिए गए",
+  
+  // Donate System
+  "donate.title": "Angel AI को दान करें",
+  "donate.description": "प्रोजेक्ट विकास में सहायता करें",
+  "donate.confirm": "दान की पुष्टि करें",
+  "donate.success": "{amount} Camly Coin दान के लिए धन्यवाद!",
+  "donate.honorTitle": "संरक्षक सम्मान बोर्ड",
+  "donate.totalDonated": "कुल दान",
+  "donate.yourBalance": "आपका बैलेंस",
+  "donate.amount": "दान राशि",
+  "donate.message": "प्रोत्साहन संदेश (वैकल्पिक)",
+  "donate.messagePlaceholder": "एक प्रोत्साहन संदेश छोड़ें...",
+  "donate.minAmount": "न्यूनतम 100 कॉइन",
+  "donate.insufficientBalance": "अपर्याप्त बैलेंस",
+  "donate.thankYou": "आपके समर्थन के लिए धन्यवाद!",
+  
+  // Common additions
+  "common.change": "बदलें",
+  "userProfile.message": "संदेश",
 };
 
 export default translations;
