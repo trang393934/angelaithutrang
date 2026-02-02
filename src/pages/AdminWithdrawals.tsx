@@ -3,10 +3,12 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History, Bell, Copy } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History, Bell, Copy, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { TreasuryBalanceCard } from "@/components/admin/TreasuryBalanceCard";
 import { useNewWithdrawalNotification } from "@/components/admin/NewWithdrawalNotification";
 import {
@@ -60,6 +62,14 @@ interface WithdrawalStats {
   total_amount_completed: number;
 }
 
+interface BatchProgress {
+  current: number;
+  total: number;
+  success: number;
+  failed: number;
+  currentWallet?: string;
+}
+
 const AdminWithdrawals = () => {
   const navigate = useNavigate();
   const { user, isAdmin, isLoading: authLoading, isAdminChecked } = useAuth();
@@ -75,6 +85,14 @@ const AdminWithdrawals = () => {
   const [txHash, setTxHash] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Batch selection states
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<BatchProgress>({ current: 0, total: 0, success: 0, failed: 0 });
+  const [showBatchApproveDialog, setShowBatchApproveDialog] = useState(false);
+  const [showBatchRejectDialog, setShowBatchRejectDialog] = useState(false);
+  const [batchRejectReason, setBatchRejectReason] = useState("");
   
   // Real-time withdrawal notifications
   const { newWithdrawals } = useNewWithdrawalNotification();
@@ -175,6 +193,139 @@ const AdminWithdrawals = () => {
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
+  };
+
+  // Get selectable withdrawals (pending or processing)
+  const selectableWithdrawals = withdrawals.filter(w => 
+    w.status === "pending" || w.status === "processing"
+  );
+
+  // Toggle single selection
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  // Toggle all selection
+  const toggleSelectAll = () => {
+    if (selectedIds.size === selectableWithdrawals.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(selectableWithdrawals.map(w => w.id)));
+    }
+  };
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  // Get selected withdrawals
+  const getSelectedWithdrawals = () => {
+    return withdrawals.filter(w => selectedIds.has(w.id) && (w.status === "pending" || w.status === "processing"));
+  };
+
+  // Calculate total amount of selected
+  const selectedTotalAmount = getSelectedWithdrawals().reduce((sum, w) => sum + w.amount, 0);
+
+  // Batch approve handler
+  const handleBatchApprove = async () => {
+    const selectedWithdrawals = getSelectedWithdrawals();
+    if (selectedWithdrawals.length === 0) return;
+
+    setIsBatchProcessing(true);
+    setBatchProgress({ current: 0, total: selectedWithdrawals.length, success: 0, failed: 0 });
+
+    for (const withdrawal of selectedWithdrawals) {
+      setBatchProgress(prev => ({ ...prev, currentWallet: withdrawal.wallet_address }));
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('process-withdrawal', {
+          body: { withdrawal_id: withdrawal.id }
+        });
+
+        if (error || !data?.success) {
+          setBatchProgress(prev => ({ 
+            ...prev, 
+            current: prev.current + 1, 
+            failed: prev.failed + 1 
+          }));
+        } else {
+          setBatchProgress(prev => ({ 
+            ...prev, 
+            current: prev.current + 1, 
+            success: prev.success + 1 
+          }));
+        }
+      } catch (error) {
+        setBatchProgress(prev => ({ 
+          ...prev, 
+          current: prev.current + 1, 
+          failed: prev.failed + 1 
+        }));
+      }
+    }
+
+    // Finish batch processing
+    setTimeout(() => {
+      setIsBatchProcessing(false);
+      setShowBatchApproveDialog(false);
+      setSelectedIds(new Set());
+      fetchWithdrawals();
+      fetchStats();
+      
+      const finalProgress = batchProgress;
+      toast.success(`Hoàn thành xử lý hàng loạt`, {
+        description: `Thành công: ${batchProgress.success + 1}, Thất bại: ${batchProgress.failed}`
+      });
+    }, 500);
+  };
+
+  // Batch reject handler
+  const handleBatchReject = async () => {
+    const selectedWithdrawals = getSelectedWithdrawals();
+    if (selectedWithdrawals.length === 0 || !batchRejectReason.trim()) return;
+
+    setIsBatchProcessing(true);
+    setBatchProgress({ current: 0, total: selectedWithdrawals.length, success: 0, failed: 0 });
+
+    for (const withdrawal of selectedWithdrawals) {
+      try {
+        const { error } = await supabase
+          .from("coin_withdrawals")
+          .update({
+            status: "failed",
+            admin_notes: batchRejectReason.trim(),
+            processed_at: new Date().toISOString(),
+            processed_by: user?.id,
+          })
+          .eq("id", withdrawal.id);
+
+        if (error) {
+          setBatchProgress(prev => ({ ...prev, current: prev.current + 1, failed: prev.failed + 1 }));
+        } else {
+          setBatchProgress(prev => ({ ...prev, current: prev.current + 1, success: prev.success + 1 }));
+        }
+      } catch (error) {
+        setBatchProgress(prev => ({ ...prev, current: prev.current + 1, failed: prev.failed + 1 }));
+      }
+    }
+
+    // Finish batch processing
+    setTimeout(() => {
+      setIsBatchProcessing(false);
+      setShowBatchRejectDialog(false);
+      setBatchRejectReason("");
+      setSelectedIds(new Set());
+      fetchWithdrawals();
+      fetchStats();
+      toast.success(`Đã từ chối ${batchProgress.success + 1} yêu cầu rút`);
+    }, 500);
   };
 
   const handleApprove = async () => {
@@ -364,7 +515,7 @@ const AdminWithdrawals = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-24">
         {/* Treasury Balance Card */}
         <TreasuryBalanceCard />
         
@@ -477,6 +628,13 @@ const AdminWithdrawals = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-primary-pale/30">
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectableWithdrawals.length > 0 && selectedIds.size === selectableWithdrawals.length}
+                    onCheckedChange={toggleSelectAll}
+                    disabled={selectableWithdrawals.length === 0}
+                  />
+                </TableHead>
                 <TableHead className="font-semibold">Thời gian</TableHead>
                 <TableHead className="font-semibold">Người dùng</TableHead>
                 <TableHead className="font-semibold">Số lượng</TableHead>
@@ -488,13 +646,21 @@ const AdminWithdrawals = () => {
             <TableBody>
               {filteredWithdrawals.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-foreground-muted">
+                  <TableCell colSpan={7} className="text-center py-8 text-foreground-muted">
                     Không có yêu cầu rút nào
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredWithdrawals.map((withdrawal) => (
-                  <TableRow key={withdrawal.id} className="hover:bg-primary-pale/10">
+                  <TableRow key={withdrawal.id} className={`hover:bg-primary-pale/10 ${selectedIds.has(withdrawal.id) ? 'bg-primary-pale/20' : ''}`}>
+                    <TableCell>
+                      {(withdrawal.status === "pending" || withdrawal.status === "processing") && (
+                        <Checkbox
+                          checked={selectedIds.has(withdrawal.id)}
+                          onCheckedChange={() => toggleSelection(withdrawal.id)}
+                        />
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm">
                       {formatDate(withdrawal.created_at)}
                     </TableCell>
@@ -611,6 +777,178 @@ const AdminWithdrawals = () => {
           </Table>
         </div>
       </main>
+
+      {/* Batch Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={true} disabled />
+                <span className="font-medium">Đã chọn: {selectedIds.size} yêu cầu</span>
+              </div>
+              <div className="text-sm text-foreground-muted">
+                Tổng: <span className="font-bold text-primary">{formatAmount(selectedTotalAmount)} CAMLY</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearSelection}
+                className="gap-1"
+              >
+                <X className="w-4 h-4" />
+                Bỏ chọn
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowBatchRejectDialog(true)}
+                className="gap-1"
+              >
+                <XCircle className="w-4 h-4" />
+                Từ chối tất cả
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setShowBatchApproveDialog(true)}
+                className="gap-1 bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Duyệt tất cả
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Approve Dialog */}
+      <Dialog open={showBatchApproveDialog} onOpenChange={(open) => !isBatchProcessing && setShowBatchApproveDialog(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <CheckCircle className="w-5 h-5" />
+              Duyệt hàng loạt
+            </DialogTitle>
+            <DialogDescription>
+              Bạn sắp duyệt <span className="font-bold">{selectedIds.size}</span> yêu cầu rút với tổng cộng <span className="font-bold">{formatAmount(selectedTotalAmount)} CAMLY</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isBatchProcessing ? (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between text-sm">
+                <span>Tiến độ: {batchProgress.current}/{batchProgress.total}</span>
+                <span className="text-green-600">✓ {batchProgress.success} | ✕ {batchProgress.failed}</span>
+              </div>
+              <Progress value={(batchProgress.current / batchProgress.total) * 100} className="h-3" />
+              {batchProgress.currentWallet && (
+                <p className="text-xs text-foreground-muted text-center">
+                  Đang xử lý: {batchProgress.currentWallet.slice(0, 10)}...{batchProgress.currentWallet.slice(-6)}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 my-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-800">Lưu ý quan trọng</p>
+                  <p className="text-amber-700 mt-1">
+                    Hệ thống sẽ tuần tự xử lý từng yêu cầu rút và chuyển CAMLY từ ví Treasury. 
+                    Quá trình này không thể hủy sau khi bắt đầu.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBatchApproveDialog(false)}
+              disabled={isBatchProcessing}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleBatchApprove} 
+              disabled={isBatchProcessing}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isBatchProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                "Xác nhận duyệt tất cả"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Reject Dialog */}
+      <Dialog open={showBatchRejectDialog} onOpenChange={(open) => !isBatchProcessing && setShowBatchRejectDialog(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <XCircle className="w-5 h-5" />
+              Từ chối hàng loạt
+            </DialogTitle>
+            <DialogDescription>
+              Từ chối <span className="font-bold">{selectedIds.size}</span> yêu cầu rút. Số coin sẽ được hoàn lại cho người dùng.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isBatchProcessing ? (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between text-sm">
+                <span>Tiến độ: {batchProgress.current}/{batchProgress.total}</span>
+              </div>
+              <Progress value={(batchProgress.current / batchProgress.total) * 100} className="h-3" />
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Lý do từ chối (áp dụng cho tất cả) *</label>
+                <Textarea
+                  placeholder="Nhập lý do từ chối..."
+                  value={batchRejectReason}
+                  onChange={(e) => setBatchRejectReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBatchRejectDialog(false)}
+              disabled={isBatchProcessing}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleBatchReject} 
+              disabled={isBatchProcessing || !batchRejectReason.trim()}
+              variant="destructive"
+            >
+              {isBatchProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                "Xác nhận từ chối tất cả"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Approve Dialog - Automated */}
       <Dialog open={actionType === "approve"} onOpenChange={() => { setActionType(null); setSelectedWithdrawal(null); setTxHash(""); setAdminNotes(""); }}>

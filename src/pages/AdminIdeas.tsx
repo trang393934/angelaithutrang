@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +34,7 @@ import {
   Calendar,
   ThumbsUp,
   Loader2,
+  X,
 } from "lucide-react";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
@@ -53,6 +56,13 @@ interface Idea {
   user_email?: string;
 }
 
+interface BatchProgress {
+  current: number;
+  total: number;
+  success: number;
+  failed: number;
+}
+
 export default function AdminIdeas() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -67,6 +77,15 @@ export default function AdminIdeas() {
   const [feedback, setFeedback] = useState("");
   const [rewardAmount, setRewardAmount] = useState(1000);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Batch selection states
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<BatchProgress>({ current: 0, total: 0, success: 0, failed: 0 });
+  const [showBatchApproveDialog, setShowBatchApproveDialog] = useState(false);
+  const [showBatchRejectDialog, setShowBatchRejectDialog] = useState(false);
+  const [batchRewardAmount, setBatchRewardAmount] = useState(1000);
+  const [batchRejectReason, setBatchRejectReason] = useState("");
 
   // Check admin status
   useEffect(() => {
@@ -133,6 +152,177 @@ export default function AdminIdeas() {
       fetchIdeas();
     }
   }, [isAdmin]);
+
+  // Get selectable ideas (pending only)
+  const selectableIdeas = ideas.filter(idea => idea.status === "pending");
+
+  // Toggle single selection
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  // Toggle all selection
+  const toggleSelectAll = () => {
+    const pendingIdeas = ideas.filter(i => i.status === "pending");
+    if (selectedIds.size === pendingIdeas.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pendingIdeas.map(i => i.id)));
+    }
+  };
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  // Get selected ideas
+  const getSelectedIdeas = () => {
+    return ideas.filter(i => selectedIds.has(i.id) && i.status === "pending");
+  };
+
+  // Batch approve handler
+  const handleBatchApprove = async () => {
+    const selectedIdeasList = getSelectedIdeas();
+    if (selectedIdeasList.length === 0 || !user) return;
+
+    setIsBatchProcessing(true);
+    setBatchProgress({ current: 0, total: selectedIdeasList.length, success: 0, failed: 0 });
+
+    for (const idea of selectedIdeasList) {
+      try {
+        // Update idea status
+        const { error: updateError } = await supabase
+          .from("build_ideas")
+          .update({
+            status: "approved",
+            reviewed_at: new Date().toISOString(),
+            reviewed_by: user.id,
+            is_rewarded: batchRewardAmount > 0,
+            reward_amount: batchRewardAmount > 0 ? batchRewardAmount : null,
+          })
+          .eq("id", idea.id);
+
+        if (updateError) throw updateError;
+
+        // Add coin reward if amount > 0
+        if (batchRewardAmount > 0) {
+          // Insert transaction
+          await supabase
+            .from("camly_coin_transactions")
+            .insert({
+              user_id: idea.user_id,
+              amount: batchRewardAmount,
+              transaction_type: "build_idea",
+              description: `Thưởng ý tưởng: ${idea.title}`,
+            });
+
+          // Update balance
+          const { data: currentBalance } = await supabase
+            .from("camly_coin_balances")
+            .select("balance, lifetime_earned")
+            .eq("user_id", idea.user_id)
+            .single();
+
+          if (currentBalance) {
+            await supabase
+              .from("camly_coin_balances")
+              .update({
+                balance: currentBalance.balance + batchRewardAmount,
+                lifetime_earned: currentBalance.lifetime_earned + batchRewardAmount,
+              })
+              .eq("user_id", idea.user_id);
+          } else {
+            await supabase.from("camly_coin_balances").insert({
+              user_id: idea.user_id,
+              balance: batchRewardAmount,
+              lifetime_earned: batchRewardAmount,
+            });
+          }
+
+          // Send notification
+          await supabase.from("healing_messages").insert({
+            user_id: idea.user_id,
+            title: "🎉 Ý tưởng được duyệt!",
+            content: `Ý tưởng "${idea.title}" của bạn đã được Admin duyệt và bạn nhận được ${batchRewardAmount.toLocaleString()} Camly Coin!`,
+            message_type: "reward",
+            triggered_by: "idea_approved",
+          });
+        }
+
+        setBatchProgress(prev => ({ ...prev, current: prev.current + 1, success: prev.success + 1 }));
+      } catch (error) {
+        console.error("Error approving idea:", idea.id, error);
+        setBatchProgress(prev => ({ ...prev, current: prev.current + 1, failed: prev.failed + 1 }));
+      }
+    }
+
+    // Finish batch processing
+    setTimeout(() => {
+      setIsBatchProcessing(false);
+      setShowBatchApproveDialog(false);
+      setSelectedIds(new Set());
+      fetchIdeas();
+      toast.success(`Hoàn thành duyệt hàng loạt`, {
+        description: `Thành công: ${batchProgress.success + 1}, Thất bại: ${batchProgress.failed}`
+      });
+    }, 500);
+  };
+
+  // Batch reject handler
+  const handleBatchReject = async () => {
+    const selectedIdeasList = getSelectedIdeas();
+    if (selectedIdeasList.length === 0 || !user || !batchRejectReason.trim()) return;
+
+    setIsBatchProcessing(true);
+    setBatchProgress({ current: 0, total: selectedIdeasList.length, success: 0, failed: 0 });
+
+    for (const idea of selectedIdeasList) {
+      try {
+        const { error } = await supabase
+          .from("build_ideas")
+          .update({
+            status: "rejected",
+            admin_feedback: batchRejectReason.trim(),
+            reviewed_at: new Date().toISOString(),
+            reviewed_by: user.id,
+          })
+          .eq("id", idea.id);
+
+        if (error) throw error;
+
+        // Send notification
+        await supabase.from("healing_messages").insert({
+          user_id: idea.user_id,
+          title: "Phản hồi ý tưởng",
+          content: `Ý tưởng "${idea.title}" của bạn đã được xem xét. ${batchRejectReason.trim()} Cảm ơn bạn đã đóng góp!`,
+          message_type: "info",
+          triggered_by: "idea_reviewed",
+        });
+
+        setBatchProgress(prev => ({ ...prev, current: prev.current + 1, success: prev.success + 1 }));
+      } catch (error) {
+        console.error("Error rejecting idea:", idea.id, error);
+        setBatchProgress(prev => ({ ...prev, current: prev.current + 1, failed: prev.failed + 1 }));
+      }
+    }
+
+    // Finish batch processing
+    setTimeout(() => {
+      setIsBatchProcessing(false);
+      setShowBatchRejectDialog(false);
+      setBatchRejectReason("");
+      setSelectedIds(new Set());
+      fetchIdeas();
+      toast.success(`Đã từ chối ${batchProgress.success + 1} ý tưởng`);
+    }, 500);
+  };
 
   const openReviewDialog = (idea: Idea, action: "approve" | "reject") => {
     setSelectedIdea(idea);
@@ -341,7 +531,7 @@ export default function AdminIdeas() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-yellow-50 to-background">
+    <div className="min-h-screen bg-gradient-to-b from-yellow-50 to-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-4">
@@ -406,6 +596,19 @@ export default function AdminIdeas() {
           </Card>
         </div>
 
+        {/* Batch select all for pending tab */}
+        {activeTab === "pending" && selectableIdeas.length > 0 && (
+          <div className="flex items-center gap-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+            <Checkbox
+              checked={selectedIds.size === selectableIdeas.length && selectableIdeas.length > 0}
+              onCheckedChange={toggleSelectAll}
+            />
+            <span className="text-sm font-medium">
+              Chọn tất cả ({selectableIdeas.length} ý tưởng chờ duyệt)
+            </span>
+          </div>
+        )}
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-5 w-full max-w-lg">
@@ -442,25 +645,34 @@ export default function AdminIdeas() {
         ) : (
           <div className="space-y-4">
             {filteredIdeas.map((idea) => (
-              <Card key={idea.id} className="overflow-hidden">
+              <Card key={idea.id} className={`overflow-hidden ${selectedIds.has(idea.id) ? 'ring-2 ring-primary' : ''}`}>
                 <CardContent className="p-4 space-y-4">
-                  {/* Header */}
+                  {/* Header with Checkbox */}
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{idea.title}</h3>
-                      <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {idea.user_display_name}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(idea.created_at).toLocaleDateString("vi-VN")}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <ThumbsUp className="h-3 w-3" />
-                          {idea.votes_count} votes
-                        </span>
+                    <div className="flex items-start gap-3 flex-1">
+                      {idea.status === "pending" && (
+                        <Checkbox
+                          checked={selectedIds.has(idea.id)}
+                          onCheckedChange={() => toggleSelection(idea.id)}
+                          className="mt-1"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{idea.title}</h3>
+                        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {idea.user_display_name}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(idea.created_at).toLocaleDateString("vi-VN")}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <ThumbsUp className="h-3 w-3" />
+                            {idea.votes_count} votes
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {getStatusBadge(idea.status)}
@@ -536,6 +748,181 @@ export default function AdminIdeas() {
           </div>
         )}
       </main>
+
+      {/* Batch Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+          <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={true} disabled />
+                <span className="font-medium">Đã chọn: {selectedIds.size} ý tưởng</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearSelection}
+                className="gap-1"
+              >
+                <X className="w-4 h-4" />
+                Bỏ chọn
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowBatchRejectDialog(true)}
+                className="gap-1"
+              >
+                <XCircle className="w-4 h-4" />
+                Từ chối tất cả
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setShowBatchApproveDialog(true)}
+                className="gap-1 bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Duyệt tất cả
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Approve Dialog */}
+      <Dialog open={showBatchApproveDialog} onOpenChange={(open) => !isBatchProcessing && setShowBatchApproveDialog(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <CheckCircle2 className="w-5 h-5" />
+              Duyệt hàng loạt
+            </DialogTitle>
+            <DialogDescription>
+              Bạn sắp duyệt <span className="font-bold">{selectedIds.size}</span> ý tưởng
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isBatchProcessing ? (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between text-sm">
+                <span>Tiến độ: {batchProgress.current}/{batchProgress.total}</span>
+                <span className="text-green-600">✓ {batchProgress.success} | ✕ {batchProgress.failed}</span>
+              </div>
+              <Progress value={(batchProgress.current / batchProgress.total) * 100} className="h-3" />
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="batchReward">Số coin thưởng cho mỗi ý tưởng</Label>
+                <div className="flex items-center gap-2">
+                  <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
+                  <Input
+                    id="batchReward"
+                    type="number"
+                    value={batchRewardAmount}
+                    onChange={(e) => setBatchRewardAmount(Number(e.target.value))}
+                    min={0}
+                    max={10000}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Tổng thưởng: {(batchRewardAmount * selectedIds.size).toLocaleString()} Camly Coin
+                </p>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBatchApproveDialog(false)}
+              disabled={isBatchProcessing}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleBatchApprove} 
+              disabled={isBatchProcessing}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isBatchProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <Gift className="w-4 h-4 mr-2" />
+                  Duyệt & Thưởng tất cả
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Reject Dialog */}
+      <Dialog open={showBatchRejectDialog} onOpenChange={(open) => !isBatchProcessing && setShowBatchRejectDialog(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <XCircle className="w-5 h-5" />
+              Từ chối hàng loạt
+            </DialogTitle>
+            <DialogDescription>
+              Từ chối <span className="font-bold">{selectedIds.size}</span> ý tưởng
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isBatchProcessing ? (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between text-sm">
+                <span>Tiến độ: {batchProgress.current}/{batchProgress.total}</span>
+              </div>
+              <Progress value={(batchProgress.current / batchProgress.total) * 100} className="h-3" />
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="batchRejectReason">Lý do từ chối (áp dụng cho tất cả) *</Label>
+                <Textarea
+                  id="batchRejectReason"
+                  placeholder="Nhập lý do từ chối..."
+                  value={batchRejectReason}
+                  onChange={(e) => setBatchRejectReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBatchRejectDialog(false)}
+              disabled={isBatchProcessing}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleBatchReject} 
+              disabled={isBatchProcessing || !batchRejectReason.trim()}
+              variant="destructive"
+            >
+              {isBatchProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                "Xác nhận từ chối tất cả"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Review Dialog */}
       <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
