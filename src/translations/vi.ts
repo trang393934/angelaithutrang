@@ -799,6 +799,27 @@ const translations: Record<string, string> = {
   "donate.emptyState": "Chưa có mạnh thường quân nào",
   "donate.beFirstDonor": "Hãy là người đầu tiên ủng hộ dự án!",
   
+  // Crypto Transfer
+  "crypto.transferTab": "Chuyển Crypto",
+  "crypto.connectToTransfer": "Kết nối ví Web3 để chuyển CAMLY token thật",
+  "crypto.connectToDonate": "Kết nối ví Web3 để donate CAMLY token thật",
+  "crypto.connectWallet": "Kết nối ví",
+  "crypto.installMetaMask": "Cần cài đặt MetaMask hoặc ví Web3 tương thích",
+  "crypto.walletBalance": "Số dư CAMLY trong ví",
+  "crypto.recipientType": "Chọn cách nhập người nhận",
+  "crypto.walletAddress": "Địa chỉ ví",
+  "crypto.fromProfile": "Từ hồ sơ",
+  "crypto.recipientAddress": "Địa chỉ ví người nhận",
+  "crypto.profileNeedWallet": "Người nhận cần đã liên kết ví Web3 với tài khoản",
+  "crypto.amount": "Số lượng CAMLY",
+  "crypto.gasNote": "Cần có BNB trong ví để thanh toán phí gas",
+  "crypto.confirmTransfer": "Xác nhận chuyển",
+  "crypto.confirmDonate": "Xác nhận donate",
+  "crypto.viewOnBscScan": "Xem giao dịch trên BSCScan",
+  "crypto.treasuryAddress": "Địa chỉ Treasury dự án",
+  "crypto.invalidAmount": "Số lượng không hợp lệ",
+  "crypto.invalidAddress": "Địa chỉ ví không hợp lệ",
+  
   // User Profile
   "userProfile.message": "Nhắn tin",
 };
