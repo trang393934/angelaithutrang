@@ -375,6 +375,20 @@ const AdminDashboard = () => {
                 <Image className="w-4 h-4" />
                 Lịch sử ảnh
               </Link>
+              <Link
+                to="/admin/ideas"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
+              >
+                <Zap className="w-4 h-4" />
+                Ý tưởng
+              </Link>
+              <Link
+                to="/admin/bounty"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
+              >
+                <TrendingUp className="w-4 h-4" />
+                Bounty
+              </Link>
               <button
                 onClick={() => signOut().then(() => navigate("/"))}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
