@@ -2348,6 +2348,7 @@ export type Database = {
         | "gift_sent"
         | "gift_received"
         | "project_donation"
+        | "project_reward"
       energy_level: "very_high" | "high" | "neutral" | "low" | "very_low"
       suspension_type: "temporary" | "permanent"
     }
@@ -2499,6 +2500,7 @@ export const Constants = {
         "gift_sent",
         "gift_received",
         "project_donation",
+        "project_reward",
       ],
       energy_level: ["very_high", "high", "neutral", "low", "very_low"],
       suspension_type: ["temporary", "permanent"],
