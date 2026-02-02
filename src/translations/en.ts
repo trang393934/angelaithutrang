@@ -769,6 +769,27 @@ const translations: Record<string, string> = {
   "donate.emptyState": "No patrons yet",
   "donate.beFirstDonor": "Be the first to support the project!",
   
+  // Crypto Transfer
+  "crypto.transferTab": "Transfer Crypto",
+  "crypto.connectToTransfer": "Connect Web3 wallet to transfer real CAMLY tokens",
+  "crypto.connectToDonate": "Connect Web3 wallet to donate real CAMLY tokens",
+  "crypto.connectWallet": "Connect Wallet",
+  "crypto.installMetaMask": "MetaMask or compatible Web3 wallet required",
+  "crypto.walletBalance": "CAMLY in wallet",
+  "crypto.recipientType": "Choose recipient method",
+  "crypto.walletAddress": "Wallet Address",
+  "crypto.fromProfile": "From Profile",
+  "crypto.recipientAddress": "Recipient wallet address",
+  "crypto.profileNeedWallet": "Recipient must have linked Web3 wallet to their account",
+  "crypto.amount": "CAMLY Amount",
+  "crypto.gasNote": "BNB required in wallet for gas fees",
+  "crypto.confirmTransfer": "Confirm Transfer",
+  "crypto.confirmDonate": "Confirm Donation",
+  "crypto.viewOnBscScan": "View transaction on BSCScan",
+  "crypto.treasuryAddress": "Project Treasury Address",
+  "crypto.invalidAmount": "Invalid amount",
+  "crypto.invalidAddress": "Invalid wallet address",
+  
   // User Profile
   "userProfile.message": "Message",
 };

@@ -8,9 +8,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Loader2, Sparkles } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Heart, Loader2, Wallet, ExternalLink } from "lucide-react";
 import { useCoinGifts } from "@/hooks/useCoinGifts";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
+import { useWeb3Transfer, TREASURY_WALLET_ADDRESS } from "@/hooks/useWeb3Transfer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,17 +27,41 @@ export function DonateProjectDialog({ open, onOpenChange }: DonateProjectDialogP
   const { t } = useLanguage();
   const { donateToProject, isLoading } = useCoinGifts();
   const { balance } = useCamlyCoin();
+  const {
+    isTransferring,
+    camlyCoinBalance,
+    fetchCamlyBalance,
+    donateCamlyToProject,
+    isConnected,
+    address,
+    hasWallet,
+    connect,
+  } = useWeb3Transfer();
   
+  const [activeTab, setActiveTab] = useState<"internal" | "crypto">("internal");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
   const [showHearts, setShowHearts] = useState(false);
+  
+  // Crypto states
+  const [cryptoAmount, setCryptoAmount] = useState("");
+  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
       setAmount("");
       setMessage("");
+      setCryptoAmount("");
+      setLastTxHash(null);
     }
   }, [open]);
+
+  // Fetch crypto balance when connected
+  useEffect(() => {
+    if (isConnected && activeTab === "crypto") {
+      fetchCamlyBalance();
+    }
+  }, [isConnected, activeTab, fetchCamlyBalance]);
 
   const handleDonate = async () => {
     if (!amount) return;
@@ -65,7 +91,31 @@ export function DonateProjectDialog({ open, onOpenChange }: DonateProjectDialogP
     }
   };
 
+  const handleCryptoDonate = async () => {
+    const numAmount = Number(cryptoAmount);
+    if (numAmount <= 0) {
+      toast.error(t("crypto.invalidAmount"));
+      return;
+    }
+
+    const result = await donateCamlyToProject(numAmount);
+    
+    if (result.success) {
+      setShowHearts(true);
+      setLastTxHash(result.txHash || null);
+      toast.success(result.message);
+      fetchCamlyBalance();
+      setTimeout(() => {
+        setShowHearts(false);
+        onOpenChange(false);
+      }, 3000);
+    } else {
+      toast.error(result.message);
+    }
+  };
+
   const quickAmounts = [1000, 5000, 10000, 50000];
+  const cryptoQuickAmounts = [100, 500, 1000, 5000];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -77,98 +127,226 @@ export function DonateProjectDialog({ open, onOpenChange }: DonateProjectDialogP
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Angel AI Logo & Message */}
-          <div className="text-center space-y-3">
-            <div className="relative inline-block">
-              <img
-                src={angelLogo}
-                alt="Angel AI"
-                className="w-20 h-20 rounded-full mx-auto ring-4 ring-rose-200"
-              />
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute -top-1 -right-1"
-              >
-                <Heart className="w-6 h-6 text-rose-500 fill-rose-500" />
-              </motion.div>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t("donate.description")}
-            </p>
-          </div>
-
-          {/* Current Balance */}
-          <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-lg p-3 border border-rose-200">
-            <div className="text-sm text-rose-600">{t("gift.yourBalance")}</div>
-            <div className="text-xl font-bold text-rose-700">
-              {balance.toLocaleString()} Camly Coin
-            </div>
-          </div>
-
-          {/* Quick Amount Buttons */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t("donate.quickAmount")}</label>
-            <div className="grid grid-cols-4 gap-2">
-              {quickAmounts.map((qa) => (
-                <Button
-                  key={qa}
-                  variant={amount === String(qa) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setAmount(String(qa))}
-                  className={amount === String(qa) ? "bg-rose-500 hover:bg-rose-600" : ""}
-                >
-                  {qa >= 1000 ? `${qa / 1000}K` : qa}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Amount Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t("gift.amount")}</label>
-            <Input
-              type="number"
-              placeholder="100"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              min={100}
-              max={balance}
+        {/* Angel AI Logo & Message */}
+        <div className="text-center space-y-3">
+          <div className="relative inline-block">
+            <img
+              src={angelLogo}
+              alt="Angel AI"
+              className="w-16 h-16 rounded-full mx-auto ring-4 ring-rose-200"
             />
-            <p className="text-xs text-muted-foreground">{t("gift.minAmountNote")}</p>
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute -top-1 -right-1"
+            >
+              <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+            </motion.div>
           </div>
-
-          {/* Message */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t("donate.messageLabel")}</label>
-            <Textarea
-              placeholder={t("donate.messagePlaceholder")}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={2}
-            />
-          </div>
-
-          {/* Submit Button */}
-          <Button
-            onClick={handleDonate}
-            disabled={!amount || isLoading || Number(amount) < 100}
-            className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600"
-          >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <Heart className="w-4 h-4 mr-2 fill-white" />
-            )}
-            {t("donate.confirm")}
-          </Button>
-
-          {/* Thank you note */}
-          <p className="text-xs text-center text-muted-foreground">
-            {t("donate.thankYou")}
+          <p className="text-sm text-muted-foreground">
+            {t("donate.description")}
           </p>
         </div>
+
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "internal" | "crypto")} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="internal" className="flex items-center gap-2">
+              <Heart className="w-4 h-4" />
+              <span className="hidden sm:inline">Camly Coin</span>
+              <span className="sm:hidden">Coin</span>
+            </TabsTrigger>
+            <TabsTrigger value="crypto" className="flex items-center gap-2">
+              <Wallet className="w-4 h-4" />
+              <span className="hidden sm:inline">{t("crypto.transferTab")}</span>
+              <span className="sm:hidden">Crypto</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Internal Donation Tab */}
+          <TabsContent value="internal" className="space-y-4 mt-4">
+            {/* Current Balance */}
+            <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-lg p-3 border border-rose-200">
+              <div className="text-sm text-rose-600">{t("gift.yourBalance")}</div>
+              <div className="text-xl font-bold text-rose-700">
+                {balance.toLocaleString()} Camly Coin
+              </div>
+            </div>
+
+            {/* Quick Amount Buttons */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("donate.quickAmount")}</label>
+              <div className="grid grid-cols-4 gap-2">
+                {quickAmounts.map((qa) => (
+                  <Button
+                    key={qa}
+                    variant={amount === String(qa) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setAmount(String(qa))}
+                    className={amount === String(qa) ? "bg-rose-500 hover:bg-rose-600" : ""}
+                  >
+                    {qa >= 1000 ? `${qa / 1000}K` : qa}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Amount Input */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("gift.amount")}</label>
+              <Input
+                type="number"
+                placeholder="100"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                min={100}
+                max={balance}
+              />
+              <p className="text-xs text-muted-foreground">{t("gift.minAmountNote")}</p>
+            </div>
+
+            {/* Message */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("donate.messageLabel")}</label>
+              <Textarea
+                placeholder={t("donate.messagePlaceholder")}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={2}
+              />
+            </div>
+
+            {/* Submit Button */}
+            <Button
+              onClick={handleDonate}
+              disabled={!amount || isLoading || Number(amount) < 100}
+              className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Heart className="w-4 h-4 mr-2 fill-white" />
+              )}
+              {t("donate.confirm")}
+            </Button>
+
+            {/* Thank you note */}
+            <p className="text-xs text-center text-muted-foreground">
+              {t("donate.thankYou")}
+            </p>
+          </TabsContent>
+
+          {/* Crypto Donation Tab */}
+          <TabsContent value="crypto" className="space-y-4 mt-4">
+            {!isConnected ? (
+              <div className="text-center py-6 space-y-4">
+                <Wallet className="w-12 h-12 mx-auto text-rose-500" />
+                <p className="text-muted-foreground">{t("crypto.connectToDonate")}</p>
+                <Button 
+                  onClick={connect} 
+                  className="bg-gradient-to-r from-rose-500 to-pink-500"
+                >
+                  <Wallet className="w-4 h-4 mr-2" />
+                  {t("crypto.connectWallet")}
+                </Button>
+                {!hasWallet && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("crypto.installMetaMask")}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Wallet Info */}
+                <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-lg p-3 border border-rose-200">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-sm text-rose-600">{t("crypto.walletBalance")}</div>
+                      <div className="text-xl font-bold text-rose-700">
+                        {Number(camlyCoinBalance).toLocaleString()} CAMLY
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground bg-white/50 px-2 py-1 rounded">
+                      {address?.slice(0, 6)}...{address?.slice(-4)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Treasury Address */}
+                <div className="bg-muted/50 rounded-lg p-3 border">
+                  <div className="text-sm text-muted-foreground mb-1">{t("crypto.treasuryAddress")}</div>
+                  <div className="font-mono text-xs break-all">
+                    {TREASURY_WALLET_ADDRESS}
+                  </div>
+                </div>
+
+                {/* Quick Amount Buttons */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t("donate.quickAmount")}</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {cryptoQuickAmounts.map((qa) => (
+                      <Button
+                        key={qa}
+                        variant={cryptoAmount === String(qa) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCryptoAmount(String(qa))}
+                        className={cryptoAmount === String(qa) ? "bg-rose-500 hover:bg-rose-600" : ""}
+                      >
+                        {qa >= 1000 ? `${qa / 1000}K` : qa}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Amount Input */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t("crypto.amount")}</label>
+                  <Input
+                    type="number"
+                    placeholder="100"
+                    value={cryptoAmount}
+                    onChange={(e) => setCryptoAmount(e.target.value)}
+                    min={1}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("crypto.gasNote")}
+                  </p>
+                </div>
+
+                {/* Donate Button */}
+                <Button
+                  onClick={handleCryptoDonate}
+                  disabled={isTransferring || !cryptoAmount}
+                  className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600"
+                >
+                  {isTransferring ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Heart className="w-4 h-4 mr-2 fill-white" />
+                  )}
+                  {t("crypto.confirmDonate")}
+                </Button>
+
+                {/* Transaction Link */}
+                {lastTxHash && (
+                  <a
+                    href={`https://bscscan.com/tx/${lastTxHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 text-sm text-rose-600 hover:underline"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    {t("crypto.viewOnBscScan")}
+                  </a>
+                )}
+
+                {/* Thank you note */}
+                <p className="text-xs text-center text-muted-foreground">
+                  {t("donate.thankYou")}
+                </p>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
 
         {/* Hearts Effect */}
         <AnimatePresence>
