@@ -761,6 +761,12 @@ const translations: Record<string, string> = {
   "donate.minAmount": "Minimum amount is 100 Camly Coin",
   "donate.thankYou": "Every contribution means the world 💛",
   "donate.appreciationMessage": "Thank you, generous hearts",
+  "donate.yourBalance": "Your balance",
+  "donate.amount": "Donation amount",
+  "donate.insufficientBalance": "Insufficient balance",
+  
+  // User Profile
+  "userProfile.message": "Message",
 };
 
 export default translations;

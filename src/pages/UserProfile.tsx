@@ -4,10 +4,12 @@ import {
   ArrowLeft, UserPlus, UserCheck, UserX, MessageCircle, Loader2, Clock, 
   Users, Award, FileText, ShieldAlert, Ban, AlertTriangle, Camera, 
   Pencil, MapPin, Calendar, MoreHorizontal, ThumbsUp, Share2, 
-  ImageIcon, Smile, Globe, Briefcase, GraduationCap, Heart, Maximize2
+  ImageIcon, Smile, Globe, Briefcase, GraduationCap, Heart, Maximize2, Gift
 } from "lucide-react";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { Button } from "@/components/ui/button";
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -45,6 +47,7 @@ interface FriendData {
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [userPosts, setUserPosts] = useState<CommunityPost[]>([]);
@@ -65,6 +68,9 @@ const UserProfile = () => {
   const [suspendDuration, setSuspendDuration] = useState("7");
   const [healingMessage, setHealingMessage] = useState("");
   const [isSuspending, setIsSuspending] = useState(false);
+  
+  // Gift dialog state
+  const [giftDialogOpen, setGiftDialogOpen] = useState(false);
 
   const { friendshipStatus, isLoading: friendshipLoading, sendFriendRequest, acceptFriendRequest, cancelFriendRequest, unfriend } = useFriendship(userId);
   const { toggleLike, sharePost, addComment, fetchComments, editPost, deletePost } = useCommunityPosts();
@@ -463,9 +469,22 @@ const UserProfile = () => {
       <Link key="message" to={`/messages/${userId}`}>
         <Button variant="secondary">
           <MessageCircle className="w-4 h-4 mr-2" />
-          Nhắn tin
+          {t("userProfile.message")}
         </Button>
       </Link>
+    );
+
+    // Gift button
+    buttons.push(
+      <Button 
+        key="gift" 
+        variant="secondary"
+        onClick={() => setGiftDialogOpen(true)}
+        className="bg-gradient-to-r from-amber-100 to-yellow-100 hover:from-amber-200 hover:to-yellow-200 text-amber-700 border-amber-300"
+      >
+        <Gift className="w-4 h-4 mr-2" />
+        {t("gift.title")}
+      </Button>
     );
 
     return <div className="flex flex-wrap gap-2">{buttons}</div>;
@@ -1025,6 +1044,19 @@ const UserProfile = () => {
           isOpen={coverLightboxOpen}
           onClose={() => setCoverLightboxOpen(false)}
           type="cover"
+        />
+      )}
+
+      {/* Gift Coin Dialog */}
+      {userId && profile && (
+        <GiftCoinDialog
+          open={giftDialogOpen}
+          onOpenChange={setGiftDialogOpen}
+          preselectedUser={{
+            id: userId,
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url,
+          }}
         />
       )}
     </div>

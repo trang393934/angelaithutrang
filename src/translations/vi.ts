@@ -791,6 +791,12 @@ const translations: Record<string, string> = {
   "donate.minAmount": "Số lượng tối thiểu là 100 Camly Coin",
   "donate.thankYou": "Mỗi đóng góp đều mang ý nghĩa to lớn 💛",
   "donate.appreciationMessage": "Cảm ơn những tấm lòng vàng",
+  "donate.yourBalance": "Số dư hiện tại",
+  "donate.amount": "Số lượng donate",
+  "donate.insufficientBalance": "Số dư không đủ",
+  
+  // User Profile
+  "userProfile.message": "Nhắn tin",
 };
 
 export default translations;

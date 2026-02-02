@@ -500,7 +500,46 @@ const translations: Record<string, string> = {
   "community.fileTooLarge": "Archivo muy grande. Máximo",
   "community.pleaseSelectFile": "Por favor selecciona una imagen o video",
   "community.imageMaxSlots": "Solo puedes subir {count} imágenes más (máx {max})",
-"community.imageTooLarge": "La imagen excede 5MB",
+  "community.imageTooLarge": "La imagen excede 5MB",
+  
+  // Gift System
+  "gift.title": "Regalar Camly Coin",
+  "gift.searchUser": "Buscar destinatario",
+  "gift.searchPlaceholder": "Buscar por nombre...",
+  "gift.recipient": "Destinatario",
+  "gift.amount": "Cantidad",
+  "gift.message": "Mensaje (opcional)",
+  "gift.messagePlaceholder": "Deja un mensaje cálido...",
+  "gift.confirm": "Confirmar regalo",
+  "gift.yourBalance": "Tu saldo",
+  "gift.minAmount": "Mínimo 100 monedas",
+  "gift.minAmountNote": "Mínimo 100 Camly Coin",
+  "gift.insufficientBalance": "Saldo insuficiente",
+  "gift.success": "¡Has regalado {amount} Camly Coin a {name}!",
+  "gift.received": "¡Recibiste {amount} Camly Coin de {name}!",
+  "gift.honorTitle": "Cuadro de Honor de Regalos",
+  "gift.topGivers": "Top Donantes",
+  "gift.topReceivers": "Top Receptores",
+  "gift.totalGifted": "Total regalado",
+  
+  // Donate System
+  "donate.title": "Donar a Angel AI",
+  "donate.description": "Apoyar el desarrollo del proyecto",
+  "donate.confirm": "Confirmar donación",
+  "donate.success": "¡Gracias por donar {amount} Camly Coin!",
+  "donate.honorTitle": "Cuadro de Honor de Mecenas",
+  "donate.totalDonated": "Total donado",
+  "donate.yourBalance": "Tu saldo",
+  "donate.amount": "Cantidad a donar",
+  "donate.message": "Mensaje de apoyo (opcional)",
+  "donate.messagePlaceholder": "Deja un mensaje de apoyo...",
+  "donate.minAmount": "Mínimo 100 monedas",
+  "donate.insufficientBalance": "Saldo insuficiente",
+  "donate.thankYou": "¡Gracias por tu apoyo!",
+  
+  // Common additions
+  "common.change": "Cambiar",
+  "userProfile.message": "Mensaje",
 };
 
 export default translations;
