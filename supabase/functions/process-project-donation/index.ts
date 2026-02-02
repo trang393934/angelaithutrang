@@ -131,6 +131,23 @@ Deno.serve(async (req) => {
       message: message || null,
     });
 
+    // 4. Add to project fund
+    const { data: currentFund } = await supabaseAdmin
+      .from("project_fund")
+      .select("balance, total_received")
+      .eq("id", "00000000-0000-0000-0000-000000000001")
+      .single();
+
+    if (currentFund) {
+      await supabaseAdmin
+        .from("project_fund")
+        .update({
+          balance: currentFund.balance + donationAmount,
+          total_received: currentFund.total_received + donationAmount,
+        })
+        .eq("id", "00000000-0000-0000-0000-000000000001");
+    }
+
     // 4. Update PoPL score for positive action
     await supabaseAdmin.rpc("update_popl_score", {
       _user_id: donorId,

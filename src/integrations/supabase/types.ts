@@ -1591,6 +1591,33 @@ export type Database = {
         }
         Relationships: []
       }
+      project_fund: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          total_distributed: number
+          total_received: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_distributed?: number
+          total_received?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_distributed?: number
+          total_received?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       question_likes: {
         Row: {
           created_at: string
