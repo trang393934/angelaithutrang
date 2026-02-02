@@ -1,165 +1,130 @@
 
-# Kế hoạch: Tính năng Trả thưởng hàng loạt cho Admin
+# Plan: Manual Web3 Donation Option with TX Hash Verification
 
-## Mục tiêu
-Cho phép admin chọn nhiều yêu cầu rút tiền (withdrawals), ý tưởng (ideas), hoặc bài nộp bounty (submissions) cùng lúc và duyệt/trả thưởng hàng loạt thay vì từng cái một.
+## Overview
+Add a "Manual Transfer" option to the Crypto donation tab allowing users to:
+1. Copy Treasury wallet address to paste in any external wallet
+2. After transfer, enter donation amount and transaction hash
+3. System records the donation and updates Honor Board in real-time
 
-## Phạm vi triển khai
+## Current Flow Analysis
+- `DonateProjectDialog.tsx` has two tabs: "Camly Coin" (internal) and "Chuyển Crypto" (Web3 connected)
+- The Crypto tab currently requires wallet connection via MetaMask
+- `project_donations` table stores: `id`, `donor_id`, `amount`, `message`, `created_at`
+- `DonationHonorBoard` subscribes to real-time changes on `project_donations` table
 
-### 1. Trang Admin Withdrawals (`/admin/withdrawals`)
-- Thêm checkbox cho mỗi yêu cầu rút tiền đang ở trạng thái "pending" hoặc "processing"
-- Thêm checkbox "Chọn tất cả" ở header của bảng
-- Thêm thanh công cụ batch actions hiển thị khi có items được chọn
-- Cho phép duyệt hàng loạt (gọi API tuần tự hoặc song song)
-- Hiển thị tiến trình xử lý và kết quả
+## Proposed Solution
 
-### 2. Trang Admin Ideas (`/admin/ideas`)
-- Thêm checkbox cho mỗi ý tưởng đang ở trạng thái "pending"
-- Cho phép duyệt hàng loạt với số tiền thưởng mặc định (1,000 coin)
-- Gửi thông báo cho từng user được duyệt
+### 1. Database Migration
+Add new columns to `project_donations` table:
+- `donation_type` (text): "internal" | "crypto_connected" | "crypto_manual"
+- `tx_hash` (text, nullable): Blockchain transaction hash for crypto donations
+- `status` (text): "confirmed" | "pending_verification" - for admin verification of manual donations
 
-### 3. Trang Admin Bounty (`/admin/bounty`)
-- Thêm checkbox cho mỗi bài nộp đang ở trạng thái "pending"
-- Cho phép duyệt hàng loạt với số tiền thưởng theo task
+### 2. UI Changes in DonateProjectDialog.tsx
+
+**Enhance the Crypto Tab with 3 sub-modes:**
+- **Mode A: Connected Wallet** (existing) - When wallet is connected, show current flow
+- **Mode B: Manual Transfer** (new) - When wallet not connected, show:
+  - Treasury address with prominent COPY button
+  - After copy: Show amount input + TX hash input form
+  - Confirm button to submit manual donation
+
+**Flow:**
+```
+[User opens Crypto tab]
+    |
+    ├── If wallet connected → Show existing connected wallet flow
+    |
+    └── If wallet NOT connected → Show 2 options:
+            1. "Connect Wallet" button (existing)
+            2. "Manual Transfer" section with:
+               - Treasury address + Copy button
+               - After copy clicked: Show form with:
+                   - Amount input
+                   - TX Hash input (optional but recommended)
+                   - Confirm button
+```
+
+### 3. Edge Function Updates
+
+**Create `process-manual-donation/index.ts`:**
+- Records manual crypto donations to `project_donations` with `donation_type = 'crypto_manual'`
+- Updates `project_fund` balance
+- Updates user's PoPL score
+- Triggers real-time update on Honor Board
+- Stores TX hash for admin verification (optional)
+
+### 4. Translation Keys (12 languages)
+Add new keys:
+- `crypto.manualTransfer` - "Transfer Manually"
+- `crypto.manualTransferDesc` - "Copy address and transfer from any wallet"
+- `crypto.copyAddress` - "Copy Address"  
+- `crypto.addressCopied` - "Address copied!"
+- `crypto.afterTransfer` - "After transferring, confirm your donation:"
+- `crypto.txHash` - "Transaction Hash"
+- `crypto.txHashOptional` - "Optional - helps verify your donation"
+- `crypto.confirmManualDonate` - "Confirm Manual Donation"
+- `crypto.manualDonateSuccess` - "Thank you! Your donation has been recorded."
+
+### 5. Honor Board Real-time Update
+The existing real-time subscription in `useCoinGifts.ts` already listens to `project_donations` changes, so the Honor Board will auto-update when a manual donation is inserted.
 
 ---
 
-## Chi tiết kỹ thuật
+## Technical Implementation Details
 
-### A. Cập nhật `AdminWithdrawals.tsx`
+### File Changes
 
-**State mới:**
-```typescript
-const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-const [isBatchProcessing, setIsBatchProcessing] = useState(false);
-const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
+1. **Database Migration** (1 file)
+   - Add `donation_type`, `tx_hash`, `status` columns to `project_donations`
+
+2. **Edge Function** (1 new file)
+   - `supabase/functions/process-manual-donation/index.ts`
+
+3. **Component Updates** (1 file)
+   - `src/components/gifts/DonateProjectDialog.tsx`
+   - Add manual transfer UI with copy functionality
+   - Add form for amount + tx_hash after copy
+
+4. **Translation Files** (12 files)
+   - `src/translations/en.ts`
+   - `src/translations/vi.ts`
+   - (and 10 other language files)
+
+5. **Config Update** (1 file)
+   - `supabase/config.toml` - Register new edge function
+
+### UI/UX Flow Diagram
+```text
+┌─────────────────────────────────────────┐
+│           Crypto Tab                    │
+├─────────────────────────────────────────┤
+│ ┌─────────────────────────────────────┐ │
+│ │  Treasury Address                   │ │
+│ │  0x02D557...0D  [📋 Copy]          │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ Option 1: Connect Wallet            │ │
+│ │  [🔗 Kết nối ví]                   │ │
+│ │                                     │ │
+│ │ ───────── OR ─────────              │ │
+│ │                                     │ │
+│ │ Option 2: Manual Transfer           │ │
+│ │  (After copying address above)      │ │
+│ │                                     │ │
+│ │  Amount: [________] CAMLY           │ │
+│ │  TX Hash: [________________]        │ │
+│ │           (optional)                │ │
+│ │                                     │ │
+│ │  [❤️ Xác nhận donate]              │ │
+│ └─────────────────────────────────────┘ │
+└─────────────────────────────────────────┘
 ```
 
-**UI Components mới:**
-1. **Batch Action Bar** - Thanh công cụ cố định xuất hiện khi có items được chọn
-   - Hiển thị số lượng đã chọn
-   - Nút "Duyệt tất cả" (màu xanh)
-   - Nút "Từ chối tất cả" (màu đỏ)
-   - Nút "Bỏ chọn tất cả"
-
-2. **Checkbox Column** - Cột checkbox đầu tiên trong bảng
-   - Header: Checkbox "Chọn tất cả pending/processing"
-   - Row: Checkbox cho từng withdrawal có thể duyệt
-
-3. **Batch Approve Dialog**
-   - Xác nhận trước khi duyệt hàng loạt
-   - Hiển thị tổng số tiền sẽ chuyển
-   - Cảnh báo về blockchain transactions
-   - Progress bar trong khi xử lý
-
-4. **Batch Reject Dialog**
-   - Nhập lý do từ chối chung
-   - Áp dụng cho tất cả items đã chọn
-
-**Logic xử lý:**
-```typescript
-const handleBatchApprove = async () => {
-  const selectedWithdrawals = withdrawals.filter(w => 
-    selectedIds.has(w.id) && 
-    (w.status === 'pending' || w.status === 'processing')
-  );
-  
-  setBatchProgress({ current: 0, total: selectedWithdrawals.length, success: 0, failed: 0 });
-  setIsBatchProcessing(true);
-  
-  for (const withdrawal of selectedWithdrawals) {
-    try {
-      await supabase.functions.invoke('process-withdrawal', {
-        body: { withdrawal_id: withdrawal.id }
-      });
-      setBatchProgress(prev => ({ ...prev, current: prev.current + 1, success: prev.success + 1 }));
-    } catch (error) {
-      setBatchProgress(prev => ({ ...prev, current: prev.current + 1, failed: prev.failed + 1 }));
-    }
-  }
-  
-  // Refresh data and show summary
-};
-```
-
-### B. Cập nhật `AdminIdeas.tsx`
-
-**Tương tự AdminWithdrawals:**
-- Thêm selection state
-- Thêm Batch Action Bar
-- Dialog duyệt hàng loạt với input cho reward amount (mặc định 1,000)
-
-**Logic batch approve cho Ideas:**
-- Cập nhật status = 'approved' cho tất cả
-- Insert transactions vào `camly_coin_transactions`
-- Cập nhật `camly_coin_balances`
-- Gửi `healing_messages` thông báo
-
-### C. Cập nhật `AdminBounty.tsx`
-
-**Tương tự AdminIdeas:**
-- Selection cho submissions pending
-- Batch approve với reward theo task_reward của từng submission
-- Cập nhật task completions count
-
----
-
-## Giao diện người dùng
-
-### Batch Action Bar (Fixed Bottom)
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ ☑ Đã chọn: 5 yêu cầu   │ [Duyệt tất cả] [Từ chối tất cả] [✕]  │
-│ Tổng: 1,500,000 CAMLY  │                                       │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Batch Progress Dialog
-```
-┌─────────────────────────────────────────────────────────────┐
-│  ⚡ Đang xử lý hàng loạt                                    │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  [████████████░░░░░░░░] 3/5 hoàn thành                     │
-│                                                             │
-│  ✓ Thành công: 3                                           │
-│  ✕ Thất bại: 0                                             │
-│                                                             │
-│  Đang xử lý: wallet 0x1234...abcd                          │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Các bước triển khai
-
-1. **Cập nhật `AdminWithdrawals.tsx`**
-   - Thêm state quản lý selection
-   - Thêm Checkbox component trong Table
-   - Tạo BatchActionBar component
-   - Tạo BatchApproveDialog và BatchRejectDialog
-   - Implement logic xử lý batch
-
-2. **Cập nhật `AdminIdeas.tsx`**
-   - Copy pattern từ Withdrawals
-   - Điều chỉnh logic reward cho Ideas
-
-3. **Cập nhật `AdminBounty.tsx`**
-   - Copy pattern từ Ideas
-   - Điều chỉnh logic reward theo task_reward
-
-4. **Component dùng chung (optional)**
-   - Có thể extract BatchActionBar thành component riêng
-
----
-
-## Lưu ý bảo mật
-- Giữ nguyên xác thực admin qua `is_admin()` RPC
-- Edge function `process-withdrawal` đã có kiểm tra admin role
-- Batch operations vẫn gọi API từng cái để đảm bảo an toàn
-
-## Ước tính thời gian
-- AdminWithdrawals: Phức tạp nhất (blockchain transactions) - 40%
-- AdminIdeas: Trung bình - 30%
-- AdminBounty: Trung bình - 30%
+### Security Considerations
+- Manual donations are recorded with `status: 'pending_verification'` initially
+- Admin can verify TX hash on BSCScan if provided
+- PoPL score still updates to reward user for their contribution intent
+- No balance deduction from internal system (this is external crypto only)
