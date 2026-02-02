@@ -389,6 +389,13 @@ const AdminDashboard = () => {
                 <TrendingUp className="w-4 h-4" />
                 Bounty
               </Link>
+              <Link
+                to="/admin/project-fund"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-rose-500 hover:bg-rose-50 transition-colors"
+              >
+                <Heart className="w-4 h-4" />
+                Quỹ
+              </Link>
               <button
                 onClick={() => signOut().then(() => navigate("/"))}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"

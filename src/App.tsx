@@ -27,6 +27,7 @@ import AdminAIUsage from "./pages/AdminAIUsage";
 import AdminImageHistory from "./pages/AdminImageHistory";
 import AdminIdeas from "./pages/AdminIdeas";
 import AdminBounty from "./pages/AdminBounty";
+import AdminProjectFund from "./pages/AdminProjectFund";
 import CommunityQuestions from "./pages/CommunityQuestions";
 import Community from "./pages/Community";
 import Earn from "./pages/Earn";
@@ -125,6 +126,7 @@ const App = () => (
               <Route path="/admin/image-history" element={<AdminImageHistory />} />
               <Route path="/admin/ideas" element={<AdminIdeas />} />
               <Route path="/admin/bounty" element={<AdminBounty />} />
+              <Route path="/admin/project-fund" element={<AdminProjectFund />} />
               <Route path="/community-questions" element={<ProfileCompletionGate><CommunityQuestions /></ProfileCompletionGate>} />
               <Route path="/community" element={<ProfileCompletionGate><Community /></ProfileCompletionGate>} />
               <Route path="/user/:userId" element={<UserProfile />} />
