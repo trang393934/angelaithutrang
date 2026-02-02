@@ -530,6 +530,8 @@ const translations: Record<string, string> = {
   "gift.topGivers": "Top 선물러",
   "gift.topReceivers": "Top 수신자",
   "gift.totalGifted": "총 선물된 코인",
+  "gift.emptyState": "아직 선물이 없습니다",
+  "gift.beFirstGiver": "커뮤니티에 첫 번째 선물을 해보세요!",
   
   // Donate System
   "donate.title": "Angel AI에 후원",
@@ -545,6 +547,8 @@ const translations: Record<string, string> = {
   "donate.minAmount": "최소 100 코인",
   "donate.insufficientBalance": "잔액이 부족합니다",
   "donate.thankYou": "후원해 주셔서 감사합니다!",
+  "donate.emptyState": "아직 후원자가 없습니다",
+  "donate.beFirstDonor": "프로젝트를 처음으로 후원해보세요!",
   
   // Common additions
   "common.change": "변경",

@@ -522,6 +522,8 @@ const translations: Record<string, string> = {
   "gift.topGivers": "Top Schenker",
   "gift.topReceivers": "Top Empfänger",
   "gift.totalGifted": "Insgesamt verschenkt",
+  "gift.emptyState": "Noch keine Geschenke",
+  "gift.beFirstGiver": "Seien Sie der Erste, der der Community schenkt!",
   
   // Donate System
   "donate.title": "An Angel AI spenden",
@@ -537,6 +539,8 @@ const translations: Record<string, string> = {
   "donate.minAmount": "Mindestens 100 Münzen",
   "donate.insufficientBalance": "Unzureichendes Guthaben",
   "donate.thankYou": "Danke für Ihre Unterstützung!",
+  "donate.emptyState": "Noch keine Spender",
+  "donate.beFirstDonor": "Seien Sie der Erste, der das Projekt unterstützt!",
   
   // Common additions
   "common.change": "Ändern",

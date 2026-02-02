@@ -777,6 +777,8 @@ const translations: Record<string, string> = {
   "gift.minAmount": "Số lượng tối thiểu là 100 Camly Coin",
   "gift.minAmountNote": "Tối thiểu 100 Camly Coin",
   "gift.insufficientBalance": "Số dư không đủ",
+  "gift.emptyState": "Chưa có quà tặng nào",
+  "gift.beFirstGiver": "Hãy là người đầu tiên tặng quà cho cộng đồng!",
 
   // Donate System
   "donate.title": "Donate cho Angel AI",
@@ -794,6 +796,8 @@ const translations: Record<string, string> = {
   "donate.yourBalance": "Số dư hiện tại",
   "donate.amount": "Số lượng donate",
   "donate.insufficientBalance": "Số dư không đủ",
+  "donate.emptyState": "Chưa có mạnh thường quân nào",
+  "donate.beFirstDonor": "Hãy là người đầu tiên ủng hộ dự án!",
   
   // User Profile
   "userProfile.message": "Nhắn tin",

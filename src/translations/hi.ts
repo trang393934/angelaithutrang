@@ -511,6 +511,8 @@ const translations: Record<string, string> = {
   "gift.topGivers": "शीर्ष उपहार देने वाले",
   "gift.topReceivers": "शीर्ष प्राप्तकर्ता",
   "gift.totalGifted": "कुल उपहार दिए गए",
+  "gift.emptyState": "अभी तक कोई उपहार नहीं",
+  "gift.beFirstGiver": "समुदाय को उपहार देने वाले पहले व्यक्ति बनें!",
   
   // Donate System
   "donate.title": "Angel AI को दान करें",
@@ -526,6 +528,8 @@ const translations: Record<string, string> = {
   "donate.minAmount": "न्यूनतम 100 कॉइन",
   "donate.insufficientBalance": "अपर्याप्त बैलेंस",
   "donate.thankYou": "आपके समर्थन के लिए धन्यवाद!",
+  "donate.emptyState": "अभी तक कोई संरक्षक नहीं",
+  "donate.beFirstDonor": "प्रोजेक्ट को सहायता करने वाले पहले व्यक्ति बनें!",
   
   // Common additions
   "common.change": "बदलें",
