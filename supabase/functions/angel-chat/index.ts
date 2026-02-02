@@ -559,10 +559,57 @@ function isGreeting(text: string): boolean {
   return GREETING_PATTERNS.some(pattern => pattern.test(trimmed));
 }
 
-// Check FAQ cache for matching response
+// Check if user is providing long content for ANALYSIS (not asking a simple question)
+// This prevents FAQ cache from matching keywords inside user-provided documents/articles
+function isContentForAnalysis(text: string): boolean {
+  const trimmed = text.trim();
+  
+  // If text is very long (> 500 chars), it's likely content for analysis, not a simple question
+  if (trimmed.length > 500) {
+    console.log("Long content detected (>500 chars) - treating as content for analysis");
+    return true;
+  }
+  
+  // If text has multiple paragraphs (3+ newlines), likely document content
+  const newlineCount = (trimmed.match(/\n/g) || []).length;
+  if (newlineCount >= 3) {
+    console.log("Multiple paragraphs detected - treating as content for analysis");
+    return true;
+  }
+  
+  // If text contains document markers like Roman numerals (I., II., III.) or section headers
+  const documentMarkers = [
+    /^\s*(I|II|III|IV|V|VI|VII|VIII|IX|X)\.\s/m,  // Roman numeral sections
+    /^[•●○]\s/m,  // Bullet points
+    /^[-—]\s/m,  // Dash lists  
+    /^\d+\.\s.*\n\d+\.\s/m,  // Numbered lists
+    /HIẾN PHÁP|TUYÊN NGÔN|ĐIỀU LUẬT|SỨ MỆNH|NGUYÊN LÝ|CAM KẾT/i,  // Document keywords
+    /MASTER CHARTER|DECLARATION|CONSTITUTION|MANIFESTO/i,
+  ];
+  
+  if (documentMarkers.some(pattern => pattern.test(trimmed))) {
+    console.log("Document markers detected - treating as content for analysis");
+    return true;
+  }
+  
+  // If text has both Vietnamese and English in structured format (like Master Charter)
+  const hasBilingual = /\([A-Z][a-z]+.*[A-Z][a-z]+\)/.test(trimmed); // e.g. "(Master Charter of...)"
+  if (hasBilingual && trimmed.length > 200) {
+    console.log("Bilingual document structure detected - treating as content for analysis");
+    return true;
+  }
+  
+  return false;
+}
 
 // Check FAQ cache for matching response
 function checkFAQCache(text: string): string | null {
+  // CRITICAL: Skip FAQ cache if user is providing content for analysis
+  if (isContentForAnalysis(text)) {
+    console.log("Content for analysis detected - SKIPPING FAQ cache to allow AI analysis");
+    return null;
+  }
+  
   const trimmed = text.trim().toLowerCase();
   for (const faq of FAQ_CACHE) {
     for (const pattern of faq.patterns) {
@@ -578,6 +625,12 @@ function checkFAQCache(text: string): string | null {
 // Check database cache for similar questions
 async function checkDatabaseCache(supabase: any, question: string): Promise<string | null> {
   try {
+    // CRITICAL: Skip database cache if user is providing content for analysis
+    if (isContentForAnalysis(question)) {
+      console.log("Content for analysis detected - SKIPPING database cache");
+      return null;
+    }
+    
     const normalized = question.toLowerCase().trim().replace(/\s+/g, ' ');
     const keywords = extractKeywords(question);
     
