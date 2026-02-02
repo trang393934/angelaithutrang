@@ -819,6 +819,16 @@ const translations: Record<string, string> = {
   "crypto.treasuryAddress": "Địa chỉ Treasury dự án",
   "crypto.invalidAmount": "Số lượng không hợp lệ",
   "crypto.invalidAddress": "Địa chỉ ví không hợp lệ",
+  "crypto.manualTransfer": "Chuyển thủ công",
+  "crypto.manualTransferDesc": "Copy địa chỉ và chuyển từ ví bất kỳ",
+  "crypto.copyAddress": "Copy địa chỉ",
+  "crypto.addressCopied": "Đã copy địa chỉ!",
+  "crypto.afterTransfer": "Sau khi chuyển xong, xác nhận donate của bạn:",
+  "crypto.txHash": "Mã giao dịch (TX Hash)",
+  "crypto.txHashOptional": "Không bắt buộc - giúp xác minh donate của bạn",
+  "crypto.confirmManualDonate": "Xác nhận donate thủ công",
+  "crypto.manualDonateSuccess": "Cảm ơn bạn! Donate của bạn đã được ghi nhận.",
+  "crypto.orManualTransfer": "Hoặc chuyển thủ công",
   
   // User Profile
   "userProfile.message": "Nhắn tin",

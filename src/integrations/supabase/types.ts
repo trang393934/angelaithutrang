@@ -1571,23 +1571,32 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          donation_type: string
           donor_id: string
           id: string
           message: string | null
+          status: string
+          tx_hash: string | null
         }
         Insert: {
           amount: number
           created_at?: string
+          donation_type?: string
           donor_id: string
           id?: string
           message?: string | null
+          status?: string
+          tx_hash?: string | null
         }
         Update: {
           amount?: number
           created_at?: string
+          donation_type?: string
           donor_id?: string
           id?: string
           message?: string | null
+          status?: string
+          tx_hash?: string | null
         }
         Relationships: []
       }
