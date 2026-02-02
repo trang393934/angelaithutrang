@@ -83,18 +83,42 @@ const UserProfile = () => {
       toast.error("Vui lòng đăng nhập để thích bài viết");
       return { success: false };
     }
+    
+    // Find current post state for optimistic update
+    const currentPost = userPosts.find(p => p.id === postId);
+    if (!currentPost) {
+      return { success: false };
+    }
+    
+    const wasLiked = currentPost.is_liked_by_me;
+    
+    // Optimistic update - immediately update UI
+    setUserPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              is_liked_by_me: !wasLiked,
+              likes_count: wasLiked 
+                ? Math.max(0, (p.likes_count || 1) - 1) 
+                : (p.likes_count || 0) + 1,
+            }
+          : p
+      )
+    );
+    
     const result = await toggleLike(postId);
+    
     if (result.success) {
-      // Update local userPosts state
+      // Sync with server response
       setUserPosts((prev) =>
         prev.map((p) =>
           p.id === postId
             ? {
                 ...p,
-                is_liked_by_me: !p.is_liked_by_me,
-                likes_count: p.is_liked_by_me 
-                  ? Math.max(0, (p.likes_count || 1) - 1) 
-                  : (p.likes_count || 0) + 1,
+                likes_count: result.newLikesCount ?? p.likes_count,
+                is_liked_by_me: result.liked ?? !wasLiked,
+                is_rewarded: result.postRewarded || p.is_rewarded,
               }
             : p
         )
@@ -102,6 +126,19 @@ const UserProfile = () => {
       if (result.postRewarded) {
         toast.success(result.message, { duration: 5000 });
       }
+    } else {
+      // Rollback on error
+      setUserPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                is_liked_by_me: wasLiked,
+                likes_count: currentPost.likes_count,
+              }
+            : p
+        )
+      );
     }
     return result;
   };
