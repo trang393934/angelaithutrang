@@ -1,10 +1,19 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Users, MessageCircle, ShoppingBag, Bell, Plus } from "lucide-react";
+import { Home, Users, MessageCircle, ShoppingBag, Bell, Plus, User, LogOut, Star, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useStories } from "@/hooks/useStories";
+import { useCamlyCoin } from "@/hooks/useCamlyCoin";
+import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { StoryViewer } from "./StoryViewer";
 import { CreateStoryModal } from "./CreateStoryModal";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -12,12 +21,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 import angelAiLogo from "@/assets/angel-ai-logo.png";
+import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function CommunityHeader() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
+  const { balance } = useCamlyCoin();
+  const { unreadCount } = useDirectMessages();
   const [showStoryViewer, setShowStoryViewer] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
   const [showCreateStory, setShowCreateStory] = useState(false);
@@ -150,14 +162,79 @@ export function CommunityHeader() {
                   <Bell className="w-5 h-5" />
                 </Button>
                 
-                <Link to={user ? "/profile" : "/auth"}>
-                  <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-white/50 cursor-pointer hover:ring-white transition-all">
-                    <AvatarImage src={userProfile?.avatar_url || currentUserStories?.avatar_url || angelAvatar} />
-                    <AvatarFallback className="bg-white text-primary-deep text-sm">
-                      {userProfile?.display_name?.charAt(0) || currentUserStories?.display_name?.charAt(0) || "A"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Link>
+                {user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-1">
+                        <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-white/50 cursor-pointer hover:ring-white transition-all">
+                          <AvatarImage src={userProfile?.avatar_url || currentUserStories?.avatar_url || angelAvatar} />
+                          <AvatarFallback className="bg-white text-primary-deep text-sm">
+                            {userProfile?.display_name?.charAt(0) || currentUserStories?.display_name?.charAt(0) || "A"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <ChevronDown className="w-4 h-4 text-white/70 hidden sm:block" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      {/* User Info Header */}
+                      <div className="px-3 py-2 border-b border-border">
+                        <p className="font-semibold text-sm text-foreground truncate">
+                          {userProfile?.display_name || currentUserStories?.display_name || "User"}
+                        </p>
+                      </div>
+                      
+                      {/* Profile Link */}
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link to="/profile" className="flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          <span>{t("header.viewProfile") || "Trang cá nhân"}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      {/* Messages Link */}
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link to="/messages" className="flex items-center gap-2">
+                          <MessageCircle className="w-4 h-4" />
+                          <span>{t("nav.messages") || "Tin nhắn"}</span>
+                          {unreadCount > 0 && (
+                            <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                              {unreadCount > 9 ? "9+" : unreadCount}
+                            </span>
+                          )}
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      {/* Earn Link */}
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link to="/earn" className="flex items-center gap-2">
+                          <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4" />
+                          <span>{t("nav.earn") || "Kiếm xu"}</span>
+                          <span className="ml-auto text-xs font-semibold text-amber-600">
+                            {Math.floor(balance).toLocaleString()}
+                          </span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuSeparator />
+                      
+                      {/* Logout */}
+                      <DropdownMenuItem 
+                        onClick={() => signOut()}
+                        className="cursor-pointer text-destructive focus:text-destructive"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        <span>{t("nav.logout") || "Đăng xuất"}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Link to="/auth">
+                    <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-white/50 cursor-pointer hover:ring-white transition-all">
+                      <AvatarImage src={angelAvatar} />
+                      <AvatarFallback className="bg-white text-primary-deep text-sm">A</AvatarFallback>
+                    </Avatar>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
