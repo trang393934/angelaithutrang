@@ -747,6 +747,8 @@ const translations: Record<string, string> = {
   "gift.minAmount": "Minimum amount is 100 Camly Coin",
   "gift.minAmountNote": "Minimum 100 Camly Coin",
   "gift.insufficientBalance": "Insufficient balance",
+  "gift.emptyState": "No gifts yet",
+  "gift.beFirstGiver": "Be the first to gift the community!",
 
   // Donate System
   "donate.title": "Donate to Angel AI",
@@ -764,6 +766,8 @@ const translations: Record<string, string> = {
   "donate.yourBalance": "Your balance",
   "donate.amount": "Donation amount",
   "donate.insufficientBalance": "Insufficient balance",
+  "donate.emptyState": "No patrons yet",
+  "donate.beFirstDonor": "Be the first to support the project!",
   
   // User Profile
   "userProfile.message": "Message",

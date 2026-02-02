@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Users, TrendingUp, Clock, Sparkles, Loader2, Trophy } from "lucide-react";
+import { Users, TrendingUp, Clock, Sparkles, Loader2, Trophy, Gift, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -18,6 +18,8 @@ import { HonorBoard } from "@/components/community/HonorBoard";
 import { CommunityGuidelinesCard } from "@/components/community/CommunityGuidelinesCard";
 import { GiftHonorBoard } from "@/components/community/GiftHonorBoard";
 import { DonationHonorBoard } from "@/components/community/DonationHonorBoard";
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
+import { DonateProjectDialog } from "@/components/gifts/DonateProjectDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { LightGate } from "@/components/LightGate";
@@ -46,6 +48,8 @@ const Community = () => {
 
   const [userProfile, setUserProfile] = useState<{ display_name: string; avatar_url: string | null } | null>(null);
   const [showMobileLeaderboard, setShowMobileLeaderboard] = useState(false);
+  const [showGiftDialog, setShowGiftDialog] = useState(false);
+  const [showDonateDialog, setShowDonateDialog] = useState(false);
   const rightSidebarRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -146,6 +150,38 @@ const Community = () => {
                   <Link to="/auth">
                     <Button className="bg-sapphire-gradient">{t("auth.login")}</Button>
                   </Link>
+                </div>
+              )}
+
+              {/* Gift & Donate Action Buttons */}
+              {user && (
+                <div className="flex gap-3">
+                  <motion.div 
+                    className="flex-1"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      onClick={() => setShowGiftDialog(true)}
+                      className="w-full bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-white font-semibold shadow-lg"
+                    >
+                      <Gift className="w-4 h-4 mr-2" />
+                      {t("gift.title")}
+                    </Button>
+                  </motion.div>
+                  <motion.div 
+                    className="flex-1"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      onClick={() => setShowDonateDialog(true)}
+                      className="w-full bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500 text-white font-semibold shadow-lg"
+                    >
+                      <Heart className="w-4 h-4 mr-2" />
+                      {t("donate.title")}
+                    </Button>
+                  </motion.div>
                 </div>
               )}
 
@@ -277,6 +313,16 @@ const Community = () => {
             </aside>
           </div>
         </div>
+
+        {/* Gift & Donate Dialogs */}
+        <GiftCoinDialog 
+          open={showGiftDialog} 
+          onOpenChange={setShowGiftDialog} 
+        />
+        <DonateProjectDialog 
+          open={showDonateDialog} 
+          onOpenChange={setShowDonateDialog} 
+        />
       </div>
     </LightGate>
   );

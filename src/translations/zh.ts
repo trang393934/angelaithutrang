@@ -725,6 +725,8 @@ const translations: Record<string, string> = {
   "gift.minAmount": "最低100 Camly Coin",
   "gift.minAmountNote": "最低100 Camly Coin",
   "gift.insufficientBalance": "余额不足",
+  "gift.emptyState": "暂无礼物",
+  "gift.beFirstGiver": "成为第一个送礼的人！",
   "donate.title": "捐赠给Angel AI",
   "donate.description": "支持光明AI平台的发展",
   "donate.quickAmount": "快速选择",
@@ -736,6 +738,8 @@ const translations: Record<string, string> = {
   "donate.minAmount": "最低100 Camly Coin",
   "donate.thankYou": "每一份贡献都意义非凡 💛",
   "donate.appreciationMessage": "感谢慷慨的心",
+  "donate.emptyState": "暂无捐赠者",
+  "donate.beFirstDonor": "成为第一个支持项目的人！",
   "common.change": "更改",
 };
 

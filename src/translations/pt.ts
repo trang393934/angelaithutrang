@@ -530,6 +530,8 @@ const translations: Record<string, string> = {
   "gift.topGivers": "Top Presenteadores",
   "gift.topReceivers": "Top Recebedores",
   "gift.totalGifted": "Total presenteado",
+  "gift.emptyState": "Ainda não há presentes",
+  "gift.beFirstGiver": "Seja o primeiro a presentear a comunidade!",
   
   // Donate System
   "donate.title": "Doar para Angel AI",
@@ -545,6 +547,8 @@ const translations: Record<string, string> = {
   "donate.minAmount": "Mínimo 100 moedas",
   "donate.insufficientBalance": "Saldo insuficiente",
   "donate.thankYou": "Obrigado pelo seu apoio!",
+  "donate.emptyState": "Ainda não há padrinhos",
+  "donate.beFirstDonor": "Seja o primeiro a apoiar o projeto!",
   
   // Common additions
   "common.change": "Alterar",
