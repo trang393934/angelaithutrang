@@ -541,6 +541,33 @@ export type Database = {
           },
         ]
       }
+      coin_gifts: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          message: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          message?: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          message?: string | null
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       coin_withdrawals: {
         Row: {
           admin_notes: string | null
@@ -1540,6 +1567,30 @@ export type Database = {
         }
         Relationships: []
       }
+      project_donations: {
+        Row: {
+          amount: number
+          created_at: string
+          donor_id: string
+          id: string
+          message: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          donor_id: string
+          id?: string
+          message?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          donor_id?: string
+          id?: string
+          message?: string | null
+        }
+        Relationships: []
+      }
       question_likes: {
         Row: {
           created_at: string
@@ -2267,6 +2318,9 @@ export type Database = {
         | "feedback_reward"
         | "vision_reward"
         | "community_support"
+        | "gift_sent"
+        | "gift_received"
+        | "project_donation"
       energy_level: "very_high" | "high" | "neutral" | "low" | "very_low"
       suspension_type: "temporary" | "permanent"
     }
@@ -2415,6 +2469,9 @@ export const Constants = {
         "feedback_reward",
         "vision_reward",
         "community_support",
+        "gift_sent",
+        "gift_received",
+        "project_donation",
       ],
       energy_level: ["very_high", "high", "neutral", "low", "very_low"],
       suspension_type: ["temporary", "permanent"],
