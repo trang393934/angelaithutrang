@@ -543,6 +543,31 @@ const translations: Record<string, string> = {
   "donate.appreciationMessage": "寛大な心に感謝",
   "donate.emptyState": "まだ寄付者がいません",
   "donate.beFirstDonor": "プロジェクトを最初にサポートしよう！",
+  
+  // Crypto Transfer
+  "crypto.transferTab": "暗号通貨転送",
+  "crypto.connectToDonate": "本物のCAMLYトークンを寄付するにはWeb3ウォレットを接続してください",
+  "crypto.connectWallet": "ウォレット接続",
+  "crypto.installMetaMask": "MetaMaskまたは互換性のあるWeb3ウォレットが必要です",
+  "crypto.walletBalance": "ウォレットのCAMLY",
+  "crypto.amount": "CAMLY数量",
+  "crypto.gasNote": "ガス代にはウォレットにBNBが必要です",
+  "crypto.confirmDonate": "寄付を確認",
+  "crypto.viewOnBscScan": "BSCScanで取引を確認",
+  "crypto.treasuryAddress": "プロジェクトTreasuryアドレス",
+  "crypto.invalidAmount": "無効な金額",
+  "crypto.invalidAddress": "無効なウォレットアドレス",
+  "crypto.manualTransfer": "手動転送",
+  "crypto.manualTransferDesc": "アドレスをコピーして任意のウォレットから転送",
+  "crypto.copyAddress": "アドレスをコピー",
+  "crypto.addressCopied": "アドレスがコピーされました！",
+  "crypto.afterTransfer": "転送後、寄付を確認してください：",
+  "crypto.txHash": "トランザクションハッシュ",
+  "crypto.txHashOptional": "オプション - 寄付の確認に役立ちます",
+  "crypto.confirmManualDonate": "手動寄付を確認",
+  "crypto.manualDonateSuccess": "ありがとうございます！寄付が記録されました。",
+  "crypto.orManualTransfer": "または手動で転送",
+  
   "common.change": "変更",
 };
 

@@ -789,6 +789,16 @@ const translations: Record<string, string> = {
   "crypto.treasuryAddress": "Project Treasury Address",
   "crypto.invalidAmount": "Invalid amount",
   "crypto.invalidAddress": "Invalid wallet address",
+  "crypto.manualTransfer": "Manual Transfer",
+  "crypto.manualTransferDesc": "Copy address and transfer from any wallet",
+  "crypto.copyAddress": "Copy Address",
+  "crypto.addressCopied": "Address copied!",
+  "crypto.afterTransfer": "After transferring, confirm your donation:",
+  "crypto.txHash": "Transaction Hash",
+  "crypto.txHashOptional": "Optional - helps verify your donation",
+  "crypto.confirmManualDonate": "Confirm Manual Donation",
+  "crypto.manualDonateSuccess": "Thank you! Your donation has been recorded.",
+  "crypto.orManualTransfer": "Or transfer manually",
   
   // User Profile
   "userProfile.message": "Message",

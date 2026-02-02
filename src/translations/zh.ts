@@ -740,6 +740,31 @@ const translations: Record<string, string> = {
   "donate.appreciationMessage": "感谢慷慨的心",
   "donate.emptyState": "暂无捐赠者",
   "donate.beFirstDonor": "成为第一个支持项目的人！",
+  
+  // Crypto Transfer
+  "crypto.transferTab": "加密货币转账",
+  "crypto.connectToDonate": "连接Web3钱包捐赠真正的CAMLY代币",
+  "crypto.connectWallet": "连接钱包",
+  "crypto.installMetaMask": "需要MetaMask或兼容的Web3钱包",
+  "crypto.walletBalance": "钱包中的CAMLY",
+  "crypto.amount": "CAMLY数量",
+  "crypto.gasNote": "钱包中需要BNB支付gas费",
+  "crypto.confirmDonate": "确认捐赠",
+  "crypto.viewOnBscScan": "在BSCScan上查看交易",
+  "crypto.treasuryAddress": "项目Treasury地址",
+  "crypto.invalidAmount": "无效金额",
+  "crypto.invalidAddress": "无效钱包地址",
+  "crypto.manualTransfer": "手动转账",
+  "crypto.manualTransferDesc": "复制地址并从任何钱包转账",
+  "crypto.copyAddress": "复制地址",
+  "crypto.addressCopied": "地址已复制！",
+  "crypto.afterTransfer": "转账后，确认您的捐赠：",
+  "crypto.txHash": "交易哈希",
+  "crypto.txHashOptional": "可选 - 帮助验证您的捐赠",
+  "crypto.confirmManualDonate": "确认手动捐赠",
+  "crypto.manualDonateSuccess": "谢谢！您的捐赠已记录。",
+  "crypto.orManualTransfer": "或手动转账",
+  
   "common.change": "更改",
 };
 
