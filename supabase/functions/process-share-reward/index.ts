@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitPPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -181,13 +182,46 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ============= PPLP Integration =============
+    const pplpResult = await submitPPLPAction(supabaseAdmin, {
+      action_type: PPLP_ACTION_TYPES.SHARE_CONTENT,
+      actor_id: userId,
+      target_id: contentId || contentHash,
+      metadata: {
+        content_type: contentType,
+        platform: platform,
+        content_hash: contentHash,
+      },
+      impact: {
+        scope: 'platform',
+        reach_count: 1,
+        quality_indicators: ['social_share', 'light_spreading'],
+      },
+      integrity: {
+        content_hash: contentHash,
+        source_verified: true,
+      },
+      evidences: [{
+        evidence_type: 'share_event',
+        content_hash: contentHash,
+        metadata: { platform, content_type: contentType }
+      }],
+      reward_amount: actualReward,
+    });
+    
+    if (pplpResult.success) {
+      console.log(`[PPLP] Share action submitted: ${pplpResult.action_id}`);
+    }
+    // ============= End PPLP Integration =============
+
     console.log(`Successfully rewarded user ${userId} with ${actualReward} coins for sharing`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         coinsEarned: actualReward,
-        message: `+${actualReward} Camly Coin! Cảm ơn con đã lan tỏa Ánh Sáng ✨`
+        message: `+${actualReward} Camly Coin! Cảm ơn con đã lan tỏa Ánh Sáng ✨`,
+        pplpActionId: pplpResult.success ? pplpResult.action_id : undefined
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

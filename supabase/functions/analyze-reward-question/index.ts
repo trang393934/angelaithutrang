@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitPPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -579,6 +580,40 @@ serve(async (req) => {
       p_user_id: userId
     });
 
+    // ============= PPLP Integration =============
+    // Submit to PPLP engine for Light Score tracking
+    const pplpResult = await submitPPLPAction(supabase, {
+      action_type: PPLP_ACTION_TYPES.QUESTION_ASK,
+      actor_id: userId,
+      metadata: {
+        question_id: questionRecord?.id,
+        question_length: questionText.length,
+        has_ai_response: !!aiResponse,
+      },
+      impact: {
+        scope: 'individual',
+        quality_indicators: purityScore >= 0.8 ? ['high_purity', 'meaningful'] : purityScore >= 0.6 ? ['genuine'] : [],
+      },
+      integrity: {
+        content_hash: generateContentHash(questionText),
+        source_verified: true,
+        duplicate_check: true,
+      },
+      evidences: [{
+        evidence_type: 'content',
+        content_hash: questionHash,
+        metadata: { type: 'question', purity_score: purityScore }
+      }],
+      reward_amount: rewardAmount,
+      purity_score: purityScore,
+      content_length: questionText.length,
+    });
+    
+    if (pplpResult.success) {
+      console.log(`[PPLP] Question action submitted: ${pplpResult.action_id}`);
+    }
+    // ============= End PPLP Integration =============
+
     return new Response(
       JSON.stringify({
         rewarded: true,
@@ -591,7 +626,8 @@ serve(async (req) => {
         isGreeting: false,
         isSpam: false,
         isDuplicate: false,
-        isResponseRecycled: false
+        isResponseRecycled: false,
+        pplpActionId: pplpResult.success ? pplpResult.action_id : undefined
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

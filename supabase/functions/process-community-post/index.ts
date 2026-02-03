@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitPPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -182,6 +183,39 @@ serve(async (req) => {
         coinsEarned = POST_CREATION_REWARD;
         rewarded = true;
         console.log(`Post creation reward given to user ${userId}: ${POST_CREATION_REWARD} coins`);
+
+        // ============= PPLP Integration =============
+        const pplpResult = await submitPPLPAction(supabase, {
+          action_type: PPLP_ACTION_TYPES.POST_CREATE,
+          actor_id: userId,
+          target_id: newPost.id,
+          metadata: {
+            post_id: newPost.id,
+            content_length: content.length,
+            image_count: finalImageUrls.length,
+          },
+          impact: {
+            scope: 'group',
+            reach_count: 1,
+            quality_indicators: finalImageUrls.length > 0 ? ['has_media'] : [],
+          },
+          integrity: {
+            content_hash: generateContentHash(content),
+            source_verified: true,
+          },
+          evidences: [{
+            evidence_type: 'post_content',
+            content_hash: generateContentHash(content),
+            metadata: { post_id: newPost.id }
+          }],
+          reward_amount: POST_CREATION_REWARD,
+          content_length: content.length,
+        });
+        
+        if (pplpResult.success) {
+          console.log(`[PPLP] Post creation action submitted: ${pplpResult.action_id}`);
+        }
+        // ============= End PPLP Integration =============
       }
 
       return new Response(
@@ -462,6 +496,38 @@ serve(async (req) => {
           .eq("id", tracking.id);
 
         console.log(`Comment reward given to user ${userId}`);
+
+        // ============= PPLP Integration =============
+        const pplpResult = await submitPPLPAction(supabase, {
+          action_type: PPLP_ACTION_TYPES.COMMENT_CREATE,
+          actor_id: userId,
+          target_id: postId,
+          metadata: {
+            comment_id: newComment.id,
+            post_id: postId,
+            content_length: contentLength,
+          },
+          impact: {
+            scope: 'group',
+            quality_indicators: contentLength >= 100 ? ['detailed_comment'] : [],
+          },
+          integrity: {
+            content_hash: generateContentHash(content),
+            source_verified: true,
+          },
+          evidences: [{
+            evidence_type: 'comment_content',
+            content_hash: generateContentHash(content),
+            metadata: { post_id: postId }
+          }],
+          reward_amount: COMMENT_REWARD,
+          content_length: contentLength,
+        });
+        
+        if (pplpResult.success) {
+          console.log(`[PPLP] Comment action submitted: ${pplpResult.action_id}`);
+        }
+        // ============= End PPLP Integration =============
 
         return new Response(
           JSON.stringify({
