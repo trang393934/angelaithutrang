@@ -1,5 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  signMintRequest,
+  createMintPayload,
+  serializeSignedRequest,
+  isValidAddress,
+  PPLP_DOMAIN,
+} from "../_shared/pplp-eip712.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +15,7 @@ const corsHeaders = {
 
 interface MintAuthorizationRequest {
   action_id: string;
+  wallet_address: string;
 }
 
 serve(async (req) => {
@@ -18,9 +26,14 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const signerPrivateKey = Deno.env.get('TREASURY_PRIVATE_KEY');
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { action_id }: MintAuthorizationRequest = await req.json();
+    const { action_id, wallet_address }: MintAuthorizationRequest = await req.json();
+
+    // ============================================
+    // VALIDATION
+    // ============================================
 
     if (!action_id) {
       return new Response(
@@ -29,7 +42,63 @@ serve(async (req) => {
       );
     }
 
-    // Fetch action with score
+    if (!wallet_address || !isValidAddress(wallet_address)) {
+      return new Response(
+        JSON.stringify({ error: 'Valid wallet_address is required (0x...)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ============================================
+    // CHECK IDEMPOTENCY - Each action can only mint once
+    // ============================================
+
+    const { data: existingMint } = await supabase
+      .from('pplp_mint_requests')
+      .select('*')
+      .eq('action_id', action_id)
+      .single();
+
+    if (existingMint) {
+      if (existingMint.status === 'minted') {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Action already minted',
+            tx_hash: existingMint.tx_hash,
+            minted_at: existingMint.minted_at
+          }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Return existing signed request if still valid
+      if (existingMint.status === 'signed' && new Date(existingMint.valid_before) > new Date()) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'Returning existing valid mint request',
+            mint_request: {
+              to: existingMint.recipient_address,
+              amount: existingMint.amount.toString(),
+              actionId: existingMint.action_hash,
+              evidenceHash: existingMint.evidence_hash,
+              policyVersion: existingMint.policy_version.toString(),
+              validAfter: Math.floor(new Date(existingMint.valid_after).getTime() / 1000).toString(),
+              validBefore: Math.floor(new Date(existingMint.valid_before).getTime() / 1000).toString(),
+              nonce: existingMint.nonce.toString(),
+              signature: existingMint.signature,
+              signer: existingMint.signer_address,
+            }
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // ============================================
+    // FETCH ACTION WITH SCORE
+    // ============================================
+
     const { data: action, error: actionError } = await supabase
       .from('pplp_actions')
       .select('*, pplp_scores(*)')
@@ -45,7 +114,10 @@ serve(async (req) => {
 
     if (action.status !== 'scored') {
       return new Response(
-        JSON.stringify({ error: 'Action must be scored before mint authorization', current_status: action.status }),
+        JSON.stringify({ 
+          error: 'Action must be scored before mint authorization', 
+          current_status: action.status 
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -69,13 +141,16 @@ serve(async (req) => {
       );
     }
 
-    // Check for unresolved fraud signals
+    // ============================================
+    // CHECK FRAUD SIGNALS
+    // ============================================
+
     const { count: fraudSignals } = await supabase
       .from('pplp_fraud_signals')
       .select('*', { count: 'exact', head: true })
       .eq('actor_id', action.actor_id)
       .eq('is_resolved', false)
-      .gte('severity', 4); // Only block for high severity
+      .gte('severity', 4);
 
     if (fraudSignals && fraudSignals > 0) {
       return new Response(
@@ -87,6 +162,10 @@ serve(async (req) => {
       );
     }
 
+    // ============================================
+    // VALIDATE REWARD AMOUNT
+    // ============================================
+
     const rewardAmount = score.final_reward;
 
     if (rewardAmount <= 0) {
@@ -96,7 +175,92 @@ serve(async (req) => {
       );
     }
 
-    // Award Camly Coins using existing function
+    // ============================================
+    // GET NONCE (Atomic increment)
+    // ============================================
+
+    const { data: nonce, error: nonceError } = await supabase
+      .rpc('get_next_nonce', { _user_id: action.actor_id });
+
+    if (nonceError) {
+      console.error('Failed to get nonce:', nonceError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to generate nonce' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ============================================
+    // CREATE MINT PAYLOAD
+    // ============================================
+
+    const mintPayload = createMintPayload({
+      recipientAddress: wallet_address,
+      amount: rewardAmount,
+      actionId: action.id,
+      evidenceHash: action.evidence_hash || '0x' + '0'.repeat(64),
+      policyVersion: parseInt(action.policy_version?.replace('v', '') || '1'),
+      nonce: nonce,
+      validityHours: 24,
+    });
+
+    // ============================================
+    // SIGN MINT REQUEST (if signer key available)
+    // ============================================
+
+    let signedRequest;
+    let signerAddress = '0x0000000000000000000000000000000000000000';
+
+    if (signerPrivateKey) {
+      try {
+        signedRequest = await signMintRequest(mintPayload, signerPrivateKey, PPLP_DOMAIN);
+        signerAddress = signedRequest.signer;
+        console.log(`[PPLP Mint] Signed request for action ${action.id} by ${signerAddress}`);
+      } catch (signError) {
+        console.error('Failed to sign mint request:', signError);
+        // Continue without signature for testing
+      }
+    } else {
+      console.warn('[PPLP Mint] No signer private key configured, returning unsigned request');
+    }
+
+    // ============================================
+    // STORE MINT REQUEST
+    // ============================================
+
+    const validAfter = new Date(mintPayload.validAfter * 1000).toISOString();
+    const validBefore = new Date(mintPayload.validBefore * 1000).toISOString();
+
+    const { error: insertError } = await supabase
+      .from('pplp_mint_requests')
+      .upsert({
+        action_id: action.id,
+        actor_id: action.actor_id,
+        recipient_address: wallet_address,
+        amount: rewardAmount,
+        action_hash: mintPayload.actionId,
+        evidence_hash: mintPayload.evidenceHash,
+        policy_version: mintPayload.policyVersion,
+        valid_after: validAfter,
+        valid_before: validBefore,
+        nonce: nonce,
+        signature: signedRequest?.signature || null,
+        signer_address: signerAddress,
+        status: signedRequest ? 'signed' : 'pending',
+      }, { onConflict: 'action_id' });
+
+    if (insertError) {
+      console.error('Failed to store mint request:', insertError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to store mint request' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ============================================
+    // ALSO MINT OFF-CHAIN (Camly Coins) for immediate use
+    // ============================================
+
     const { data: newBalance, error: coinError } = await supabase
       .rpc('add_camly_coins', {
         _user_id: action.actor_id,
@@ -121,34 +285,55 @@ serve(async (req) => {
             K: score.mult_k,
           },
           light_score: score.light_score,
+          on_chain_pending: !!signedRequest,
         }
       });
 
     if (coinError) {
       console.error('Failed to add coins:', coinError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to mint reward', details: coinError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Don't fail - on-chain mint is still possible
     }
 
-    // Update action status to minted
+    // ============================================
+    // UPDATE ACTION STATUS
+    // ============================================
+
     await supabase
       .from('pplp_actions')
       .update({ 
         status: 'minted',
-        minted_at: new Date().toISOString()
+        minted_at: new Date().toISOString(),
+        mint_request_hash: mintPayload.actionId,
       })
       .eq('id', action.id);
 
-    // Update PoPL score for the user
+    // Update PoPL score
     await supabase.rpc('update_popl_score', {
       _user_id: action.actor_id,
       _action_type: action.action_type.toLowerCase(),
       _is_positive: true
     });
 
-    console.log(`[PPLP Mint] Action ${action.id}: Minted ${rewardAmount} Camly Coins to ${action.actor_id}`);
+    console.log(`[PPLP Mint] Action ${action.id}: Authorized ${rewardAmount} Camly Coins to ${wallet_address}`);
+
+    // ============================================
+    // RESPONSE
+    // ============================================
+
+    const responsePayload = signedRequest 
+      ? serializeSignedRequest(signedRequest)
+      : {
+          to: mintPayload.to,
+          amount: mintPayload.amount.toString(),
+          actionId: mintPayload.actionId,
+          evidenceHash: mintPayload.evidenceHash,
+          policyVersion: mintPayload.policyVersion.toString(),
+          validAfter: mintPayload.validAfter.toString(),
+          validBefore: mintPayload.validBefore.toString(),
+          nonce: mintPayload.nonce.toString(),
+          signature: null,
+          signer: null,
+        };
 
     return new Response(
       JSON.stringify({
@@ -165,7 +350,11 @@ serve(async (req) => {
           C: score.pillar_c,
           U: score.pillar_u,
         },
-        message: `Successfully minted ${rewardAmount} Camly Coins based on PPLP scoring`,
+        mint_request: responsePayload,
+        domain: PPLP_DOMAIN,
+        message: signedRequest 
+          ? `Signed mint request ready for on-chain submission`
+          : `Unsigned mint request (configure TREASURY_PRIVATE_KEY for signing)`,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
