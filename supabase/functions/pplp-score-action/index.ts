@@ -310,6 +310,76 @@ serve(async (req) => {
 
     console.log(`[PPLP] Action ${action.id} scored: ${decision.toUpperCase()} - LightScore: ${lightScore.toFixed(2)}, Reward: ${finalReward}`);
 
+    // ========== AUTO-MINT: Automatically mint if scoring passed ==========
+    let mintResult = null;
+    if (decision === 'pass' && finalReward > 0) {
+      try {
+        // Check for unresolved high-severity fraud signals
+        const { count: fraudSignals } = await supabase
+          .from('pplp_fraud_signals')
+          .select('*', { count: 'exact', head: true })
+          .eq('actor_id', action.actor_id)
+          .eq('is_resolved', false)
+          .gte('severity', 4);
+
+        if (!fraudSignals || fraudSignals === 0) {
+          // Award Camly Coins directly
+          const { data: newBalance, error: coinError } = await supabase
+            .rpc('add_camly_coins', {
+              _user_id: action.actor_id,
+              _amount: finalReward,
+              _transaction_type: 'pplp_reward',
+              _description: `PPLP Auto-Mint: ${action.platform_id}/${action.action_type}`,
+              _purity_score: lightScore / 100,
+              _metadata: {
+                action_id: action.id,
+                platform_id: action.platform_id,
+                action_type: action.action_type,
+                pillars: { S: pillars.S, T: pillars.T, H: pillars.H, C: pillars.C, U: pillars.U },
+                multipliers: { Q: multipliers.Q, I: multipliers.I, K: multipliers.K },
+                light_score: Math.round(lightScore * 100) / 100,
+                auto_minted: true,
+              }
+            });
+
+          if (!coinError) {
+            // Update action status to minted
+            await supabase
+              .from('pplp_actions')
+              .update({ 
+                status: 'minted',
+                minted_at: new Date().toISOString()
+              })
+              .eq('id', action.id);
+
+            // Update PoPL score
+            await supabase.rpc('update_popl_score', {
+              _user_id: action.actor_id,
+              _action_type: action.action_type.toLowerCase(),
+              _is_positive: true
+            });
+
+            mintResult = {
+              auto_minted: true,
+              reward_amount: finalReward,
+              new_balance: newBalance,
+            };
+
+            console.log(`[PPLP Auto-Mint] ✓ Action ${action.id}: Minted ${finalReward} Camly Coins to ${action.actor_id.slice(0, 8)}...`);
+          } else {
+            console.error('[PPLP Auto-Mint] Coin transfer failed:', coinError);
+            mintResult = { auto_minted: false, error: coinError.message };
+          }
+        } else {
+          console.warn(`[PPLP Auto-Mint] Blocked for ${action.actor_id}: ${fraudSignals} unresolved fraud signals`);
+          mintResult = { auto_minted: false, blocked_by_fraud: true, fraud_signal_count: fraudSignals };
+        }
+      } catch (mintError) {
+        console.error('[PPLP Auto-Mint] Error:', mintError);
+        mintResult = { auto_minted: false, error: mintError instanceof Error ? mintError.message : 'Unknown error' };
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -321,6 +391,7 @@ serve(async (req) => {
         final_reward: finalReward,
         decision,
         fail_reasons: failReasons.length > 0 ? failReasons : null,
+        mint: mintResult,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -211,33 +211,58 @@ export async function submitPPLPAction(
 }
 
 /**
- * Submit and immediately score a PPLP action (for synchronous flows)
+ * Submit and immediately score + auto-mint a PPLP action
  * 
- * Use this when you want to submit and score in one step.
- * The scoring will happen in the background.
+ * This is the PRIMARY method for Light Economy integration.
+ * After submission, the action is automatically scored and if passed,
+ * Camly Coins are minted directly to the user.
+ * 
+ * Flow: Submit → Score → Auto-Mint (if passed)
  */
 export async function submitAndScorePPLPAction(
   supabase: SupabaseClient,
   input: PPLPActionInput
-): Promise<PPLPSubmitResult> {
+): Promise<PPLPSubmitResult & { scored?: boolean; minted?: boolean; reward?: number }> {
   const submitResult = await submitPPLPAction(supabase, input);
   
   if (!submitResult.success || !submitResult.action_id) {
     return submitResult;
   }
 
-  // Trigger async scoring (fire and forget)
+  // Trigger scoring + auto-mint
   try {
-    // Call the score function internally
-    await supabase.functions.invoke('pplp-score-action', {
+    const scoreResponse = await supabase.functions.invoke('pplp-score-action', {
       body: { action_id: submitResult.action_id }
     });
+
+    if (scoreResponse.data) {
+      const { decision, mint, final_reward } = scoreResponse.data;
+      return {
+        ...submitResult,
+        scored: true,
+        minted: mint?.auto_minted === true,
+        reward: final_reward,
+      };
+    }
   } catch (scoreError) {
-    console.warn('[PPLP Helper] Score trigger warning:', scoreError);
-    // Don't fail the action submission
+    console.warn('[PPLP Helper] Score/Mint warning:', scoreError);
+    // Action submitted but scoring failed - can be retried
   }
 
-  return submitResult;
+  return { ...submitResult, scored: false, minted: false };
+}
+
+/**
+ * Submit action only (scoring will happen later)
+ * 
+ * Use this for batch processing or when you want manual control
+ * over the scoring/minting flow.
+ */
+export async function submitPPLPActionOnly(
+  supabase: SupabaseClient,
+  input: PPLPActionInput
+): Promise<PPLPSubmitResult> {
+  return submitPPLPAction(supabase, input);
 }
 
 /**
