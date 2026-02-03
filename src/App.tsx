@@ -10,6 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ProfileCompletionGate } from "@/components/ProfileCompletionGate";
 import { WithdrawalCelebration } from "@/components/WithdrawalCelebration";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { BackToTopButton } from "@/components/BackToTopButton";
 import Index from "./pages/Index";
 import Chat from "./pages/Chat";
 import About from "./pages/About";
@@ -100,6 +101,7 @@ const App = () => (
           <WithdrawalCelebration />
           <BrowserRouter>
             <ScrollToTop />
+            <BackToTopButton />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/chat" element={<ProfileCompletionGate><Chat /></ProfileCompletionGate>} />
