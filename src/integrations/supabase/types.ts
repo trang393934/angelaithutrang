@@ -2765,6 +2765,7 @@ export type Database = {
         | "gift_received"
         | "project_donation"
         | "project_reward"
+        | "pplp_reward"
       energy_level: "very_high" | "high" | "neutral" | "low" | "very_low"
       pplp_action_status:
         | "pending"
@@ -2926,6 +2927,7 @@ export const Constants = {
         "gift_received",
         "project_donation",
         "project_reward",
+        "pplp_reward",
       ],
       energy_level: ["very_high", "high", "neutral", "low", "very_low"],
       pplp_action_status: [
