@@ -15,9 +15,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCoinGifts } from "@/hooks/useCoinGifts";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useWeb3Transfer } from "@/hooks/useWeb3Transfer";
+import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { Heart } from "lucide-react";
 
 interface GiftCoinDialogProps {
   open: boolean;
@@ -37,6 +39,7 @@ interface UserSearchResult {
 
 export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoinDialogProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { sendGift, isLoading } = useCoinGifts();
   const { balance } = useCamlyCoin();
   const { 
@@ -49,6 +52,8 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
     hasWallet, 
     connect 
   } = useWeb3Transfer();
+  
+  const [selfGiftWarning, setSelfGiftWarning] = useState(false);
   
   const [activeTab, setActiveTab] = useState<"internal" | "crypto">("internal");
   const [searchQuery, setSearchQuery] = useState("");
@@ -130,6 +135,12 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
 
   const handleSendGift = async () => {
     if (!selectedUser || !amount) return;
+
+    // Check if user is trying to gift themselves
+    if (user?.id === selectedUser.user_id) {
+      setSelfGiftWarning(true);
+      return;
+    }
 
     const numAmount = Number(amount);
     if (numAmount < 100) {
@@ -241,23 +252,27 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
 
                 {searchResults.length > 0 && (
                   <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
-                    {searchResults.map((user) => (
+                    {searchResults.map((searchUser) => (
                       <button
-                        key={user.user_id}
+                        key={searchUser.user_id}
                         className="w-full p-2 flex items-center gap-3 hover:bg-accent text-left"
                         onClick={() => {
-                          setSelectedUser(user);
+                          setSelfGiftWarning(false);
+                          setSelectedUser(searchUser);
                           setSearchQuery("");
                           setSearchResults([]);
                         }}
                       >
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.avatar_url || ""} />
+                          <AvatarImage src={searchUser.avatar_url || ""} />
                           <AvatarFallback>
                             <User className="w-4 h-4" />
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{user.display_name || "Người dùng"}</span>
+                        <span className="font-medium">{searchUser.display_name || "Người dùng"}</span>
+                        {searchUser.user_id === user?.id && (
+                          <span className="text-xs text-muted-foreground ml-auto">(Bạn)</span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -288,6 +303,43 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
                 </div>
               </div>
             )}
+
+            {/* Self-Gift Warning */}
+            <AnimatePresence>
+              {selfGiftWarning && selectedUser?.user_id === user?.id && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-lg p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
+                      <Heart className="w-5 h-5 text-rose-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-rose-700 mb-1">
+                        Yêu thương bản thân là tuyệt vời! 💕
+                      </p>
+                      <p className="text-sm text-rose-600">
+                        Nhưng món quà sẽ ý nghĩa hơn khi chia sẻ với người khác. Hãy chọn một người bạn để lan tỏa yêu thương nhé!
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full border-rose-200 text-rose-600 hover:bg-rose-50"
+                    onClick={() => {
+                      setSelfGiftWarning(false);
+                      setSelectedUser(null);
+                    }}
+                  >
+                    Chọn người nhận khác
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Amount Input */}
             <div className="space-y-2">
