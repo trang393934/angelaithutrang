@@ -281,12 +281,13 @@ serve(async (req) => {
         pillar_u: pillars.U,
         light_score: Math.round(lightScore * 100) / 100,
         base_reward: baseReward,
-        mult_q: multipliers.Q,
-        mult_i: multipliers.I,
-        mult_k: multipliers.K,
+        multiplier_q: multipliers.Q,
+        multiplier_i: multipliers.I,
+        multiplier_k: multipliers.K,
         final_reward: finalReward,
         decision,
-        fail_reasons: failReasons.length > 0 ? failReasons : null,
+        decision_reason: failReasons.length > 0 ? failReasons.join(', ') : null,
+        scored_by: 'pplp_engine_v1',
         policy_version: action.policy_version,
       });
 

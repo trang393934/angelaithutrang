@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitPPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -382,6 +383,44 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
       _metadata: { journal_id: journalRecord?.id, content_length: contentLength }
     });
 
+    // ============= PPLP Integration =============
+    const actionType = journalType === 'gratitude' 
+      ? PPLP_ACTION_TYPES.GRATITUDE_PRACTICE 
+      : PPLP_ACTION_TYPES.JOURNAL_WRITE;
+      
+    const pplpResult = await submitPPLPAction(supabase, {
+      action_type: actionType,
+      actor_id: userId,
+      target_id: journalRecord?.id,
+      metadata: {
+        journal_id: journalRecord?.id,
+        journal_type: journalType,
+        content_length: contentLength,
+      },
+      impact: {
+        scope: 'individual',
+        quality_indicators: purityScore >= 0.8 ? ['deep_reflection', 'authentic'] : purityScore >= 0.6 ? ['sincere'] : [],
+      },
+      integrity: {
+        content_hash: contentHash,
+        source_verified: true,
+        duplicate_check: true,
+      },
+      evidences: [{
+        evidence_type: 'journal_content',
+        content_hash: contentHash,
+        metadata: { journal_type: journalType, purity_score: purityScore }
+      }],
+      reward_amount: rewardAmount,
+      purity_score: purityScore,
+      content_length: contentLength,
+    });
+    
+    if (pplpResult.success) {
+      console.log(`[PPLP] Journal action submitted: ${pplpResult.action_id}`);
+    }
+    // ============= End PPLP Integration =============
+
     // Calculate remaining after this journal
     const remainingAfterThis = MAX_JOURNALS_PER_DAY - newJournalCount;
 
@@ -395,7 +434,8 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
         journalsToday: newJournalCount,
         limit: MAX_JOURNALS_PER_DAY,
         message: `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% 📝✨`,
-        journalId: journalRecord?.id
+        journalId: journalRecord?.id,
+        pplpActionId: pplpResult.success ? pplpResult.action_id : undefined
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
