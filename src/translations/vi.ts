@@ -832,6 +832,43 @@ const translations: Record<string, string> = {
   
   // User Profile
   "userProfile.message": "Nhắn tin",
+  
+  // API Keys
+  "apiKeys.title": "API Keys",
+  "apiKeys.description": "Truy cập Angel AI từ các ứng dụng bên ngoài",
+  "apiKeys.createNew": "Tạo API Key mới",
+  "apiKeys.name": "Tên Key",
+  "apiKeys.namePlaceholder": "Chatbot website của tôi",
+  "apiKeys.nameRequired": "Vui lòng nhập tên cho API key",
+  "apiKeys.dailyLimit": "Giới hạn yêu cầu/ngày",
+  "apiKeys.requestsPerDay": "yêu cầu/ngày",
+  "apiKeys.created": "Đã tạo",
+  "apiKeys.lastUsed": "Dùng lần cuối",
+  "apiKeys.never": "Chưa dùng",
+  "apiKeys.todayUsage": "Hôm nay: {used}/{limit} yêu cầu",
+  "apiKeys.copy": "Sao chép",
+  "apiKeys.copied": "Đã sao chép ID key!",
+  "apiKeys.delete": "Xóa",
+  "apiKeys.deleted": "Đã xóa API key",
+  "apiKeys.disable": "Tắt",
+  "apiKeys.enable": "Bật",
+  "apiKeys.active": "Đang hoạt động",
+  "apiKeys.inactive": "Đã tắt",
+  "apiKeys.create": "Tạo API Key",
+  "apiKeys.createDescription": "Tạo API key mới để sử dụng Angel AI từ các ứng dụng bên ngoài",
+  "apiKeys.createSuccess": "Tạo API Key thành công!",
+  "apiKeys.copyWarning": "Sao chép key ngay! Bạn sẽ không thể xem lại key này.",
+  "apiKeys.copyWarningTitle": "Cảnh báo",
+  "apiKeys.yourKey": "API Key của bạn",
+  "apiKeys.usageExample": "Ví dụ sử dụng",
+  "apiKeys.done": "Đã sao chép Key - Hoàn tất",
+  "apiKeys.copyFirst": "Sao chép Key trước",
+  "apiKeys.deleteTitle": "Xóa API Key",
+  "apiKeys.deleteConfirm": "Bạn có chắc chắn muốn xóa API key này? Hành động này không thể hoàn tác.",
+  "apiKeys.maxKeysReached": "Tối đa 5 API keys",
+  "apiKeys.securityNote": "Bảo mật key của bạn - không chia sẻ công khai.",
+  "apiKeys.noKeys": "Chưa có API key",
+  "apiKeys.createFirst": "Tạo API key đầu tiên để bắt đầu",
 };
 
 export default translations;

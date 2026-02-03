@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon, MessageCircle, Move, Maximize2 } from "lucide-react";
+import { ApiKeysSection } from "@/components/profile/ApiKeysSection";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { CoverPositionEditor } from "@/components/profile/CoverPositionEditor";
 import { PoPLScoreCard } from "@/components/profile/PoPLScoreCard";
@@ -1413,6 +1414,9 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* API Keys Section */}
+          <ApiKeysSection />
 
           {/* Light Law Agreement Status */}
           <Card className={`border-2 shadow-soft ${hasAgreedToLightLaw ? 'border-green-500/30 bg-green-50/30' : 'border-red-500/30 bg-red-50/30'}`}>

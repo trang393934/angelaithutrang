@@ -145,3 +145,9 @@ verify_jwt = false
 
 [functions.process-manual-donation]
 verify_jwt = false
+
+[functions.create-api-key]
+verify_jwt = false
+
+[functions.delete-api-key]
+verify_jwt = false
