@@ -151,3 +151,15 @@ verify_jwt = false
 
 [functions.delete-api-key]
 verify_jwt = false
+
+[functions.pplp-submit-action]
+verify_jwt = false
+
+[functions.pplp-score-action]
+verify_jwt = false
+
+[functions.pplp-detect-fraud]
+verify_jwt = false
+
+[functions.pplp-authorize-mint]
+verify_jwt = false
