@@ -1551,6 +1551,63 @@ export type Database = {
         }
         Relationships: []
       }
+      pplp_action_caps: {
+        Row: {
+          action_type: string
+          base_reward: number
+          cooldown_seconds: number | null
+          created_at: string
+          diminishing_factor: number | null
+          diminishing_threshold: number | null
+          id: string
+          is_active: boolean
+          max_global_daily: number | null
+          max_per_user_daily: number | null
+          max_per_user_weekly: number | null
+          min_quality_score: number | null
+          multiplier_ranges: Json
+          platform_id: string
+          thresholds: Json
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          base_reward?: number
+          cooldown_seconds?: number | null
+          created_at?: string
+          diminishing_factor?: number | null
+          diminishing_threshold?: number | null
+          id?: string
+          is_active?: boolean
+          max_global_daily?: number | null
+          max_per_user_daily?: number | null
+          max_per_user_weekly?: number | null
+          min_quality_score?: number | null
+          multiplier_ranges?: Json
+          platform_id?: string
+          thresholds?: Json
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          base_reward?: number
+          cooldown_seconds?: number | null
+          created_at?: string
+          diminishing_factor?: number | null
+          diminishing_threshold?: number | null
+          id?: string
+          is_active?: boolean
+          max_global_daily?: number | null
+          max_per_user_daily?: number | null
+          max_per_user_weekly?: number | null
+          min_quality_score?: number | null
+          multiplier_ranges?: Json
+          platform_id?: string
+          thresholds?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pplp_actions: {
         Row: {
           action_type: string
@@ -1672,6 +1729,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pplp_epoch_caps: {
+        Row: {
+          action_counts: Json
+          created_at: string
+          epoch_date: string
+          epoch_type: string
+          id: string
+          total_minted: number
+          unique_users: number
+          updated_at: string
+        }
+        Insert: {
+          action_counts?: Json
+          created_at?: string
+          epoch_date?: string
+          epoch_type?: string
+          id?: string
+          total_minted?: number
+          unique_users?: number
+          updated_at?: string
+        }
+        Update: {
+          action_counts?: Json
+          created_at?: string
+          epoch_date?: string
+          epoch_type?: string
+          id?: string
+          total_minted?: number
+          unique_users?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       pplp_evidences: {
         Row: {
@@ -1882,6 +1972,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pplp_user_caps: {
+        Row: {
+          action_counts: Json
+          created_at: string
+          epoch_date: string
+          epoch_type: string
+          id: string
+          last_action_at: string | null
+          total_minted: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_counts?: Json
+          created_at?: string
+          epoch_date?: string
+          epoch_type?: string
+          id?: string
+          last_action_at?: string | null
+          total_minted?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_counts?: Json
+          created_at?: string
+          epoch_date?: string
+          epoch_type?: string
+          id?: string
+          last_action_at?: string | null
+          total_minted?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -2586,6 +2712,10 @@ export type Database = {
           daily_limit: number
           message: string
         }[]
+      }
+      check_user_cap_and_update: {
+        Args: { _action_type: string; _reward_amount: number; _user_id: string }
+        Returns: Json
       }
       check_withdrawal_eligibility: {
         Args: { _user_id: string }

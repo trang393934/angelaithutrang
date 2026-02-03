@@ -6,22 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface PolicyConfig {
-  global: {
-    minTruth: number;
-    minIntegrity: number;
-    minLightScore: number;
-    weights: { S: number; T: number; H: number; C: number; U: number };
-  };
-  platforms: Record<string, {
-    actions: Record<string, {
-      baseReward: number;
-      thresholds: Record<string, number>;
-      multipliers: { Q: [number, number]; I: [number, number]; K: [number, number] };
-    }>;
-  }>;
-}
-
 interface ActionData {
   id: string;
   platform_id: string;
@@ -33,83 +17,64 @@ interface ActionData {
   policy_version: string;
 }
 
-// Default scoring policy (v1.0.0)
-const defaultPolicy: PolicyConfig = {
-  global: {
-    minTruth: 70,
-    minIntegrity: 60,
-    minLightScore: 60,
-    weights: { S: 0.25, T: 0.20, H: 0.20, C: 0.20, U: 0.15 }
-  },
-  platforms: {
-    ANGEL_AI: {
-      actions: {
-        QUESTION_ASK: { baseReward: 100, thresholds: { T: 70, K: 70 }, multipliers: { Q: [0.8, 2.0], I: [0.8, 1.5], K: [0.6, 1.0] } },
-        AI_REVIEW_HELPFUL: { baseReward: 150, thresholds: { T: 80, K: 75 }, multipliers: { Q: [1.0, 2.5], I: [1.0, 2.0], K: [0.7, 1.0] } },
-        FRAUD_REPORT_VALID: { baseReward: 300, thresholds: { T: 85, K: 80 }, multipliers: { Q: [1.0, 3.0], I: [1.0, 3.0], K: [0.8, 1.0] } },
-      }
-    },
-    FUN_PROFILE: {
-      actions: {
-        CONTENT_CREATE: { baseReward: 150, thresholds: { T: 70, U: 65, K: 70 }, multipliers: { Q: [0.8, 2.5], I: [0.8, 2.0], K: [0.6, 1.0] } },
-        COMMUNITY_POST: { baseReward: 100, thresholds: { T: 70, K: 65 }, multipliers: { Q: [0.8, 2.0], I: [0.8, 1.5], K: [0.6, 1.0] } },
-        MENTOR_HELP: { baseReward: 300, thresholds: { T: 75, H: 70, K: 75 }, multipliers: { Q: [1.0, 3.0], I: [1.0, 2.5], K: [0.7, 1.0] } },
-      }
-    },
-    FUN_CHARITY: {
-      actions: {
-        DONATE: { baseReward: 500, thresholds: { T: 85, S: 75, K: 80 }, multipliers: { Q: [1.0, 2.0], I: [1.0, 5.0], K: [0.8, 1.0] } },
-        VOLUNTEER: { baseReward: 400, thresholds: { T: 80, H: 75, K: 75 }, multipliers: { Q: [1.0, 2.5], I: [1.0, 3.0], K: [0.7, 1.0] } },
-      }
-    },
-    FUN_ACADEMY: {
-      actions: {
-        LEARN_COMPLETE: { baseReward: 200, thresholds: { T: 70, LightScore: 60, K: 60 }, multipliers: { Q: [0.8, 2.0], I: [0.8, 1.5], K: [0.6, 1.0] } },
-        PROJECT_SUBMIT: { baseReward: 500, thresholds: { T: 75, C: 70, K: 65 }, multipliers: { Q: [1.0, 3.0], I: [1.0, 2.5], K: [0.65, 1.0] } },
-        PEER_REVIEW: { baseReward: 150, thresholds: { T: 75, K: 70 }, multipliers: { Q: [0.8, 2.0], I: [0.8, 1.5], K: [0.6, 1.0] } },
-      }
-    },
-  }
-};
+interface ActionCapsConfig {
+  action_type: string;
+  platform_id: string;
+  base_reward: number;
+  max_per_user_daily: number | null;
+  max_per_user_weekly: number | null;
+  max_global_daily: number | null;
+  cooldown_seconds: number;
+  diminishing_threshold: number;
+  diminishing_factor: number;
+  min_quality_score: number;
+  thresholds: Record<string, number>;
+  multiplier_ranges: { Q: [number, number]; I: [number, number]; K: [number, number] };
+  is_active: boolean;
+}
 
-// Calculate 5-pillar scores based on action data
+// ========== 5 PILLARS WEIGHTS (固定) ==========
+const PILLAR_WEIGHTS = { S: 0.25, T: 0.20, H: 0.20, C: 0.20, U: 0.15 };
+const MIN_LIGHT_SCORE = 60;
+
+// ========== Calculate 5-pillar scores ==========
 function calculatePillarScores(action: ActionData): { S: number; T: number; H: number; C: number; U: number } {
   const metadata = action.metadata || {};
   const impact = action.impact || {};
   const integrity = action.integrity || {};
 
-  // S - Service to Life (based on beneficiaries and outcome)
-  let S = 50; // Base score
+  // S - Service to Life
+  let S = 50;
   if (impact.beneficiaries && typeof impact.beneficiaries === 'number') {
     S = Math.min(100, 50 + impact.beneficiaries * 5);
   }
   if (impact.outcome === 'positive' || impact.outcome === 'helpful') S += 20;
 
-  // T - Truth/Transparency (based on evidence quality)
-  let T = 60; // Base score
+  // T - Truth/Transparency
+  let T = 60;
   if (metadata.has_evidence) T += 20;
   if (metadata.verified) T += 15;
   if (integrity.verification_score && typeof integrity.verification_score === 'number') {
     T = Math.min(100, T + integrity.verification_score * 10);
   }
 
-  // H - Healing/Compassion (based on emotional impact)
-  let H = 50; // Base score
+  // H - Healing/Compassion
+  let H = 50;
   if (metadata.sentiment_score && typeof metadata.sentiment_score === 'number') {
     H = Math.min(100, 50 + metadata.sentiment_score * 50);
   }
   if (impact.healing_effect) H += 25;
 
-  // C - Contribution durability (based on lasting value)
-  let C = 50; // Base score
+  // C - Contribution durability
+  let C = 50;
   if (metadata.content_length && typeof metadata.content_length === 'number') {
     C = Math.min(100, 50 + Math.min(metadata.content_length / 100, 30));
   }
   if (metadata.is_educational) C += 20;
   if (impact.creates_asset) C += 25;
 
-  // U - Unity alignment (based on community impact)
-  let U = 50; // Base score
+  // U - Unity alignment
+  let U = 50;
   if (impact.promotes_unity) U += 30;
   if (metadata.is_collaborative) U += 20;
   if (impact.connection_score && typeof impact.connection_score === 'number') {
@@ -125,53 +90,98 @@ function calculatePillarScores(action: ActionData): { S: number; T: number; H: n
   };
 }
 
-// Calculate multipliers based on quality, impact, and integrity
+// ========== Calculate LightScore ==========
+function calculateLightScore(pillars: { S: number; T: number; H: number; C: number; U: number }): number {
+  return (
+    pillars.S * PILLAR_WEIGHTS.S +
+    pillars.T * PILLAR_WEIGHTS.T +
+    pillars.H * PILLAR_WEIGHTS.H +
+    pillars.C * PILLAR_WEIGHTS.C +
+    pillars.U * PILLAR_WEIGHTS.U
+  );
+}
+
+// ========== Calculate Q, I, K multipliers ==========
 function calculateMultipliers(
   action: ActionData,
   pillars: { S: number; T: number; H: number; C: number; U: number },
-  actionConfig: { multipliers: { Q: [number, number]; I: [number, number]; K: [number, number] } }
+  ranges: { Q: [number, number]; I: [number, number]; K: [number, number] }
 ): { Q: number; I: number; K: number } {
   const impact = action.impact || {};
   const integrity = action.integrity || {};
   const metadata = action.metadata || {};
 
-  // Q - Quality multiplier (based on content quality)
-  const qRange = actionConfig.multipliers.Q;
-  let qNormalized = 0.5; // Default middle
+  // Q - Quality multiplier
+  let qNormalized = 0.5;
   if (metadata.quality_score && typeof metadata.quality_score === 'number') {
     qNormalized = metadata.quality_score;
   } else {
-    qNormalized = (pillars.T + pillars.C) / 200; // Derive from T and C
+    qNormalized = (pillars.T + pillars.C) / 200;
   }
-  const Q = qRange[0] + (qRange[1] - qRange[0]) * qNormalized;
+  const Q = ranges.Q[0] + (ranges.Q[1] - ranges.Q[0]) * qNormalized;
 
-  // I - Impact multiplier (based on reach and effect)
-  const iRange = actionConfig.multipliers.I;
-  let iNormalized = 0.3; // Default lower
+  // I - Impact multiplier
+  let iNormalized = 0.3;
   if (impact.beneficiaries && typeof impact.beneficiaries === 'number') {
     iNormalized = Math.min(1, impact.beneficiaries / 10);
   }
   if (impact.reach_score && typeof impact.reach_score === 'number') {
     iNormalized = Math.max(iNormalized, impact.reach_score);
   }
-  const I = iRange[0] + (iRange[1] - iRange[0]) * iNormalized;
+  const I = ranges.I[0] + (ranges.I[1] - ranges.I[0]) * iNormalized;
 
-  // K - Integrity multiplier (anti-fraud score)
-  const kRange = actionConfig.multipliers.K;
-  let kNormalized = 0.7; // Default reasonable trust
+  // K - Integrity multiplier
+  let kNormalized = 0.7;
   if (integrity.anti_sybil_score && typeof integrity.anti_sybil_score === 'number') {
     kNormalized = integrity.anti_sybil_score;
   }
   if (integrity.fraud_signals && (integrity.fraud_signals as unknown[]).length > 0) {
-    kNormalized *= 0.5; // Reduce for fraud signals
+    kNormalized *= 0.5;
   }
-  const K = kRange[0] + (kRange[1] - kRange[0]) * kNormalized;
+  const K = ranges.K[0] + (ranges.K[1] - ranges.K[0]) * kNormalized;
 
   return {
     Q: Math.round(Q * 100) / 100,
     I: Math.round(I * 100) / 100,
     K: Math.round(K * 100) / 100,
   };
+}
+
+// ========== Check thresholds ==========
+function checkThresholds(
+  pillars: { S: number; T: number; H: number; C: number; U: number },
+  lightScore: number,
+  multipliers: { Q: number; I: number; K: number },
+  thresholds: Record<string, number>
+): { pass: boolean; reasons: string[] } {
+  const failReasons: string[] = [];
+
+  if (thresholds.S && pillars.S < thresholds.S) {
+    failReasons.push(`S_BELOW_${thresholds.S}`);
+  }
+  if (thresholds.T && pillars.T < thresholds.T) {
+    failReasons.push(`T_BELOW_${thresholds.T}`);
+  }
+  if (thresholds.H && pillars.H < thresholds.H) {
+    failReasons.push(`H_BELOW_${thresholds.H}`);
+  }
+  if (thresholds.C && pillars.C < thresholds.C) {
+    failReasons.push(`C_BELOW_${thresholds.C}`);
+  }
+  if (thresholds.U && pillars.U < thresholds.U) {
+    failReasons.push(`U_BELOW_${thresholds.U}`);
+  }
+  if (thresholds.K && multipliers.K * 100 < thresholds.K) {
+    failReasons.push(`K_BELOW_${thresholds.K}`);
+  }
+  if (thresholds.LightScore && lightScore < thresholds.LightScore) {
+    failReasons.push(`LIGHTSCORE_BELOW_${thresholds.LightScore}`);
+  }
+  if (lightScore < MIN_LIGHT_SCORE) {
+    failReasons.push(`LIGHTSCORE_BELOW_GLOBAL_MIN`);
+  }
+
+  return { pass: failReasons.length === 0, reasons: failReasons };
 }
 
 serve(async (req) => {
@@ -193,7 +203,7 @@ serve(async (req) => {
       );
     }
 
-    // Fetch the action
+    // ========== 1. Fetch the action ==========
     const { data: action, error: actionError } = await supabase
       .from('pplp_actions')
       .select('*')
@@ -214,62 +224,53 @@ serve(async (req) => {
       );
     }
 
-    // Get policy config (use default for now)
-    const policy = defaultPolicy;
-    const platformConfig = policy.platforms[action.platform_id];
-    const actionConfig = platformConfig?.actions[action.action_type];
+    // ========== 2. Fetch action caps config from DB ==========
+    const { data: capsConfig } = await supabase
+      .from('pplp_action_caps')
+      .select('*')
+      .eq('action_type', action.action_type)
+      .eq('is_active', true)
+      .maybeSingle();
 
-    if (!actionConfig) {
-      // Use generic fallback
-      console.log(`[PPLP] No specific config for ${action.platform_id}/${action.action_type}, using defaults`);
-    }
+    // Default config if not found
+    const config: ActionCapsConfig = capsConfig || {
+      action_type: action.action_type,
+      platform_id: 'ALL',
+      base_reward: 100,
+      max_per_user_daily: 10,
+      max_per_user_weekly: 50,
+      max_global_daily: null,
+      cooldown_seconds: 0,
+      diminishing_threshold: 5,
+      diminishing_factor: 0.8,
+      min_quality_score: 0.5,
+      thresholds: { T: 70, LightScore: 60 },
+      multiplier_ranges: { Q: [0.5, 3.0], I: [0.5, 5.0], K: [0.0, 1.0] },
+      is_active: true,
+    };
 
-    const baseReward = actionConfig?.baseReward || 100;
-    const thresholds = actionConfig?.thresholds || { T: 70, K: 60 };
-    const multiplierConfig = actionConfig?.multipliers || { Q: [0.8, 2.0], I: [0.8, 1.5], K: [0.6, 1.0] };
-
-    // Calculate pillar scores
+    // ========== 3. Calculate pillar scores ==========
     const pillars = calculatePillarScores(action);
+    const lightScore = calculateLightScore(pillars);
 
-    // Calculate LightScore
-    const weights = policy.global.weights;
-    const lightScore = 
-      pillars.S * weights.S +
-      pillars.T * weights.T +
-      pillars.H * weights.H +
-      pillars.C * weights.C +
-      pillars.U * weights.U;
+    // ========== 4. Calculate multipliers ==========
+    const multiplierRanges = config.multiplier_ranges || { Q: [0.5, 3.0], I: [0.5, 5.0], K: [0.0, 1.0] };
+    const multipliers = calculateMultipliers(action, pillars, multiplierRanges);
 
-    // Calculate multipliers
-    const multipliers = calculateMultipliers(action, pillars, { multipliers: multiplierConfig });
+    // ========== 5. Check thresholds ==========
+    const thresholds = config.thresholds || { T: 70, LightScore: 60 };
+    const thresholdCheck = checkThresholds(pillars, lightScore, multipliers, thresholds);
+    
+    let decision: 'pass' | 'fail' = thresholdCheck.pass ? 'pass' : 'fail';
+    const failReasons = thresholdCheck.reasons;
 
-    // Check thresholds
-    let decision: 'pass' | 'fail' = 'pass';
-    const failReasons: string[] = [];
-
-    if (thresholds.T && pillars.T < thresholds.T) {
-      failReasons.push(`T_BELOW_${thresholds.T}`);
-    }
-    if (thresholds.K && multipliers.K * 100 < thresholds.K) {
-      failReasons.push(`K_BELOW_${thresholds.K}`);
-    }
-    if (thresholds.LightScore && lightScore < thresholds.LightScore) {
-      failReasons.push(`LIGHTSCORE_BELOW_${thresholds.LightScore}`);
-    }
-    if (lightScore < policy.global.minLightScore) {
-      failReasons.push(`LIGHTSCORE_BELOW_GLOBAL_MIN`);
-    }
-
-    if (failReasons.length > 0) {
-      decision = 'fail';
-    }
-
-    // Calculate final reward
-    const finalReward = decision === 'pass' 
+    // ========== 6. Calculate base reward ==========
+    const baseReward = config.base_reward || 100;
+    let finalReward = decision === 'pass' 
       ? Math.round(baseReward * multipliers.Q * multipliers.I * multipliers.K)
       : 0;
 
-    // Insert score record
+    // ========== 7. Insert score record ==========
     const { error: scoreError } = await supabase
       .from('pplp_scores')
       .insert({
@@ -292,14 +293,14 @@ serve(async (req) => {
       });
 
     if (scoreError) {
-      console.error('Score insert error:', scoreError);
+      console.error('[PPLP] Score insert error:', scoreError);
       return new Response(
         JSON.stringify({ error: 'Failed to save score', details: scoreError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Update action status
+    // ========== 8. Update action status ==========
     await supabase
       .from('pplp_actions')
       .update({ 
@@ -310,7 +311,7 @@ serve(async (req) => {
 
     console.log(`[PPLP] Action ${action.id} scored: ${decision.toUpperCase()} - LightScore: ${lightScore.toFixed(2)}, Reward: ${finalReward}`);
 
-    // ========== AUTO-MINT: Automatically mint if scoring passed ==========
+    // ========== 9. AUTO-MINT with Caps & Diminishing Returns ==========
     let mintResult = null;
     if (decision === 'pass' && finalReward > 0) {
       try {
@@ -322,57 +323,90 @@ serve(async (req) => {
           .eq('is_resolved', false)
           .gte('severity', 4);
 
-        if (!fraudSignals || fraudSignals === 0) {
-          // Award Camly Coins directly
-          const { data: newBalance, error: coinError } = await supabase
-            .rpc('add_camly_coins', {
-              _user_id: action.actor_id,
-              _amount: finalReward,
-              _transaction_type: 'pplp_reward',
-              _description: `PPLP Auto-Mint: ${action.platform_id}/${action.action_type}`,
-              _purity_score: lightScore / 100,
-              _metadata: {
-                action_id: action.id,
-                platform_id: action.platform_id,
-                action_type: action.action_type,
-                pillars: { S: pillars.S, T: pillars.T, H: pillars.H, C: pillars.C, U: pillars.U },
-                multipliers: { Q: multipliers.Q, I: multipliers.I, K: multipliers.K },
-                light_score: Math.round(lightScore * 100) / 100,
-                auto_minted: true,
-              }
-            });
-
-          if (!coinError) {
-            // Update action status to minted
-            await supabase
-              .from('pplp_actions')
-              .update({ 
-                status: 'minted',
-                minted_at: new Date().toISOString()
-              })
-              .eq('id', action.id);
-
-            // Update PoPL score
-            await supabase.rpc('update_popl_score', {
-              _user_id: action.actor_id,
-              _action_type: action.action_type.toLowerCase(),
-              _is_positive: true
-            });
-
-            mintResult = {
-              auto_minted: true,
-              reward_amount: finalReward,
-              new_balance: newBalance,
-            };
-
-            console.log(`[PPLP Auto-Mint] ✓ Action ${action.id}: Minted ${finalReward} Camly Coins to ${action.actor_id.slice(0, 8)}...`);
-          } else {
-            console.error('[PPLP Auto-Mint] Coin transfer failed:', coinError);
-            mintResult = { auto_minted: false, error: coinError.message };
-          }
-        } else {
+        if (fraudSignals && fraudSignals > 0) {
           console.warn(`[PPLP Auto-Mint] Blocked for ${action.actor_id}: ${fraudSignals} unresolved fraud signals`);
           mintResult = { auto_minted: false, blocked_by_fraud: true, fraud_signal_count: fraudSignals };
+        } else {
+          // ========== Check caps & apply diminishing returns ==========
+          const { data: capResult, error: capError } = await supabase
+            .rpc('check_user_cap_and_update', {
+              _user_id: action.actor_id,
+              _action_type: action.action_type,
+              _reward_amount: finalReward
+            });
+
+          if (capError) {
+            console.error('[PPLP] Cap check error:', capError);
+            mintResult = { auto_minted: false, error: capError.message };
+          } else if (!capResult.can_mint) {
+            console.warn(`[PPLP Auto-Mint] Blocked: ${capResult.reason}`);
+            mintResult = { 
+              auto_minted: false, 
+              blocked_by_cap: true, 
+              reason: capResult.reason,
+              action_count_today: capResult.action_count_today,
+              max_daily: capResult.max_daily
+            };
+          } else {
+            // Apply diminishing returns to final reward
+            const adjustedReward = capResult.adjusted_reward;
+
+            // Award Camly Coins
+            const { data: newBalance, error: coinError } = await supabase
+              .rpc('add_camly_coins', {
+                _user_id: action.actor_id,
+                _amount: adjustedReward,
+                _transaction_type: 'pplp_reward',
+                _description: `PPLP Mint: ${action.platform_id}/${action.action_type}`,
+                _purity_score: lightScore / 100,
+                _metadata: {
+                  action_id: action.id,
+                  platform_id: action.platform_id,
+                  action_type: action.action_type,
+                  pillars,
+                  multipliers,
+                  light_score: Math.round(lightScore * 100) / 100,
+                  base_reward: baseReward,
+                  original_reward: finalReward,
+                  adjusted_reward: adjustedReward,
+                  diminishing_multiplier: capResult.diminishing_multiplier,
+                  action_count_today: capResult.action_count_today,
+                }
+              });
+
+            if (!coinError) {
+              // Update action status to minted
+              await supabase
+                .from('pplp_actions')
+                .update({ 
+                  status: 'minted',
+                  minted_at: new Date().toISOString()
+                })
+                .eq('id', action.id);
+
+              // Update PoPL score
+              await supabase.rpc('update_popl_score', {
+                _user_id: action.actor_id,
+                _action_type: action.action_type.toLowerCase(),
+                _is_positive: true
+              });
+
+              mintResult = {
+                auto_minted: true,
+                original_reward: finalReward,
+                adjusted_reward: adjustedReward,
+                diminishing_multiplier: capResult.diminishing_multiplier,
+                action_count_today: capResult.action_count_today,
+                max_daily: capResult.max_daily,
+                new_balance: newBalance,
+              };
+
+              console.log(`[PPLP Auto-Mint] ✓ Action ${action.id}: Minted ${adjustedReward} (orig: ${finalReward}) to ${action.actor_id.slice(0, 8)}...`);
+            } else {
+              console.error('[PPLP Auto-Mint] Coin transfer failed:', coinError);
+              mintResult = { auto_minted: false, error: coinError.message };
+            }
+          }
         }
       } catch (mintError) {
         console.error('[PPLP Auto-Mint] Error:', mintError);
