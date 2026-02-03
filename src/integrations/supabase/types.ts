@@ -1551,6 +1551,302 @@ export type Database = {
         }
         Relationships: []
       }
+      pplp_actions: {
+        Row: {
+          action_type: string
+          actor_id: string
+          created_at: string
+          evidence_hash: string | null
+          id: string
+          impact: Json
+          integrity: Json
+          metadata: Json
+          minted_at: string | null
+          platform_id: string
+          policy_version: string
+          scored_at: string | null
+          status: Database["public"]["Enums"]["pplp_action_status"]
+          target_id: string | null
+        }
+        Insert: {
+          action_type: string
+          actor_id: string
+          created_at?: string
+          evidence_hash?: string | null
+          id?: string
+          impact?: Json
+          integrity?: Json
+          metadata?: Json
+          minted_at?: string | null
+          platform_id?: string
+          policy_version?: string
+          scored_at?: string | null
+          status?: Database["public"]["Enums"]["pplp_action_status"]
+          target_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          actor_id?: string
+          created_at?: string
+          evidence_hash?: string | null
+          id?: string
+          impact?: Json
+          integrity?: Json
+          metadata?: Json
+          minted_at?: string | null
+          platform_id?: string
+          policy_version?: string
+          scored_at?: string | null
+          status?: Database["public"]["Enums"]["pplp_action_status"]
+          target_id?: string | null
+        }
+        Relationships: []
+      }
+      pplp_disputes: {
+        Row: {
+          action_id: string
+          assigned_to: string | null
+          created_at: string
+          evidence: Json
+          id: string
+          reason: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["pplp_dispute_status"]
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          action_id: string
+          assigned_to?: string | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          reason: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["pplp_dispute_status"]
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          action_id?: string
+          assigned_to?: string | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          reason?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["pplp_dispute_status"]
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_disputes_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pplp_evidences: {
+        Row: {
+          action_id: string
+          content_hash: string
+          created_at: string
+          evidence_type: string
+          id: string
+          metadata: Json
+          uri: string | null
+        }
+        Insert: {
+          action_id: string
+          content_hash: string
+          created_at?: string
+          evidence_type: string
+          id?: string
+          metadata?: Json
+          uri?: string | null
+        }
+        Update: {
+          action_id?: string
+          content_hash?: string
+          created_at?: string
+          evidence_type?: string
+          id?: string
+          metadata?: Json
+          uri?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_evidences_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pplp_fraud_signals: {
+        Row: {
+          action_id: string | null
+          actor_id: string
+          created_at: string
+          details: Json
+          id: string
+          is_resolved: boolean
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: number
+          signal_type: string
+          source: string
+        }
+        Insert: {
+          action_id?: string | null
+          actor_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          is_resolved?: boolean
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: number
+          signal_type: string
+          source?: string
+        }
+        Update: {
+          action_id?: string | null
+          actor_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          is_resolved?: boolean
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: number
+          signal_type?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_fraud_signals_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pplp_policies: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          is_active: boolean
+          policy_json: Json
+          version: string
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          is_active?: boolean
+          policy_json: Json
+          version: string
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          is_active?: boolean
+          policy_json?: Json
+          version?: string
+        }
+        Relationships: []
+      }
+      pplp_scores: {
+        Row: {
+          action_id: string
+          base_reward: number
+          created_at: string
+          decision: Database["public"]["Enums"]["pplp_decision"]
+          decision_reason: string | null
+          final_reward: number
+          id: string
+          light_score: number
+          multiplier_i: number
+          multiplier_k: number
+          multiplier_q: number
+          pillar_c: number
+          pillar_h: number
+          pillar_s: number
+          pillar_t: number
+          pillar_u: number
+          policy_version: string
+          scored_by: string
+        }
+        Insert: {
+          action_id: string
+          base_reward?: number
+          created_at?: string
+          decision?: Database["public"]["Enums"]["pplp_decision"]
+          decision_reason?: string | null
+          final_reward?: number
+          id?: string
+          light_score?: number
+          multiplier_i?: number
+          multiplier_k?: number
+          multiplier_q?: number
+          pillar_c?: number
+          pillar_h?: number
+          pillar_s?: number
+          pillar_t?: number
+          pillar_u?: number
+          policy_version?: string
+          scored_by?: string
+        }
+        Update: {
+          action_id?: string
+          base_reward?: number
+          created_at?: string
+          decision?: Database["public"]["Enums"]["pplp_decision"]
+          decision_reason?: string | null
+          final_reward?: number
+          id?: string
+          light_score?: number
+          multiplier_i?: number
+          multiplier_k?: number
+          multiplier_q?: number
+          pillar_c?: number
+          pillar_h?: number
+          pillar_s?: number
+          pillar_t?: number
+          pillar_u?: number
+          policy_version?: string
+          scored_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_scores_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: true
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -2238,6 +2534,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      calculate_light_score: {
+        Args: { _c: number; _h: number; _s: number; _t: number; _u: number }
+        Returns: number
+      }
+      calculate_pplp_reward: {
+        Args: { _base_reward: number; _i: number; _k: number; _q: number }
+        Returns: number
+      }
       check_and_increment_ai_usage: {
         Args: { _daily_limit?: number; _usage_type: string; _user_id: string }
         Returns: {
@@ -2350,6 +2654,21 @@ export type Database = {
           transaction_type: string
         }[]
       }
+      get_user_pplp_stats: {
+        Args: { _user_id: string }
+        Returns: {
+          avg_light_score: number
+          avg_pillar_c: number
+          avg_pillar_h: number
+          avg_pillar_s: number
+          avg_pillar_t: number
+          avg_pillar_u: number
+          minted_actions: number
+          scored_actions: number
+          total_actions: number
+          total_rewards: number
+        }[]
+      }
       get_user_withdrawal_status: {
         Args: { _user_id: string }
         Returns: {
@@ -2447,6 +2766,15 @@ export type Database = {
         | "project_donation"
         | "project_reward"
       energy_level: "very_high" | "high" | "neutral" | "low" | "very_low"
+      pplp_action_status:
+        | "pending"
+        | "scoring"
+        | "scored"
+        | "minted"
+        | "rejected"
+        | "disputed"
+      pplp_decision: "pass" | "fail" | "pending" | "manual_review"
+      pplp_dispute_status: "open" | "investigating" | "resolved" | "rejected"
       suspension_type: "temporary" | "permanent"
     }
     CompositeTypes: {
@@ -2600,6 +2928,16 @@ export const Constants = {
         "project_reward",
       ],
       energy_level: ["very_high", "high", "neutral", "low", "very_low"],
+      pplp_action_status: [
+        "pending",
+        "scoring",
+        "scored",
+        "minted",
+        "rejected",
+        "disputed",
+      ],
+      pplp_decision: ["pass", "fail", "pending", "manual_review"],
+      pplp_dispute_status: ["open", "investigating", "resolved", "rejected"],
       suspension_type: ["temporary", "permanent"],
     },
   },
