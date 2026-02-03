@@ -163,3 +163,6 @@ verify_jwt = false
 
 [functions.pplp-authorize-mint]
 verify_jwt = false
+
+[functions.pplp-batch-processor]
+verify_jwt = false
