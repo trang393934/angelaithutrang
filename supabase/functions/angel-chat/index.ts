@@ -3,8 +3,56 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key",
 };
+
+// ═══════════════════════════════════════════════════════════════
+// 🔑 API KEY VALIDATION - Allow external apps to use Angel AI
+// ═══════════════════════════════════════════════════════════════
+
+async function hashApiKey(apiKey: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(apiKey);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function validateApiKey(apiKey: string, supabase: any): Promise<{ userId: string; apiKeyId: string } | null> {
+  try {
+    const keyHash = await hashApiKey(apiKey);
+    
+    // Use the database function to validate and check rate limit
+    const { data, error } = await supabase
+      .rpc('validate_api_key', { _key_hash: keyHash });
+    
+    if (error) {
+      console.error("API key validation error:", error);
+      return null;
+    }
+    
+    if (!data || data.length === 0) {
+      console.log("API key not found or inactive");
+      return null;
+    }
+    
+    const keyData = data[0];
+    
+    // Check rate limit
+    if (keyData.is_rate_limited) {
+      console.log(`API key ${keyData.api_key_id} has exceeded daily rate limit`);
+      return null;
+    }
+    
+    return {
+      userId: keyData.user_id,
+      apiKeyId: keyData.api_key_id,
+    };
+  } catch (err) {
+    console.error("API key validation exception:", err);
+    return null;
+  }
+}
 
 // Response style configurations
 const RESPONSE_STYLES = {
@@ -803,29 +851,61 @@ serve(async (req) => {
     }
 
     let supabase = null;
+    let authenticatedUserId: string | null = null;
+    let apiKeyId: string | null = null;
+    
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
       
-      // Track chat usage (no limit, just tracking)
+      // ═══════════════════════════════════════════════════════════════
+      // 🔐 AUTHENTICATION: Support both JWT and API Key
+      // ═══════════════════════════════════════════════════════════════
+      
+      const apiKeyHeader = req.headers.get("x-api-key");
       const authHeader = req.headers.get("Authorization");
-      if (authHeader) {
+      
+      if (apiKeyHeader) {
+        // API Key Authentication (for external applications)
+        console.log("Attempting API key authentication...");
+        const validationResult = await validateApiKey(apiKeyHeader, supabase);
+        
+        if (validationResult) {
+          authenticatedUserId = validationResult.userId;
+          apiKeyId = validationResult.apiKeyId;
+          console.log(`API key authenticated for user: ${authenticatedUserId}`);
+          
+          // Increment API key usage
+          await supabase.rpc('increment_api_key_usage', { 
+            _api_key_id: apiKeyId,
+            _tokens_used: 0 // Will be updated based on actual usage
+          });
+        } else {
+          console.log("Invalid API key or rate limit exceeded");
+          return new Response(
+            JSON.stringify({ error: "Invalid API key or rate limit exceeded" }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else if (authHeader) {
+        // JWT Authentication (for web app users)
         try {
           const token = authHeader.replace('Bearer ', '');
           const { data: claimsData } = await supabase.auth.getClaims(token);
-          const userId = claimsData?.claims?.sub as string || null;
+          authenticatedUserId = claimsData?.claims?.sub as string || null;
           
-          if (userId) {
+          if (authenticatedUserId) {
             await supabase.rpc('check_and_increment_ai_usage', {
-              _user_id: userId,
+              _user_id: authenticatedUserId,
               _usage_type: 'chat',
               _daily_limit: null
             });
-            console.log(`Tracked chat usage for user ${userId}`);
+            console.log(`JWT authenticated and tracked usage for user: ${authenticatedUserId}`);
           }
         } catch (trackError) {
-          console.error("Usage tracking error:", trackError);
+          console.error("JWT auth/usage tracking error:", trackError);
         }
       }
+      // Note: Anonymous access (no auth) is still allowed for basic queries
       
       // OPTIMIZATION 3: Check database cache for similar questions
       // Use actualQuestion (without mantra) to avoid false matches

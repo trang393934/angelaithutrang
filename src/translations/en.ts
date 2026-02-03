@@ -802,6 +802,43 @@ const translations: Record<string, string> = {
   
   // User Profile
   "userProfile.message": "Message",
+  
+  // API Keys
+  "apiKeys.title": "API Keys",
+  "apiKeys.description": "Access Angel AI from external applications",
+  "apiKeys.createNew": "Create New API Key",
+  "apiKeys.name": "Key Name",
+  "apiKeys.namePlaceholder": "My Website Chatbot",
+  "apiKeys.nameRequired": "Please enter a name for your API key",
+  "apiKeys.dailyLimit": "Daily Request Limit",
+  "apiKeys.requestsPerDay": "requests/day",
+  "apiKeys.created": "Created",
+  "apiKeys.lastUsed": "Last used",
+  "apiKeys.never": "Never",
+  "apiKeys.todayUsage": "Today: {used}/{limit} requests",
+  "apiKeys.copy": "Copy",
+  "apiKeys.copied": "Key ID copied!",
+  "apiKeys.delete": "Delete",
+  "apiKeys.deleted": "API key deleted",
+  "apiKeys.disable": "Disable",
+  "apiKeys.enable": "Enable",
+  "apiKeys.active": "Active",
+  "apiKeys.inactive": "Inactive",
+  "apiKeys.create": "Create API Key",
+  "apiKeys.createDescription": "Generate a new API key to use Angel AI from external applications",
+  "apiKeys.createSuccess": "API Key Created Successfully!",
+  "apiKeys.copyWarning": "Copy this key now! You won't be able to see it again.",
+  "apiKeys.copyWarningTitle": "Warning",
+  "apiKeys.yourKey": "Your API Key",
+  "apiKeys.usageExample": "Usage Example",
+  "apiKeys.done": "I've Copied My Key - Done",
+  "apiKeys.copyFirst": "Copy Key First",
+  "apiKeys.deleteTitle": "Delete API Key",
+  "apiKeys.deleteConfirm": "Are you sure you want to delete this API key? This action cannot be undone.",
+  "apiKeys.maxKeysReached": "Maximum 5 API keys allowed",
+  "apiKeys.securityNote": "Keep your keys secure - never share them publicly.",
+  "apiKeys.noKeys": "No API keys yet",
+  "apiKeys.createFirst": "Create your first API key to get started",
 };
 
 export default translations;

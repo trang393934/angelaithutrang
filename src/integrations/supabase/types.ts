@@ -44,6 +44,38 @@ export type Database = {
         }
         Relationships: []
       }
+      api_key_usage: {
+        Row: {
+          api_key_id: string
+          id: string
+          request_count: number
+          tokens_used: number
+          usage_date: string
+        }
+        Insert: {
+          api_key_id: string
+          id?: string
+          request_count?: number
+          tokens_used?: number
+          usage_date?: string
+        }
+        Update: {
+          api_key_id?: string
+          id?: string
+          request_count?: number
+          tokens_used?: number
+          usage_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_key_usage_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "user_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bounty_submissions: {
         Row: {
           admin_feedback: string | null
@@ -1713,6 +1745,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_api_keys: {
+        Row: {
+          created_at: string
+          daily_limit: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          total_requests: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_limit?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          total_requests?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_limit?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          total_requests?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_energy_status: {
         Row: {
           admin_notes: string | null
@@ -2294,6 +2368,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_api_key_usage: {
+        Args: { _api_key_id: string; _tokens_used?: number }
+        Returns: undefined
+      }
       increment_early_adopter_questions: {
         Args: { p_user_id: string }
         Returns: number
@@ -2332,6 +2410,16 @@ export type Database = {
       update_popl_score: {
         Args: { _action_type: string; _is_positive: boolean; _user_id: string }
         Returns: number
+      }
+      validate_api_key: {
+        Args: { _key_hash: string }
+        Returns: {
+          api_key_id: string
+          current_usage: number
+          daily_limit: number
+          is_rate_limited: boolean
+          user_id: string
+        }[]
       }
     }
     Enums: {
