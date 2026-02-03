@@ -220,13 +220,76 @@ const Chat = () => {
     setPendingImage(null);
   };
 
-  const handleDownloadImage = (imageUrl: string) => {
-    const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = `angel-ai-image-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadImage = async (imageUrl: string) => {
+    try {
+      // Check if it's a data URL (base64) - can download directly
+      if (imageUrl.startsWith('data:')) {
+        const link = document.createElement("a");
+        link.href = imageUrl;
+        link.download = `angel-ai-image-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Đã tải hình ảnh thành công!");
+        return;
+      }
+
+      // For external URLs, use canvas to convert and download
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      
+      const downloadPromise = new Promise<void>((resolve, reject) => {
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              reject(new Error("Cannot create canvas context"));
+              return;
+            }
+            
+            ctx.drawImage(img, 0, 0);
+            
+            canvas.toBlob((blob) => {
+              if (!blob) {
+                reject(new Error("Cannot create blob"));
+                return;
+              }
+              
+              const blobUrl = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = blobUrl;
+              link.download = `angel-ai-image-${Date.now()}.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(blobUrl);
+              resolve();
+            }, "image/png");
+          } catch (err) {
+            reject(err);
+          }
+        };
+        
+        img.onerror = () => reject(new Error("Failed to load image"));
+      });
+      
+      img.src = imageUrl;
+      await downloadPromise;
+      toast.success("Đã tải hình ảnh thành công!");
+    } catch (error) {
+      console.error("Download error:", error);
+      // Fallback: try to open in new tab for manual save
+      try {
+        window.open(imageUrl, '_blank');
+        toast.info("Hình ảnh đã mở trong tab mới. Nhấn giữ để lưu về thiết bị.");
+      } catch {
+        toast.error("Không thể tải hình ảnh. Vui lòng thử lại.");
+      }
+    }
   };
 
   // Check if user has agreed to Light Law and fetch response style
@@ -1009,6 +1072,13 @@ const Chat = () => {
           <div className="flex-shrink-0 px-3 sm:px-4 lg:px-8 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-t border-border">
             <div className="mx-auto max-w-5xl flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 sm:gap-2">
+                <button
+                  onClick={() => setChatMode("chat")}
+                  className="p-1.5 rounded-full hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors group"
+                  title="Quay lại chat"
+                >
+                  <ArrowLeft className="w-4 h-4 text-purple-600 group-hover:text-purple-800 dark:group-hover:text-purple-300" />
+                </button>
                 <Wand2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
                 <span className="text-xs sm:text-sm font-medium text-purple-700 dark:text-purple-300">
                   {t("chat.mode.image")}
@@ -1026,7 +1096,7 @@ const Chat = () => {
                 </select>
                 <button
                   onClick={() => setChatMode("chat")}
-                  className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground px-1.5"
+                  className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground px-1.5 sm:px-2 py-1 rounded hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
                 >
                   {t("chat.cancel")}
                 </button>
