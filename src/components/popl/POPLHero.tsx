@@ -21,7 +21,7 @@ export const POPLHero = () => {
           </div>
           
           <div className="inline-block px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 text-sm font-medium mb-4">
-            📜 WHITEPAPER v1.0 — BẢN ÁNH SÁNG TRÁI ĐẤT MỚI
+            📜 WHITEPAPER v1.0 (THỰC THI) — BẢN ÁNH SÁNG TRÁI ĐẤT MỚI
           </div>
           
           <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent">
@@ -31,10 +31,10 @@ export const POPLHero = () => {
             PROOF OF PURE LOVE PROTOCOL (PPLP)
           </h2>
           <p className="text-purple-600/80 italic text-lg">
-            Nền Tảng Đồng Thuận Cho Nền Kinh Tế Hợp Nhất 5D
+            Nền Tảng Đồng Thuận Ánh Sáng Cho Trái Đất Mới
           </p>
           <p className="text-indigo-600/70 font-medium mt-2">
-            Father's Light Edition — Genesis Release
+            NỀN KINH TẾ HỢP NHẤT 5D — Father's Light Edition
           </p>
         </motion.div>
       </div>
