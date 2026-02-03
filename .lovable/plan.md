@@ -1,249 +1,158 @@
 
-# PPLP Technical Spec v1.0 - Implementation Plan
+# Kế hoạch: Giữ lại cuộc trò chuyện khi quay lại trang Chat trên điện thoại
 
-## Overview
+## Tổng quan vấn đề
 
-Plan triển khai hệ thống PPLP (Proof of Pure Love Protocol) với 6 mục tiêu kỹ thuật chính, tích hợp vào nền tảng Angel AI hiện có.
+Khi người dùng đang chat với Angel AI trên điện thoại và chuyển sang ứng dụng khác (VD: đọc tin nhắn, check email), khi quay lại trang Chat thì cuộc trò chuyện bị mất - phải vào lịch sử chat để tìm lại.
 
----
+**Mong muốn**: Cuộc trò chuyện trước đó vẫn hiển thị sẵn để tiếp tục. Nếu muốn tạo cuộc trò chuyện mới thì nhấn nút "+".
 
-## Current State Analysis
+## Giải pháp
 
-### What Already Exists:
-1. **PoPL Score System** (`usePoPLScore.ts`): Basic score tracking with badge levels
-2. **Light Points** (`useLightPoints.ts`): Point accumulation with level tiers  
-3. **Camly Coin** (`useCamlyCoin.ts`): Token balance and transactions
-4. **Reward Edge Functions**: `analyze-reward-question`, `process-engagement-reward`, etc.
-5. **Database Tables**: `user_light_totals`, `camly_coin_transactions`, `chat_questions`
-6. **Engine Spec Documentation** (`pplpEngineSpec.ts`): Complete technical specification
+Lưu session ID đang hoạt động vào bộ nhớ tạm của trình duyệt (localStorage). Khi quay lại trang Chat, tự động tải lại cuộc trò chuyện đó.
 
-### What Needs to Be Built:
-- Light Action standardization framework
-- Evidence collection with anti-fraud detection
-- 5-pillar scoring engine (S/T/H/C/U)
-- Multiplier-based mint decision system
-- Reputation/Badge management
-- Audit/Governance dashboard
+## Các bước thực hiện
 
----
+### Bước 1: Cập nhật `useChatSessions.ts`
 
-## Implementation Phases
-
-### Phase 1: Database Schema Extension
-
-Create new tables following the Engine Spec:
+Thêm logic persist session vào localStorage:
 
 ```text
-+------------------+     +------------------+     +------------------+
-|  pplp_actions    |---->|  pplp_evidences  |     |  pplp_scores     |
-+------------------+     +------------------+     +------------------+
-| id (uuid)        |     | id (uuid)        |     | id (uuid)        |
-| platform_id      |     | action_id (FK)   |     | action_id (FK)   |
-| action_type      |     | evidence_type    |     | pillar_s (0-100) |
-| actor_id         |     | uri              |     | pillar_t (0-100) |
-| metadata (jsonb) |     | content_hash     |     | pillar_h (0-100) |
-| impact (jsonb)   |     | created_at       |     | pillar_c (0-100) |
-| integrity (jsonb)|     +------------------+     | pillar_u (0-100) |
-| status           |                              | light_score      |
-| evidence_hash    |     +------------------+     | multipliers      |
-| policy_version   |     | pplp_policies    |     | reward_amount    |
-| created_at       |     +------------------+     | decision         |
-+------------------+     | version (PK)     |     +------------------+
-                         | policy_json      |
-+------------------+     | created_at       |     +------------------+
-| pplp_fraud_signals|    +------------------+     | pplp_disputes    |
-+------------------+                              +------------------+
-| id (uuid)        |                              | id (uuid)        |
-| actor_id         |                              | action_id (FK)   |
-| signal_type      |                              | reason           |
-| severity (1-5)   |                              | evidence (jsonb) |
-| source           |                              | status           |
-| details (jsonb)  |                              | resolution       |
-+------------------+                              +------------------+
+┌─────────────────────────────────────────────────────────────┐
+│                   Luồng hoạt động mới                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. User vào Chat → Kiểm tra localStorage có session ID?   │
+│           ↓                                                 │
+│  2. CÓ → Tải session từ database → Hiển thị tin nhắn cũ    │
+│           ↓                                                 │
+│  3. KHÔNG → Hiển thị trang chat trống (welcome message)    │
+│           ↓                                                 │
+│  4. User gửi tin nhắn → Tạo session mới → Lưu ID vào       │
+│     localStorage                                            │
+│           ↓                                                 │
+│  5. User nhấn "+" → Xóa localStorage → Trang trống mới     │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Tables to create:**
-1. `pplp_actions` - Light actions with canonical structure
-2. `pplp_evidences` - Evidence bundles per action
-3. `pplp_scores` - 5-pillar scoring results
-4. `pplp_policies` - Versioned scoring policies
-5. `pplp_fraud_signals` - Anti-fraud detection signals
-6. `pplp_disputes` - Governance/audit disputes
+**Thay đổi cụ thể:**
+- Thêm hằng số `LAST_SESSION_KEY = 'angel_ai_last_session_id'`
+- Khi `setCurrentSession` được gọi với session hợp lệ → Lưu session ID vào localStorage
+- Khi `endCurrentSession` hoặc tạo chat mới → Xóa localStorage
+- Thêm logic trong `useEffect` khởi tạo: Nếu có session ID trong localStorage → Tự động `selectSession`
+
+### Bước 2: Cập nhật `Chat.tsx`
+
+Điều chỉnh logic khởi tạo để phối hợp với việc restore session:
+
+**Thay đổi:**
+- Thêm state `isRestoringSession` để tránh hiển thị welcome message trong lúc đang tải session cũ
+- Đợi `useChatSessions` hoàn tất việc restore trước khi hiển thị nội dung
+
+### Bước 3: Cập nhật `handleNewSession`
+
+Đảm bảo khi user nhấn nút "+" (tạo chat mới):
+- Xóa session ID trong localStorage
+- Reset về trạng thái chat mới
 
 ---
 
-### Phase 2: Edge Functions - Core Engine
+## Chi tiết kỹ thuật
 
-#### 2.1 `pplp-submit-action/index.ts`
-Submit and canonicalize Light Actions:
-- Validate input structure
-- Generate canonical hash
-- Collect and hash evidence bundle
-- Enqueue for scoring
-- Return action ID
+### File 1: `src/hooks/useChatSessions.ts`
 
-#### 2.2 `pplp-score-action/index.ts`
-Score actions using 5-pillar rubric:
-- Load current policy version
-- Calculate S/T/H/C/U scores (0-100 each)
-- Apply platform-specific thresholds
-- Calculate multipliers (Q/I/K)
-- Determine PASS/FAIL decision
-- Store score record
+```typescript
+// Thêm constant cho localStorage key
+const LAST_SESSION_KEY = 'angel_ai_last_session_id';
 
-#### 2.3 `pplp-detect-fraud/index.ts`
-Anti-fraud detection:
-- Sybil detection (device fingerprint, IP patterns)
-- Bot behavior analysis
-- Collusion detection (coordinated actions)
-- Spam/wash detection
-- Integration with Angel AI for advanced analysis
+// Trong useChatSessions hook:
 
-#### 2.4 `pplp-authorize-mint/index.ts`
-Authorize FUN Money minting:
-- Verify score PASSED thresholds
-- Check fraud signals
-- Calculate final reward amount
-- Create mint authorization record
-- (Future: EIP-712 signing for on-chain)
+// 1. Thêm function lưu session ID
+const saveLastSessionId = (sessionId: string | null) => {
+  if (sessionId) {
+    localStorage.setItem(LAST_SESSION_KEY, sessionId);
+  } else {
+    localStorage.removeItem(LAST_SESSION_KEY);
+  }
+};
 
----
+// 2. Cập nhật selectSession để lưu vào localStorage
+const selectSession = useCallback(async (session: ChatSession | null) => {
+  setCurrentSession(session);
+  saveLastSessionId(session?.id || null); // Lưu vào localStorage
+  if (session) {
+    await fetchSessionMessages(session.id);
+  } else {
+    setSessionMessages([]);
+  }
+}, [fetchSessionMessages]);
 
-### Phase 3: Scoring Engine Logic
+// 3. Cập nhật endCurrentSession để xóa localStorage
+const endCurrentSession = useCallback(async () => {
+  if (currentSession) {
+    await updateSession(currentSession.id, { title: currentSession.title });
+  }
+  setCurrentSession(null);
+  setSessionMessages([]);
+  saveLastSessionId(null); // Xóa localStorage khi kết thúc session
+}, [currentSession, updateSession]);
 
-Implement the 5-pillar scoring rubric:
-
+// 4. Thêm logic restore session trong useEffect
+useEffect(() => {
+  const restoreLastSession = async () => {
+    if (!user) return;
+    
+    const lastSessionId = localStorage.getItem(LAST_SESSION_KEY);
+    if (lastSessionId && sessions.length > 0) {
+      // Tìm session trong danh sách đã tải
+      const lastSession = sessions.find(s => s.id === lastSessionId);
+      if (lastSession) {
+        // Chỉ restore nếu session còn tồn tại
+        await selectSession(lastSession);
+      } else {
+        // Session đã bị xóa, xóa khỏi localStorage
+        localStorage.removeItem(LAST_SESSION_KEY);
+      }
+    }
+  };
+  
+  // Chạy sau khi sessions được tải xong
+  if (!isLoading && sessions.length >= 0) {
+    restoreLastSession();
+  }
+}, [user, sessions, isLoading]); // Dependency: chạy khi sessions thay đổi
 ```
-LightScore Formula:
-LightScore = (S * 0.25) + (T * 0.20) + (H * 0.20) + (C * 0.20) + (U * 0.15)
 
-Final Reward:
-RewardAmount = BaseReward * Q * I * K
+### File 2: `src/pages/Chat.tsx`
 
-Where:
-- S = Service to Life (0-100)
-- T = Truth/Transparency (0-100)  
-- H = Healing/Compassion (0-100)
-- C = Contribution durability (0-100)
-- U = Unity alignment (0-100)
-- Q = Quality multiplier (1.0-3.0)
-- I = Impact multiplier (1.0-5.0)
-- K = Integrity multiplier (0.0-1.0)
+```typescript
+// Không cần thay đổi nhiều, chỉ đảm bảo:
+
+// handleNewSession đã gọi endCurrentSession() đúng cách
+const handleNewSession = async () => {
+  await endCurrentSession(); // Đã có sẵn - sẽ xóa localStorage
+  setMessages([{ role: "assistant", content: t("chat.welcome"), type: "text" }]);
+  toast.success("Bắt đầu cuộc trò chuyện mới");
+};
 ```
 
-**Platform-specific thresholds from Engine Spec:**
-- Angel AI: T >= 80, K >= 0.75
-- FUN Profile: T >= 70, U >= 65, K >= 0.70
-- FUN Charity: T >= 85, S >= 75, K >= 0.80
-- FUN Academy: T >= 70, LightScore >= 60
-- (All 16 platforms defined in pplpEngineSpec.ts)
+---
+
+## Kết quả mong đợi
+
+| Tình huống | Trước | Sau |
+|------------|-------|-----|
+| User quay lại Chat sau khi chuyển app | Mất cuộc trò chuyện, phải vào lịch sử | Cuộc trò chuyện trước hiển thị sẵn |
+| User nhấn nút "+" | Tạo chat mới | Tạo chat mới (không đổi) |
+| User xóa session trong lịch sử | Session bị xóa | Session bị xóa + xóa khỏi localStorage nếu là session hiện tại |
+| User đăng xuất | N/A | localStorage được xóa tự động khi user = null |
 
 ---
 
-### Phase 4: Frontend Components
+## Lưu ý
 
-#### 4.1 Enhanced PoPL Score Card
-Update `PoPLScoreCard.tsx` to show:
-- 5-pillar breakdown (S/T/H/C/U)
-- Visual radar chart
-- Recent actions history
-- Badge progression
+- localStorage persist qua các lần refresh trang và chuyển app
+- Session sẽ được restore cho đến khi user chủ động tạo chat mới hoặc xóa session đó
+- Không ảnh hưởng đến các tính năng khác như tạo ảnh, phân tích ảnh
 
-#### 4.2 Light Action History Page
-New page `/activity/light-actions`:
-- List of all submitted actions
-- Status (PENDING/SCORED/MINTED)
-- Score breakdown per action
-- Evidence links
-
-#### 4.3 Admin PPLP Dashboard
-New admin page `/admin/pplp`:
-- Policy version management
-- Fraud signal monitoring
-- Dispute resolution interface
-- Scoring analytics
-
----
-
-### Phase 5: Integration with Existing Systems
-
-#### 5.1 Connect Current Reward Flow
-Update existing edge functions to submit PPLP actions:
-- `analyze-reward-question` -> Submit QUESTION_ASK action
-- `process-engagement-reward` -> Submit ENGAGEMENT_LIKE action
-- `process-share-reward` -> Submit CONTENT_SHARE action
-- `analyze-reward-journal` -> Submit JOURNAL_WRITE action
-
-#### 5.2 Reputation Sync
-- Sync `pplp_scores` -> `user_light_totals.popl_score`
-- Update badge levels based on aggregate scores
-- Trigger healing messages on milestones
-
----
-
-## Technical Details
-
-### Database Migrations Required:
-1. Create `pplp_actions` table with RLS policies
-2. Create `pplp_evidences` table with FK to actions
-3. Create `pplp_scores` table with scoring columns
-4. Create `pplp_policies` table with versioning
-5. Create `pplp_fraud_signals` table
-6. Create `pplp_disputes` table
-7. Create RPC functions for scoring calculations
-8. Add indexes for performance
-
-### Edge Functions to Create:
-1. `pplp-submit-action` - Action submission
-2. `pplp-score-action` - Scoring engine
-3. `pplp-detect-fraud` - Fraud detection
-4. `pplp-authorize-mint` - Mint authorization
-5. `pplp-get-policy` - Policy retrieval
-6. `pplp-manage-dispute` - Dispute management
-
-### React Hooks to Create:
-1. `usePPLPActions` - Submit and track actions
-2. `usePPLPScore` - Enhanced scoring with 5 pillars
-3. `usePPLPPolicy` - Current policy retrieval
-4. `usePPLPDisputes` - Dispute management (admin)
-
-### UI Components:
-1. `PPLPScoreRadar` - Radar chart for 5 pillars
-2. `PPLPActionCard` - Action display with status
-3. `PPLPPolicyViewer` - Policy version display
-4. `PPLPFraudAlerts` - Admin fraud monitoring
-
----
-
-## Implementation Order
-
-1. **Database Schema** (Phase 1) - Foundation
-2. **pplp-submit-action** - Accept Light Actions
-3. **pplp-score-action** - Core scoring engine
-4. **pplp-detect-fraud** - Anti-fraud layer
-5. **Frontend Score Display** - Show 5-pillar scores
-6. **Integration** - Connect existing reward flows
-7. **Admin Dashboard** - Governance tools
-8. **pplp-authorize-mint** - Mint authorization
-
----
-
-## Security Considerations
-
-- All scoring logic in Edge Functions (server-side)
-- RLS policies on all PPLP tables
-- Admin-only access to policy management
-- Fraud signals visible only to admins
-- Evidence hashing for integrity verification
-- Rate limiting on action submission
-
----
-
-## Estimated Scope
-
-- **Database**: 6 new tables + migrations
-- **Edge Functions**: 6 new functions
-- **React Hooks**: 4 new hooks
-- **UI Components**: 5-8 new components
-- **Admin Pages**: 1-2 new pages
-- **Integration**: Update 4-5 existing edge functions
