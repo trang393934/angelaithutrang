@@ -153,7 +153,25 @@
     font-family: 'Be Vietnam Pro', 'Noto Sans', system-ui, sans-serif;
     font-weight: 600;
     letter-spacing: -0.01em;
-    line-height: 1.35;
+    line-height: 1.5;
+    padding-top: 0.15em;
+  }
+
+  /* Vietnamese diacritics fix for large uppercase titles */
+  .vn-title-lg,
+  .text-3xl,
+  .text-4xl,
+  .text-5xl,
+  .text-6xl {
+    line-height: 1.4 !important;
+    padding-top: 0.2em;
+    overflow: visible;
+  }
+  
+  /* Specific fix for uppercase Vietnamese titles */
+  .uppercase {
+    padding-top: 0.15em;
+    line-height: 1.5;
   }
 
   /* Ensure Vietnamese diacritics render correctly */
