@@ -112,10 +112,10 @@ export async function submitPPLPAction(
   input: PPLPActionInput
 ): Promise<PPLPSubmitResult> {
   try {
-    // Get current active policy version
+    // Get current active policy with full versioning data
     const { data: policy, error: policyError } = await supabase
       .from('pplp_policies')
-      .select('version')
+      .select('version, policy_hash, thresholds, caps, formulas, action_configs')
       .eq('is_active', true)
       .maybeSingle();
 
@@ -125,7 +125,17 @@ export async function submitPPLPAction(
     }
 
     const policyVersion = policy?.version || 'v1.0.0';
+    const policyHash = policy?.policy_hash || null;
+    const actionConfigs = policy?.action_configs || {};
     const evidenceHash = generateEvidenceHash(input.evidences);
+
+    // Get action-specific config from policy
+    const actionConfig = actionConfigs[input.action_type] || {};
+    const maxDaily = actionConfig.max_daily;
+    const baseReward = actionConfig.base_reward;
+
+    console.log(`[PPLP Helper] Using policy ${policyVersion} (hash: ${policyHash?.slice(0, 10)}...)`);
+    console.log(`[PPLP Helper] Action config for ${input.action_type}:`, actionConfig);
 
     // Enrich metadata with reward context
     const enrichedMetadata = {
@@ -151,7 +161,7 @@ export async function submitPPLPAction(
       duplicate_check: input.integrity?.duplicate_check ?? false,
     };
 
-    // Create the action record
+    // Create the action record with policy snapshot
     const { data: action, error: actionError } = await supabase
       .from('pplp_actions')
       .insert({
@@ -164,6 +174,12 @@ export async function submitPPLPAction(
         integrity: defaultIntegrity,
         evidence_hash: evidenceHash,
         policy_version: policyVersion,
+        policy_snapshot: {
+          version: policyVersion,
+          hash: policyHash,
+          action_config: actionConfig,
+          thresholds: policy?.thresholds,
+        },
         status: 'pending',
       })
       .select('id')

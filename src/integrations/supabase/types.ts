@@ -2034,31 +2034,151 @@ export type Database = {
       }
       pplp_policies: {
         Row: {
+          action_configs: Json | null
           activated_at: string | null
+          approved_by: string[] | null
+          arweave_tx: string | null
+          caps: Json | null
+          changelog: string | null
           created_at: string
           created_by: string | null
+          deprecated_at: string | null
+          deprecation_reason: string | null
           description: string | null
+          formulas: Json | null
+          ipfs_cid: string | null
           is_active: boolean
+          policy_hash: string | null
           policy_json: Json
+          required_approvals: number | null
+          thresholds: Json | null
+          updated_at: string | null
           version: string
+          version_int: number | null
         }
         Insert: {
+          action_configs?: Json | null
           activated_at?: string | null
+          approved_by?: string[] | null
+          arweave_tx?: string | null
+          caps?: Json | null
+          changelog?: string | null
           created_at?: string
           created_by?: string | null
+          deprecated_at?: string | null
+          deprecation_reason?: string | null
           description?: string | null
+          formulas?: Json | null
+          ipfs_cid?: string | null
           is_active?: boolean
+          policy_hash?: string | null
           policy_json: Json
+          required_approvals?: number | null
+          thresholds?: Json | null
+          updated_at?: string | null
           version: string
+          version_int?: number | null
         }
         Update: {
+          action_configs?: Json | null
           activated_at?: string | null
+          approved_by?: string[] | null
+          arweave_tx?: string | null
+          caps?: Json | null
+          changelog?: string | null
           created_at?: string
           created_by?: string | null
+          deprecated_at?: string | null
+          deprecation_reason?: string | null
           description?: string | null
+          formulas?: Json | null
+          ipfs_cid?: string | null
           is_active?: boolean
+          policy_hash?: string | null
           policy_json?: Json
+          required_approvals?: number | null
+          thresholds?: Json | null
+          updated_at?: string | null
           version?: string
+          version_int?: number | null
+        }
+        Relationships: []
+      }
+      pplp_policy_changes: {
+        Row: {
+          block_number: number | null
+          change_type: string
+          changed_at: string
+          changed_by: string | null
+          field_changed: string | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          policy_version: string
+          reason: string | null
+          tx_hash: string | null
+        }
+        Insert: {
+          block_number?: number | null
+          change_type: string
+          changed_at?: string
+          changed_by?: string | null
+          field_changed?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          policy_version: string
+          reason?: string | null
+          tx_hash?: string | null
+        }
+        Update: {
+          block_number?: number | null
+          change_type?: string
+          changed_at?: string
+          changed_by?: string | null
+          field_changed?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          policy_version?: string
+          reason?: string | null
+          tx_hash?: string | null
+        }
+        Relationships: []
+      }
+      pplp_policy_onchain: {
+        Row: {
+          block_number: number
+          chain_id: number
+          contract_address: string
+          id: string
+          policy_hash: string
+          policy_version: string
+          registered_at: string
+          signer_address: string
+          tx_hash: string
+        }
+        Insert: {
+          block_number: number
+          chain_id?: number
+          contract_address: string
+          id?: string
+          policy_hash: string
+          policy_version: string
+          registered_at?: string
+          signer_address: string
+          tx_hash: string
+        }
+        Update: {
+          block_number?: number
+          chain_id?: number
+          contract_address?: string
+          id?: string
+          policy_hash?: string
+          policy_version?: string
+          registered_at?: string
+          signer_address?: string
+          tx_hash?: string
         }
         Relationships: []
       }
@@ -2998,7 +3118,40 @@ export type Database = {
         }[]
       }
       cleanup_expired_stories: { Args: never; Returns: undefined }
+      compute_policy_hash: { Args: { _policy_json: Json }; Returns: string }
       expire_old_mint_requests: { Args: never; Returns: number }
+      get_active_policy: {
+        Args: never
+        Returns: {
+          action_configs: Json | null
+          activated_at: string | null
+          approved_by: string[] | null
+          arweave_tx: string | null
+          caps: Json | null
+          changelog: string | null
+          created_at: string
+          created_by: string | null
+          deprecated_at: string | null
+          deprecation_reason: string | null
+          description: string | null
+          formulas: Json | null
+          ipfs_cid: string | null
+          is_active: boolean
+          policy_hash: string | null
+          policy_json: Json
+          required_approvals: number | null
+          thresholds: Json | null
+          updated_at: string | null
+          version: string
+          version_int: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pplp_policies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_activity_history_stats: {
         Args: never
         Returns: {
@@ -3213,6 +3366,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      validate_policy_version: { Args: { _version: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"
