@@ -128,14 +128,14 @@ const Community = () => {
 
         {/* Content area - fills remaining height */}
         <div className="flex-1 flex overflow-hidden">
-          <div className="container mx-auto flex gap-4 sm:gap-6 px-3 sm:px-4 py-4 h-full">
+          <div className="container mx-auto flex gap-2 sm:gap-4 lg:gap-6 px-2 sm:px-3 lg:px-4 py-3 sm:py-4 h-full">
             {/* Left Sidebar - scrollable with visible scrollbar */}
             <aside className="hidden xl:flex flex-col w-[280px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50 pr-1">
               <FunEcosystemSidebar className="w-full" />
             </aside>
 
             {/* Main Content - SCROLLABLE */}
-            <main className="flex-1 min-w-0 overflow-y-auto space-y-4 sm:space-y-6 pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
+            <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden space-y-3 sm:space-y-4 lg:space-y-6 pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
               {/* Create Post */}
               {user ? (
                 <CollapsibleCreatePost
@@ -155,31 +155,31 @@ const Community = () => {
 
               {/* Gift & Donate Action Buttons */}
               {user && (
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3">
                   <motion.div 
-                    className="flex-1"
+                    className="flex-1 min-w-0"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Button
                       onClick={() => setShowGiftDialog(true)}
-                      className="w-full bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-white font-semibold shadow-lg"
+                      className="w-full bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-white font-semibold shadow-lg px-2 sm:px-4 text-xs sm:text-sm"
                     >
-                      <Gift className="w-4 h-4 mr-2" />
-                      {t("gift.title")}
+                      <Gift className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                      <span className="truncate">{t("gift.title")}</span>
                     </Button>
                   </motion.div>
                   <motion.div 
-                    className="flex-1"
+                    className="flex-1 min-w-0"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Button
                       onClick={() => setShowDonateDialog(true)}
-                      className="w-full bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500 text-white font-semibold shadow-lg"
+                      className="w-full bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500 text-white font-semibold shadow-lg px-2 sm:px-4 text-xs sm:text-sm"
                     >
-                      <Heart className="w-4 h-4 mr-2" />
-                      {t("donate.title")}
+                      <Heart className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                      <span className="truncate">{t("donate.title")}</span>
                     </Button>
                   </motion.div>
                 </div>
@@ -191,20 +191,20 @@ const Community = () => {
                   <SheetTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 flex items-center gap-2"
+                      className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 flex items-center justify-center gap-2 text-xs sm:text-sm py-2"
                     >
-                      <Trophy className="w-4 h-4" />
-                      {t("community.leaderboard")}
+                      <Trophy className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{t("community.leaderboard")}</span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+                  <SheetContent side="bottom" className="h-[85vh] overflow-y-auto px-3 sm:px-6">
                     <SheetHeader>
-                      <SheetTitle className="text-center text-amber-600 flex items-center justify-center gap-2">
-                        <Trophy className="w-5 h-5" />
-                        {t("community.leaderboardStats")}
+                      <SheetTitle className="text-center text-amber-600 flex items-center justify-center gap-2 text-sm sm:text-base">
+                        <Trophy className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                        <span className="truncate">{t("community.leaderboardStats")}</span>
                       </SheetTitle>
                     </SheetHeader>
-                    <div className="space-y-4 mt-4 pb-6">
+                    <div className="space-y-3 sm:space-y-4 mt-3 sm:mt-4 pb-6">
                       <HonorBoard />
                       <GiftHonorBoard />
                       <DonationHonorBoard />
@@ -218,14 +218,14 @@ const Community = () => {
 
               {/* Sort Tabs */}
               <Tabs value={sortBy} onValueChange={(v) => setSortBy(v as "recent" | "popular")}>
-                <TabsList className="grid w-full max-w-xs grid-cols-2 bg-white/50">
-                  <TabsTrigger value="recent" className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" />
-                    {t("community.sortRecent")}
+                <TabsList className="grid w-full max-w-[280px] sm:max-w-xs grid-cols-2 bg-white/50">
+                  <TabsTrigger value="recent" className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                    <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="truncate">{t("community.sortRecent")}</span>
                   </TabsTrigger>
-                  <TabsTrigger value="popular" className="flex items-center gap-1.5">
-                    <TrendingUp className="w-4 h-4" />
-                    {t("community.sortPopular")}
+                  <TabsTrigger value="popular" className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="truncate">{t("community.sortPopular")}</span>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
