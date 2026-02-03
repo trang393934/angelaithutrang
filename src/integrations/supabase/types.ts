@@ -1677,6 +1677,95 @@ export type Database = {
         }
         Relationships: []
       }
+      pplp_audits: {
+        Row: {
+          action_id: string | null
+          action_taken: string | null
+          actor_id: string
+          audit_status: string
+          audit_type: string
+          audited_score: Json | null
+          auditor_id: string | null
+          completed_at: string | null
+          created_at: string
+          finding: string | null
+          id: string
+          original_score: Json | null
+          penalty_amount: number | null
+        }
+        Insert: {
+          action_id?: string | null
+          action_taken?: string | null
+          actor_id: string
+          audit_status?: string
+          audit_type: string
+          audited_score?: Json | null
+          auditor_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          finding?: string | null
+          id?: string
+          original_score?: Json | null
+          penalty_amount?: number | null
+        }
+        Update: {
+          action_id?: string | null
+          action_taken?: string | null
+          actor_id?: string
+          audit_status?: string
+          audit_type?: string
+          audited_score?: Json | null
+          auditor_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          finding?: string | null
+          id?: string
+          original_score?: Json | null
+          penalty_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_audits_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pplp_device_registry: {
+        Row: {
+          device_hash: string
+          first_seen: string
+          flag_reason: string | null
+          id: string
+          is_flagged: boolean
+          last_seen: string
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          device_hash: string
+          first_seen?: string
+          flag_reason?: string | null
+          id?: string
+          is_flagged?: boolean
+          last_seen?: string
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          device_hash?: string
+          first_seen?: string
+          flag_reason?: string | null
+          id?: string
+          is_flagged?: boolean
+          last_seen?: string
+          usage_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       pplp_disputes: {
         Row: {
           action_id: string
@@ -2006,6 +2095,69 @@ export type Database = {
           total_minted?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      pplp_user_tiers: {
+        Row: {
+          cap_multiplier: number
+          community_vouches: number
+          created_at: string
+          failed_actions: number
+          fraud_flags: number
+          known_device_hashes: string[] | null
+          last_device_hash: string | null
+          last_tier_change: string | null
+          passed_actions: number
+          stake_locked_until: string | null
+          staked_amount: number
+          tier: number
+          tier_change_reason: string | null
+          total_actions_scored: number
+          trust_score: number
+          updated_at: string
+          user_id: string
+          verified_connections: number
+        }
+        Insert: {
+          cap_multiplier?: number
+          community_vouches?: number
+          created_at?: string
+          failed_actions?: number
+          fraud_flags?: number
+          known_device_hashes?: string[] | null
+          last_device_hash?: string | null
+          last_tier_change?: string | null
+          passed_actions?: number
+          stake_locked_until?: string | null
+          staked_amount?: number
+          tier?: number
+          tier_change_reason?: string | null
+          total_actions_scored?: number
+          trust_score?: number
+          updated_at?: string
+          user_id: string
+          verified_connections?: number
+        }
+        Update: {
+          cap_multiplier?: number
+          community_vouches?: number
+          created_at?: string
+          failed_actions?: number
+          fraud_flags?: number
+          known_device_hashes?: string[] | null
+          last_device_hash?: string | null
+          last_tier_change?: string | null
+          passed_actions?: number
+          stake_locked_until?: string | null
+          staked_amount?: number
+          tier?: number
+          tier_change_reason?: string | null
+          total_actions_scored?: number
+          trust_score?: number
+          updated_at?: string
+          user_id?: string
+          verified_connections?: number
         }
         Relationships: []
       }
@@ -2883,6 +3035,10 @@ export type Database = {
           user_rank: number
         }[]
       }
+      register_device_fingerprint: {
+        Args: { _device_hash: string; _user_id: string }
+        Returns: Json
+      }
       register_early_adopter: { Args: { p_user_id: string }; Returns: boolean }
       request_coin_withdrawal: {
         Args: { _amount: number; _user_id: string; _wallet_address: string }
@@ -2892,9 +3048,39 @@ export type Database = {
           withdrawal_id: string
         }[]
       }
+      schedule_random_audit: { Args: never; Returns: number }
       update_popl_score: {
         Args: { _action_type: string; _is_positive: boolean; _user_id: string }
         Returns: number
+      }
+      update_user_tier: {
+        Args: { _user_id: string }
+        Returns: {
+          cap_multiplier: number
+          community_vouches: number
+          created_at: string
+          failed_actions: number
+          fraud_flags: number
+          known_device_hashes: string[] | null
+          last_device_hash: string | null
+          last_tier_change: string | null
+          passed_actions: number
+          stake_locked_until: string | null
+          staked_amount: number
+          tier: number
+          tier_change_reason: string | null
+          total_actions_scored: number
+          trust_score: number
+          updated_at: string
+          user_id: string
+          verified_connections: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pplp_user_tiers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       validate_api_key: {
         Args: { _key_hash: string }

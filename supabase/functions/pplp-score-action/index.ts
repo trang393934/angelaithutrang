@@ -311,106 +311,193 @@ serve(async (req) => {
 
     console.log(`[PPLP] Action ${action.id} scored: ${decision.toUpperCase()} - LightScore: ${lightScore.toFixed(2)}, Reward: ${finalReward}`);
 
-    // ========== 9. AUTO-MINT with Caps & Diminishing Returns ==========
+    // ========== 9. Run fraud detection ==========
+    let fraudResult = null;
+    try {
+      const fraudCheckResponse = await fetch(`${supabaseUrl}/functions/v1/pplp-detect-fraud`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceRoleKey}`,
+        },
+        body: JSON.stringify({
+          actor_id: action.actor_id,
+          action_id: action.id,
+          action_type: action.action_type,
+          metadata: {
+            ...action.metadata,
+            device_hash: action.integrity?.device_hash,
+            ip_hash: action.integrity?.ip_hash,
+          },
+        }),
+      });
+      
+      if (fraudCheckResponse.ok) {
+        fraudResult = await fraudCheckResponse.json();
+        console.log(`[PPLP] Fraud check: risk_score=${fraudResult.risk_score}, signals=${fraudResult.signals_detected}`);
+      }
+    } catch (fraudError) {
+      console.error('[PPLP] Fraud detection call failed:', fraudError);
+    }
+
+    // ========== 10. AUTO-MINT with Caps & Diminishing Returns ==========
     let mintResult = null;
     if (decision === 'pass' && finalReward > 0) {
       try {
-        // Check for unresolved high-severity fraud signals
-        const { count: fraudSignals } = await supabase
-          .from('pplp_fraud_signals')
-          .select('*', { count: 'exact', head: true })
-          .eq('actor_id', action.actor_id)
-          .eq('is_resolved', false)
-          .gte('severity', 4);
-
-        if (fraudSignals && fraudSignals > 0) {
-          console.warn(`[PPLP Auto-Mint] Blocked for ${action.actor_id}: ${fraudSignals} unresolved fraud signals`);
-          mintResult = { auto_minted: false, blocked_by_fraud: true, fraud_signal_count: fraudSignals };
+        // Block if high fraud risk
+        if (fraudResult && fraudResult.risk_score > 50) {
+          console.warn(`[PPLP Auto-Mint] Blocked for ${action.actor_id}: high fraud risk score ${fraudResult.risk_score}`);
+          mintResult = { 
+            auto_minted: false, 
+            blocked_by_fraud: true, 
+            fraud_risk_score: fraudResult.risk_score,
+            fraud_recommendation: fraudResult.recommendation,
+          };
         } else {
-          // ========== Check caps & apply diminishing returns ==========
-          const { data: capResult, error: capError } = await supabase
-            .rpc('check_user_cap_and_update', {
-              _user_id: action.actor_id,
-              _action_type: action.action_type,
-              _reward_amount: finalReward
-            });
+          // Check for unresolved high-severity fraud signals (fallback check)
+          const { count: fraudSignals } = await supabase
+            .from('pplp_fraud_signals')
+            .select('*', { count: 'exact', head: true })
+            .eq('actor_id', action.actor_id)
+            .eq('is_resolved', false)
+            .gte('severity', 4);
 
-          if (capError) {
-            console.error('[PPLP] Cap check error:', capError);
-            mintResult = { auto_minted: false, error: capError.message };
-          } else if (!capResult.can_mint) {
-            console.warn(`[PPLP Auto-Mint] Blocked: ${capResult.reason}`);
-            mintResult = { 
-              auto_minted: false, 
-              blocked_by_cap: true, 
-              reason: capResult.reason,
-              action_count_today: capResult.action_count_today,
-              max_daily: capResult.max_daily
-            };
+          if (fraudSignals && fraudSignals > 0) {
+            console.warn(`[PPLP Auto-Mint] Blocked for ${action.actor_id}: ${fraudSignals} unresolved fraud signals`);
+            mintResult = { auto_minted: false, blocked_by_fraud: true, fraud_signal_count: fraudSignals };
           } else {
-            // Apply diminishing returns to final reward
-            const adjustedReward = capResult.adjusted_reward;
+            // ========== Get user tier for cap multiplier ==========
+            const { data: userTier } = await supabase
+              .from('pplp_user_tiers')
+              .select('tier, cap_multiplier, trust_score')
+              .eq('user_id', action.actor_id)
+              .maybeSingle();
+            
+            const capMultiplier = userTier?.cap_multiplier || 1.0;
 
-            // Award Camly Coins
-            const { data: newBalance, error: coinError } = await supabase
-              .rpc('add_camly_coins', {
+            // ========== Check caps & apply diminishing returns ==========
+            const { data: capResult, error: capError } = await supabase
+              .rpc('check_user_cap_and_update', {
                 _user_id: action.actor_id,
-                _amount: adjustedReward,
-                _transaction_type: 'pplp_reward',
-                _description: `PPLP Mint: ${action.platform_id}/${action.action_type}`,
-                _purity_score: lightScore / 100,
-                _metadata: {
-                  action_id: action.id,
-                  platform_id: action.platform_id,
-                  action_type: action.action_type,
-                  pillars,
-                  multipliers,
-                  light_score: Math.round(lightScore * 100) / 100,
-                  base_reward: baseReward,
+                _action_type: action.action_type,
+                _reward_amount: finalReward
+              });
+
+            if (capError) {
+              console.error('[PPLP] Cap check error:', capError);
+              mintResult = { auto_minted: false, error: capError.message };
+            } else if (!capResult.can_mint) {
+              console.warn(`[PPLP Auto-Mint] Blocked: ${capResult.reason}`);
+              mintResult = { 
+                auto_minted: false, 
+                blocked_by_cap: true, 
+                reason: capResult.reason,
+                action_count_today: capResult.action_count_today,
+                max_daily: capResult.max_daily
+              };
+            } else {
+              // Apply diminishing returns and tier multiplier to final reward
+              const adjustedReward = Math.round(capResult.adjusted_reward * capMultiplier);
+
+              // Award Camly Coins
+              const { data: newBalance, error: coinError } = await supabase
+                .rpc('add_camly_coins', {
+                  _user_id: action.actor_id,
+                  _amount: adjustedReward,
+                  _transaction_type: 'pplp_reward',
+                  _description: `PPLP Mint: ${action.platform_id}/${action.action_type}`,
+                  _purity_score: lightScore / 100,
+                  _metadata: {
+                    action_id: action.id,
+                    platform_id: action.platform_id,
+                    action_type: action.action_type,
+                    pillars,
+                    multipliers,
+                    light_score: Math.round(lightScore * 100) / 100,
+                    base_reward: baseReward,
+                    original_reward: finalReward,
+                    adjusted_reward: adjustedReward,
+                    diminishing_multiplier: capResult.diminishing_multiplier,
+                    tier_multiplier: capMultiplier,
+                    user_tier: userTier?.tier || 0,
+                    action_count_today: capResult.action_count_today,
+                  }
+                });
+
+              if (!coinError) {
+                // Update action status to minted
+                await supabase
+                  .from('pplp_actions')
+                  .update({ 
+                    status: 'minted',
+                    minted_at: new Date().toISOString()
+                  })
+                  .eq('id', action.id);
+
+                // Update PoPL score
+                await supabase.rpc('update_popl_score', {
+                  _user_id: action.actor_id,
+                  _action_type: action.action_type.toLowerCase(),
+                  _is_positive: true
+                });
+
+                // Update user tier stats
+                await supabase
+                  .from('pplp_user_tiers')
+                  .upsert({
+                    user_id: action.actor_id,
+                    total_actions_scored: 1,
+                    passed_actions: 1,
+                    updated_at: new Date().toISOString(),
+                  }, { 
+                    onConflict: 'user_id',
+                    ignoreDuplicates: false 
+                  });
+
+                // Increment tier counters
+                await supabase.rpc('update_user_tier', { _user_id: action.actor_id });
+
+                mintResult = {
+                  auto_minted: true,
                   original_reward: finalReward,
                   adjusted_reward: adjustedReward,
                   diminishing_multiplier: capResult.diminishing_multiplier,
+                  tier_multiplier: capMultiplier,
+                  user_tier: userTier?.tier || 0,
                   action_count_today: capResult.action_count_today,
-                }
-              });
+                  max_daily: capResult.max_daily,
+                  new_balance: newBalance,
+                };
 
-            if (!coinError) {
-              // Update action status to minted
-              await supabase
-                .from('pplp_actions')
-                .update({ 
-                  status: 'minted',
-                  minted_at: new Date().toISOString()
-                })
-                .eq('id', action.id);
-
-              // Update PoPL score
-              await supabase.rpc('update_popl_score', {
-                _user_id: action.actor_id,
-                _action_type: action.action_type.toLowerCase(),
-                _is_positive: true
-              });
-
-              mintResult = {
-                auto_minted: true,
-                original_reward: finalReward,
-                adjusted_reward: adjustedReward,
-                diminishing_multiplier: capResult.diminishing_multiplier,
-                action_count_today: capResult.action_count_today,
-                max_daily: capResult.max_daily,
-                new_balance: newBalance,
-              };
-
-              console.log(`[PPLP Auto-Mint] ✓ Action ${action.id}: Minted ${adjustedReward} (orig: ${finalReward}) to ${action.actor_id.slice(0, 8)}...`);
-            } else {
-              console.error('[PPLP Auto-Mint] Coin transfer failed:', coinError);
-              mintResult = { auto_minted: false, error: coinError.message };
+                console.log(`[PPLP Auto-Mint] ✓ Action ${action.id}: Minted ${adjustedReward} (orig: ${finalReward}, tier x${capMultiplier}) to ${action.actor_id.slice(0, 8)}...`);
+              } else {
+                console.error('[PPLP Auto-Mint] Coin transfer failed:', coinError);
+                mintResult = { auto_minted: false, error: coinError.message };
+              }
             }
           }
         }
       } catch (mintError) {
         console.error('[PPLP Auto-Mint] Error:', mintError);
         mintResult = { auto_minted: false, error: mintError instanceof Error ? mintError.message : 'Unknown error' };
+      }
+    } else if (decision === 'fail') {
+      // Update user tier for failed action
+      try {
+        await supabase
+          .from('pplp_user_tiers')
+          .upsert({
+            user_id: action.actor_id,
+            total_actions_scored: 1,
+            failed_actions: 1,
+            updated_at: new Date().toISOString(),
+          }, { 
+            onConflict: 'user_id',
+            ignoreDuplicates: false 
+          });
+        await supabase.rpc('update_user_tier', { _user_id: action.actor_id });
+      } catch (tierError) {
+        console.error('[PPLP] Tier update for failed action error:', tierError);
       }
     }
 
@@ -425,6 +512,11 @@ serve(async (req) => {
         final_reward: finalReward,
         decision,
         fail_reasons: failReasons.length > 0 ? failReasons : null,
+        fraud: fraudResult ? {
+          risk_score: fraudResult.risk_score,
+          signals_detected: fraudResult.signals_detected,
+          recommendation: fraudResult.recommendation,
+        } : null,
         mint: mintResult,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
