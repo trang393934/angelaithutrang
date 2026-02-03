@@ -1,378 +1,249 @@
 
-
-# Plan: API Key Management System for Angel AI
+# PPLP Technical Spec v1.0 - Implementation Plan
 
 ## Overview
-Build a complete API Key management system allowing users to create personal API keys to access Angel AI from external applications, with usage tracking, rate limiting, and key management.
 
-## System Architecture
+Plan triển khai hệ thống PPLP (Proof of Pure Love Protocol) với 6 mục tiêu kỹ thuật chính, tích hợp vào nền tảng Angel AI hiện có.
+
+---
+
+## Current State Analysis
+
+### What Already Exists:
+1. **PoPL Score System** (`usePoPLScore.ts`): Basic score tracking with badge levels
+2. **Light Points** (`useLightPoints.ts`): Point accumulation with level tiers  
+3. **Camly Coin** (`useCamlyCoin.ts`): Token balance and transactions
+4. **Reward Edge Functions**: `analyze-reward-question`, `process-engagement-reward`, etc.
+5. **Database Tables**: `user_light_totals`, `camly_coin_transactions`, `chat_questions`
+6. **Engine Spec Documentation** (`pplpEngineSpec.ts`): Complete technical specification
+
+### What Needs to Be Built:
+- Light Action standardization framework
+- Evidence collection with anti-fraud detection
+- 5-pillar scoring engine (S/T/H/C/U)
+- Multiplier-based mint decision system
+- Reputation/Badge management
+- Audit/Governance dashboard
+
+---
+
+## Implementation Phases
+
+### Phase 1: Database Schema Extension
+
+Create new tables following the Engine Spec:
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    API Key Management System                    │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌───────────────────┐    ┌───────────────────────────────────┐ │
-│  │   User Settings   │    │      External Application         │ │
-│  │     (Profile)     │    │                                   │ │
-│  │                   │    │  fetch('angel-chat', {            │ │
-│  │  [Create API Key] │    │    headers: {                     │ │
-│  │                   │    │      'x-api-key': 'ak_xxx...'     │ │
-│  │  ┌─────────────┐  │    │    }                              │ │
-│  │  │ ak_abc...   │  │    │  })                               │ │
-│  │  │ Created: ... │  │    │                                   │ │
-│  │  │ [Copy][Del] │  │    └───────────┬───────────────────────┘ │
-│  │  └─────────────┘  │                │                         │
-│  │                   │                ▼                         │
-│  │  ┌─────────────┐  │    ┌───────────────────────────────────┐ │
-│  │  │ ak_xyz...   │  │    │     Edge Function (angel-chat)    │ │
-│  │  │ Last: 2h ago│  │───▶│                                   │ │
-│  │  │ [Copy][Del] │  │    │  1. Validate API Key              │ │
-│  │  └─────────────┘  │    │  2. Check Rate Limit              │ │
-│  │                   │    │  3. Process Request               │ │
-│  └───────────────────┘    │  4. Track Usage                   │ │
-│                           │  5. Return Response               │ │
-│                           └───────────────────────────────────┘ │
-│                                       │                         │
-│                                       ▼                         │
-│                           ┌───────────────────────────────────┐ │
-│                           │         Database Tables           │ │
-│                           │                                   │ │
-│                           │  • user_api_keys                  │ │
-│                           │  • api_key_usage                  │ │
-│                           └───────────────────────────────────┘ │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
++------------------+     +------------------+     +------------------+
+|  pplp_actions    |---->|  pplp_evidences  |     |  pplp_scores     |
++------------------+     +------------------+     +------------------+
+| id (uuid)        |     | id (uuid)        |     | id (uuid)        |
+| platform_id      |     | action_id (FK)   |     | action_id (FK)   |
+| action_type      |     | evidence_type    |     | pillar_s (0-100) |
+| actor_id         |     | uri              |     | pillar_t (0-100) |
+| metadata (jsonb) |     | content_hash     |     | pillar_h (0-100) |
+| impact (jsonb)   |     | created_at       |     | pillar_c (0-100) |
+| integrity (jsonb)|     +------------------+     | pillar_u (0-100) |
+| status           |                              | light_score      |
+| evidence_hash    |     +------------------+     | multipliers      |
+| policy_version   |     | pplp_policies    |     | reward_amount    |
+| created_at       |     +------------------+     | decision         |
++------------------+     | version (PK)     |     +------------------+
+                         | policy_json      |
++------------------+     | created_at       |     +------------------+
+| pplp_fraud_signals|    +------------------+     | pplp_disputes    |
++------------------+                              +------------------+
+| id (uuid)        |                              | id (uuid)        |
+| actor_id         |                              | action_id (FK)   |
+| signal_type      |                              | reason           |
+| severity (1-5)   |                              | evidence (jsonb) |
+| source           |                              | status           |
+| details (jsonb)  |                              | resolution       |
++------------------+                              +------------------+
 ```
+
+**Tables to create:**
+1. `pplp_actions` - Light actions with canonical structure
+2. `pplp_evidences` - Evidence bundles per action
+3. `pplp_scores` - 5-pillar scoring results
+4. `pplp_policies` - Versioned scoring policies
+5. `pplp_fraud_signals` - Anti-fraud detection signals
+6. `pplp_disputes` - Governance/audit disputes
 
 ---
 
-## Phase 1: Database Schema
+### Phase 2: Edge Functions - Core Engine
 
-### Table 1: `user_api_keys`
-Stores API keys for each user.
+#### 2.1 `pplp-submit-action/index.ts`
+Submit and canonicalize Light Actions:
+- Validate input structure
+- Generate canonical hash
+- Collect and hash evidence bundle
+- Enqueue for scoring
+- Return action ID
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| user_id | uuid | Owner of the key |
-| key_hash | text | SHA-256 hash of API key (never store plain key) |
-| key_prefix | text | First 8 chars for display (e.g., "ak_abc123") |
-| name | text | User-friendly label |
-| created_at | timestamp | Creation date |
-| last_used_at | timestamp | Last API call time |
-| expires_at | timestamp | Expiration date (optional) |
-| is_active | boolean | Enable/disable without deleting |
-| daily_limit | integer | Max requests per day (default: 100) |
-| total_requests | bigint | Lifetime request count |
+#### 2.2 `pplp-score-action/index.ts`
+Score actions using 5-pillar rubric:
+- Load current policy version
+- Calculate S/T/H/C/U scores (0-100 each)
+- Apply platform-specific thresholds
+- Calculate multipliers (Q/I/K)
+- Determine PASS/FAIL decision
+- Store score record
 
-### Table 2: `api_key_usage`
-Tracks daily usage per key for rate limiting.
+#### 2.3 `pplp-detect-fraud/index.ts`
+Anti-fraud detection:
+- Sybil detection (device fingerprint, IP patterns)
+- Bot behavior analysis
+- Collusion detection (coordinated actions)
+- Spam/wash detection
+- Integration with Angel AI for advanced analysis
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| api_key_id | uuid | Reference to user_api_keys |
-| usage_date | date | Date of usage |
-| request_count | integer | Number of requests that day |
-| tokens_used | bigint | Total AI tokens consumed |
-
-### RLS Policies
-- Users can only view/manage their own API keys
-- API key hashes are never exposed to client
-- Usage data is read-only for users
-
----
-
-## Phase 2: API Key Generation & Validation
-
-### Key Format
-```text
-ak_[user_id_prefix]_[random_32_chars]
-Example: ak_abc12_x9Kj2mNp4qRs6tUv8wYz0aBC3dEf
-```
-
-### Security Flow
-```text
-1. User clicks "Create API Key"
-       │
-       ▼
-2. Frontend calls Edge Function: create-api-key
-       │
-       ▼
-3. Edge Function generates secure random key
-       │
-       ▼
-4. Hash key with SHA-256, store hash in DB
-       │
-       ▼
-5. Return PLAIN key to user ONCE (never stored)
-       │
-       ▼
-6. User copies key - cannot be retrieved again
-```
+#### 2.4 `pplp-authorize-mint/index.ts`
+Authorize FUN Money minting:
+- Verify score PASSED thresholds
+- Check fraud signals
+- Calculate final reward amount
+- Create mint authorization record
+- (Future: EIP-712 signing for on-chain)
 
 ---
 
-## Phase 3: Edge Functions
+### Phase 3: Scoring Engine Logic
 
-### 3.1 `create-api-key` (New)
-- Authenticates user via JWT
-- Generates cryptographically secure API key
-- Stores hashed key in database
-- Returns plain key (one-time display)
-- Limits: Max 5 active keys per user
+Implement the 5-pillar scoring rubric:
 
-### 3.2 `validate-api-key` (New)
-- Internal helper function
-- Takes API key, returns user_id if valid
-- Updates last_used_at timestamp
-- Checks rate limits
-
-### 3.3 `angel-chat` (Update)
-Add API key authentication as alternative to JWT:
-
-```typescript
-// Current: JWT only
-const token = authHeader.replace('Bearer ', '');
-const { data } = await supabase.auth.getClaims(token);
-
-// New: Support both JWT and API Key
-const apiKey = req.headers.get('x-api-key');
-if (apiKey) {
-  // Validate API key, get user_id
-  const userId = await validateApiKey(apiKey);
-  // Continue with userId
-} else {
-  // Existing JWT flow
-}
 ```
+LightScore Formula:
+LightScore = (S * 0.25) + (T * 0.20) + (H * 0.20) + (C * 0.20) + (U * 0.15)
+
+Final Reward:
+RewardAmount = BaseReward * Q * I * K
+
+Where:
+- S = Service to Life (0-100)
+- T = Truth/Transparency (0-100)  
+- H = Healing/Compassion (0-100)
+- C = Contribution durability (0-100)
+- U = Unity alignment (0-100)
+- Q = Quality multiplier (1.0-3.0)
+- I = Impact multiplier (1.0-5.0)
+- K = Integrity multiplier (0.0-1.0)
+```
+
+**Platform-specific thresholds from Engine Spec:**
+- Angel AI: T >= 80, K >= 0.75
+- FUN Profile: T >= 70, U >= 65, K >= 0.70
+- FUN Charity: T >= 85, S >= 75, K >= 0.80
+- FUN Academy: T >= 70, LightScore >= 60
+- (All 16 platforms defined in pplpEngineSpec.ts)
 
 ---
 
-## Phase 4: User Interface
+### Phase 4: Frontend Components
 
-### Location: Profile Page → New "API Keys" Section
+#### 4.1 Enhanced PoPL Score Card
+Update `PoPLScoreCard.tsx` to show:
+- 5-pillar breakdown (S/T/H/C/U)
+- Visual radar chart
+- Recent actions history
+- Badge progression
 
-```text
-┌────────────────────────────────────────────────────────────┐
-│  🔑 API Keys                                               │
-│  ─────────────────────────────────────────────────────────│
-│                                                            │
-│  Access Angel AI from external applications                │
-│                                                            │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  📌 My Website Bot                                   │  │
-│  │  ak_abc123...  •  Created: 2026-02-01               │  │
-│  │  Last used: 2 hours ago  •  Today: 45/100 requests   │  │
-│  │                                                      │  │
-│  │  [📋 Copy Key ID]  [🗑️ Delete]  [⏸️ Disable]        │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                            │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  📌 Mobile App                                       │  │
-│  │  ak_xyz789...  •  Created: 2026-01-15               │  │
-│  │  Last used: 5 days ago  •  Today: 0/100 requests     │  │
-│  │                                                      │  │
-│  │  [📋 Copy Key ID]  [🗑️ Delete]  [⏸️ Disable]        │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                            │
-│  [+ Create New API Key]                                    │
-│                                                            │
-│  ℹ️ API keys allow external apps to use Angel AI.          │
-│     Keep your keys secure - never share them publicly.     │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
-```
+#### 4.2 Light Action History Page
+New page `/activity/light-actions`:
+- List of all submitted actions
+- Status (PENDING/SCORED/MINTED)
+- Score breakdown per action
+- Evidence links
 
-### Create Key Modal
-```text
-┌────────────────────────────────────────────────────────────┐
-│  🔑 Create New API Key                                     │
-│  ─────────────────────────────────────────────────────────│
-│                                                            │
-│  Name (for your reference):                                │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  My Website Chatbot                                  │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                            │
-│  Daily Request Limit:                                      │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  100  ▼                                              │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                            │
-│  [Cancel]                              [Create API Key]    │
-└────────────────────────────────────────────────────────────┘
-```
-
-### Key Created Success Modal
-```text
-┌────────────────────────────────────────────────────────────┐
-│  ✅ API Key Created Successfully!                          │
-│  ─────────────────────────────────────────────────────────│
-│                                                            │
-│  ⚠️ IMPORTANT: Copy this key now!                          │
-│     You won't be able to see it again.                     │
-│                                                            │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  ak_abc12_x9Kj2mNp4qRs6tUv8wYz0aBC3dEf5gHi6jK      │  │
-│  │                                        [📋 Copy]    │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                            │
-│  Usage Example:                                            │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  fetch('https://...angel-chat', {                   │  │
-│  │    method: 'POST',                                   │  │
-│  │    headers: {                                        │  │
-│  │      'x-api-key': 'YOUR_API_KEY',                   │  │
-│  │      'Content-Type': 'application/json'              │  │
-│  │    },                                                │  │
-│  │    body: JSON.stringify({ message: 'Hello' })        │  │
-│  │  })                                                  │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                            │
-│                                [I've Copied My Key - Done] │
-└────────────────────────────────────────────────────────────┘
-```
+#### 4.3 Admin PPLP Dashboard
+New admin page `/admin/pplp`:
+- Policy version management
+- Fraud signal monitoring
+- Dispute resolution interface
+- Scoring analytics
 
 ---
 
-## Phase 5: Translation Keys (12 Languages)
+### Phase 5: Integration with Existing Systems
 
-New keys to add:
-- `apiKeys.title` - "API Keys"
-- `apiKeys.description` - "Access Angel AI from external applications"
-- `apiKeys.createNew` - "Create New API Key"
-- `apiKeys.name` - "Key Name"
-- `apiKeys.namePlaceholder` - "My Website Chatbot"
-- `apiKeys.dailyLimit` - "Daily Request Limit"
-- `apiKeys.created` - "Created"
-- `apiKeys.lastUsed` - "Last used"
-- `apiKeys.never` - "Never"
-- `apiKeys.todayUsage` - "Today: {used}/{limit} requests"
-- `apiKeys.copy` - "Copy"
-- `apiKeys.delete` - "Delete"
-- `apiKeys.disable` - "Disable"
-- `apiKeys.enable` - "Enable"
-- `apiKeys.createSuccess` - "API Key Created Successfully!"
-- `apiKeys.copyWarning` - "Copy this key now! You won't be able to see it again."
-- `apiKeys.copied` - "Key copied!"
-- `apiKeys.deleteConfirm` - "Are you sure you want to delete this API key?"
-- `apiKeys.maxKeysReached` - "Maximum 5 API keys allowed"
-- `apiKeys.securityNote` - "Keep your keys secure - never share them publicly."
+#### 5.1 Connect Current Reward Flow
+Update existing edge functions to submit PPLP actions:
+- `analyze-reward-question` -> Submit QUESTION_ASK action
+- `process-engagement-reward` -> Submit ENGAGEMENT_LIKE action
+- `process-share-reward` -> Submit CONTENT_SHARE action
+- `analyze-reward-journal` -> Submit JOURNAL_WRITE action
+
+#### 5.2 Reputation Sync
+- Sync `pplp_scores` -> `user_light_totals.popl_score`
+- Update badge levels based on aggregate scores
+- Trigger healing messages on milestones
 
 ---
 
-## Phase 6: Security Measures
+## Technical Details
 
-### Rate Limiting
-- Default: 100 requests/day per key
-- Configurable per key (50, 100, 200, 500)
-- Shared with user's normal usage limits
+### Database Migrations Required:
+1. Create `pplp_actions` table with RLS policies
+2. Create `pplp_evidences` table with FK to actions
+3. Create `pplp_scores` table with scoring columns
+4. Create `pplp_policies` table with versioning
+5. Create `pplp_fraud_signals` table
+6. Create `pplp_disputes` table
+7. Create RPC functions for scoring calculations
+8. Add indexes for performance
 
-### Key Security
-- Keys are hashed (SHA-256) before storage
-- Plain keys shown only once at creation
-- Keys can be disabled without deletion
-- Automatic expiration option (30, 60, 90 days)
+### Edge Functions to Create:
+1. `pplp-submit-action` - Action submission
+2. `pplp-score-action` - Scoring engine
+3. `pplp-detect-fraud` - Fraud detection
+4. `pplp-authorize-mint` - Mint authorization
+5. `pplp-get-policy` - Policy retrieval
+6. `pplp-manage-dispute` - Dispute management
 
-### Abuse Prevention
-- Max 5 active keys per user
-- Keys inherit user's suspension status
-- Admin can view/revoke keys
-- Logging for audit trail
+### React Hooks to Create:
+1. `usePPLPActions` - Submit and track actions
+2. `usePPLPScore` - Enhanced scoring with 5 pillars
+3. `usePPLPPolicy` - Current policy retrieval
+4. `usePPLPDisputes` - Dispute management (admin)
 
----
-
-## Implementation Files
-
-### New Files (6)
-1. `supabase/migrations/xxx_create_api_keys_tables.sql`
-2. `supabase/functions/create-api-key/index.ts`
-3. `supabase/functions/delete-api-key/index.ts`
-4. `src/components/profile/ApiKeysSection.tsx`
-5. `src/components/profile/CreateApiKeyDialog.tsx`
-6. `src/hooks/useApiKeys.ts`
-
-### Modified Files (14)
-1. `supabase/config.toml` - Register new functions
-2. `supabase/functions/angel-chat/index.ts` - Add API key auth
-3. `src/pages/Profile.tsx` - Add API Keys section
-4. Translation files (12 files) - Add new keys
+### UI Components:
+1. `PPLPScoreRadar` - Radar chart for 5 pillars
+2. `PPLPActionCard` - Action display with status
+3. `PPLPPolicyViewer` - Policy version display
+4. `PPLPFraudAlerts` - Admin fraud monitoring
 
 ---
 
-## Technical Notes
+## Implementation Order
 
-### API Key Authentication in Edge Functions
-
-```typescript
-// Utility function to validate API key
-async function validateApiKey(apiKey: string, supabase: any): Promise<string | null> {
-  // Hash the provided key
-  const keyHash = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(apiKey)
-  );
-  const hashHex = Array.from(new Uint8Array(keyHash))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-  
-  // Look up in database
-  const { data, error } = await supabase
-    .from('user_api_keys')
-    .select('id, user_id, daily_limit, is_active')
-    .eq('key_hash', hashHex)
-    .eq('is_active', true)
-    .single();
-  
-  if (error || !data) return null;
-  
-  // Check rate limit
-  const today = new Date().toISOString().split('T')[0];
-  const { data: usage } = await supabase
-    .from('api_key_usage')
-    .select('request_count')
-    .eq('api_key_id', data.id)
-    .eq('usage_date', today)
-    .single();
-  
-  if (usage && usage.request_count >= data.daily_limit) {
-    return null; // Rate limit exceeded
-  }
-  
-  // Update usage
-  await supabase.rpc('increment_api_key_usage', { 
-    _api_key_id: data.id 
-  });
-  
-  return data.user_id;
-}
-```
-
-### Secure Key Generation
-
-```typescript
-function generateApiKey(userId: string): string {
-  const prefix = userId.substring(0, 5);
-  const randomBytes = crypto.getRandomValues(new Uint8Array(24));
-  const randomPart = Array.from(randomBytes)
-    .map(b => b.toString(36))
-    .join('')
-    .substring(0, 32);
-  return `ak_${prefix}_${randomPart}`;
-}
-```
+1. **Database Schema** (Phase 1) - Foundation
+2. **pplp-submit-action** - Accept Light Actions
+3. **pplp-score-action** - Core scoring engine
+4. **pplp-detect-fraud** - Anti-fraud layer
+5. **Frontend Score Display** - Show 5-pillar scores
+6. **Integration** - Connect existing reward flows
+7. **Admin Dashboard** - Governance tools
+8. **pplp-authorize-mint** - Mint authorization
 
 ---
 
-## Summary
+## Security Considerations
 
-This API Key system enables:
-1. Users to create up to 5 personal API keys
-2. External applications to access Angel AI
-3. Usage tracking and rate limiting per key
-4. Secure key storage (hashed, not plain text)
-5. Full management UI in Profile page
-6. Multi-language support (12 languages)
+- All scoring logic in Edge Functions (server-side)
+- RLS policies on all PPLP tables
+- Admin-only access to policy management
+- Fraud signals visible only to admins
+- Evidence hashing for integrity verification
+- Rate limiting on action submission
 
+---
+
+## Estimated Scope
+
+- **Database**: 6 new tables + migrations
+- **Edge Functions**: 6 new functions
+- **React Hooks**: 4 new hooks
+- **UI Components**: 5-8 new components
+- **Admin Pages**: 1-2 new pages
+- **Integration**: Update 4-5 existing edge functions
