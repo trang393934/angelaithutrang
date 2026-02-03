@@ -139,6 +139,71 @@ Nếu phát hiện bug, ghi lại theo format sau:
 
 ---
 
+## 🪙 10. FUN Money Smart Contract — Mint Flow (Section 7.1)
+
+### Flow Tổng Quan
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          FUN Money Mint Flow                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  1. USER ACTION (chat, journal, post...)                                   │
+│     ↓                                                                       │
+│  2. PPLP Engine → Score: Base × Q × I × K                                  │
+│     ↓                                                                       │
+│  3. Create MintRequest:                                                     │
+│     • to, amount, actionId, evidenceHash                                    │
+│     • policyVersion, validAfter/Before, nonce                               │
+│     ↓                                                                       │
+│  4. PPLP Signer (Treasury) → EIP-712 Signature                             │
+│     ↓                                                                       │
+│  5. User calls mintWithSignature(req, sig)                                 │
+│     ↓                                                                       │
+│  6. ON-CHAIN CHECK:                                                         │
+│     ✓ actionId chưa mint (idempotent)                                      │
+│     ✓ nonce đúng                                                           │
+│     ✓ signer có SIGNER_ROLE                                                │
+│     ✓ epoch caps không vượt                                                │
+│     ✓ chưa hết hạn                                                         │
+│     ↓                                                                       │
+│  7. MINT → Event MintAuthorized (audit log)                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Test Cases
+
+| # | Test Case | Bước thực hiện | Kết quả mong đợi | ✓/✗ |
+|---|-----------|----------------|------------------|-----|
+| 10.1 | Request mint authorization | Call pplp-authorize-mint với action_id hợp lệ | Trả về signed MintRequest |  |
+| 10.2 | Idempotency check | Gọi authorize cùng action_id 2 lần | Lần 2 trả về existing request |  |
+| 10.3 | Execute on-chain mint | Gọi mintWithSignature trên contract | Transaction thành công |  |
+| 10.4 | Double-mint prevention | Mint cùng actionId 2 lần | Lần 2 revert "action already minted" |  |
+| 10.5 | Invalid nonce | Gửi request với nonce sai | Revert "bad nonce" |  |
+| 10.6 | Expired request | Gửi request với validBefore < now | Revert "expired" |  |
+| 10.7 | Invalid signer | Ký bằng key không có SIGNER_ROLE | Revert "invalid signer" |  |
+| 10.8 | Epoch cap exceeded | Mint vượt epochMintCap | Revert "epoch cap exceeded" |  |
+| 10.9 | User cap exceeded | Mint vượt userEpochCap | Revert "user cap exceeded" |  |
+| 10.10 | Event audit | Sau mint thành công | Event MintAuthorized emitted |  |
+
+### Code References
+
+- **Solidity Contract**: `contracts/FUNMoney.sol`
+- **Edge Function**: `supabase/functions/pplp-authorize-mint/index.ts`
+- **Frontend Hook**: `src/hooks/useFUNMoneyContract.ts`
+- **ABI & Types**: `src/lib/funMoneyABI.ts`
+
+### Formula Reward
+
+```
+Reward = BaseReward × Q × I × K
+
+Q = Quality multiplier (0.5-2.0)
+I = Integrity multiplier (0.1-1.5)
+K = Impact multiplier (1.0-3.0)
+```
+
+---
+
 ## ✅ Sign-off Checklist
 
 Trước khi launch, đảm bảo:
@@ -146,10 +211,12 @@ Trước khi launch, đảm bảo:
 - [ ] Tất cả test cases Authentication PASSED
 - [ ] Tất cả test cases Chat AI PASSED  
 - [ ] Tất cả test cases Security PASSED
+- [ ] Tất cả test cases FUN Money Mint Flow PASSED
 - [ ] Không có Critical/High bugs chưa fix
 - [ ] Leaked Password Protection đã BẬT
 - [ ] Test trên ít nhất 2 browsers
 - [ ] Test responsive mobile
+- [ ] TREASURY_PRIVATE_KEY đã cấu hình (production)
 
 ---
 
