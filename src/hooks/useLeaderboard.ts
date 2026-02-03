@@ -108,12 +108,17 @@ export function useLeaderboard() {
       setAllUsers(combinedUsers);
       setTopUsers(combinedUsers.slice(0, 10));
 
-      // Calculate stats - count unique users from both tables
+      // Calculate stats - use profiles count as the source of truth for total members
       const totalCoins = combinedUsers.reduce((sum, u) => sum + u.lifetime_earned, 0);
       const activeUsers = combinedUsers.filter(u => u.lifetime_earned > 0).length;
 
+      // Get total members from profiles table (most reliable source)
+      const { count: profilesCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
       setStats({
-        total_users: allUserIds.size,
+        total_users: profilesCount || 0,
         active_users: activeUsers,
         total_coins_distributed: totalCoins,
       });
