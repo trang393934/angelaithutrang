@@ -1,6 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+
+// localStorage key for persisting last session ID
+const LAST_SESSION_KEY = 'angel_ai_last_session_id';
+
+// Helper functions for localStorage persistence
+const saveLastSessionId = (sessionId: string | null) => {
+  if (sessionId) {
+    localStorage.setItem(LAST_SESSION_KEY, sessionId);
+  } else {
+    localStorage.removeItem(LAST_SESSION_KEY);
+  }
+};
+
+const getLastSessionId = (): string | null => {
+  return localStorage.getItem(LAST_SESSION_KEY);
+};
 
 export interface ChatSession {
   id: string;
@@ -33,6 +49,8 @@ export function useChatSessions() {
   const [sessionMessages, setSessionMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRestoringSession, setIsRestoringSession] = useState(false);
+  const hasRestoredSession = useRef(false);
 
   // Fetch all sessions for user with retry logic
   const fetchSessions = useCallback(async (retryCount = 0) => {
@@ -183,9 +201,10 @@ export function useChatSessions() {
     }
   }, [user, currentSession]);
 
-  // Select a session
+  // Select a session and persist to localStorage
   const selectSession = useCallback(async (session: ChatSession | null) => {
     setCurrentSession(session);
+    saveLastSessionId(session?.id || null); // Persist to localStorage
     if (session) {
       await fetchSessionMessages(session.id);
     } else {
@@ -193,30 +212,84 @@ export function useChatSessions() {
     }
   }, [fetchSessionMessages]);
 
-  // End current session and start new one
+  // End current session and clear localStorage
   const endCurrentSession = useCallback(async () => {
     if (currentSession) {
       await updateSession(currentSession.id, { title: currentSession.title });
     }
     setCurrentSession(null);
     setSessionMessages([]);
+    saveLastSessionId(null); // Clear localStorage when starting new session
   }, [currentSession, updateSession]);
 
+  // Clear session from localStorage when it's deleted
+  const deleteSessionWithPersist = useCallback(async (sessionId: string) => {
+    const result = await deleteSession(sessionId);
+    // If deleted session was the persisted one, clear localStorage
+    if (result && getLastSessionId() === sessionId) {
+      saveLastSessionId(null);
+    }
+    return result;
+  }, [deleteSession]);
+
+  // Fetch sessions on mount
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
+
+  // Restore last session from localStorage after sessions are loaded
+  useEffect(() => {
+    const restoreLastSession = async () => {
+      // Only restore once per mount, and only when sessions are loaded
+      if (hasRestoredSession.current || isLoading || !user) return;
+      
+      const lastSessionId = getLastSessionId();
+      if (!lastSessionId) {
+        hasRestoredSession.current = true;
+        return;
+      }
+
+      // Find session in loaded sessions
+      const lastSession = sessions.find(s => s.id === lastSessionId);
+      if (lastSession) {
+        setIsRestoringSession(true);
+        await selectSession(lastSession);
+        setIsRestoringSession(false);
+      } else {
+        // Session was deleted, clear localStorage
+        saveLastSessionId(null);
+      }
+      
+      hasRestoredSession.current = true;
+    };
+
+    restoreLastSession();
+  }, [user, sessions, isLoading, selectSession]);
+
+  // Reset restoration flag when user changes (logout/login)
+  useEffect(() => {
+    hasRestoredSession.current = false;
+  }, [user?.id]);
+
+  // Clear localStorage when user logs out
+  useEffect(() => {
+    if (!user) {
+      saveLastSessionId(null);
+    }
+  }, [user]);
 
   return {
     sessions,
     currentSession,
     sessionMessages,
     isLoading,
+    isRestoringSession,
     error,
     fetchSessions,
     fetchSessionMessages,
     createSession,
     updateSession,
-    deleteSession,
+    deleteSession: deleteSessionWithPersist, // Use wrapped version
     selectSession,
     endCurrentSession,
     setCurrentSession,
