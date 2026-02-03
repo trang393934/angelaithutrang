@@ -1,5 +1,20 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { 
+  PPLP_ACTION_TYPES, 
+  FUN_PLATFORMS, 
+  LightAction, 
+  LightActionEvidence,
+  PPLPActionType,
+  FUNPlatformId,
+  BASE_REWARDS 
+} from "../_shared/pplp-types.ts";
+import { 
+  generateCanonicalHash, 
+  generateEvidenceBundleHash,
+  generateEvidenceContentHash,
+  canonicalJSON 
+} from "../_shared/pplp-crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,48 +26,38 @@ interface SubmitActionRequest {
   action_type: string;
   target_id?: string;
   metadata?: Record<string, unknown>;
-  impact?: Record<string, unknown>;
-  integrity?: Record<string, unknown>;
+  impact?: {
+    beneficiaries?: number;
+    measurable_outcome?: string;
+    impact_uri?: string;
+    scope?: 'individual' | 'group' | 'platform' | 'ecosystem';
+    reach_count?: number;
+    quality_indicators?: string[];
+  };
+  integrity?: {
+    device_hash?: string;
+    session_signals?: string;
+    anti_sybil_score?: number;
+    source_verified?: boolean;
+    duplicate_check?: boolean;
+  };
   evidences?: Array<{
     evidence_type: string;
+    value?: number | string;
     uri?: string;
-    content_hash: string;
+    content_hash?: string;
     metadata?: Record<string, unknown>;
   }>;
 }
 
-// Generate canonical hash for action
-function generateCanonicalHash(action: SubmitActionRequest, actor_id: string, timestamp: string): string {
-  const canonical = JSON.stringify({
-    platform_id: action.platform_id,
-    action_type: action.action_type,
-    actor_id,
-    timestamp,
-    metadata: action.metadata || {},
-  });
-  
-  // Simple hash for MVP - in production use crypto.subtle
-  let hash = 0;
-  for (let i = 0; i < canonical.length; i++) {
-    const char = canonical.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return `0x${Math.abs(hash).toString(16).padStart(16, '0')}`;
+// Validate action type against enum
+function isValidActionType(type: string): type is PPLPActionType {
+  return Object.values(PPLP_ACTION_TYPES).includes(type as PPLPActionType);
 }
 
-// Generate evidence bundle hash
-function generateEvidenceHash(evidences: SubmitActionRequest['evidences']): string | null {
-  if (!evidences || evidences.length === 0) return null;
-  
-  const bundle = JSON.stringify(evidences.map(e => e.content_hash).sort());
-  let hash = 0;
-  for (let i = 0; i < bundle.length; i++) {
-    const char = bundle.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return `0x${Math.abs(hash).toString(16).padStart(16, '0')}`;
+// Validate platform ID
+function isValidPlatform(platform: string): platform is FUNPlatformId {
+  return Object.values(FUN_PLATFORMS).includes(platform as FUNPlatformId);
 }
 
 serve(async (req) => {
@@ -111,21 +116,66 @@ serve(async (req) => {
       );
     }
 
-    const timestamp = new Date().toISOString();
-    const evidenceHash = generateEvidenceHash(body.evidences);
+    const timestamp = Date.now();
+    
+    // Convert evidences to LightActionEvidence format and generate hashes
+    const evidences: LightActionEvidence[] = (body.evidences || []).map(e => ({
+      type: e.evidence_type as any,
+      value: e.value,
+      uri: e.uri,
+      content_hash: e.content_hash,
+      metadata: e.metadata,
+    }));
+    
+    // Generate evidence hashes
+    const evidenceHashesPromises = evidences.map(async (e) => {
+      if (e.content_hash) return e.content_hash;
+      return await generateEvidenceContentHash(e);
+    });
+    const evidenceHashes = await Promise.all(evidenceHashesPromises);
+    
+    // Generate evidence bundle hash
+    const evidenceHash = await generateEvidenceBundleHash(evidences);
+    
+    // Build LightAction object for canonical hash
+    const lightAction: LightAction = {
+      action_id: crypto.randomUUID(),
+      platform_id: (isValidPlatform(body.platform_id) ? body.platform_id : 'ANGEL_AI') as FUNPlatformId,
+      action_type: (isValidActionType(body.action_type) ? body.action_type : 'CONTENT_CREATE') as PPLPActionType,
+      actor: userId,
+      timestamp,
+      metadata: body.metadata || {},
+      evidence: evidences,
+      impact: body.impact || {},
+      integrity: body.integrity || {},
+    };
+    
+    // Generate canonical hash for evidence anchoring
+    const canonicalHash = await generateCanonicalHash(lightAction);
+    
+    // Get base reward for action type
+    const baseReward = isValidActionType(body.action_type) 
+      ? BASE_REWARDS[body.action_type as PPLPActionType] || 1000
+      : 1000;
 
-    // Create the action record
+    // Create the action record with new fields
     const { data: action, error: actionError } = await supabase
       .from('pplp_actions')
       .insert({
         platform_id: body.platform_id,
         action_type: body.action_type,
+        action_type_enum: isValidActionType(body.action_type) ? body.action_type : null,
         actor_id: userId,
         target_id: body.target_id || null,
-        metadata: body.metadata || {},
+        metadata: {
+          ...body.metadata,
+          base_reward: baseReward,
+          submitted_at: new Date().toISOString(),
+        },
         impact: body.impact || {},
         integrity: body.integrity || {},
         evidence_hash: evidenceHash,
+        canonical_hash: canonicalHash,
         policy_version: policy.version,
         status: 'pending',
       })
@@ -140,13 +190,14 @@ serve(async (req) => {
       );
     }
 
-    // Insert evidences if provided
+    // Insert evidences if provided with computed hashes
     if (body.evidences && body.evidences.length > 0) {
-      const evidenceRecords = body.evidences.map(e => ({
+      const evidenceRecords = body.evidences.map((e, i) => ({
         action_id: action.id,
         evidence_type: e.evidence_type,
+        evidence_type_enum: e.evidence_type, // Will be validated by DB
         uri: e.uri || null,
-        content_hash: e.content_hash,
+        content_hash: evidenceHashes[i],
         metadata: e.metadata || {},
       }));
 
@@ -160,7 +211,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`[PPLP] Action submitted: ${action.id} by ${userId} - ${body.platform_id}/${body.action_type}`);
+    console.log(`[PPLP] Action submitted: ${action.id} by ${userId} - ${body.platform_id}/${body.action_type} | canonical: ${canonicalHash.slice(0, 18)}...`);
 
     return new Response(
       JSON.stringify({
@@ -168,6 +219,9 @@ serve(async (req) => {
         action_id: action.id,
         status: 'pending',
         policy_version: policy.version,
+        canonical_hash: canonicalHash,
+        evidence_hash: evidenceHash,
+        base_reward: baseReward,
         message: 'Action submitted successfully. Awaiting scoring.',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

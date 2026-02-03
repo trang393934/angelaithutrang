@@ -1554,15 +1554,21 @@ export type Database = {
       pplp_actions: {
         Row: {
           action_type: string
+          action_type_enum:
+            | Database["public"]["Enums"]["pplp_action_type"]
+            | null
           actor_id: string
+          canonical_hash: string | null
           created_at: string
           evidence_hash: string | null
           id: string
           impact: Json
           integrity: Json
           metadata: Json
+          mint_request_hash: string | null
           minted_at: string | null
           platform_id: string
+          policy_snapshot: Json | null
           policy_version: string
           scored_at: string | null
           status: Database["public"]["Enums"]["pplp_action_status"]
@@ -1570,15 +1576,21 @@ export type Database = {
         }
         Insert: {
           action_type: string
+          action_type_enum?:
+            | Database["public"]["Enums"]["pplp_action_type"]
+            | null
           actor_id: string
+          canonical_hash?: string | null
           created_at?: string
           evidence_hash?: string | null
           id?: string
           impact?: Json
           integrity?: Json
           metadata?: Json
+          mint_request_hash?: string | null
           minted_at?: string | null
           platform_id?: string
+          policy_snapshot?: Json | null
           policy_version?: string
           scored_at?: string | null
           status?: Database["public"]["Enums"]["pplp_action_status"]
@@ -1586,15 +1598,21 @@ export type Database = {
         }
         Update: {
           action_type?: string
+          action_type_enum?:
+            | Database["public"]["Enums"]["pplp_action_type"]
+            | null
           actor_id?: string
+          canonical_hash?: string | null
           created_at?: string
           evidence_hash?: string | null
           id?: string
           impact?: Json
           integrity?: Json
           metadata?: Json
+          mint_request_hash?: string | null
           minted_at?: string | null
           platform_id?: string
+          policy_snapshot?: Json | null
           policy_version?: string
           scored_at?: string | null
           status?: Database["public"]["Enums"]["pplp_action_status"]
@@ -1658,27 +1676,45 @@ export type Database = {
       pplp_evidences: {
         Row: {
           action_id: string
+          anchor_chain: string | null
+          anchor_tx_hash: string | null
+          anchored_at: string | null
           content_hash: string
           created_at: string
           evidence_type: string
+          evidence_type_enum:
+            | Database["public"]["Enums"]["pplp_evidence_type"]
+            | null
           id: string
           metadata: Json
           uri: string | null
         }
         Insert: {
           action_id: string
+          anchor_chain?: string | null
+          anchor_tx_hash?: string | null
+          anchored_at?: string | null
           content_hash: string
           created_at?: string
           evidence_type: string
+          evidence_type_enum?:
+            | Database["public"]["Enums"]["pplp_evidence_type"]
+            | null
           id?: string
           metadata?: Json
           uri?: string | null
         }
         Update: {
           action_id?: string
+          anchor_chain?: string | null
+          anchor_tx_hash?: string | null
+          anchored_at?: string | null
           content_hash?: string
           created_at?: string
           evidence_type?: string
+          evidence_type_enum?:
+            | Database["public"]["Enums"]["pplp_evidence_type"]
+            | null
           id?: string
           metadata?: Json
           uri?: string | null
@@ -2774,8 +2810,71 @@ export type Database = {
         | "minted"
         | "rejected"
         | "disputed"
+      pplp_action_type:
+        | "LEARN_COMPLETE"
+        | "PROJECT_SUBMIT"
+        | "MENTOR_HELP"
+        | "COURSE_CREATE"
+        | "QUIZ_PASS"
+        | "CONTENT_CREATE"
+        | "CONTENT_REVIEW"
+        | "CONTENT_SHARE"
+        | "COMMENT_CREATE"
+        | "POST_ENGAGEMENT"
+        | "DONATE"
+        | "VOLUNTEER"
+        | "CAMPAIGN_CREATE"
+        | "CAMPAIGN_SUPPORT"
+        | "TREE_PLANT"
+        | "CLEANUP_EVENT"
+        | "CARBON_OFFSET"
+        | "ECO_ACTION"
+        | "FARM_DELIVERY"
+        | "MARKET_FAIR_TRADE"
+        | "PRODUCT_REVIEW"
+        | "SELLER_VERIFY"
+        | "BUG_BOUNTY"
+        | "GOV_PROPOSAL"
+        | "GOV_VOTE"
+        | "DISPUTE_RESOLVE"
+        | "POLICY_REVIEW"
+        | "DAILY_RITUAL"
+        | "GRATITUDE_PRACTICE"
+        | "JOURNAL_WRITE"
+        | "QUESTION_ASK"
+        | "DAILY_LOGIN"
+        | "STAKE_LOCK"
+        | "LIQUIDITY_PROVIDE"
+        | "REFERRAL_INVITE"
+        | "PROFILE_COMPLETE"
+        | "KYC_VERIFY"
+        | "REPUTATION_EARN"
       pplp_decision: "pass" | "fail" | "pending" | "manual_review"
       pplp_dispute_status: "open" | "investigating" | "resolved" | "rejected"
+      pplp_evidence_type:
+        | "QUIZ_SCORE"
+        | "CERTIFICATE"
+        | "SCREENSHOT"
+        | "TRANSACTION_HASH"
+        | "GPS_LOCATION"
+        | "PHOTO_PROOF"
+        | "VIDEO_PROOF"
+        | "DOCUMENT"
+        | "API_RESPONSE"
+        | "DEVICE_SIGNATURE"
+        | "USER_ATTESTATION"
+        | "THIRD_PARTY_VERIFY"
+        | "IPFS_HASH"
+        | "CONTENT_HASH"
+      pplp_integrity_signal:
+        | "DEVICE_FINGERPRINT"
+        | "SESSION_CONTINUITY"
+        | "IP_CONSISTENCY"
+        | "BEHAVIORAL_PATTERN"
+        | "CAPTCHA_PASS"
+        | "ANTI_SYBIL_CHECK"
+        | "TIME_PATTERN_VALID"
+        | "LOCATION_VALID"
       suspension_type: "temporary" | "permanent"
     }
     CompositeTypes: {
@@ -2938,8 +3037,74 @@ export const Constants = {
         "rejected",
         "disputed",
       ],
+      pplp_action_type: [
+        "LEARN_COMPLETE",
+        "PROJECT_SUBMIT",
+        "MENTOR_HELP",
+        "COURSE_CREATE",
+        "QUIZ_PASS",
+        "CONTENT_CREATE",
+        "CONTENT_REVIEW",
+        "CONTENT_SHARE",
+        "COMMENT_CREATE",
+        "POST_ENGAGEMENT",
+        "DONATE",
+        "VOLUNTEER",
+        "CAMPAIGN_CREATE",
+        "CAMPAIGN_SUPPORT",
+        "TREE_PLANT",
+        "CLEANUP_EVENT",
+        "CARBON_OFFSET",
+        "ECO_ACTION",
+        "FARM_DELIVERY",
+        "MARKET_FAIR_TRADE",
+        "PRODUCT_REVIEW",
+        "SELLER_VERIFY",
+        "BUG_BOUNTY",
+        "GOV_PROPOSAL",
+        "GOV_VOTE",
+        "DISPUTE_RESOLVE",
+        "POLICY_REVIEW",
+        "DAILY_RITUAL",
+        "GRATITUDE_PRACTICE",
+        "JOURNAL_WRITE",
+        "QUESTION_ASK",
+        "DAILY_LOGIN",
+        "STAKE_LOCK",
+        "LIQUIDITY_PROVIDE",
+        "REFERRAL_INVITE",
+        "PROFILE_COMPLETE",
+        "KYC_VERIFY",
+        "REPUTATION_EARN",
+      ],
       pplp_decision: ["pass", "fail", "pending", "manual_review"],
       pplp_dispute_status: ["open", "investigating", "resolved", "rejected"],
+      pplp_evidence_type: [
+        "QUIZ_SCORE",
+        "CERTIFICATE",
+        "SCREENSHOT",
+        "TRANSACTION_HASH",
+        "GPS_LOCATION",
+        "PHOTO_PROOF",
+        "VIDEO_PROOF",
+        "DOCUMENT",
+        "API_RESPONSE",
+        "DEVICE_SIGNATURE",
+        "USER_ATTESTATION",
+        "THIRD_PARTY_VERIFY",
+        "IPFS_HASH",
+        "CONTENT_HASH",
+      ],
+      pplp_integrity_signal: [
+        "DEVICE_FINGERPRINT",
+        "SESSION_CONTINUITY",
+        "IP_CONSISTENCY",
+        "BEHAVIORAL_PATTERN",
+        "CAPTCHA_PASS",
+        "ANTI_SYBIL_CHECK",
+        "TIME_PATTERN_VALID",
+        "LOCATION_VALID",
+      ],
       suspension_type: ["temporary", "permanent"],
     },
   },
