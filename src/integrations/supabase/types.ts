@@ -1961,6 +1961,77 @@ export type Database = {
           },
         ]
       }
+      pplp_mint_requests: {
+        Row: {
+          action_hash: string
+          action_id: string
+          actor_id: string
+          amount: number
+          created_at: string
+          evidence_hash: string
+          id: string
+          minted_at: string | null
+          nonce: number
+          policy_version: number
+          recipient_address: string
+          signature: string | null
+          signer_address: string | null
+          status: string
+          tx_hash: string | null
+          updated_at: string
+          valid_after: string
+          valid_before: string
+        }
+        Insert: {
+          action_hash: string
+          action_id: string
+          actor_id: string
+          amount: number
+          created_at?: string
+          evidence_hash: string
+          id?: string
+          minted_at?: string | null
+          nonce: number
+          policy_version?: number
+          recipient_address: string
+          signature?: string | null
+          signer_address?: string | null
+          status?: string
+          tx_hash?: string | null
+          updated_at?: string
+          valid_after?: string
+          valid_before?: string
+        }
+        Update: {
+          action_hash?: string
+          action_id?: string
+          actor_id?: string
+          amount?: number
+          created_at?: string
+          evidence_hash?: string
+          id?: string
+          minted_at?: string | null
+          nonce?: number
+          policy_version?: number
+          recipient_address?: string
+          signature?: string | null
+          signer_address?: string | null
+          status?: string
+          tx_hash?: string | null
+          updated_at?: string
+          valid_after?: string
+          valid_before?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_mint_requests_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: true
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pplp_policies: {
         Row: {
           activated_at: string | null
@@ -2062,6 +2133,36 @@ export type Database = {
           },
         ]
       }
+      pplp_signers: {
+        Row: {
+          address: string
+          created_at: string
+          deactivated_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          weight: number
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          weight?: number
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       pplp_user_caps: {
         Row: {
           action_counts: Json
@@ -2094,6 +2195,24 @@ export type Database = {
           last_action_at?: string | null
           total_minted?: number
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pplp_user_nonces: {
+        Row: {
+          current_nonce: number
+          last_used_at: string
+          user_id: string
+        }
+        Insert: {
+          current_nonce?: number
+          last_used_at?: string
+          user_id: string
+        }
+        Update: {
+          current_nonce?: number
+          last_used_at?: string
           user_id?: string
         }
         Relationships: []
@@ -2879,6 +2998,7 @@ export type Database = {
         }[]
       }
       cleanup_expired_stories: { Args: never; Returns: undefined }
+      expire_old_mint_requests: { Args: never; Returns: number }
       get_activity_history_stats: {
         Args: never
         Returns: {
@@ -2954,6 +3074,7 @@ export type Database = {
           total_coins_today: number
         }[]
       }
+      get_next_nonce: { Args: { _user_id: string }; Returns: number }
       get_top_recipients: {
         Args: { _date_filter?: string; _limit?: number }
         Returns: {
