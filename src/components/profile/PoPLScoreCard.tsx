@@ -1,7 +1,12 @@
-import { Heart, TrendingUp, TrendingDown, Shield, Sparkles } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Heart, TrendingUp, TrendingDown, Shield, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { PPLPScoreRadar } from "@/components/pplp/PPLPScoreRadar";
+import { PPLPPillarScores } from "@/hooks/usePPLPScore";
 
 interface PoPLScoreCardProps {
   score: number;
@@ -9,6 +14,8 @@ interface PoPLScoreCardProps {
   negativeActions: number;
   isVerified?: boolean;
   badgeLevel?: string;
+  pillarScores?: PPLPPillarScores;
+  showRadar?: boolean;
 }
 
 const getBadgeInfo = (level: string) => {
@@ -45,16 +52,28 @@ const getScoreLabel = (score: number) => {
   return "Cần Hỗ Trợ";
 };
 
+const DEFAULT_PILLARS: PPLPPillarScores = {
+  pillar_s: 50,
+  pillar_t: 50,
+  pillar_h: 50,
+  pillar_c: 50,
+  pillar_u: 50
+};
+
 export const PoPLScoreCard = ({
   score,
   positiveActions,
   negativeActions,
   isVerified = false,
-  badgeLevel = "newcomer"
+  badgeLevel = "newcomer",
+  pillarScores,
+  showRadar = true
 }: PoPLScoreCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const badgeInfo = getBadgeInfo(badgeLevel);
   const scoreColor = getScoreColor(score);
   const scoreLabel = getScoreLabel(score);
+  const pillars = pillarScores || DEFAULT_PILLARS;
 
   return (
     <Card className="border-divine-gold/20 shadow-soft overflow-hidden">
@@ -99,6 +118,41 @@ export const PoPLScoreCard = ({
             {badgeInfo.label}
           </Badge>
         </div>
+
+        {/* 5-Pillar Radar Chart (Collapsible) */}
+        {showRadar && (
+          <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full text-xs">
+                <Sparkles className="w-3 h-3 mr-1 text-primary" />
+                {isExpanded ? "Thu gọn" : "Xem 5-Pillar Breakdown"}
+                {isExpanded ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+              </Button>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="mt-4">
+              <div className="border-t border-border/50 pt-4">
+                <PPLPScoreRadar pillars={pillars} size="md" showLabels />
+                
+                {/* Pillar Values Grid */}
+                <div className="grid grid-cols-5 gap-1 mt-4">
+                  {[
+                    { key: "S", value: pillars.pillar_s, label: "Phục Vụ", color: "text-emerald-500" },
+                    { key: "T", value: pillars.pillar_t, label: "Chân Thật", color: "text-blue-500" },
+                    { key: "H", value: pillars.pillar_h, label: "Chữa Lành", color: "text-pink-500" },
+                    { key: "C", value: pillars.pillar_c, label: "Đóng Góp", color: "text-amber-500" },
+                    { key: "U", value: pillars.pillar_u, label: "Hợp Nhất", color: "text-violet-500" },
+                  ].map(pillar => (
+                    <div key={pillar.key} className="text-center p-2 rounded-lg bg-muted/30">
+                      <p className={`text-lg font-bold ${pillar.color}`}>{pillar.value}</p>
+                      <p className="text-[10px] text-muted-foreground">{pillar.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 pt-2">
