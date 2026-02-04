@@ -51,6 +51,12 @@ interface Withdrawal {
   retry_count?: number;
   error_message?: string | null;
   user_email?: string;
+  // Anti-fraud fields
+  lifetime_earned?: number;
+  chat_count?: number;
+  coins_per_chat?: number;
+  is_suspicious?: boolean;
+  suspicious_reasons?: string[];
 }
 
 interface WithdrawalStats {
@@ -129,21 +135,75 @@ const AdminWithdrawals = () => {
 
       if (error) throw error;
 
-      // Fetch user emails
+      // Fetch user emails and names
       const userIds = [...new Set(data?.map(w => w.user_id) || [])];
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, display_name")
         .in("user_id", userIds);
 
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
-      
-      const withdrawalsWithEmail = data?.map(w => ({
-        ...w,
-        user_email: profileMap.get(w.user_id) || w.user_id.slice(0, 8) + "..."
-      })) || [];
+      // Fetch balance data for anti-fraud detection
+      const { data: balances } = await supabase
+        .from("camly_coin_balances")
+        .select("user_id, lifetime_earned")
+        .in("user_id", userIds);
 
-      setWithdrawals(withdrawalsWithEmail);
+      // Fetch chat count for each user
+      const { data: chatCounts } = await supabase
+        .from("chat_history")
+        .select("user_id")
+        .in("user_id", userIds);
+
+      // Count chats per user
+      const chatCountMap = new Map<string, number>();
+      chatCounts?.forEach(c => {
+        chatCountMap.set(c.user_id, (chatCountMap.get(c.user_id) || 0) + 1);
+      });
+
+      // Find duplicate wallets
+      const walletUserMap = new Map<string, string[]>();
+      data?.forEach(w => {
+        const users = walletUserMap.get(w.wallet_address) || [];
+        if (!users.includes(w.user_id)) {
+          users.push(w.user_id);
+        }
+        walletUserMap.set(w.wallet_address, users);
+      });
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
+      const balanceMap = new Map(balances?.map(b => [b.user_id, b.lifetime_earned]) || []);
+      
+      const withdrawalsWithData = data?.map(w => {
+        const lifetimeEarned = balanceMap.get(w.user_id) || 0;
+        const chatCount = chatCountMap.get(w.user_id) || 0;
+        const coinsPerChat = chatCount > 0 ? lifetimeEarned / chatCount : 0;
+        const walletUsers = walletUserMap.get(w.wallet_address) || [];
+        const isDuplicateWallet = walletUsers.length > 1;
+        
+        // Determine suspicious status
+        const suspiciousReasons: string[] = [];
+        if (coinsPerChat > 6000) {
+          suspiciousReasons.push(`Coins/Chat cao bất thường: ${Math.round(coinsPerChat).toLocaleString()}`);
+        }
+        if (isDuplicateWallet) {
+          suspiciousReasons.push(`Ví dùng chung bởi ${walletUsers.length} users`);
+        }
+        if (chatCount > 0 && chatCount < 5 && lifetimeEarned > 50000) {
+          suspiciousReasons.push(`Ít chat (${chatCount}) nhưng kiếm nhiều (${lifetimeEarned.toLocaleString()})`);
+        }
+
+        return {
+          ...w,
+          user_email: profileMap.get(w.user_id) || w.user_id.slice(0, 8) + "...",
+          lifetime_earned: lifetimeEarned,
+          chat_count: chatCount,
+          coins_per_chat: coinsPerChat,
+          is_suspicious: suspiciousReasons.length > 0,
+          suspicious_reasons: suspiciousReasons,
+        };
+      }) || [];
+
+      setWithdrawals(withdrawalsWithData);
     } catch (error) {
       console.error("Error fetching withdrawals:", error);
       toast.error("Không thể tải danh sách yêu cầu rút");
@@ -652,7 +712,10 @@ const AdminWithdrawals = () => {
                 </TableRow>
               ) : (
                 filteredWithdrawals.map((withdrawal) => (
-                  <TableRow key={withdrawal.id} className={`hover:bg-primary-pale/10 ${selectedIds.has(withdrawal.id) ? 'bg-primary-pale/20' : ''}`}>
+                  <TableRow 
+                    key={withdrawal.id} 
+                    className={`hover:bg-primary-pale/10 ${selectedIds.has(withdrawal.id) ? 'bg-primary-pale/20' : ''} ${withdrawal.is_suspicious ? 'bg-red-50/50' : ''}`}
+                  >
                     <TableCell>
                       {(withdrawal.status === "pending" || withdrawal.status === "processing") && (
                         <Checkbox
@@ -665,7 +728,24 @@ const AdminWithdrawals = () => {
                       {formatDate(withdrawal.created_at)}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {withdrawal.user_email}
+                      <div className="flex flex-col gap-1">
+                        <span>{withdrawal.user_email}</span>
+                        {withdrawal.is_suspicious && (
+                          <div className="flex flex-col gap-0.5">
+                            {withdrawal.suspicious_reasons?.map((reason, idx) => (
+                              <span key={idx} className="text-xs text-red-600 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" />
+                                {reason}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {withdrawal.chat_count !== undefined && (
+                          <span className="text-xs text-foreground-muted">
+                            {withdrawal.chat_count} chats | {withdrawal.coins_per_chat ? Math.round(withdrawal.coins_per_chat).toLocaleString() : 0}/chat
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="font-bold text-primary-deep">
                       {formatAmount(withdrawal.amount)}
@@ -686,7 +766,14 @@ const AdminWithdrawals = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(withdrawal.status, withdrawal.retry_count)}
+                      <div className="flex flex-col gap-1">
+                        {getStatusBadge(withdrawal.status, withdrawal.retry_count)}
+                        {withdrawal.is_suspicious && withdrawal.status === "pending" && (
+                          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
+                            ⚠️ Cần kiểm tra
+                          </Badge>
+                        )}
+                      </div>
                       {withdrawal.error_message && (
                         <p className="text-xs text-red-500 mt-1 max-w-[200px] truncate" title={withdrawal.error_message}>
                           {withdrawal.error_message}

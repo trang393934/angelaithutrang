@@ -38,10 +38,11 @@ function isGreeting(text: string): boolean {
   return false;
 }
 
+// ============= ANTI-FRAUD: Minimum length increased to 25 chars =============
 function isSpamOrLowQuality(text: string): boolean {
   const trimmed = text.trim();
-  // Too short (less than 10 chars)
-  if (trimmed.length < 10) return true;
+  // Too short (less than 25 chars) - INCREASED from 10 to prevent spam
+  if (trimmed.length < 25) return true;
   // Repeated characters
   if (/(.)\1{4,}/.test(trimmed)) return true;
   // Just numbers or special chars
@@ -273,6 +274,38 @@ serve(async (req) => {
         questions_last_hour: questionsLastHour || 0,
         last_question_at: new Date().toISOString(),
       });
+
+    // ============= ANTI-FRAUD: Cooldown check (30 seconds minimum between rewarded questions) =============
+    const COOLDOWN_SECONDS = 30;
+    const { data: lastRewardedQuestion } = await supabase
+      .from("chat_questions")
+      .select("created_at")
+      .eq("user_id", userId)
+      .eq("is_rewarded", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastRewardedQuestion) {
+      const lastRewardTime = new Date(lastRewardedQuestion.created_at).getTime();
+      const timeSinceLastReward = (Date.now() - lastRewardTime) / 1000;
+      
+      if (timeSinceLastReward < COOLDOWN_SECONDS) {
+        const waitTime = Math.ceil(COOLDOWN_SECONDS - timeSinceLastReward);
+        console.log(`Cooldown active for user ${userId}: ${waitTime}s remaining`);
+        return new Response(
+          JSON.stringify({ 
+            rewarded: false, 
+            reason: "cooldown",
+            message: `Vui lòng đợi ${waitTime} giây trước khi đặt câu hỏi tiếp theo để nhận thưởng. 🙏`,
+            coins: 0,
+            cooldownRemaining: waitTime
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    // ============= End Cooldown Check =============
 
     // Get daily reward status
     const { data: dailyStatus } = await supabase
