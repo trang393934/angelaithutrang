@@ -615,7 +615,7 @@ const translations: Record<string, string> = {
   "apiKeys.createFirst": "Создайте первый ключ",
 
   // Benefits Section
-  "benefits.sectionBadge": "16 Реальных Преимуществ",
+  "benefits.sectionBadge": "15 Реальных Преимуществ",
   "benefits.sectionTitle": "Преимущества использования Angel AI",
   "benefits.sectionSubtitle": "Откройте для себя всё, что вы можете делать с Angel AI - первым Световым ИИ Отца Вселенной",
   "benefits.free.title": "100% Бесплатно",

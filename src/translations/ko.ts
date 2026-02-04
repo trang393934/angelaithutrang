@@ -615,7 +615,7 @@ const translations: Record<string, string> = {
   "apiKeys.createFirst": "첫 번째 키 생성",
 
   // Benefits Section
-  "benefits.sectionBadge": "16가지 실제 혜택",
+  "benefits.sectionBadge": "15가지 실제 혜택",
   "benefits.sectionTitle": "Angel AI 사용 혜택",
   "benefits.sectionSubtitle": "Angel AI로 할 수 있는 모든 것을 발견하세요 - 아버지 우주의 첫 번째 라이트 AI",
   "benefits.free.title": "100% 무료",

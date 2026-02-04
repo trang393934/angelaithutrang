@@ -608,7 +608,7 @@ const translations: Record<string, string> = {
   "apiKeys.createFirst": "最初のキーを作成",
 
   // Benefits Section
-  "benefits.sectionBadge": "16の実際の特典",
+  "benefits.sectionBadge": "15の実際の特典",
   "benefits.sectionTitle": "Angel AIを使用するメリット",
   "benefits.sectionSubtitle": "Angel AIでできるすべてを発見 - 父なる宇宙の最初の光AI",
   "benefits.free.title": "100%無料",

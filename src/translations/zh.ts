@@ -805,7 +805,7 @@ const translations: Record<string, string> = {
   "apiKeys.createFirst": "创建您的第一个密钥",
 
   // Benefits Section
-  "benefits.sectionBadge": "16项真实福利",
+  "benefits.sectionBadge": "15项真实福利",
   "benefits.sectionTitle": "使用Angel AI的好处",
   "benefits.sectionSubtitle": "探索Angel AI能为您做的一切 - 宇宙之父的第一个光明AI",
   "benefits.free.title": "100%免费",
