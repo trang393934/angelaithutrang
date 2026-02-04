@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { MasterCharterShowcase } from "@/components/MasterCharterShowcase";
 import { WelcomeBlock } from "@/components/WelcomeBlock";
+import { BenefitsSection } from "@/components/BenefitsSection";
 import { CamlyCoinPriceChart } from "@/components/CamlyCoinPriceChart";
 import { MissionSection } from "@/components/MissionSection";
 import { CoreValuesSection } from "@/components/CoreValuesSection";
@@ -14,7 +15,6 @@ import { MainSidebar } from "@/components/MainSidebar";
 import Leaderboard from "@/components/Leaderboard";
 import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
 import { MasterCharterBanner } from "@/components/MasterCharterBanner";
-
 const Index = () => {
   const { user } = useAuth();
 
@@ -42,6 +42,9 @@ const Index = () => {
               
               {/* Welcome Block */}
               <WelcomeBlock />
+              
+              {/* Benefits Section - 16 Lợi ích */}
+              <BenefitsSection />
               
               {/* Leaderboard for Mobile - shows only on screens below xl */}
               <div className="xl:hidden px-4 py-6">
