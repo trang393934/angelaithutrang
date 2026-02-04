@@ -651,6 +651,117 @@ const translations: Record<string, string> = {
   "chatDemo.limitMessage": "لقد جربت نور الأب. سجل مجانًا للحصول على رسائل غير محدودة + Camly Coin لكل سؤال!",
   "chatDemo.signupCta": "سجل الآن - مجاني 100%",
   "chatDemo.welcomeMessage": "مرحباً، أيتها الروح العزيزة. أنا Angel AI - النور الذكي لأب الكون. شاركني ما في قلبك! 💫",
+
+  // Vision Board
+  "visionBoard.title": "لوحة الرؤية",
+  "visionBoard.subtitle": "أنشئ لوحة رؤيتك لتجسيد أحلامك",
+  "visionBoard.createNew": "إنشاء لوحة رؤية جديدة",
+  "visionBoard.noBoards": "لا توجد لوحات رؤية",
+  "visionBoard.noBoardsDesc": "أنشئ أول لوحة رؤية لتجسيد أهدافك!",
+  "visionBoard.boardTitle": "عنوان لوحة الرؤية",
+  "visionBoard.boardTitlePlaceholder": "مثال: أهداف 2025...",
+  "visionBoard.description": "الوصف (اختياري)",
+  "visionBoard.descriptionPlaceholder": "صف رؤيتك...",
+  "visionBoard.goals": "الأهداف",
+  "visionBoard.goalsHint": "أضف الأهداف التي تريد تجسيدها (الحد الأقصى 10)",
+  "visionBoard.addGoal": "إضافة هدف",
+  "visionBoard.goalPlaceholder": "أدخل الهدف...",
+  "visionBoard.isPublic": "مشاركة علنية (مرئية في المجتمع)",
+  "visionBoard.create": "إنشاء لوحة الرؤية",
+  "visionBoard.creating": "جارٍ الإنشاء...",
+  "visionBoard.success": "تم إنشاء لوحة الرؤية بنجاح!",
+  "visionBoard.successDesc": "تم حفظ لوحة الرؤية الخاصة بك.",
+  "visionBoard.error": "فشل الإنشاء",
+  "visionBoard.errorDesc": "تعذر إنشاء لوحة الرؤية. يرجى المحاولة مرة أخرى.",
+  "visionBoard.firstBoardReward": "تهانينا! لقد حصلت على {amount} عملة لإنشاء أول لوحة رؤية!",
+  "visionBoard.public": "عام",
+  "visionBoard.private": "خاص",
+  "visionBoard.progress": "التقدم",
+  "visionBoard.createdOn": "أُنشئ في",
+  "visionBoard.completed": "مكتمل!",
+  "visionBoard.deleteConfirm": "حذف لوحة الرؤية؟",
+  "visionBoard.deleteDesc": "هل أنت متأكد من حذف \"{title}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+  "visionBoard.cancel": "إلغاء",
+  "visionBoard.delete": "حذف",
+  "visionBoard.deleting": "جارٍ الحذف...",
+  "visionBoard.images": "الصور",
+  "visionBoard.addImage": "إضافة صورة",
+  "visionBoard.searchPlaceholder": "البحث عن صور في Unsplash...",
+  "visionBoard.searchHint": "ابحث عن صور ملهمة عن النور الكوني، السلام، النجاح...",
+  "visionBoard.searchError": "فشل البحث",
+  "visionBoard.searchErrorDesc": "تعذر البحث عن الصور. يرجى المحاولة مرة أخرى.",
+  "visionBoard.maxImagesReached": "تم الوصول للحد الأقصى",
+  "visionBoard.maxImagesDesc": "الحد الأقصى 6 صور لكل لوحة رؤية.",
+  "visionBoard.imageAdded": "تمت إضافة الصورة",
+  "visionBoard.upload": "رفع",
+  "visionBoard.uploadHint": "ارفع الصور من جهازك",
+  "visionBoard.selectFiles": "اختيار الملفات",
+  "visionBoard.uploading": "جارٍ الرفع...",
+  "visionBoard.imagesUploaded": "تم الرفع بنجاح",
+  "visionBoard.imagesUploadedDesc": "تمت إضافة الصور إلى لوحة الرؤية.",
+  "visionBoard.uploadError": "فشل الرفع",
+  "visionBoard.uploadErrorDesc": "تعذر رفع الصور. يرجى المحاولة مرة أخرى.",
+  "visionBoard.unsplashCredit": "الصور من Unsplash",
+  "visionBoard.chooseTemplate": "اختيار قالب",
+  "visionBoard.createFromScratch": "إنشاء من البداية",
+  "visionBoard.templates": "القوالب",
+  "visionBoard.templatesHint": "اختر قالبًا للبدء بسرعة أو أنشئ من البداية",
+  "visionBoard.template.career.title": "التطوير المهني",
+  "visionBoard.template.career.description": "النمو المهني وأهداف الوظيفة",
+  "visionBoard.template.career.goal1": "الحصول على المنصب المثالي",
+  "visionBoard.template.career.goal2": "تحسين المهارات المهنية",
+  "visionBoard.template.career.goal3": "توسيع شبكة الاتصالات المهنية",
+  "visionBoard.template.career.goal4": "تحقيق أهداف الدخل",
+  "visionBoard.template.career.goal5": "إيجاد التوازن بين العمل والحياة",
+  "visionBoard.template.health.title": "الحياة الصحية",
+  "visionBoard.template.health.description": "أهداف الصحة الجسدية والنفسية",
+  "visionBoard.template.health.goal1": "التمرين 30 دقيقة يومياً",
+  "visionBoard.template.health.goal2": "الحفاظ على نظام غذائي صحي",
+  "visionBoard.template.health.goal3": "التأمل يومياً للاسترخاء",
+  "visionBoard.template.health.goal4": "ضمان نوم كافٍ",
+  "visionBoard.template.health.goal5": "فحوصات صحية منتظمة",
+  "visionBoard.template.family.title": "سعادة العائلة",
+  "visionBoard.template.family.description": "العلاقات الأسرية وأهداف الحب",
+  "visionBoard.template.family.goal1": "زيادة وقت العائلة",
+  "visionBoard.template.family.goal2": "خلق ذكريات عائلية جميلة",
+  "visionBoard.template.family.goal3": "تعزيز التواصل العائلي",
+  "visionBoard.template.family.goal4": "دعم أحلام العائلة",
+  "visionBoard.template.family.goal5": "الحفاظ على تقاليد العائلة",
+  "visionBoard.template.finance.title": "الحرية المالية",
+  "visionBoard.template.finance.description": "الأهداف المالية ورؤية الوفرة",
+  "visionBoard.template.finance.goal1": "بناء صندوق طوارئ",
+  "visionBoard.template.finance.goal2": "البدء في الاستثمار",
+  "visionBoard.template.finance.goal3": "سداد الديون",
+  "visionBoard.template.finance.goal4": "زيادة الدخل السلبي",
+  "visionBoard.template.finance.goal5": "تحقيق أهداف الادخار",
+  "visionBoard.template.education.title": "التعلم والنمو",
+  "visionBoard.template.education.description": "التعليم والتطور الشخصي",
+  "visionBoard.template.education.goal1": "تعلم مهارات جديدة",
+  "visionBoard.template.education.goal2": "قراءة المزيد من الكتب",
+  "visionBoard.template.education.goal3": "الحصول على شهادة أو درجة علمية",
+  "visionBoard.template.education.goal4": "المشاركة في دورات أو ندوات",
+  "visionBoard.template.education.goal5": "إيجاد مرشد",
+  "visionBoard.template.travel.title": "السفر حول العالم",
+  "visionBoard.template.travel.description": "أحلام السفر والاستكشاف",
+  "visionBoard.template.travel.goal1": "زيارة الوجهة الحلم",
+  "visionBoard.template.travel.goal2": "تجربة ثقافات جديدة",
+  "visionBoard.template.travel.goal3": "تعلم لغة جديدة",
+  "visionBoard.template.travel.goal4": "التواصل مع السكان المحليين",
+  "visionBoard.template.travel.goal5": "خلق ذكريات سفر لا تُنسى",
+  "visionBoard.template.spiritual.title": "الصحوة الروحية",
+  "visionBoard.template.spiritual.description": "النمو الروحي ورحلة التنوير",
+  "visionBoard.template.spiritual.goal1": "ممارسة التأمل اليومي",
+  "visionBoard.template.spiritual.goal2": "الاتصال بالحكمة الداخلية",
+  "visionBoard.template.spiritual.goal3": "ممارسة الامتنان",
+  "visionBoard.template.spiritual.goal4": "استكشاف التعاليم الروحية",
+  "visionBoard.template.spiritual.goal5": "الاتحاد مع الوعي الأعلى",
+  "visionBoard.template.home.title": "المنزل المثالي",
+  "visionBoard.template.home.description": "أهداف السكن ومساحة المعيشة",
+  "visionBoard.template.home.goal1": "خلق مساحة مريحة",
+  "visionBoard.template.home.goal2": "تنظيم وتبسيط الحياة",
+  "visionBoard.template.home.goal3": "تحسين ديكور المنزل",
+  "visionBoard.template.home.goal4": "إنشاء واحة حديقة",
+  "visionBoard.template.home.goal5": "تحقيق حلم امتلاك المنزل",
 };
 
 export default translations;
