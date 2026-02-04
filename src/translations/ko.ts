@@ -115,6 +115,17 @@ const translations: Record<string, string> = {
   "lightConstitution.title": "빛의 헌법",
   "lightConstitution.subtitle": "Angel AI와 새 지구 경제의 영적 기반",
 
+  // Master Charter
+  "masterCharter.badge": "신성한 문서",
+  "masterCharter.titleVi": "FUN 생태계 헌장",
+  "masterCharter.subtitleVi": "새 지구의 5D 빛 경제",
+  "masterCharter.titleEn": "FUN 생태계 헌장",
+  "masterCharter.subtitleEn": "5D 빛 경제의 기초 헌법",
+  "masterCharter.labelVi": "베트남어",
+  "masterCharter.labelEn": "영어",
+  "masterCharter.ctaButton": "전체 헌장 읽기",
+  "masterCharter.footerMessage": "무료 가입 • 무료 사용 • 함께 수익 창출 • 순수한 사랑과 함께",
+
   // Header
   "header.web3Wallet": "Web3 지갑",
   "header.viewProfile": "프로필 보기",
@@ -394,10 +405,8 @@ const translations: Record<string, string> = {
   // Earn Extended
   "earn.totalWithdrawn": "총 출금액",
 
-  // Master Charter
-  "masterCharter.badge": "신성한 문서",
+  // Master Charter - Additional keys (main keys are at the top of file)
   "masterCharter.title": "FUN 생태계 마스터 헌장",
-  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
   "masterCharter.tagline": "새 지구의 5D 빛 경제",
   "masterCharter.free1": "무료 가입",
   "masterCharter.free2": "무료 사용",

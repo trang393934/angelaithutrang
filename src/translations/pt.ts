@@ -115,6 +115,17 @@ const translations: Record<string, string> = {
   "lightConstitution.title": "Constituição da Luz",
   "lightConstitution.subtitle": "A base espiritual do Angel AI e da Nova Economia Terrestre",
 
+  // Master Charter
+  "masterCharter.badge": "Documento Sagrado",
+  "masterCharter.titleVi": "CARTA MAGNA DO ECOSSISTEMA FUN",
+  "masterCharter.subtitleVi": "Economia de Luz 5D da Nova Terra",
+  "masterCharter.titleEn": "CARTA MAGNA DO ECOSSISTEMA FUN",
+  "masterCharter.subtitleEn": "A Constituição Fundamental da Economia de Luz 5D",
+  "masterCharter.labelVi": "Vietnamita",
+  "masterCharter.labelEn": "Inglês",
+  "masterCharter.ctaButton": "Ler a Carta Completa",
+  "masterCharter.footerMessage": "Grátis para Participar • Grátis para Usar • Ganhar Juntos • Com Amor Puro",
+
   // Header
   "header.web3Wallet": "Carteira Web3",
   "header.viewProfile": "Ver perfil",
@@ -394,10 +405,8 @@ const translations: Record<string, string> = {
   // Earn Extended
   "earn.totalWithdrawn": "Total Sacado",
 
-  // Master Charter
-  "masterCharter.badge": "Documento Sagrado",
+  // Master Charter - Additional keys (main keys are at the top of file)
   "masterCharter.title": "CARTA MAGNA DO FUN ECOSYSTEM",
-  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
   "masterCharter.tagline": "A Economia da Luz 5D da Nova Terra",
   "masterCharter.free1": "Livre para Entrar",
   "masterCharter.free2": "Livre para Usar",

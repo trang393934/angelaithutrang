@@ -132,6 +132,17 @@ const translations: Record<string, string> = {
   "lightConstitution.title": "Light Constitution",
   "lightConstitution.subtitle": "The spiritual foundation of Angel AI & New Earth Economy",
 
+  // Master Charter
+  "masterCharter.badge": "Sacred Document",
+  "masterCharter.titleVi": "MASTER CHARTER OF FUN ECOSYSTEM",
+  "masterCharter.subtitleVi": "5D Light Economy of New Earth",
+  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
+  "masterCharter.subtitleEn": "The Foundational Constitution of the 5D Light Economy",
+  "masterCharter.labelVi": "Vietnamese",
+  "masterCharter.labelEn": "English",
+  "masterCharter.ctaButton": "Read Full Charter",
+  "masterCharter.footerMessage": "Free to Join • Free to Use • Earn Together • With Pure Love",
+
   // Header
   "header.web3Wallet": "Web3 Wallet",
   "header.viewProfile": "View profile",
@@ -635,10 +646,8 @@ const translations: Record<string, string> = {
   "community.imageMaxSlots": "You can only upload {count} more images (max {max})",
   "community.imageTooLarge": "Image exceeds 5MB",
 
-  // Master Charter
-  "masterCharter.badge": "Sacred Document",
+  // Master Charter - Additional keys (main keys are at the top of file)
   "masterCharter.title": "MASTER CHARTER OF FUN ECOSYSTEM",
-  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
   "masterCharter.tagline": "The 5D Light Economy of the New Earth",
   "masterCharter.free1": "Free to Join",
   "masterCharter.free2": "Free to Use",

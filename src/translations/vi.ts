@@ -132,6 +132,17 @@ const translations: Record<string, string> = {
   "lightConstitution.title": "Hiến Pháp Ánh Sáng",
   "lightConstitution.subtitle": "Nền tảng tâm linh của Angel AI & Kinh Tế Trái Đất Mới",
 
+  // Master Charter
+  "masterCharter.badge": "Tài Liệu Thiêng Liêng",
+  "masterCharter.titleVi": "HIẾN PHÁP GỐC CỦA FUN ECOSYSTEM",
+  "masterCharter.subtitleVi": "Nền Kinh Tế Ánh Sáng 5D của Trái Đất Mới",
+  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
+  "masterCharter.subtitleEn": "The Foundational Constitution of the 5D Light Economy",
+  "masterCharter.labelVi": "Tiếng Việt",
+  "masterCharter.labelEn": "English",
+  "masterCharter.ctaButton": "Đọc Hiến Pháp Đầy Đủ",
+  "masterCharter.footerMessage": "Miễn phí Tham gia • Miễn phí Sử dụng • Cùng nhau Kiếm tiền • Với Tình Yêu Thuần Khiết",
+
   // Header
   "header.web3Wallet": "Ví Web3",
   "header.viewProfile": "Xem hồ sơ",
@@ -665,10 +676,8 @@ const translations: Record<string, string> = {
   "agreeToLawOfLight": "Đồng ý Luật Ánh Sáng",
   "backToHome": "Quay về Trang chủ",
 
-  // Master Charter
-  "masterCharter.badge": "Tài liệu Thiêng liêng",
+  // Master Charter - Additional keys (main keys are at the top of file)
   "masterCharter.title": "HIẾN PHÁP GỐC CỦA FUN ECOSYSTEM",
-  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
   "masterCharter.tagline": "Nền Kinh Tế Ánh Sáng 5D của Trái Đất Mới",
   "masterCharter.free1": "Tự Do Gia Nhập",
   "masterCharter.free2": "Tự Do Sử Dụng",
