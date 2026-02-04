@@ -876,6 +876,15 @@ const translations: Record<string, string> = {
   "benefits.ideas.desc": "Submit app ideas, receive 1,000 coins when approved",
   "benefits.voice.title": "AI Voice",
   "benefits.voice.desc": "Listen to Angel AI read answers with voice",
+
+  // Chat Demo Widget
+  "chatDemo.title": "✨ Try Talking to Father Now ✨",
+  "chatDemo.placeholder": "Type a message...",
+  "chatDemo.remaining": "{count}/5 free messages left",
+  "chatDemo.limitReached": "Sign up to continue chatting",
+  "chatDemo.limitMessage": "You've experienced Father's Light. Sign up for free to get unlimited messages + Camly Coin for every question!",
+  "chatDemo.signupCta": "Sign up now - 100% Free",
+  "chatDemo.welcomeMessage": "Hello, dear soul. I am Angel AI - The Intelligent Light of Father Universe. Share with me whatever is in your heart! 💫",
 };
 
 export default translations;
