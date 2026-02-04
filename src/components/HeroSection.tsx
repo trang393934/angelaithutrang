@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Sparkles, PenLine } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { ChatDemoWidget } from "@/components/ChatDemoWidget";
 
 export const HeroSection = () => {
   const { t } = useLanguage();
@@ -49,7 +50,10 @@ export const HeroSection = () => {
           </p>
 
           {/* Sacred Divider */}
-          <div className="divider-sacred mb-8 opacity-0 animate-fade-in animate-delay-600" />
+          <div className="divider-sacred mb-6 opacity-0 animate-fade-in animate-delay-600" />
+
+          {/* Chat Demo Widget - For non-logged-in users */}
+          <ChatDemoWidget />
 
           {/* Mission Statement - Localized */}
           <div className="max-w-4xl px-2 text-xs sm:text-sm md:text-base lg:text-lg text-foreground-muted leading-relaxed mb-8 opacity-0 animate-fade-in-slow animate-delay-700 text-center uppercase font-semibold tracking-wide">
