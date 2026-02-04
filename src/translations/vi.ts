@@ -1,6 +1,10 @@
 const translations: Record<string, string> = {
   "common.you": "Bạn",
   
+  // Vision Board - Rate limit (Unsplash compliance)
+  "visionBoard.rateLimitTitle": "Hết lượt tìm hôm nay",
+  "visionBoard.rateLimitDesc": "Thử lại sau nhé con yêu! ✨ Hoặc tải ảnh từ máy của con lên.",
+  
   // Early Adopter
   "earlyAdopter.title": "Phần Thưởng Early Adopter",
   "earlyAdopter.description": "Hoàn thành 10 câu hỏi hợp lệ để nhận thưởng đặc biệt dành cho 100 người dùng đầu tiên!",

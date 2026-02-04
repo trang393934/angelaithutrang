@@ -62,11 +62,15 @@ export function VisionBoardImagePicker({
 
       if (error) throw error;
       setSearchResults(data.photos || []);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Unsplash search error:', error);
+      // Check if rate limit error (429)
+      const isRateLimit = error instanceof Error && 
+        (error.message.includes('429') || error.message.includes('rate limit'));
+      
       toast({
-        title: t("visionBoard.searchError"),
-        description: t("visionBoard.searchErrorDesc"),
+        title: isRateLimit ? t("visionBoard.rateLimitTitle") : t("visionBoard.searchError"),
+        description: isRateLimit ? t("visionBoard.rateLimitDesc") : t("visionBoard.searchErrorDesc"),
         variant: "destructive"
       });
     } finally {
