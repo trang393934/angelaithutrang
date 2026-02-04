@@ -324,10 +324,17 @@ const AdminWithdrawals = () => {
     }
   };
 
-  // Get selectable withdrawals (pending or processing)
+  // Get selectable withdrawals (pending or processing) from filtered list
   const selectableWithdrawals = withdrawals.filter(w => 
     w.status === "pending" || w.status === "processing"
   );
+
+  // Get selectable withdrawals from the current filtered view
+  const getFilteredSelectableWithdrawals = () => {
+    return filteredWithdrawals.filter(w => 
+      w.status === "pending" || w.status === "processing"
+    );
+  };
 
   // Toggle single selection
   const toggleSelection = (id: string) => {
@@ -340,13 +347,36 @@ const AdminWithdrawals = () => {
     setSelectedIds(newSelected);
   };
 
-  // Toggle all selection
+  // Toggle all selection - only selects from currently filtered/displayed list
   const toggleSelectAll = () => {
-    if (selectedIds.size === selectableWithdrawals.length) {
-      setSelectedIds(new Set());
+    const filteredSelectable = getFilteredSelectableWithdrawals();
+    const filteredSelectableIds = new Set(filteredSelectable.map(w => w.id));
+    
+    // Check if all filtered selectable items are already selected
+    const allSelected = filteredSelectable.every(w => selectedIds.has(w.id));
+    
+    if (allSelected && filteredSelectable.length > 0) {
+      // Deselect all filtered items
+      const newSelected = new Set(selectedIds);
+      filteredSelectable.forEach(w => newSelected.delete(w.id));
+      setSelectedIds(newSelected);
     } else {
-      setSelectedIds(new Set(selectableWithdrawals.map(w => w.id)));
+      // Select all filtered items (add to existing selection)
+      const newSelected = new Set(selectedIds);
+      filteredSelectable.forEach(w => newSelected.add(w.id));
+      setSelectedIds(newSelected);
     }
+  };
+
+  // Select only pending withdrawals from current filter
+  const selectAllPending = () => {
+    const pendingWithdrawals = filteredWithdrawals.filter(w => w.status === "pending");
+    if (pendingWithdrawals.length === 0) {
+      toast.info("Không có yêu cầu chờ duyệt nào");
+      return;
+    }
+    setSelectedIds(new Set(pendingWithdrawals.map(w => w.id)));
+    toast.success(`Đã chọn ${pendingWithdrawals.length} yêu cầu chờ duyệt`);
   };
 
   // Clear selection
@@ -758,11 +788,38 @@ const AdminWithdrawals = () => {
             <TableHeader>
               <TableRow className="bg-primary-pale/30">
                 <TableHead className="w-12">
-                  <Checkbox
-                    checked={selectableWithdrawals.length > 0 && selectedIds.size === selectableWithdrawals.length}
-                    onCheckedChange={toggleSelectAll}
-                    disabled={selectableWithdrawals.length === 0}
-                  />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Checkbox
+                            checked={getFilteredSelectableWithdrawals().length > 0 && getFilteredSelectableWithdrawals().every(w => selectedIds.has(w.id))}
+                            onCheckedChange={toggleSelectAll}
+                            disabled={getFilteredSelectableWithdrawals().length === 0}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <div className="space-y-1">
+                          <p className="font-medium">Chọn tất cả ({getFilteredSelectableWithdrawals().length})</p>
+                          {filteredWithdrawals.filter(w => w.status === "pending").length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs h-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                selectAllPending();
+                              }}
+                            >
+                              <Clock className="w-3 h-3 mr-1" />
+                              Chỉ chọn chờ duyệt ({filteredWithdrawals.filter(w => w.status === "pending").length})
+                            </Button>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </TableHead>
                 <TableHead className="font-semibold">Thời gian</TableHead>
                 <TableHead className="font-semibold">Người dùng</TableHead>
