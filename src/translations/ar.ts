@@ -115,6 +115,17 @@ const translations: Record<string, string> = {
   "lightConstitution.title": "دستور النور",
   "lightConstitution.subtitle": "الأساس الروحي لـ Angel AI واقتصاد الأرض الجديد",
 
+  // Master Charter
+  "masterCharter.badge": "وثيقة مقدسة",
+  "masterCharter.titleVi": "الميثاق الأساسي لنظام FUN البيئي",
+  "masterCharter.subtitleVi": "اقتصاد النور 5D للأرض الجديدة",
+  "masterCharter.titleEn": "الميثاق الأساسي لنظام FUN البيئي",
+  "masterCharter.subtitleEn": "الدستور الأساسي لاقتصاد النور 5D",
+  "masterCharter.labelVi": "فيتنامية",
+  "masterCharter.labelEn": "إنجليزية",
+  "masterCharter.ctaButton": "قراءة الميثاق الكامل",
+  "masterCharter.footerMessage": "مجاني للانضمام • مجاني للاستخدام • اربح معاً • بالحب النقي",
+
   // Header
   "header.web3Wallet": "محفظة Web3",
   "header.viewProfile": "عرض الملف الشخصي",
@@ -386,10 +397,8 @@ const translations: Record<string, string> = {
   // Earn Extended
   "earn.totalWithdrawn": "إجمالي السحب",
 
-  // Master Charter
-  "masterCharter.badge": "وثيقة مقدسة",
+  // Master Charter - Additional keys (main keys are at the top of file)
   "masterCharter.title": "الميثاق الأساسي لنظام FUN البيئي",
-  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
   "masterCharter.tagline": "اقتصاد النور 5D للأرض الجديدة",
   "masterCharter.free1": "حرية الانضمام",
   "masterCharter.free2": "حرية الاستخدام",

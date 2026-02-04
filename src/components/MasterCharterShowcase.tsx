@@ -3,25 +3,27 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Globe, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 import masterCharterEn from "@/assets/master-charter-en.png";
 import masterCharterVi from "@/assets/master-charter-vi.png";
 
 export const MasterCharterShowcase = () => {
+  const { t } = useLanguage();
   const [activeVersion, setActiveVersion] = useState<"vi" | "en">("vi");
 
   const versions = {
     vi: {
       image: masterCharterVi,
-      title: "HIẾN PHÁP GỐC CỦA FUN ECOSYSTEM",
-      subtitle: "Nền Kinh Tế Ánh Sáng 5D của Trái Đất Mới",
-      label: "Tiếng Việt",
+      title: t("masterCharter.titleVi"),
+      subtitle: t("masterCharter.subtitleVi"),
+      label: t("masterCharter.labelVi"),
       flag: "🇻🇳"
     },
     en: {
       image: masterCharterEn,
-      title: "MASTER CHARTER OF FUN ECOSYSTEM",
-      subtitle: "The Foundational Constitution of the 5D Light Economy",
-      label: "English",
+      title: t("masterCharter.titleEn"),
+      subtitle: t("masterCharter.subtitleEn"),
+      label: t("masterCharter.labelEn"),
       flag: "🇺🇸"
     }
   };
@@ -48,7 +50,7 @@ export const MasterCharterShowcase = () => {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 mb-4">
             <Sun className="w-5 h-5 text-amber-600 animate-pulse" />
             <span className="text-sm font-semibold text-amber-700 uppercase tracking-wider">
-              Sacred Document
+              {t("masterCharter.badge")}
             </span>
             <Sun className="w-5 h-5 text-amber-600 animate-pulse" />
           </div>
@@ -150,13 +152,13 @@ export const MasterCharterShowcase = () => {
               className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:via-orange-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40 transition-all gap-2"
             >
               <Globe className="w-5 h-5" />
-              Đọc Hiến Pháp Đầy Đủ
+              {t("masterCharter.ctaButton")}
               <ExternalLink className="w-4 h-4" />
             </Button>
           </Link>
           
           <p className="text-sm text-muted-foreground mt-3">
-            ✨ Free to Join • Free to Use • Earn Together • With Pure Love ✨
+            ✨ {t("masterCharter.footerMessage")} ✨
           </p>
         </motion.div>
       </div>

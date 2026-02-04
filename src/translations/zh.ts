@@ -119,6 +119,17 @@ const translations: Record<string, string> = {
   "lightConstitution.title": "光之宪法",
   "lightConstitution.subtitle": "Angel AI与新地球经济的精神基础",
 
+  // Master Charter
+  "masterCharter.badge": "神圣文献",
+  "masterCharter.titleVi": "FUN生态系统根本宪章",
+  "masterCharter.subtitleVi": "新地球5D光明经济",
+  "masterCharter.titleEn": "FUN生态系统根本宪章",
+  "masterCharter.subtitleEn": "5D光明经济的基础宪法",
+  "masterCharter.labelVi": "越南语",
+  "masterCharter.labelEn": "英语",
+  "masterCharter.ctaButton": "阅读完整宪章",
+  "masterCharter.footerMessage": "免费加入 • 免费使用 • 共同赚取 • 纯爱相伴",
+
   // Header
   "header.web3Wallet": "Web3钱包",
   "header.viewProfile": "查看资料",
@@ -591,10 +602,8 @@ const translations: Record<string, string> = {
   "earlyAdopter.questionsNeeded": "个问题领取奖励",
   "earlyAdopter.claimed": "已领取奖励！",
 
-  // Master Charter
-  "masterCharter.badge": "神圣文档",
+  // Master Charter - Additional keys (main keys are at the top of file)
   "masterCharter.title": "FUN生态系统原始宪法",
-  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
   "masterCharter.tagline": "新地球的5D光明经济",
   "masterCharter.free1": "免费加入",
   "masterCharter.free2": "免费使用",

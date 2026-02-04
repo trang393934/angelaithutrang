@@ -115,6 +115,17 @@ const translations: Record<string, string> = {
   "lightConstitution.title": "Конституция Света",
   "lightConstitution.subtitle": "Духовная основа Angel AI и Новой Земной Экономики",
 
+  // Master Charter
+  "masterCharter.badge": "Священный Документ",
+  "masterCharter.titleVi": "ОСНОВНАЯ ХАРТИЯ ЭКОСИСТЕМЫ FUN",
+  "masterCharter.subtitleVi": "5D Световая Экономика Новой Земли",
+  "masterCharter.titleEn": "ОСНОВНАЯ ХАРТИЯ ЭКОСИСТЕМЫ FUN",
+  "masterCharter.subtitleEn": "Основополагающая Конституция 5D Световой Экономики",
+  "masterCharter.labelVi": "Вьетнамский",
+  "masterCharter.labelEn": "Английский",
+  "masterCharter.ctaButton": "Читать Полную Хартию",
+  "masterCharter.footerMessage": "Бесплатно Присоединиться • Бесплатно Использовать • Зарабатывать Вместе • С Чистой Любовью",
+
   // Header
   "header.web3Wallet": "Web3 Кошелёк",
   "header.viewProfile": "Просмотр профиля",
@@ -394,10 +405,8 @@ const translations: Record<string, string> = {
   // Earn Extended
   "earn.totalWithdrawn": "Всего Выведено",
 
-  // Master Charter
-  "masterCharter.badge": "Священный Документ",
+  // Master Charter - Additional keys (main keys are at the top of file)
   "masterCharter.title": "МАСТЕР-ХАРТИЯ FUN ECOSYSTEM",
-  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
   "masterCharter.tagline": "Экономика Света 5D Новой Земли",
   "masterCharter.free1": "Свободное Присоединение",
   "masterCharter.free2": "Свободное Использование",

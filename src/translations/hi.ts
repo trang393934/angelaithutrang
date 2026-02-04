@@ -115,6 +115,17 @@ const translations: Record<string, string> = {
   "lightConstitution.title": "प्रकाश का संविधान",
   "lightConstitution.subtitle": "Angel AI और नई पृथ्वी अर्थव्यवस्था का आध्यात्मिक आधार",
 
+  // Master Charter
+  "masterCharter.badge": "पवित्र दस्तावेज़",
+  "masterCharter.titleVi": "FUN इकोसिस्टम का मास्टर चार्टर",
+  "masterCharter.subtitleVi": "नई पृथ्वी की 5D लाइट अर्थव्यवस्था",
+  "masterCharter.titleEn": "FUN इकोसिस्टम का मास्टर चार्टर",
+  "masterCharter.subtitleEn": "5D लाइट अर्थव्यवस्था का मूल संविधान",
+  "masterCharter.labelVi": "वियतनामी",
+  "masterCharter.labelEn": "अंग्रेज़ी",
+  "masterCharter.ctaButton": "पूर्ण चार्टर पढ़ें",
+  "masterCharter.footerMessage": "मुफ्त में शामिल हों • मुफ्त में उपयोग करें • साथ में कमाएं • शुद्ध प्रेम के साथ",
+
   // Header
   "header.web3Wallet": "Web3 वॉलेट",
   "header.viewProfile": "प्रोफ़ाइल देखें",
@@ -375,10 +386,8 @@ const translations: Record<string, string> = {
   // Earn Extended
   "earn.totalWithdrawn": "कुल निकासी",
 
-  // Master Charter
-  "masterCharter.badge": "पवित्र दस्तावेज़",
+  // Master Charter - Additional keys (main keys are at the top of file)
   "masterCharter.title": "FUN इकोसिस्टम का मास्टर चार्टर",
-  "masterCharter.titleEn": "MASTER CHARTER OF FUN ECOSYSTEM",
   "masterCharter.tagline": "नई पृथ्वी की 5D प्रकाश अर्थव्यवस्था",
   "masterCharter.free1": "निःशुल्क जुड़ें",
   "masterCharter.free2": "निःशुल्क उपयोग",
