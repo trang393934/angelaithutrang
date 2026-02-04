@@ -128,7 +128,9 @@ export function EarlyAdopterProgress() {
           
           <Progress 
             value={progress} 
-            className="h-3 bg-amber-100 dark:bg-amber-900/50"
+            className={`h-3 bg-amber-100 dark:bg-amber-900/50 ${
+              progress >= 100 ? 'animate-pulse [&>div]:bg-gradient-to-r [&>div]:from-emerald-400 [&>div]:to-teal-500' : ''
+            }`}
           />
           
           {questionsRemaining > 0 && (

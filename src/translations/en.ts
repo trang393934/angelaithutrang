@@ -1,6 +1,9 @@
 const translations: Record<string, string> = {
   "common.you": "You",
   
+  // Earn page - Spiritual subtitle
+  "earn.subtitleSpiritual": "Accumulate Light through gratitude and loving actions – Earn Camly Coin from your heart ✨",
+  
   // Vision Board - Rate limit (Unsplash compliance)
   "visionBoard.rateLimitTitle": "Search limit reached",
   "visionBoard.rateLimitDesc": "Please try again later! ✨ Or upload your own images.",

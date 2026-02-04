@@ -101,8 +101,8 @@ export default function Earn() {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
               {t("earn.title")}
             </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t("earn.subtitle")}
+            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+              {t("earn.subtitleSpiritual")}
             </p>
           </div>
 
@@ -122,8 +122,8 @@ export default function Earn() {
                     <CardContent>
                       <div className="flex items-center gap-3">
                         <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12" />
-                        <span className="text-4xl font-bold">
-                          {isLoading ? "..." : balance.toLocaleString()}
+                        <span className="text-4xl font-bold flex items-center gap-2">
+                          ✨ {isLoading ? "..." : balance.toLocaleString()}
                         </span>
                       </div>
                     </CardContent>
