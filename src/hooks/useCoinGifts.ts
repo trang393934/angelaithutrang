@@ -57,15 +57,20 @@ export function useCoinGifts() {
   const { user } = useAuth();
   const { refreshBalance } = useCamlyCoin();
   const [isLoading, setIsLoading] = useState(false);
-  const [topGivers, setTopGivers] = useState<TopGiver[]>([]);
-  const [topReceivers, setTopReceivers] = useState<TopReceiver[]>([]);
-  const [topDonors, setTopDonors] = useState<TopDonor[]>([]);
+  const [allGivers, setAllGivers] = useState<TopGiver[]>([]);
+  const [allReceivers, setAllReceivers] = useState<TopReceiver[]>([]);
+  const [allDonors, setAllDonors] = useState<TopDonor[]>([]);
   const [totalGifted, setTotalGifted] = useState(0);
   const [totalDonated, setTotalDonated] = useState(0);
 
+  // Computed top lists for display
+  const topGivers = allGivers.slice(0, 5);
+  const topReceivers = allReceivers.slice(0, 5);
+  const topDonors = allDonors.slice(0, 10);
+
   const fetchLeaderboards = useCallback(async () => {
     try {
-      // Fetch top givers
+      // Fetch all givers
       const { data: gifts } = await supabase
         .from("coin_gifts")
         .select("sender_id, amount");
@@ -92,14 +97,13 @@ export function useCoinGifts() {
               total_given: giverMap.get(id) || 0,
             };
           })
-          .sort((a, b) => b.total_given - a.total_given)
-          .slice(0, 5);
+          .sort((a, b) => b.total_given - a.total_given);
 
-        setTopGivers(givers);
+        setAllGivers(givers);
         setTotalGifted(gifts.reduce((sum, g) => sum + g.amount, 0));
       }
 
-      // Fetch top receivers
+      // Fetch all receivers
       const { data: receivedGifts } = await supabase
         .from("coin_gifts")
         .select("receiver_id, amount");
@@ -126,13 +130,12 @@ export function useCoinGifts() {
               total_received: receiverMap.get(id) || 0,
             };
           })
-          .sort((a, b) => b.total_received - a.total_received)
-          .slice(0, 5);
+          .sort((a, b) => b.total_received - a.total_received);
 
-        setTopReceivers(receivers);
+        setAllReceivers(receivers);
       }
 
-      // Fetch top donors
+      // Fetch all donors
       const { data: donations } = await supabase
         .from("project_donations")
         .select("donor_id, amount");
@@ -159,10 +162,9 @@ export function useCoinGifts() {
               total_donated: donorMap.get(id) || 0,
             };
           })
-          .sort((a, b) => b.total_donated - a.total_donated)
-          .slice(0, 10);
+          .sort((a, b) => b.total_donated - a.total_donated);
 
-        setTopDonors(donors);
+        setAllDonors(donors);
         setTotalDonated(donations.reduce((sum, d) => sum + d.amount, 0));
       }
     } catch (error) {
@@ -284,6 +286,9 @@ export function useCoinGifts() {
     topGivers,
     topReceivers,
     topDonors,
+    allGivers,
+    allReceivers,
+    allDonors,
     totalGifted,
     totalDonated,
     sendGift,
