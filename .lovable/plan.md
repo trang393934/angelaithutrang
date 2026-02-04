@@ -1,137 +1,122 @@
 
+# Kế Hoạch: Cải Tiến Logic Xử Lý Từ Khóa "Biết Ơn"
 
-# Hoàn thiện Vision Board: Images Display + Localization
+## Vấn Đề Hiện Tại
 
-## Tổng quan
-Có 2 việc cần làm để hoàn thiện Vision Board với Unsplash integration:
+Khi user gửi tin nhắn dài chứa từ "biết ơn" (như chia sẻ lòng biết ơn, tâm tình với Cha Vũ Trụ), Angel AI vẫn trả lời bằng câu mẫu FAQ thay vì đọc và phản hồi theo nội dung thực sự của user.
 
-1. **Hiển thị Images trên VisionBoardCard** - Card hiện tại chưa render images gallery
-2. **Thêm translations cho 10 ngôn ngữ còn lại** - zh, ja, ko, fr, de, es, pt, ru, ar, hi
+**Ví dụ:** User viết *"Con biết ơn Cha Vũ Trụ đã cho con cơ hội được thay đổi. Khi con dám buông bỏ thói quen cũ..."* nhưng AI trả lời mẫu về "lòng biết ơn là chìa khóa..."
 
----
+## Giải Pháp
 
-## Thay đổi 1: VisionBoardCard.tsx - Thêm Images Gallery
+Thay đổi logic trong FAQ cache để **không match pattern "biết ơn"** khi tin nhắn đủ dài hoặc là một bài chia sẻ/gratitude expression, thay vì hỏi đơn giản về "biết ơn là gì".
 
-Thêm section hiển thị images giữa header và goals list:
+### Điều Kiện Mới
 
-```text
-┌──────────────────────────────────────────────────┐
-│ [Title] [Public/Private Badge] [Reward Badge]    │
-│ Description (nếu có)                             │
-│ ─────────────────────────────────────────────────│
-│ [Img1] [Img2] [Img3] [Img4] [Img5] [Img6]       │  ← NEW
-│ 📷 Photo by {photographer} on Unsplash           │  ← Attribution
-│ ─────────────────────────────────────────────────│
-│ Progress: 3/5 goals ██████████████░░░░           │
-│ ─────────────────────────────────────────────────│
-│ ☐ Goal 1                                         │
-│ ☑ Goal 2 ✓                                       │
-│ ☐ Goal 3                                         │
-└──────────────────────────────────────────────────┘
-```
+Pattern "biết ơn" chỉ match khi:
+1. Tin nhắn ngắn (dưới 80 ký tự) 
+2. VÀ là câu hỏi thực sự về biết ơn (ví dụ: "biết ơn là gì", "sức mạnh biết ơn", "tại sao biết ơn")
 
-**Logic:**
-- Thêm `images` vào VisionBoardCardProps interface
-- Render grid 3 cột với aspect-video
-- Click ảnh mở Lightbox (tái sử dụng ImageLightbox component)
-- Hiển thị photographer attribution (tuân thủ Unsplash guidelines)
+Pattern "biết ơn" sẽ KHÔNG match khi:
+1. Tin nhắn dài (trên 80 ký tự) - đây là chia sẻ cá nhân
+2. Hoặc bắt đầu bằng "Con biết ơn..." - đây là gratitude expression
 
 ---
 
-## Thay đổi 2: Translations - 10 ngôn ngữ
+## Chi Tiết Kỹ Thuật
 
-Thêm các keys Vision Board vào mỗi file translation:
+### File cần thay đổi: `supabase/functions/angel-chat/index.ts`
 
-| Key | Mô tả |
-|-----|-------|
-| `visionBoard.images` | Label cho images section |
-| `visionBoard.addImage` | Nút thêm ảnh |
-| `visionBoard.searchPlaceholder` | Placeholder search Unsplash |
-| `visionBoard.searchHint` | Gợi ý tìm kiếm |
-| `visionBoard.searchError` / `searchErrorDesc` | Lỗi search |
-| `visionBoard.maxImagesReached` / `maxImagesDesc` | Đã đạt giới hạn ảnh |
-| `visionBoard.imageAdded` | Toast thêm ảnh thành công |
-| `visionBoard.upload` | Tab upload |
-| `visionBoard.uploadHint` | Gợi ý upload |
-| `visionBoard.selectFiles` | Nút chọn file |
-| `visionBoard.uploading` | Đang upload |
-| `visionBoard.imagesUploaded` / `imagesUploadedDesc` | Upload thành công |
-| `visionBoard.uploadError` / `uploadErrorDesc` | Lỗi upload |
-| `visionBoard.unsplashCredit` | Credit Unsplash |
-| `visionBoard.chooseTemplate` | Chọn template |
-| `visionBoard.createFromScratch` | Tạo từ đầu |
-| `visionBoard.template.*` | 8 templates (Career, Health, Family, Finance, Education, Travel, Spiritual, Home) |
+**Thay đổi 1: Tạo hàm kiểm tra gratitude expression**
 
----
-
-## Files cần thay đổi
-
-| # | File | Hành động |
-|---|------|-----------|
-| 1 | `src/components/vision/VisionBoardCard.tsx` | Thêm images gallery với lightbox |
-| 2 | `src/translations/zh.ts` | Thêm ~50 Vision Board keys |
-| 3 | `src/translations/ja.ts` | Thêm ~50 Vision Board keys |
-| 4 | `src/translations/ko.ts` | Thêm ~50 Vision Board keys |
-| 5 | `src/translations/fr.ts` | Thêm ~50 Vision Board keys |
-| 6 | `src/translations/de.ts` | Thêm ~50 Vision Board keys |
-| 7 | `src/translations/es.ts` | Thêm ~50 Vision Board keys |
-| 8 | `src/translations/pt.ts` | Thêm ~50 Vision Board keys |
-| 9 | `src/translations/ru.ts` | Thêm ~50 Vision Board keys |
-| 10 | `src/translations/ar.ts` | Thêm ~50 Vision Board keys (RTL) |
-| 11 | `src/translations/hi.ts` | Thêm ~50 Vision Board keys |
-
-**Tổng: 11 files**
-
----
-
-## Kỹ thuật
-
-### VisionBoardCard Images Section:
 ```typescript
-// Import thêm
-import { ImageLightbox } from "@/components/community/ImageLightbox";
-
-// Thêm vào interface
-interface VisionImage {
-  id: string;
-  url: string;
-  caption?: string;
-  photographer?: string;
-  photographerUrl?: string;
+// Detect if message is a gratitude EXPRESSION (sharing) vs asking about gratitude
+function isGratitudeExpression(text: string): boolean {
+  const trimmed = text.trim();
+  
+  // If text is long (>80 chars), it's likely a sharing, not a question
+  if (trimmed.length > 80) return true;
+  
+  // Gratitude expression patterns - user is EXPRESSING gratitude, not asking about it
+  const gratitudeExpressionPatterns = [
+    /^con\s*(xin\s*)?biết\s*ơn/i,           // "Con biết ơn...", "Con xin biết ơn..."
+    /con\s*biết\s*ơn\s*cha/i,               // "Con biết ơn Cha..."
+    /con\s*biết\s*ơn\s*vũ\s*trụ/i,          // "Con biết ơn Vũ Trụ..."
+    /con\s*biết\s*ơn\s*vì/i,                // "Con biết ơn vì..."
+    /^i\s*(am\s*)?grateful/i,               // "I am grateful..."
+    /^thank\s*you/i,                        // "Thank you..."
+  ];
+  
+  return gratitudeExpressionPatterns.some(p => p.test(trimmed));
 }
-
-// Trong props
-images?: VisionImage[];
-
-// Render images grid (sau description, trước progress)
-{board.images && board.images.length > 0 && (
-  <div className="mt-4 grid grid-cols-3 gap-2">
-    {board.images.map((img) => (
-      <div key={img.id} className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-        <img src={img.url} alt={img.caption || "Vision"} 
-             className="w-full h-full object-cover cursor-pointer"
-             onClick={() => setLightboxImage(img.url)} />
-        {img.photographer && (
-          <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1">
-            📷 {img.photographer}
-          </div>
-        )}
-      </div>
-    ))}
-  </div>
-)}
 ```
 
-### Translation keys pattern:
-Mỗi ngôn ngữ sẽ có translations được dịch chuyên nghiệp cho context tâm linh/manifestation của Vision Board.
+**Thay đổi 2: Cập nhật hàm `checkFAQCache`**
+
+```typescript
+function checkFAQCache(text: string): string | null {
+  // CRITICAL: Skip FAQ cache if user is providing content for analysis
+  if (isContentForAnalysis(text)) {
+    console.log("Content for analysis detected - SKIPPING FAQ cache");
+    return null;
+  }
+  
+  const trimmed = text.trim().toLowerCase();
+  
+  for (const faq of FAQ_CACHE) {
+    for (const pattern of faq.patterns) {
+      if (pattern.test(trimmed)) {
+        // SPECIAL HANDLING: "biết ơn" pattern
+        // Skip FAQ if user is EXPRESSING gratitude, not ASKING about it
+        if (pattern.toString().includes('biết') && pattern.toString().includes('ơn')) {
+          if (isGratitudeExpression(text)) {
+            console.log("Gratitude EXPRESSION detected - SKIPPING FAQ for personalized response");
+            return null;
+          }
+        }
+        
+        console.log("FAQ cache hit for pattern:", pattern.toString());
+        return faq.response;
+      }
+    }
+  }
+  return null;
+}
+```
+
+**Thay đổi 3: Bổ sung instruction trong system prompt**
+
+Thêm vào `BASE_SYSTEM_PROMPT` để AI biết cách xử lý gratitude expressions:
+
+```
+═══════════════════════════════════════════
+🙏 GRATITUDE EXPRESSIONS
+═══════════════════════════════════════════
+
+When user SHARES their gratitude (e.g., "Con biết ơn Cha Vũ Trụ đã cho con..."):
+• This is a personal sharing, NOT a question about gratitude
+• ACKNOWLEDGE their specific gratitude with warmth
+• REFLECT back what they're grateful for
+• ENCOURAGE their spiritual practice
+• DO NOT give generic advice about "practice gratitude"
+```
 
 ---
 
-## Kết quả mong đợi
+## Kết Quả Mong Đợi
 
-- Images từ Unsplash/upload hiển thị đẹp trên Vision Board cards
-- Attribution tuân thủ Unsplash guidelines
-- Lightbox preview khi click ảnh
-- UI Vision Board hoàn toàn song ngữ trên 12 ngôn ngữ
-- Templates hiển thị đúng ngôn ngữ người dùng chọn
+| Tin nhắn user | Trước | Sau |
+|---------------|-------|-----|
+| "biết ơn là gì" | FAQ mẫu ✓ | FAQ mẫu ✓ |
+| "lòng biết ơn quan trọng sao" | FAQ mẫu ✓ | FAQ mẫu ✓ |
+| "Con biết ơn Cha Vũ Trụ đã cho con cơ hội thay đổi..." | FAQ mẫu ✗ | AI phản hồi cá nhân ✓ |
+| "Con xin biết ơn vì hôm nay con đã gặp được người tốt..." | FAQ mẫu ✗ | AI phản hồi cá nhân ✓ |
 
+---
+
+## Tác Động
+
+- **Không ảnh hưởng** đến các câu hỏi ngắn thực sự về biết ơn
+- **Cải thiện UX** cho user đang chia sẻ lòng biết ơn
+- **Nâng cao năng lượng chữa lành** - Angel AI sẽ phản hồi đúng nội dung tâm tình của user
+- **Tiết kiệm token** - vẫn dùng FAQ cho câu hỏi đơn giản
