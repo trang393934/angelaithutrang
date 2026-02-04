@@ -14,7 +14,6 @@ interface Benefit {
 const benefits: Benefit[] = [
   { icon: "🆓", titleKey: "benefits.free.title", descKey: "benefits.free.desc" },
   { icon: "🪙", titleKey: "benefits.earn.title", descKey: "benefits.earn.desc", highlight: true, link: "/earn" },
-  { icon: "🎁", titleKey: "benefits.earlyAdopter.title", descKey: "benefits.earlyAdopter.desc", highlight: true },
   { icon: "💰", titleKey: "benefits.withdraw.title", descKey: "benefits.withdraw.desc", highlight: true, link: "/earn" },
   { icon: "🔥", titleKey: "benefits.dailyLogin.title", descKey: "benefits.dailyLogin.desc", link: "/earn" },
   { icon: "🎨", titleKey: "benefits.imageGen.title", descKey: "benefits.imageGen.desc", link: "/chat" },
