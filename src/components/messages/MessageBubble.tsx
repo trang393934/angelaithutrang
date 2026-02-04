@@ -73,7 +73,7 @@ export function MessageBubble({
         setShowReactions(false);
       }}
     >
-      <div className={`flex gap-2 max-w-[75%] ${isOwn ? "flex-row-reverse" : ""}`}>
+      <div className={`flex gap-2 max-w-[85%] sm:max-w-[80%] ${isOwn ? "flex-row-reverse" : ""}`}>
         {/* Avatar */}
         {!isOwn && (
           <Avatar className="w-8 h-8 shrink-0 mt-auto">
@@ -185,13 +185,13 @@ export function MessageBubble({
             {message.content && (
               <div
                 className={cn(
-                  "px-4 py-3 rounded-2xl transition-all",
+                  "px-5 py-4 rounded-2xl transition-all",
                   isOwn
                     ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-br-sm"
                     : "bg-muted rounded-bl-sm"
                 )}
               >
-                <p className="text-base sm:text-lg whitespace-pre-wrap break-words leading-relaxed message-content">{message.content}</p>
+                <p className="text-[17px] sm:text-xl whitespace-pre-wrap break-words leading-relaxed message-content">{message.content}</p>
               </div>
             )}
 
