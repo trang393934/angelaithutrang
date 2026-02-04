@@ -3,7 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History, Bell, Copy, X, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History, Bell, Copy, X, Loader2, Gift, MessageSquare, BookOpen, Calendar, Users } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import angelAvatar from "@/assets/angel-avatar.png";
 
+interface EarningBreakdown {
+  chat_coins: number;
+  journal_coins: number;
+  gifts_received: number;
+  login_coins: number;
+  post_coins: number;
+  other_coins: number;
+}
+
 interface Withdrawal {
   id: string;
   user_id: string;
@@ -57,6 +67,8 @@ interface Withdrawal {
   coins_per_chat?: number;
   is_suspicious?: boolean;
   suspicious_reasons?: string[];
+  // Earning breakdown
+  earning_breakdown?: EarningBreakdown;
 }
 
 interface WithdrawalStats {
@@ -151,19 +163,53 @@ const AdminWithdrawals = () => {
       // Fetch chat count for each user using count query to bypass 1000 row limit
       const chatCountMap = new Map<string, number>();
       
-      // Fetch chat counts in parallel for better performance
-      const chatCountPromises = userIds.map(async (userId) => {
-        const { count } = await supabase
-          .from("chat_history")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", userId);
-        return { userId, count: count ?? 0 };
+      // Fetch all earning breakdown data in parallel
+      const earningBreakdownPromises = userIds.map(async (userId) => {
+        const [
+          chatCountRes,
+          chatCoinsRes,
+          journalCoinsRes,
+          giftsReceivedRes,
+          loginCoinsRes,
+          postCoinsRes
+        ] = await Promise.all([
+          // Chat count
+          supabase.from("chat_history").select("*", { count: "exact", head: true }).eq("user_id", userId),
+          // Chat coins (from chat_questions)
+          supabase.from("chat_questions").select("reward_amount").eq("user_id", userId).eq("is_rewarded", true),
+          // Journal coins
+          supabase.from("gratitude_journal").select("reward_amount").eq("user_id", userId).eq("is_rewarded", true),
+          // Gifts received
+          supabase.from("coin_gifts").select("amount").eq("receiver_id", userId),
+          // Login coins  
+          supabase.from("daily_login_tracking").select("coins_earned").eq("user_id", userId),
+          // Post coins
+          supabase.from("community_posts").select("reward_amount").eq("user_id", userId).eq("is_rewarded", true),
+        ]);
+
+        const chatCount = chatCountRes.count ?? 0;
+        const chatCoins = chatCoinsRes.data?.reduce((sum, r) => sum + (r.reward_amount || 0), 0) ?? 0;
+        const journalCoins = journalCoinsRes.data?.reduce((sum, r) => sum + (r.reward_amount || 0), 0) ?? 0;
+        const giftsReceived = giftsReceivedRes.data?.reduce((sum, r) => sum + (r.amount || 0), 0) ?? 0;
+        const loginCoins = loginCoinsRes.data?.reduce((sum, r) => sum + (r.coins_earned || 0), 0) ?? 0;
+        const postCoins = postCoinsRes.data?.reduce((sum, r) => sum + (r.reward_amount || 0), 0) ?? 0;
+
+        return {
+          userId,
+          chatCount,
+          breakdown: {
+            chat_coins: chatCoins,
+            journal_coins: journalCoins,
+            gifts_received: giftsReceived,
+            login_coins: loginCoins,
+            post_coins: postCoins,
+            other_coins: 0, // Will be calculated
+          }
+        };
       });
       
-      const chatCountResults = await Promise.all(chatCountPromises);
-      chatCountResults.forEach(({ userId, count }) => {
-        chatCountMap.set(userId, count);
-      });
+      const earningResults = await Promise.all(earningBreakdownPromises);
+      const earningMap = new Map(earningResults.map(r => [r.userId, r]));
 
       // Find duplicate wallets
       const walletUserMap = new Map<string, string[]>();
@@ -180,21 +226,38 @@ const AdminWithdrawals = () => {
       
       const withdrawalsWithData = data?.map(w => {
         const lifetimeEarned = balanceMap.get(w.user_id) || 0;
-        const chatCount = chatCountMap.get(w.user_id) || 0;
-        const coinsPerChat = chatCount > 0 ? lifetimeEarned / chatCount : 0;
+        const earningData = earningMap.get(w.user_id);
+        const chatCount = earningData?.chatCount ?? 0;
+        const breakdown = earningData?.breakdown;
+        
+        // Calculate other coins (difference between lifetime and known sources)
+        const knownCoins = breakdown 
+          ? breakdown.chat_coins + breakdown.journal_coins + breakdown.gifts_received + breakdown.login_coins + breakdown.post_coins
+          : 0;
+        const otherCoins = Math.max(0, lifetimeEarned - knownCoins);
+        
+        const fullBreakdown: EarningBreakdown = breakdown 
+          ? { ...breakdown, other_coins: otherCoins }
+          : { chat_coins: 0, journal_coins: 0, gifts_received: 0, login_coins: 0, post_coins: 0, other_coins: lifetimeEarned };
+
         const walletUsers = walletUserMap.get(w.wallet_address) || [];
         const isDuplicateWallet = walletUsers.length > 1;
         
-        // Determine suspicious status
+        // Determine suspicious status - now smarter with breakdown
         const suspiciousReasons: string[] = [];
-        if (coinsPerChat > 6000) {
-          suspiciousReasons.push(`Coins/Chat cao bất thường: ${Math.round(coinsPerChat).toLocaleString()}`);
+        
+        // Only flag if gifts are NOT the main source and ratio is still high
+        const nonGiftEarnings = lifetimeEarned - fullBreakdown.gifts_received;
+        const coinsPerChatFromActivities = chatCount > 0 ? nonGiftEarnings / chatCount : 0;
+        
+        if (coinsPerChatFromActivities > 6000 && fullBreakdown.gifts_received < lifetimeEarned * 0.5) {
+          suspiciousReasons.push(`Hoạt động/Chat cao bất thường`);
         }
         if (isDuplicateWallet) {
           suspiciousReasons.push(`Ví dùng chung bởi ${walletUsers.length} users`);
         }
-        if (chatCount > 0 && chatCount < 5 && lifetimeEarned > 50000) {
-          suspiciousReasons.push(`Ít chat (${chatCount}) nhưng kiếm nhiều (${lifetimeEarned.toLocaleString()})`);
+        if (chatCount > 0 && chatCount < 5 && nonGiftEarnings > 50000) {
+          suspiciousReasons.push(`Ít chat nhưng kiếm nhiều`);
         }
 
         return {
@@ -202,9 +265,10 @@ const AdminWithdrawals = () => {
           user_email: profileMap.get(w.user_id) || w.user_id.slice(0, 8) + "...",
           lifetime_earned: lifetimeEarned,
           chat_count: chatCount,
-          coins_per_chat: coinsPerChat,
+          coins_per_chat: chatCount > 0 ? lifetimeEarned / chatCount : 0,
           is_suspicious: suspiciousReasons.length > 0,
           suspicious_reasons: suspiciousReasons,
+          earning_breakdown: fullBreakdown,
         };
       }) || [];
 
@@ -733,8 +797,92 @@ const AdminWithdrawals = () => {
                       {formatDate(withdrawal.created_at)}
                     </TableCell>
                     <TableCell className="font-medium">
-                      <div className="flex flex-col gap-1">
-                        <span>{withdrawal.user_email}</span>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="font-semibold">{withdrawal.user_email}</span>
+                        
+                        {/* Earning Breakdown - always show */}
+                        {withdrawal.earning_breakdown && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex flex-wrap gap-1 cursor-help">
+                                  {withdrawal.earning_breakdown.chat_coins > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
+                                      <MessageSquare className="w-2.5 h-2.5 mr-0.5" />
+                                      {(withdrawal.earning_breakdown.chat_coins / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                  {withdrawal.earning_breakdown.journal_coins > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-50 text-purple-700 border-purple-200">
+                                      <BookOpen className="w-2.5 h-2.5 mr-0.5" />
+                                      {(withdrawal.earning_breakdown.journal_coins / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                  {withdrawal.earning_breakdown.gifts_received > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-pink-50 text-pink-700 border-pink-200">
+                                      <Gift className="w-2.5 h-2.5 mr-0.5" />
+                                      {(withdrawal.earning_breakdown.gifts_received / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                  {withdrawal.earning_breakdown.login_coins > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-50 text-green-700 border-green-200">
+                                      <Calendar className="w-2.5 h-2.5 mr-0.5" />
+                                      {(withdrawal.earning_breakdown.login_coins / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                  {withdrawal.earning_breakdown.post_coins > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-50 text-amber-700 border-amber-200">
+                                      <Users className="w-2.5 h-2.5 mr-0.5" />
+                                      {(withdrawal.earning_breakdown.post_coins / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                  {withdrawal.earning_breakdown.other_coins > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-gray-50 text-gray-700 border-gray-200">
+                                      +{(withdrawal.earning_breakdown.other_coins / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="space-y-1 text-xs">
+                                  <p className="font-semibold border-b pb-1 mb-1">Chi tiết nguồn thu</p>
+                                  <p className="flex justify-between gap-4">
+                                    <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3 text-blue-600" /> Chat:</span>
+                                    <span className="font-mono">{withdrawal.earning_breakdown.chat_coins.toLocaleString()}</span>
+                                  </p>
+                                  <p className="flex justify-between gap-4">
+                                    <span className="flex items-center gap-1"><BookOpen className="w-3 h-3 text-purple-600" /> Nhật ký:</span>
+                                    <span className="font-mono">{withdrawal.earning_breakdown.journal_coins.toLocaleString()}</span>
+                                  </p>
+                                  <p className="flex justify-between gap-4">
+                                    <span className="flex items-center gap-1"><Gift className="w-3 h-3 text-pink-600" /> Quà tặng:</span>
+                                    <span className="font-mono">{withdrawal.earning_breakdown.gifts_received.toLocaleString()}</span>
+                                  </p>
+                                  <p className="flex justify-between gap-4">
+                                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3 text-green-600" /> Điểm danh:</span>
+                                    <span className="font-mono">{withdrawal.earning_breakdown.login_coins.toLocaleString()}</span>
+                                  </p>
+                                  <p className="flex justify-between gap-4">
+                                    <span className="flex items-center gap-1"><Users className="w-3 h-3 text-amber-600" /> Cộng đồng:</span>
+                                    <span className="font-mono">{withdrawal.earning_breakdown.post_coins.toLocaleString()}</span>
+                                  </p>
+                                  {withdrawal.earning_breakdown.other_coins > 0 && (
+                                    <p className="flex justify-between gap-4">
+                                      <span>Khác:</span>
+                                      <span className="font-mono">{withdrawal.earning_breakdown.other_coins.toLocaleString()}</span>
+                                    </p>
+                                  )}
+                                  <p className="flex justify-between gap-4 border-t pt-1 font-semibold">
+                                    <span>Tổng:</span>
+                                    <span className="font-mono">{withdrawal.lifetime_earned?.toLocaleString()}</span>
+                                  </p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        
+                        {/* Suspicious warnings - only show if truly suspicious */}
                         {withdrawal.is_suspicious && (
                           <div className="flex flex-col gap-0.5">
                             {withdrawal.suspicious_reasons?.map((reason, idx) => (
@@ -745,9 +893,11 @@ const AdminWithdrawals = () => {
                             ))}
                           </div>
                         )}
+                        
+                        {/* Chat count info */}
                         {withdrawal.chat_count !== undefined && (
-                          <span className="text-xs text-foreground-muted">
-                            {withdrawal.chat_count} chats | {withdrawal.coins_per_chat ? Math.round(withdrawal.coins_per_chat).toLocaleString() : 0}/chat
+                          <span className="text-[10px] text-foreground-muted">
+                            {withdrawal.chat_count} chats • Tổng: {withdrawal.lifetime_earned?.toLocaleString() || 0}
                           </span>
                         )}
                       </div>
