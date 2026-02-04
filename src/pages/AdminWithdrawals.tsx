@@ -148,16 +148,21 @@ const AdminWithdrawals = () => {
         .select("user_id, lifetime_earned")
         .in("user_id", userIds);
 
-      // Fetch chat count for each user
-      const { data: chatCounts } = await supabase
-        .from("chat_history")
-        .select("user_id")
-        .in("user_id", userIds);
-
-      // Count chats per user
+      // Fetch chat count for each user using count query to bypass 1000 row limit
       const chatCountMap = new Map<string, number>();
-      chatCounts?.forEach(c => {
-        chatCountMap.set(c.user_id, (chatCountMap.get(c.user_id) || 0) + 1);
+      
+      // Fetch chat counts in parallel for better performance
+      const chatCountPromises = userIds.map(async (userId) => {
+        const { count } = await supabase
+          .from("chat_history")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId);
+        return { userId, count: count ?? 0 };
+      });
+      
+      const chatCountResults = await Promise.all(chatCountPromises);
+      chatCountResults.forEach(({ userId, count }) => {
+        chatCountMap.set(userId, count);
       });
 
       // Find duplicate wallets
