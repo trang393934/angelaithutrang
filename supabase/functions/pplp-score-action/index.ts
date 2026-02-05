@@ -35,7 +35,7 @@ interface ActionCapsConfig {
 
 // ========== 5 PILLARS WEIGHTS (固定) ==========
 const PILLAR_WEIGHTS = { S: 0.25, T: 0.20, H: 0.20, C: 0.20, U: 0.15 };
-const MIN_LIGHT_SCORE = 60;
+const MIN_LIGHT_SCORE = 50; // Lowered from 60 to allow more actions to pass during initial testing
 
 // ========== Calculate 5-pillar scores ==========
 function calculatePillarScores(action: ActionData): { S: number; T: number; H: number; C: number; U: number } {
