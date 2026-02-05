@@ -1,63 +1,120 @@
 
 
-# Kế hoạch: Sửa lỗi câu hỏi chat không hiển thị trong Mint FUN Money
+# Kế hoạch: Sửa lỗi Câu hỏi Chat không hiển thị trong Mint FUN Money
 
 ## Phân tích nguyên nhân
 
-Sau khi kiểm tra kỹ logs và database, cha đã tìm ra nguyên nhân gốc rễ:
+Sau khi kiểm tra chi tiết, cha xác định được vấn đề chính:
 
-### 1. Các Edge Functions quan trọng chưa được deploy
-- `analyze-reward-question` → trả về **404 Not Found**
-- `pplp-score-action` → trả về **404 Not Found**  
-- `pplp-batch-processor` → trả về **404 Not Found**
+### 1. Edge Function `analyze-reward-question` không phản hồi
+- Không có network request từ frontend đến function này trong logs gần đây
+- Function logs chỉ thấy "shutdown" - không có processing logs
+- Câu hỏi chat cuối cùng được xử lý là lúc 7:39 sáng (5+ tiếng trước)
 
-### 2. Hậu quả
-- Khi con chat với Angel AI, hệ thống không thể gọi `analyze-reward-question` để xử lý reward
-- Các PPLP actions được tạo nhưng không được chấm điểm (scoring)
-- Hiện có **20+ actions đang stuck ở trạng thái `pending`** trong database
-- Trang /mint chỉ hiển thị actions có `status: scored` hoặc `minted`, nên không thấy gì
+### 2. Hậu quả  
+- Khi con chat với Angel AI, hệ thống nhận câu trả lời nhưng **không gọi được `analyze-reward-question`**
+- Không có thông báo thưởng hiển thị (+Camly Coin)
+- Không có PPLP Action mới nào được tạo → Không hiển thị trong /mint
+
+### 3. Flow hiện tại bị đứt
+```
+User gửi câu hỏi → angel-chat trả lời (OK)
+                 ↓
+           analyzeAndReward() được gọi sau 500ms
+                 ↓
+           supabase.functions.invoke("analyze-reward-question") ← LỖI Ở ĐÂY
+                 ↓
+           [Không có response/timeout silently]
+```
+
+---
 
 ## Giải pháp
 
-### Bước 1: Deploy lại tất cả Edge Functions cần thiết
+### Bước 1: Deploy lại edge function với version tracking
 
-Deploy 4 edge functions còn thiếu:
-- `analyze-reward-question` - Xử lý reward khi chat
-- `pplp-score-action` - Chấm điểm Light Score cho actions  
-- `pplp-submit-action` - Submit PPLP action mới
-- `pplp-batch-processor` - Xử lý hàng loạt actions pending
+Thêm version logging để theo dõi deployment và debug:
 
-### Bước 2: Xử lý các actions pending đang tồn tại
+```typescript
+// Thêm vào đầu analyze-reward-question/index.ts
+const VERSION = "v2.0.1";
+console.log(`[analyze-reward-question ${VERSION}] Function booted at ${new Date().toISOString()}`);
+```
 
-Sau khi deploy xong, gọi `pplp-batch-processor` để chấm điểm các actions đang pending trong database.
+### Bước 2: Cải thiện error handling phía frontend
 
-### Bước 3: Kiểm tra end-to-end
+Hiện tại `analyzeAndReward()` có try-catch nhưng chỉ log lỗi ra console. Cần thêm thông báo cho user biết khi có lỗi xảy ra.
 
-1. Chat với Angel AI một câu hỏi mới
-2. Đợi vài giây để hệ thống xử lý
-3. Vào trang /mint và kiểm tra xem action mới có xuất hiện không
+### Bước 3: Thêm retry logic
+
+Nếu request đầu tiên thất bại, tự động retry 1 lần sau 2 giây.
 
 ---
 
 ## Chi tiết kỹ thuật
 
-### Flow hoàn chỉnh cần hoạt động:
+### File cần sửa:
 
-```text
-User Chat với Angel AI
-        ↓
-angel-chat (Edge Function)
-        ↓ 
-analyze-reward-question (Edge Function) → Submit PPLP Action
-        ↓
-pplp-score-action (Edge Function) → Tính Light Score + Auto-mint Camly Coins
-        ↓
-Action status: "scored" hoặc "minted"
-        ↓
-Hiển thị trên trang /mint
+1. **`supabase/functions/analyze-reward-question/index.ts`**
+   - Thêm VERSION constant và logging
+   - Đảm bảo function handle tất cả edge cases
+
+2. **`src/pages/Chat.tsx`** (function `analyzeAndReward`)
+   - Thêm timeout handling (hiện không có timeout)
+   - Thêm retry logic cho network failures
+   - Hiển thị error toast khi thất bại hoàn toàn
+
+### Cải tiến `analyzeAndReward`:
+
+```typescript
+const analyzeAndReward = useCallback(async (questionText: string, aiResponse: string) => {
+  if (!user) return;
+  
+  let retries = 0;
+  const maxRetries = 2;
+  
+  while (retries < maxRetries) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      
+      const { data, error } = await supabase.functions.invoke("analyze-reward-question", {
+        body: { questionText, aiResponse },
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (error) throw error;
+      
+      // Handle success...
+      if (data?.rewarded) {
+        setCurrentReward({...});
+        refreshBalance();
+      }
+      return; // Success, exit loop
+      
+    } catch (error) {
+      retries++;
+      console.error(`Reward analysis attempt ${retries} failed:`, error);
+      
+      if (retries >= maxRetries) {
+        toast.error("Không thể xử lý thưởng. Vui lòng thử lại sau.");
+      } else {
+        await new Promise(r => setTimeout(r, 2000)); // Wait 2s before retry
+      }
+    }
+  }
+}, [user, refreshBalance]);
 ```
 
-### Database state hiện tại:
-- Có nhiều actions với `status: pending`, `scored_at: null`, `minted_at: null`
-- Các actions này cần được chấm điểm lại sau khi deploy
+---
+
+## Sau khi triển khai
+
+1. Deploy edge function `analyze-reward-question`
+2. Con chat 1 câu hỏi mới với Angel AI 
+3. Kiểm tra:
+   - Có hiện thông báo thưởng (+Camly Coin) không?
+   - Vào /mint có thấy Light Action mới không?
+4. Nếu vẫn lỗi, kiểm tra edge function logs để xem version mới đã deploy chưa
 
