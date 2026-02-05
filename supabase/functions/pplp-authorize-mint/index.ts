@@ -71,8 +71,13 @@ async function tryReadNonce(
     if (isCallException) {
       console.log(`[PPLP Mint] getNonce failed with CALL_EXCEPTION, trying mintNonces fallback`);
       // Try mintNonces (older contract version with public mapping)
-      const nonce = await Promise.race([contract.mintNonces(walletAddress), timeout]);
-      return { nonce, method: "mintNonces" };
+      try {
+        const nonce = await Promise.race([contract.mintNonces(walletAddress), timeout]);
+        return { nonce, method: "mintNonces" };
+      } catch (fallbackError: any) {
+        const msg = fallbackError?.shortMessage || fallbackError?.message || "unknown";
+        throw new Error(`Both getNonce and mintNonces failed: ${msg}`);
+      }
     }
     // Re-throw other errors (timeout, network, etc.)
     throw getNonceError;
@@ -156,16 +161,16 @@ async function getValidatedBscProvider(
         return { result: { provider, nonce: 0n, blockNumber, nonceMethod: "getNonce" }, failures };
       }
       
-      try {
-        const { nonce, method } = await tryReadNonce(contract, walletAddress, timeout);
-        console.log(`[PPLP Mint] ✓ Valid RPC ${rpcUrl} - block ${blockNumber}, nonce ${nonce} (via ${method})`);
-        return { result: { provider, nonce, blockNumber, nonceMethod: method }, failures };
-      } catch (nonceError: any) {
-        // If nonce methods fail but we can read name(), assume nonce = 0 for new user
-        console.warn(`[PPLP Mint] RPC ${rpcUrl} nonce methods failed, assuming nonce = 0 for new user`);
-        console.log(`[PPLP Mint] ✓ Valid RPC ${rpcUrl} - block ${blockNumber}, nonce 0 (fallback)`);
-        return { result: { provider, nonce: 0n, blockNumber, nonceMethod: "getNonce" }, failures };
-      }
+       try {
+         const { nonce, method } = await tryReadNonce(contract, walletAddress, timeout);
+         console.log(`[PPLP Mint] ✓ Valid RPC ${rpcUrl} - block ${blockNumber}, nonce ${nonce} (via ${method})`);
+         return { result: { provider, nonce, blockNumber, nonceMethod: method }, failures };
+       } catch (nonceError: any) {
+         const reason = `nonce read failed: ${nonceError?.message || nonceError?.shortMessage || "unknown"}`;
+         console.warn(`[PPLP Mint] RPC ${rpcUrl} ${reason}`);
+         failures.push({ rpc: rpcUrl, reason });
+         continue;
+       }
     } catch (error: any) {
       const reason = error?.message || "unknown error";
       console.warn(`[PPLP Mint] RPC ${rpcUrl} failed:`, reason);

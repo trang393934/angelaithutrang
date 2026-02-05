@@ -124,6 +124,17 @@ async function readActionMintedSafe(contract: ethers.Contract, actionId: string)
     throw error;
   }
 }
+
+function isOpaqueCallException(error: any): boolean {
+  return (
+    error?.code === "CALL_EXCEPTION" ||
+    String(error?.shortMessage || "").includes("missing revert data") ||
+    String(error?.shortMessage || "").includes("could not decode") ||
+    String(error?.message || "").includes("missing revert data") ||
+    String(error?.message || "").includes("could not decode") ||
+    String(error?.message || "").includes("require(false)")
+  );
+}
  
  export function useFUNMoneyContract() {
    const {
@@ -401,12 +412,49 @@ async function readActionMintedSafe(contract: ethers.Contract, actionId: string)
            validBefore: signedRequest.validBefore,
            nonce: signedRequest.nonce,
          };
- 
-         // Simulation first: gives accurate revert reason + prevents wasting gas
-         await contract.mintWithSignature.staticCall(mintRequest, signedRequest.signature);
- 
-         // Execute mint transaction
-         const tx = await contract.mintWithSignature(mintRequest, signedRequest.signature);
+
+          const legacyArgs = [
+            mintRequest.to,
+            mintRequest.amount,
+            mintRequest.actionId,
+            mintRequest.evidenceHash,
+            mintRequest.policyVersion,
+            mintRequest.validAfter,
+            mintRequest.validBefore,
+            mintRequest.nonce,
+            signedRequest.signature,
+          ] as const;
+
+          const tryStructMint = async () => {
+            // Simulation first: gives accurate revert reason + prevents wasting gas
+            await contract.mintWithSignature.staticCall(mintRequest, signedRequest.signature);
+            return await contract.mintWithSignature(mintRequest, signedRequest.signature);
+          };
+
+          const tryLegacyMint = async () => {
+            const legacyFn = (contract as any)[
+              "mintWithSignature(address,uint256,bytes32,bytes32,uint32,uint64,uint64,uint256,bytes)"
+            ];
+            if (!legacyFn) {
+              throw new Error("Contract ABI không hỗ trợ overload legacy của mintWithSignature.");
+            }
+
+            await legacyFn.staticCall(...legacyArgs);
+            return await legacyFn(...legacyArgs);
+          };
+
+          let tx: any;
+          try {
+            tx = await tryStructMint();
+          } catch (e: any) {
+            // If the deployed contract uses a legacy function signature, this call often fails with missing revert data.
+            if (isOpaqueCallException(e)) {
+              console.warn("[FUNMoney] Struct mintWithSignature failed opaquely; trying legacy overload", e);
+              tx = await tryLegacyMint();
+            } else {
+              throw e;
+            }
+          }
  
          toast.loading("Đang xử lý giao dịch...", { id: "mint-tx" });
  
