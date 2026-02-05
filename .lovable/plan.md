@@ -1,5 +1,5 @@
 
-# KẾ HOẠCH TRIỂN KHAI: Mint FUN Money qua Angel AI Platform
+# ✅ HOÀN THÀNH: Mint FUN Money qua Angel AI Platform
 
 ## I. TỔNG QUAN
 
@@ -8,6 +8,17 @@
 **Contract Address**: `0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2` (BSC Testnet)
 
 **Signer**: Sử dụng `TREASURY_PRIVATE_KEY` (đã có trong secrets)
+
+---
+
+## ✅ TRẠNG THÁI TRIỂN KHAI
+
+| Phase | Trạng thái | Ghi chú |
+|-------|-----------|---------|
+| Phase 1: Cấu hình | ✅ Hoàn thành | Contract address + BSC Testnet |
+| Phase 2: UI | ✅ Hoàn thành | Trang /mint + components |
+| Phase 3: Integration | ✅ Hoàn thành | Mint flow hoàn chỉnh |
+| Phase 4: Messages | ✅ Hoàn thành | Status labels trong UI |
 
 ---
 
@@ -155,17 +166,22 @@ Flow hoàn chỉnh:
 
 ## V. YÊU CẦU BÊN NGOÀI
 
-**QUAN TRỌNG**: Trước khi hệ thống hoạt động, cần thực hiện on-chain:
+**⚠️ BƯỚC CUỐI - CẦN THỰC HIỆN TRÊN BLOCKCHAIN**:
 
 **Grant SIGNER_ROLE cho Angel AI Wallet**
 
 Ví từ `TREASURY_PRIVATE_KEY` cần được grant quyền SIGNER trên smart contract. Bé Ly cần:
 
-1. Lấy địa chỉ ví từ `TREASURY_PRIVATE_KEY`
-2. Gọi `grantSigner(address)` từ admin wallet (owner của contract)
-3. Có thể thực hiện qua Remix IDE hoặc BSCScan Write Contract
+1. **Lấy địa chỉ ví từ TREASURY_PRIVATE_KEY**
+   - Import private key vào MetaMask để xem địa chỉ public
 
-Sau khi grant role, hệ thống sẽ hoạt động hoàn chỉnh.
+2. **Gọi `grantSigner(address)` từ admin wallet**
+   - Truy cập: https://testnet.bscscan.com/address/0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2#writeContract
+   - Connect wallet admin (owner)
+   - Tìm function `grantSigner`
+   - Nhập địa chỉ ví Treasury và confirm
+
+Sau khi grant role, hệ thống sẽ ký được mint requests và users có thể claim FUN Money on-chain!
 
 ---
 
@@ -189,12 +205,15 @@ Angel AI ký EIP-712 signature
 User gửi transaction → FUN Money về ví
 ```
 
-### Ước tính thời gian:
+### Files đã tạo/cập nhật:
 
-- Phase 1 (Config): ~15 phút
-- Phase 2 (UI): ~45 phút
-- Phase 3 (Integration): ~30 phút
-- Phase 4 (Messages): ~15 phút
-- **Tổng cộng**: ~2 giờ
-
-Sau khi Cha approve, Cha sẽ bắt đầu triển khai từ Phase 1!
+- `src/lib/funMoneyABI.ts` - Contract address + chainId 97
+- `supabase/functions/_shared/pplp-eip712.ts` - EIP-712 domain config
+- `src/hooks/useWeb3Wallet.ts` - BSC Testnet support
+- `src/hooks/usePPLPActions.ts` - Fetch actions with scores
+- `src/pages/Mint.tsx` - Trang mint chính
+- `src/components/mint/FUNMoneyBalanceCard.tsx` - Hiển thị balance on-chain
+- `src/components/mint/FUNMoneyMintCard.tsx` - Card claim từng action
+- `src/components/mint/MintActionsList.tsx` - Danh sách Light Actions
+- `src/pages/Earn.tsx` - Thêm quick action link
+- `src/App.tsx` - Route /mint

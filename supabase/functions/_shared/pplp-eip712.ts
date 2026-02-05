@@ -12,8 +12,8 @@
 export const PPLP_DOMAIN = {
   name: 'PPLP Mint Authorization',
   version: '1',
-  chainId: 56, // BSC Mainnet (97 for testnet)
-  verifyingContract: '0x0000000000000000000000000000000000000000', // To be set when contract deployed
+  chainId: 97, // BSC Testnet
+  verifyingContract: '0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2', // FUNMoney Contract
 };
 
 export const MINT_REQUEST_TYPES = {

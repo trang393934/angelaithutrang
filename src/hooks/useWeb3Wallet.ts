@@ -2,11 +2,16 @@ import { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 
 // BSC Chain configuration
-const BSC_CHAIN_ID = 56;
-const BSC_CHAIN_ID_HEX = "0x38";
-const BSC_CONFIG = {
-  chainId: BSC_CHAIN_ID_HEX,
-  chainName: "BNB Smart Chain",
+const BSC_MAINNET_CHAIN_ID = 56;
+const BSC_TESTNET_CHAIN_ID = 97;
+
+// Current active network (Testnet for now)
+const BSC_CHAIN_ID = BSC_TESTNET_CHAIN_ID;
+const BSC_CHAIN_ID_HEX = "0x61"; // 97 in hex
+
+const BSC_MAINNET_CONFIG = {
+  chainId: "0x38",
+  chainName: "BNB Smart Chain Mainnet",
   nativeCurrency: {
     name: "BNB",
     symbol: "BNB",
@@ -16,42 +21,36 @@ const BSC_CONFIG = {
   blockExplorerUrls: ["https://bscscan.com"],
 };
 
+const BSC_TESTNET_CONFIG = {
+  chainId: BSC_CHAIN_ID_HEX,
+  chainName: "BNB Smart Chain Testnet",
+  nativeCurrency: {
+    name: "tBNB",
+    symbol: "tBNB",
+    decimals: 18,
+  },
+  rpcUrls: ["https://data-seed-prebsc-1-s1.binance.org:8545/"],
+  blockExplorerUrls: ["https://testnet.bscscan.com"],
+};
+
+// Use Testnet config as default
+const BSC_CONFIG = BSC_TESTNET_CONFIG;
+
 // Popular BSC tokens with their contract addresses
 const BSC_TOKENS = [
   {
     symbol: "BNB",
-    name: "BNB",
+    name: "tBNB (Testnet)",
     address: "native",
     decimals: 18,
     logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
   },
   {
-    symbol: "CAMLY",
-    name: "Camly Coin",
-    address: "0x0910320181889fefde0bb1ca63962b0a8882e413", // Correct Camly Coin contract
+    symbol: "FUN",
+    name: "FUN Money",
+    address: "0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2", // FUNMoney contract on Testnet
     decimals: 18,
-    logo: "/src/assets/camly-coin-logo.png",
-  },
-  {
-    symbol: "USDT",
-    name: "Tether USD",
-    address: "0x55d398326f99059fF775485246999027B3197955",
-    decimals: 18,
-    logo: "https://cryptologos.cc/logos/tether-usdt-logo.png",
-  },
-  {
-    symbol: "BUSD",
-    name: "Binance USD",
-    address: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
-    decimals: 18,
-    logo: "https://cryptologos.cc/logos/binance-usd-busd-logo.png",
-  },
-  {
-    symbol: "CAKE",
-    name: "PancakeSwap",
-    address: "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82",
-    decimals: 18,
-    logo: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
+    logo: "/src/assets/fun-money-logo.png",
   },
 ];
 

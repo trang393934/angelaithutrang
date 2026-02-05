@@ -85,16 +85,16 @@ export const FUN_MONEY_ABI = [
 
 // Contract addresses per network
 export const FUN_MONEY_ADDRESSES: Record<number, string> = {
-  56: "", // BSC Mainnet - to be filled after deployment
-  97: "", // BSC Testnet - to be filled after deployment
+  56: "", // BSC Mainnet - to be deployed later
+  97: "0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2", // BSC Testnet
 };
 
 // EIP-712 Domain for signing
 export const FUN_MONEY_DOMAIN = {
   name: "FUNMoney-PPLP",
   version: "1",
-  chainId: 56, // BSC Mainnet
-  verifyingContract: "", // To be filled after deployment
+  chainId: 97, // BSC Testnet
+  verifyingContract: "0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2",
 };
 
 // MintRequest types for EIP-712

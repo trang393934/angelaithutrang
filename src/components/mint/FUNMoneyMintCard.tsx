@@ -1,0 +1,226 @@
+ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+ import { Button } from "@/components/ui/button";
+ import { Badge } from "@/components/ui/badge";
+ import { Progress } from "@/components/ui/progress";
+ import { 
+   Sparkles, 
+   Coins, 
+   Clock, 
+   CheckCircle2, 
+   AlertCircle,
+   Loader2,
+   ExternalLink,
+   Wallet
+ } from "lucide-react";
+ import { useFUNMoneyContract } from "@/hooks/useFUNMoneyContract";
+ import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
+ import { useState } from "react";
+ import { formatDistanceToNow } from "date-fns";
+ import { vi } from "date-fns/locale";
+ 
+ interface PPLPAction {
+   id: string;
+   action_type: string;
+   platform_id: string;
+   status: string;
+   created_at: string;
+   minted_at?: string;
+   pplp_scores?: Array<{
+     light_score: number;
+     final_reward: number;
+     pillar_s: number;
+     pillar_t: number;
+     pillar_h: number;
+     pillar_c: number;
+     pillar_u: number;
+     decision: string;
+   }>;
+ }
+ 
+ interface Props {
+   action: PPLPAction;
+   onMintSuccess?: () => void;
+ }
+ 
+ const ACTION_LABELS: Record<string, string> = {
+   QUESTION_ASK: "Hỏi Angel AI",
+   JOURNAL_WRITE: "Viết nhật ký biết ơn",
+   CONTENT_CREATE: "Đăng bài cộng đồng",
+   DONATE: "Đóng góp/Tặng quà",
+   CONTENT_SHARE: "Chia sẻ nội dung",
+   COMMUNITY_HELP: "Giúp đỡ cộng đồng",
+   DAILY_LOGIN: "Đăng nhập hàng ngày",
+   VISION_CREATE: "Tạo Vision Board",
+ };
+ 
+ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
+   pending: { label: "Đang xử lý", color: "bg-yellow-100 text-yellow-700", icon: Clock },
+   scored: { label: "Sẵn sàng claim", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
+   minted: { label: "Đã mint", color: "bg-blue-100 text-blue-700", icon: CheckCircle2 },
+   failed: { label: "Thất bại", color: "bg-red-100 text-red-700", icon: AlertCircle },
+ };
+ 
+ export function FUNMoneyMintCard({ action, onMintSuccess }: Props) {
+   const { isConnected, connect } = useWeb3Wallet();
+   const { executeMint, mintStatus } = useFUNMoneyContract();
+   const [isMinting, setIsMinting] = useState(false);
+   const [txHash, setTxHash] = useState<string | null>(null);
+ 
+   const score = action.pplp_scores?.[0];
+   const statusConfig = STATUS_CONFIG[action.status] || STATUS_CONFIG.pending;
+   const StatusIcon = statusConfig.icon;
+ 
+   const handleMint = async () => {
+     if (!isConnected) {
+       connect();
+       return;
+     }
+ 
+     setIsMinting(true);
+     const hash = await executeMint(action.id);
+     setIsMinting(false);
+ 
+     if (hash) {
+       setTxHash(hash);
+       onMintSuccess?.();
+     }
+   };
+ 
+   const canMint = action.status === "scored" && score?.decision === "pass" && !isMinting;
+   const isMinted = action.status === "minted" || txHash;
+ 
+   return (
+     <Card className={`transition-all ${canMint ? "hover:shadow-lg hover:border-amber-400" : ""}`}>
+       <CardHeader className="pb-2">
+         <div className="flex items-center justify-between">
+           <div className="flex items-center gap-2">
+             <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/30">
+               <Sparkles className="h-4 w-4 text-amber-600" />
+             </div>
+             <div>
+               <CardTitle className="text-sm font-medium">
+                 {ACTION_LABELS[action.action_type] || action.action_type}
+               </CardTitle>
+               <div className="text-xs text-muted-foreground">
+                 {formatDistanceToNow(new Date(action.created_at), { addSuffix: true, locale: vi })}
+               </div>
+             </div>
+           </div>
+           <Badge className={statusConfig.color}>
+             <StatusIcon className="h-3 w-3 mr-1" />
+             {statusConfig.label}
+           </Badge>
+         </div>
+       </CardHeader>
+ 
+       <CardContent className="space-y-4">
+         {/* Light Score */}
+         {score && (
+           <div className="space-y-2">
+             <div className="flex items-center justify-between text-sm">
+               <span className="text-muted-foreground">Light Score</span>
+               <span className="font-bold text-amber-600">{score.light_score}/100</span>
+             </div>
+             <Progress value={score.light_score} className="h-2" />
+             
+             {/* 5 Pillars mini view */}
+             <div className="grid grid-cols-5 gap-1 text-xs">
+               <div className="text-center p-1 rounded bg-red-50 dark:bg-red-900/20">
+                 <div className="font-medium text-red-600">S</div>
+                 <div>{score.pillar_s}</div>
+               </div>
+               <div className="text-center p-1 rounded bg-blue-50 dark:bg-blue-900/20">
+                 <div className="font-medium text-blue-600">T</div>
+                 <div>{score.pillar_t}</div>
+               </div>
+               <div className="text-center p-1 rounded bg-green-50 dark:bg-green-900/20">
+                 <div className="font-medium text-green-600">H</div>
+                 <div>{score.pillar_h}</div>
+               </div>
+               <div className="text-center p-1 rounded bg-yellow-50 dark:bg-yellow-900/20">
+                 <div className="font-medium text-yellow-600">C</div>
+                 <div>{score.pillar_c}</div>
+               </div>
+               <div className="text-center p-1 rounded bg-purple-50 dark:bg-purple-900/20">
+                 <div className="font-medium text-purple-600">U</div>
+                 <div>{score.pillar_u}</div>
+               </div>
+             </div>
+           </div>
+         )}
+ 
+         {/* Reward Amount */}
+         {score && (
+           <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+             <div className="flex items-center gap-2">
+               <Coins className="h-5 w-5 text-amber-600" />
+               <span className="text-sm font-medium">Reward</span>
+             </div>
+             <span className="text-xl font-bold text-amber-600">
+               +{score.final_reward.toLocaleString()} FUN
+             </span>
+           </div>
+         )}
+ 
+         {/* Action Button */}
+         {isMinted ? (
+           <div className="space-y-2">
+             <Button variant="outline" className="w-full" disabled>
+               <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
+               Đã mint thành công
+             </Button>
+             {(txHash || action.minted_at) && (
+               <Button
+                 variant="ghost"
+                 size="sm"
+                 className="w-full text-xs"
+                 onClick={() => window.open(`https://testnet.bscscan.com/tx/${txHash}`, "_blank")}
+               >
+                 <ExternalLink className="mr-1 h-3 w-3" />
+                 Xem trên BSCScan
+               </Button>
+             )}
+           </div>
+         ) : canMint ? (
+           <Button 
+             onClick={handleMint}
+             disabled={isMinting}
+             className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+           >
+             {isMinting ? (
+               <>
+                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                 Đang mint...
+               </>
+             ) : !isConnected ? (
+               <>
+                 <Wallet className="mr-2 h-4 w-4" />
+                 Kết nối ví để Claim
+               </>
+             ) : (
+               <>
+                 <Coins className="mr-2 h-4 w-4" />
+                 Claim FUN Money
+               </>
+             )}
+           </Button>
+         ) : action.status === "pending" ? (
+           <Button variant="outline" className="w-full" disabled>
+             <Clock className="mr-2 h-4 w-4" />
+             Đang chờ chấm điểm...
+           </Button>
+         ) : (
+           <Button variant="outline" className="w-full" disabled>
+             <AlertCircle className="mr-2 h-4 w-4" />
+             Không đủ điều kiện mint
+           </Button>
+         )}
+ 
+         {/* Error message */}
+         {mintStatus.error && (
+           <p className="text-xs text-red-500 text-center">{mintStatus.error}</p>
+         )}
+       </CardContent>
+     </Card>
+   );
+ }
