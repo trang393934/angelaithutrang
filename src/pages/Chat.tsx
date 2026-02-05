@@ -444,52 +444,86 @@ const Chat = () => {
 
   const analyzeAndReward = useCallback(async (questionText: string, aiResponse: string) => {
     if (!user) return;
-    try {
-      const { data } = await supabase.functions.invoke("analyze-reward-question", {
-        body: { questionText, aiResponse },
-      });
-      
-      // Handle response recycling detection
-      if (data?.isResponseRecycled) {
-        toast.info(data.message, {
-          duration: 8000,
-          icon: "💫",
-          style: {
-            background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
-            border: "1px solid #f59e0b",
-            color: "#92400e",
-          }
+    
+    const maxRetries = 2;
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[analyzeAndReward] Attempt ${attempt}/${maxRetries} for question:`, questionText.substring(0, 50));
+        
+        const { data, error } = await supabase.functions.invoke("analyze-reward-question", {
+          body: { questionText, aiResponse },
         });
-        // Still update remaining questions count
-        if (data.questionsRemaining !== undefined) {
+        
+        if (error) {
+          console.error(`[analyzeAndReward] Function error on attempt ${attempt}:`, error);
+          throw error;
+        }
+        
+        console.log(`[analyzeAndReward] Response received:`, data);
+        
+        // Handle response recycling detection
+        if (data?.isResponseRecycled) {
+          toast.info(data.message, {
+            duration: 8000,
+            icon: "💫",
+            style: {
+              background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
+              border: "1px solid #f59e0b",
+              color: "#92400e",
+            }
+          });
+          // Still update remaining questions count
+          if (data.questionsRemaining !== undefined) {
+            setCurrentReward({
+              coins: 0,
+              purityScore: 0,
+              message: data.message,
+              questionsRemaining: data.questionsRemaining,
+            });
+          }
+          return;
+        }
+        
+        if (data?.rewarded) {
           setCurrentReward({
-            coins: 0,
-            purityScore: 0,
+            coins: data.coins,
+            purityScore: data.purityScore,
             message: data.message,
             questionsRemaining: data.questionsRemaining,
           });
+          refreshBalance();
+          
+          // Early adopter count is now incremented server-side in analyze-reward-question
+          // Just refresh the status to get updated count
+          if (!data.isGreeting && !data.isSpam && !data.isDuplicate) {
+            // Status will be refreshed through the hook's subscription
+          }
+        } else if (data?.reason) {
+          // Show info for non-rewarded cases (greeting, spam, daily limit, etc.)
+          console.log(`[analyzeAndReward] Not rewarded - reason: ${data.reason}`);
         }
-        return;
-      }
-      
-      if (data?.rewarded) {
-        setCurrentReward({
-          coins: data.coins,
-          purityScore: data.purityScore,
-          message: data.message,
-          questionsRemaining: data.questionsRemaining,
-        });
-        refreshBalance();
         
-        // Early adopter count is now incremented server-side in analyze-reward-question
-        // Just refresh the status to get updated count
-        if (!data.isGreeting && !data.isSpam && !data.isDuplicate) {
-          // Status will be refreshed through the hook's subscription
+        // Success - exit retry loop
+        return;
+        
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`[analyzeAndReward] Attempt ${attempt} failed:`, error);
+        
+        if (attempt < maxRetries) {
+          // Wait 2 seconds before retrying
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
-    } catch (error) {
-      console.error("Reward analysis error:", error);
     }
+    
+    // All retries exhausted
+    console.error("[analyzeAndReward] All retry attempts failed:", lastError);
+    toast.error("Không thể xử lý thưởng. Vui lòng thử lại sau.", {
+      duration: 5000,
+    });
   }, [user, refreshBalance]);
 
   // Image generation - saves to IMAGE history (separate from chat history)
