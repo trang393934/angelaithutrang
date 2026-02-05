@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +19,16 @@ export interface PPLPAction {
   scored_at: string | null;
   minted_at: string | null;
   created_at: string;
+  pplp_scores?: Array<{
+    light_score: number;
+    final_reward: number;
+    pillar_s: number;
+    pillar_t: number;
+    pillar_h: number;
+    pillar_c: number;
+    pillar_u: number;
+    decision: string;
+  }>;
 }
 
 export interface PPLPEvidence {
@@ -49,7 +60,7 @@ export function usePPLPActions() {
     try {
       const { data, error } = await supabase
         .from("pplp_actions")
-        .select("*")
+        .select("*, pplp_scores(*)")
         .eq("actor_id", user.id)
         .order("created_at", { ascending: false })
         .limit(limit);

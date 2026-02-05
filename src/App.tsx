@@ -47,6 +47,7 @@ import MasterCharter from "./pages/docs/MasterCharter";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
 import ActivityHistory from "./pages/ActivityHistory";
+import Mint from "./pages/Mint";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
@@ -117,6 +118,7 @@ const App = () => (
               <Route path="/swap" element={<Swap />} />
               <Route path="/knowledge" element={<Knowledge />} />
               <Route path="/activity-history" element={<ProfileCompletionGate><ActivityHistory /></ProfileCompletionGate>} />
+              <Route path="/mint" element={<ProfileCompletionGate><Mint /></ProfileCompletionGate>} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/knowledge" element={<AdminKnowledge />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
