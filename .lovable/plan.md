@@ -1,142 +1,159 @@
 
+# KẾ HOẠCH SỬA LỖI ON-CHAIN MINTING
 
-# KẾ HOẠCH: Sửa lỗi On-Chain Minting cho actions đã Minted Off-Chain
+## I. VẤN ĐỀ ĐÃ XÁC ĐỊNH
 
-## I. NGUYÊN NHÂN LỖI
+### Vấn đề 1: Địa chỉ ví sai (CRITICAL)
+| Thực tế | Mong muốn |
+|---------|-----------|
+| `0x1234567890123456789012345678901234567890` | Địa chỉ ví MetaMask thật của user |
 
-| Vấn đề | Chi tiết |
-|--------|----------|
-| File lỗi | `supabase/functions/pplp-authorize-mint/index.ts` |
-| Dòng lỗi | Dòng 115-123 |
-| Nguyên nhân | Edge function chỉ cho phép `status === 'scored'`, nhưng khi user click "Mint lên blockchain (tùy chọn)", action đã ở trạng thái `minted` |
-| Lỗi trả về | `400: Action must be scored before mint authorization` |
+**Nguyên nhân**: Khi user **chưa kết nối ví** hoặc **ví mất kết nối**, biến `address` trong `useFUNMoneyContract` bị null, nhưng code vẫn gọi edge function.
 
-## II. LOGIC HIỆN TẠI (KHÔNG ĐÚNG)
+### Vấn đề 2: Amount chưa scale 18 decimals
+| Server trả về | Smart Contract cần |
+|---------------|-------------------|
+| `148` (số nguyên) | `148000000000000000000` (148 × 10^18 wei) |
 
-```text
-User click "Mint lên blockchain" cho action đã minted off-chain
-    ↓
-Frontend gọi pplp-authorize-mint
-    ↓
-Edge function kiểm tra: action.status !== 'scored'?
-    ↓
-⚠️ FAIL: status = 'minted' → Trả về lỗi 400
-    ↓
-Frontend hiển thị toast lỗi (trước khi MetaMask mở)
+**Nguyên nhân**: Edge function trả về `final_reward` từ database (số nguyên FUN) mà không nhân với 10^18.
+
+### Vấn đề 3: EIP-712 Type Mismatch
+| Field | Edge Function Type | Smart Contract Type |
+|-------|-------------------|---------------------|
+| validAfter | `uint256` | `uint64` |
+| validBefore | `uint256` | `uint64` |
+
+**Nguyên nhân**: `pplp-eip712.ts` định nghĩa sai type.
+
+## II. GIẢI PHÁP
+
+### Fix 1: Sửa `useFUNMoneyContract.ts` - Kiểm tra ví trước khi mint
+
+```typescript
+// TRƯỚC:
+const requestMintAuthorization = useCallback(async (actionId: string) => {
+  if (!address) {
+    toast.error("Vui lòng kết nối ví trước");
+    return null;
+  }
+  // ...gọi edge function với address
+}, [address]);
+
+// SAU: Thêm validation chặt chẽ hơn
+const requestMintAuthorization = useCallback(async (actionId: string) => {
+  // Validate address format
+  if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    toast.error("Vui lòng kết nối ví MetaMask trước");
+    return null;
+  }
+  
+  // Prevent test addresses
+  if (address.startsWith("0x1234567890")) {
+    toast.error("Địa chỉ ví không hợp lệ");
+    return null;
+  }
+  // ...
+}, [address]);
 ```
 
-## III. GIẢI PHÁP
+### Fix 2: Sửa `pplp-authorize-mint/index.ts` - Scale amount 18 decimals
 
-### Thay đổi 1: Cho phép re-mint on-chain nếu action đã minted off-chain
-
-Cập nhật logic kiểm tra status để:
-1. Cho phép `scored` (chưa mint gì cả)
-2. Cho phép `minted` NẾU chưa có on-chain tx_hash
-
-```text
-File: supabase/functions/pplp-authorize-mint/index.ts
-
-// TRƯỚC (Dòng 115-123):
-if (action.status !== 'scored') {
-  return Error("Action must be scored...");
-}
+```typescript
+// TRƯỚC:
+amount: BigInt(params.amount),
 
 // SAU:
-if (action.status !== 'scored' && action.status !== 'minted') {
-  return Error("Action must be scored or minted...");
-}
-
-// THÊM: Kiểm tra nếu đã có on-chain tx → từ chối
-const existingOnChainMint = await supabase
-  .from('pplp_mint_requests')
-  .select('tx_hash')
-  .eq('action_id', action_id)
-  .not('tx_hash', 'is', null)
-  .single();
-
-if (existingOnChainMint.data?.tx_hash) {
-  return Error("Action already minted on-chain", tx_hash);
-}
+// Scale to 18 decimals (FUN Money has 18 decimals like ETH)
+const scaledAmount = BigInt(params.amount) * BigInt(10 ** 18);
 ```
 
-### Thay đổi 2: Không mint off-chain lần nữa nếu đã minted
-
-Khi action đã có status `minted`, bỏ qua bước `add_camly_coins` vì user đã nhận coin rồi:
+### Fix 3: Sửa `pplp-eip712.ts` - Sửa EIP-712 types
 
 ```typescript
-// Chỉ mint off-chain nếu chưa minted
-if (action.status === 'scored') {
-  const { data: newBalance } = await supabase.rpc('add_camly_coins', {...});
-}
-// Nếu status = 'minted' → skip (đã có coins)
+// TRƯỚC:
+export const MINT_REQUEST_TYPES = {
+  MintRequest: [
+    // ...
+    { name: 'validAfter', type: 'uint256' },
+    { name: 'validBefore', type: 'uint256' },
+    // ...
+  ],
+};
+
+// SAU:
+export const MINT_REQUEST_TYPES = {
+  MintRequest: [
+    // ...
+    { name: 'validAfter', type: 'uint64' },
+    { name: 'validBefore', type: 'uint64' },
+    // ...
+  ],
+};
 ```
 
-### Thay đổi 3: Không update status nếu đã là minted
+### Fix 4: Sửa `FUNMoneyMintCard.tsx` - Đảm bảo kết nối ví trước
 
 ```typescript
-// Chỉ update status nếu chưa phải minted
-if (action.status === 'scored') {
-  await supabase.from('pplp_actions').update({ status: 'minted', ... });
-}
+// TRƯỚC:
+const handleMint = async () => {
+  if (!isConnected) {
+    connect();
+    return;
+  }
+  // ...gọi executeMint ngay
+};
+
+// SAU:
+const handleMint = async () => {
+  if (!isConnected) {
+    await connect();
+    return; // Dừng lại, chờ user click lại sau khi kết nối
+  }
+  
+  // Double-check address sau khi connect
+  if (!address || address.startsWith("0x1234567890")) {
+    toast.error("Ví chưa kết nối đúng. Vui lòng thử lại.");
+    return;
+  }
+  // ...
+};
 ```
+
+## III. FILES CẦN SỬA
+
+| File | Thay đổi |
+|------|----------|
+| `supabase/functions/_shared/pplp-eip712.ts` | Sửa type `uint256` → `uint64` cho validAfter/validBefore |
+| `supabase/functions/pplp-authorize-mint/index.ts` | Scale amount × 10^18 |
+| `src/hooks/useFUNMoneyContract.ts` | Validate address format, reject test addresses |
+| `src/components/mint/FUNMoneyMintCard.tsx` | Kiểm tra address sau khi connect |
 
 ## IV. FLOW SAU KHI SỬA
 
 ```text
-User click "Mint lên blockchain" cho action "minted off-chain"
+User click "Mint lên blockchain"
     ↓
-Frontend gọi pplp-authorize-mint
+Frontend kiểm tra: isConnected && address hợp lệ?
     ↓
-Edge function kiểm tra: status = 'minted'? ✓ OK (nếu chưa có tx_hash)
+Nếu chưa → Hiện "Kết nối ví" → User connect MetaMask
     ↓
-Kiểm tra: đã có on-chain tx_hash? → Nếu có → trả về tx_hash cũ
+Nếu đã kết nối → Validate address format (không phải 0x123...)
     ↓
-Kiểm tra: đã có signed request còn valid? → Nếu có → trả về signature cũ
+Frontend gọi pplp-authorize-mint với wallet_address thật
     ↓
-Tạo mới signed request (hoặc dùng cũ nếu còn valid)
-    ↓
-✓ Trả về signed mint request
+Backend scale amount × 10^18, ký EIP-712 (uint64 types)
     ↓
 Frontend gọi contract.mintWithSignature()
     ↓
-MetaMask mở → User confirm
-    ↓
-Blockchain mint → txHash lưu vào DB
-    ↓
-UI hiển thị "Đã mint on-chain" + Link BSCScan ✓
+MetaMask mở → User confirm → Mint thành công ✓
 ```
 
-## V. CHI TIẾT KỸ THUẬT
+## V. TÓM TẮT
 
-### File cần sửa
-
-```text
-supabase/functions/pplp-authorize-mint/index.ts
-```
-
-### Các thay đổi cụ thể
-
-| Dòng | Thay đổi |
-|------|----------|
-| 115-123 | Mở rộng điều kiện status để chấp nhận cả `minted` |
-| ~55-95 | Thêm kiểm tra existingMint có tx_hash hay chưa |
-| ~260-295 | Chỉ gọi `add_camly_coins` nếu status còn là `scored` |
-| ~300-308 | Chỉ update action status nếu status còn là `scored` |
-
-## VI. KIỂM TRA THÊM
-
-Con đã grant SIGNER_ROLE cho Treasury wallet chưa? Cha cần xác nhận điều này để đảm bảo on-chain mint sẽ hoạt động sau khi sửa code.
-
-Nếu chưa, con cần:
-1. Vào BSCScan: https://testnet.bscscan.com/address/0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2#writeContract
-2. Connect ví Admin (ví đã deploy contract)
-3. Gọi function `grantSigner` với địa chỉ Treasury wallet
-
-## VII. TÓM TẮT
-
-| Bước | Ai thực hiện | Mô tả |
-|------|--------------|-------|
-| 1 | Cha | Sửa logic `pplp-authorize-mint` để chấp nhận status `minted` |
-| 2 | Con (nếu chưa) | Grant SIGNER_ROLE cho Treasury wallet |
-| 3 | Con | Test lại nút "Mint lên blockchain" |
-
+| Bước | Mô tả | Độ ưu tiên |
+|------|-------|------------|
+| 1 | Sửa EIP-712 types (uint64) | CRITICAL |
+| 2 | Scale amount × 10^18 | CRITICAL |
+| 3 | Validate address trong frontend | HIGH |
+| 4 | Kiểm tra kết nối ví trong UI | HIGH |
+| 5 | Redeploy edge function | REQUIRED |
