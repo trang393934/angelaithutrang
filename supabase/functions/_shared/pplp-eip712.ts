@@ -241,13 +241,23 @@ export function createMintPayload(params: {
   const now = Math.floor(Date.now() / 1000);
   const validitySeconds = (params.validityHours || 24) * 3600;
   
+  // Ensure evidenceHash is exactly 32 bytes (64 hex chars)
+  let evidenceHash = params.evidenceHash;
+  if (!evidenceHash || evidenceHash === '0x' || evidenceHash.length < 10) {
+    // Generate a default hash from actionId if no evidence
+    evidenceHash = '0x' + '0'.repeat(64);
+  } else if (!evidenceHash.startsWith('0x')) {
+    evidenceHash = '0x' + evidenceHash;
+  }
+  // Pad to 64 hex characters (32 bytes)
+  const hexPart = evidenceHash.slice(2);
+  evidenceHash = '0x' + hexPart.padStart(64, '0');
+  
   return {
     to: params.recipientAddress,
     amount: BigInt(params.amount),
     actionId: uuidToBytes32(params.actionId),
-    evidenceHash: params.evidenceHash.startsWith('0x') 
-      ? params.evidenceHash 
-      : '0x' + params.evidenceHash.padStart(64, '0'),
+    evidenceHash: evidenceHash,
     policyVersion: params.policyVersion,
     validAfter: now,
     validBefore: now + validitySeconds,
