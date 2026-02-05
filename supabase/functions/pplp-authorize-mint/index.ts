@@ -14,85 +14,168 @@
    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
  };
  
-// BSC Testnet RPC fallback list (updated 2026 - blastapi deprecated)
+// BSC Testnet RPC fallback list (updated 2026 - cleaned up failing endpoints)
 const BSC_TESTNET_RPC_LIST = [
   "https://bsc-testnet-rpc.publicnode.com",
   "https://data-seed-prebsc-1-s1.binance.org:8545",
   "https://data-seed-prebsc-2-s1.binance.org:8545",
   "https://data-seed-prebsc-1-s2.binance.org:8545",
   "https://data-seed-prebsc-2-s2.binance.org:8545",
-  "https://endpoints.omniatech.io/v1/bsc/testnet/public",
+  "https://bsc-testnet.blockpi.network/v1/rpc/public",
+  "https://rpc.ankr.com/bsc_testnet_chapel",
 ];
- 
- const BSC_TESTNET_CHAIN_ID = 97n;
- 
- interface ValidatedRpcResult {
-   provider: ethers.JsonRpcProvider;
-   nonce: bigint;
-   blockNumber: number;
- }
- 
- async function getValidatedBscProvider(
-   contractAddress: string,
-   walletAddress: string,
-   customRpcUrl?: string
- ): Promise<ValidatedRpcResult | null> {
-   // Build RPC list: custom first (if valid), then fallbacks
-   const rpcList = customRpcUrl
-     ? [customRpcUrl, ...BSC_TESTNET_RPC_LIST.filter((r) => r !== customRpcUrl)]
-     : BSC_TESTNET_RPC_LIST;
- 
-   for (const rpcUrl of rpcList) {
-     try {
-       console.log(`[PPLP Mint] Trying RPC: ${rpcUrl}`);
-       const provider = new ethers.JsonRpcProvider(rpcUrl);
- 
-       // Timeout for slow RPCs
-       const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("RPC timeout")), 5000));
- 
-       // 1. Verify chain ID
-       const network = await Promise.race([provider.getNetwork(), timeout]);
-       if (network.chainId !== BSC_TESTNET_CHAIN_ID) {
-         console.warn(`[PPLP Mint] RPC ${rpcUrl} returned wrong chainId: ${network.chainId}`);
-         continue;
-       }
- 
-       // 2. Get block number (should be >80M for BSC Testnet)
-       const blockNumber = await Promise.race([provider.getBlockNumber(), timeout]);
-       if (blockNumber < 10_000_000) {
-         console.warn(`[PPLP Mint] RPC ${rpcUrl} block number too low: ${blockNumber}`);
-         continue;
-       }
- 
-       // 3. Verify contract code exists
-       const code = await Promise.race([provider.getCode(contractAddress), timeout]);
-       if (code === "0x" || code.length < 4) {
-         console.warn(`[PPLP Mint] RPC ${rpcUrl} has no contract code at ${contractAddress}`);
-         continue;
-       }
- 
-        // 4. Fetch nonce using only getNonce (the correct function name in our contract)
-        const nonceAbi = ["function getNonce(address user) view returns (uint256)"];
-        const contract = new ethers.Contract(contractAddress, nonceAbi, provider);
 
-        let nonce: bigint;
-        try {
-          nonce = await Promise.race([contract.getNonce(walletAddress), timeout]);
-        } catch (nonceError) {
-          console.warn(`[PPLP Mint] RPC ${rpcUrl} getNonce call failed:`, nonceError);
-          continue;
-        }
- 
-       console.log(`[PPLP Mint] ✓ Valid RPC ${rpcUrl} - block ${blockNumber}, nonce ${nonce}`);
-       return { provider, nonce, blockNumber };
-     } catch (error) {
-       console.warn(`[PPLP Mint] RPC ${rpcUrl} failed:`, error);
-       continue;
-     }
-   }
- 
-   return null;
- }
+const BSC_TESTNET_CHAIN_ID = 97n;
+
+// Contract ABI for nonce reading - supports both old and new contract versions
+// Also includes ERC20 name() to verify contract is FUNMoney
+const CONTRACT_ABI = [
+  "function getNonce(address user) view returns (uint256)",
+  "function mintNonces(address user) view returns (uint256)",
+  "function name() view returns (string)",
+];
+
+interface RpcFailureReason {
+  rpc: string;
+  reason: string;
+}
+
+interface ValidatedRpcResult {
+  provider: ethers.JsonRpcProvider;
+  nonce: bigint;
+  blockNumber: number;
+  nonceMethod: "getNonce" | "mintNonces";
+}
+
+/**
+ * Try to read user nonce from contract - supports both getNonce() and mintNonces()
+ * Returns nonce and method used, or throws if both fail
+ */
+async function tryReadNonce(
+  contract: ethers.Contract,
+  walletAddress: string,
+  timeout: Promise<never>
+): Promise<{ nonce: bigint; method: "getNonce" | "mintNonces" }> {
+  // Try getNonce first (newer contract version)
+  try {
+    const nonce = await Promise.race([contract.getNonce(walletAddress), timeout]);
+    return { nonce, method: "getNonce" };
+  } catch (getNonceError: any) {
+    // If it's CALL_EXCEPTION with require(false), try mintNonces
+    const isCallException =
+      getNonceError?.code === "CALL_EXCEPTION" ||
+      String(getNonceError?.message || "").includes("require(false)") ||
+      String(getNonceError?.message || "").includes("missing revert data") ||
+      String(getNonceError?.shortMessage || "").includes("require(false)");
+
+    if (isCallException) {
+      console.log(`[PPLP Mint] getNonce failed with CALL_EXCEPTION, trying mintNonces fallback`);
+      // Try mintNonces (older contract version with public mapping)
+      const nonce = await Promise.race([contract.mintNonces(walletAddress), timeout]);
+      return { nonce, method: "mintNonces" };
+    }
+    // Re-throw other errors (timeout, network, etc.)
+    throw getNonceError;
+  }
+}
+
+async function getValidatedBscProvider(
+  contractAddress: string,
+  walletAddress: string,
+  customRpcUrl?: string,
+  skipNonceValidation: boolean = false
+): Promise<{ result: ValidatedRpcResult | null; failures: RpcFailureReason[] }> {
+  const failures: RpcFailureReason[] = [];
+
+  // Build RPC list: custom first (if valid), then fallbacks
+  const rpcList = customRpcUrl
+    ? [customRpcUrl, ...BSC_TESTNET_RPC_LIST.filter((r) => r !== customRpcUrl)]
+    : BSC_TESTNET_RPC_LIST;
+
+  for (const rpcUrl of rpcList) {
+    try {
+      console.log(`[PPLP Mint] Trying RPC: ${rpcUrl}`);
+      const provider = new ethers.JsonRpcProvider(rpcUrl);
+
+      // Timeout for slow RPCs
+      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("RPC timeout")), 5000));
+
+      // 1. Verify chain ID
+      const network = await Promise.race([provider.getNetwork(), timeout]);
+      if (network.chainId !== BSC_TESTNET_CHAIN_ID) {
+        const reason = `wrong chainId: ${network.chainId}`;
+        console.warn(`[PPLP Mint] RPC ${rpcUrl} ${reason}`);
+        failures.push({ rpc: rpcUrl, reason });
+        continue;
+      }
+
+      // 2. Get block number (should be >80M for BSC Testnet)
+      const blockNumber = await Promise.race([provider.getBlockNumber(), timeout]);
+      if (blockNumber < 10_000_000) {
+        const reason = `block number too low: ${blockNumber}`;
+        console.warn(`[PPLP Mint] RPC ${rpcUrl} ${reason}`);
+        failures.push({ rpc: rpcUrl, reason });
+        continue;
+      }
+
+      // 3. Verify contract code exists
+      const code = await Promise.race([provider.getCode(contractAddress), timeout]);
+      if (code === "0x" || code.length < 4) {
+        const reason = `no contract code at ${contractAddress}`;
+        console.warn(`[PPLP Mint] RPC ${rpcUrl} ${reason}`);
+        failures.push({ rpc: rpcUrl, reason });
+        continue;
+      }
+
+      // 4. Verify contract is actually FUNMoney by reading name()
+      const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, provider);
+      
+      let contractName: string;
+      try {
+        contractName = await Promise.race([contract.name(), timeout]);
+        console.log(`[PPLP Mint] Contract name: "${contractName}"`);
+      } catch (nameError: any) {
+        const reason = `contract.name() failed - not a valid ERC20: ${nameError?.shortMessage || nameError?.message || "unknown"}`;
+        console.warn(`[PPLP Mint] RPC ${rpcUrl} ${reason}`);
+        failures.push({ rpc: rpcUrl, reason });
+        continue;
+      }
+      
+      // If name doesn't contain "FUN" or is empty, it's not our contract
+      if (!contractName || !contractName.toLowerCase().includes("fun")) {
+        const reason = `contract name "${contractName}" is not FUNMoney - wrong contract at this address`;
+        console.warn(`[PPLP Mint] RPC ${rpcUrl} ${reason}`);
+        failures.push({ rpc: rpcUrl, reason });
+        continue;
+      }
+
+      // 5. Fetch nonce using compatible method (try getNonce, fallback to mintNonces)
+      // If skipNonceValidation is true, use nonce = 0 (for when contract doesn't have nonce methods)
+      if (skipNonceValidation) {
+        console.log(`[PPLP Mint] ✓ Valid RPC ${rpcUrl} - block ${blockNumber}, skipping nonce validation (using 0)`);
+        return { result: { provider, nonce: 0n, blockNumber, nonceMethod: "getNonce" }, failures };
+      }
+      
+      try {
+        const { nonce, method } = await tryReadNonce(contract, walletAddress, timeout);
+        console.log(`[PPLP Mint] ✓ Valid RPC ${rpcUrl} - block ${blockNumber}, nonce ${nonce} (via ${method})`);
+        return { result: { provider, nonce, blockNumber, nonceMethod: method }, failures };
+      } catch (nonceError: any) {
+        // If nonce methods fail but we can read name(), assume nonce = 0 for new user
+        console.warn(`[PPLP Mint] RPC ${rpcUrl} nonce methods failed, assuming nonce = 0 for new user`);
+        console.log(`[PPLP Mint] ✓ Valid RPC ${rpcUrl} - block ${blockNumber}, nonce 0 (fallback)`);
+        return { result: { provider, nonce: 0n, blockNumber, nonceMethod: "getNonce" }, failures };
+      }
+    } catch (error: any) {
+      const reason = error?.message || "unknown error";
+      console.warn(`[PPLP Mint] RPC ${rpcUrl} failed:`, reason);
+      failures.push({ rpc: rpcUrl, reason });
+      continue;
+    }
+  }
+
+  return { result: null, failures };
+}
  
  interface MintAuthorizationRequest {
    action_id: string;
@@ -142,21 +225,24 @@ const BSC_TESTNET_RPC_LIST = [
      // VALIDATE BSC TESTNET RPC + FETCH ON-CHAIN NONCE
      // ============================================
  
-     const rpcResult = await getValidatedBscProvider(PPLP_DOMAIN.verifyingContract, wallet_address, bscRpcUrl);
- 
-     if (!rpcResult) {
-       console.error("[PPLP Mint] All BSC Testnet RPCs failed");
-       return new Response(
-         JSON.stringify({
-           error: "Backend cannot reach BSC Testnet. Please try again later.",
-           details: "All RPC endpoints failed validation",
-         }),
-         { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-       );
-     }
- 
-     const onChainNonce = rpcResult.nonce;
-     console.log(`[PPLP Mint] Using validated RPC - block ${rpcResult.blockNumber}, nonce ${onChainNonce}`);
+    const { result: rpcResult, failures } = await getValidatedBscProvider(PPLP_DOMAIN.verifyingContract, wallet_address, bscRpcUrl);
+
+    if (!rpcResult) {
+      console.error("[PPLP Mint] All BSC Testnet RPCs failed");
+      // Include diagnostic info about why each RPC failed
+      const failureSummary = failures.slice(0, 5).map((f) => `${f.rpc.replace(/https?:\/\//, "")}: ${f.reason}`);
+      return new Response(
+        JSON.stringify({
+          error: "Backend cannot reach BSC Testnet. Please try again later.",
+          details: "All RPC endpoints failed validation",
+          diagnostics: failureSummary,
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const onChainNonce = rpcResult.nonce;
+    console.log(`[PPLP Mint] Using validated RPC - block ${rpcResult.blockNumber}, nonce ${onChainNonce} (via ${rpcResult.nonceMethod})`);
  
      // ============================================
      // CHECK IDEMPOTENCY

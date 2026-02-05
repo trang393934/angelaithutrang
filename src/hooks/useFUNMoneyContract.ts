@@ -75,13 +75,55 @@
    return base || `Mint thất bại: ${parsed.name}`;
  }
  
- // Get ethereum provider from window
- function getEthereumProvider(): ethers.BrowserProvider | null {
-   if (typeof window !== "undefined" && (window as any).ethereum) {
-     return new ethers.BrowserProvider((window as any).ethereum);
-   }
-   return null;
- }
+// Get ethereum provider from window
+function getEthereumProvider(): ethers.BrowserProvider | null {
+  if (typeof window !== "undefined" && (window as any).ethereum) {
+    return new ethers.BrowserProvider((window as any).ethereum);
+  }
+  return null;
+}
+
+/**
+ * Safe nonce reader - tries getNonce first, falls back to mintNonces
+ * This handles both old and new contract versions
+ */
+async function readUserNonceSafe(contract: ethers.Contract, address: string): Promise<bigint> {
+  try {
+    return await contract.getNonce(address);
+  } catch (getNonceError: any) {
+    // If CALL_EXCEPTION (method doesn't exist), try mintNonces
+    const isCallException =
+      getNonceError?.code === "CALL_EXCEPTION" ||
+      String(getNonceError?.message || "").includes("require(false)") ||
+      String(getNonceError?.message || "").includes("missing revert data");
+    
+    if (isCallException) {
+      console.log("[FUNMoney] getNonce failed, trying mintNonces fallback");
+      return await contract.mintNonces(address);
+    }
+    throw getNonceError;
+  }
+}
+
+/**
+ * Safe action minted checker - tries isActionMinted first, falls back to mintedAction
+ */
+async function readActionMintedSafe(contract: ethers.Contract, actionId: string): Promise<boolean> {
+  try {
+    return await contract.isActionMinted(actionId);
+  } catch (error: any) {
+    const isCallException =
+      error?.code === "CALL_EXCEPTION" ||
+      String(error?.message || "").includes("require(false)") ||
+      String(error?.message || "").includes("missing revert data");
+    
+    if (isCallException) {
+      console.log("[FUNMoney] isActionMinted failed, trying mintedAction fallback");
+      return await contract.mintedAction(actionId);
+    }
+    throw error;
+  }
+}
  
  export function useFUNMoneyContract() {
    const {
@@ -227,21 +269,21 @@
          remainingUserCapacity,
          currentEpoch,
          userNonce,
-       ] = await Promise.all([
-         contract.name(),
-         contract.symbol(),
-         contract.decimals(),
-         contract.totalSupply(),
-         contract.balanceOf(address),
-         contract.mintingEnabled(),
-         contract.currentPolicyVersion(),
-         contract.epochMintCap(),
-         contract.userEpochCap(),
-         contract.remainingEpochCapacity(),
-         contract.remainingUserCapacity(address),
-         contract.currentEpoch(),
-         contract.getNonce(address),
-       ]);
+        ] = await Promise.all([
+          contract.name(),
+          contract.symbol(),
+          contract.decimals(),
+          contract.totalSupply(),
+          contract.balanceOf(address),
+          contract.mintingEnabled(),
+          contract.currentPolicyVersion(),
+          contract.epochMintCap(),
+          contract.userEpochCap(),
+          contract.remainingEpochCapacity(),
+          contract.remainingUserCapacity(address),
+          contract.currentEpoch(),
+          readUserNonceSafe(contract, address), // Use safe helper with fallback
+        ]);
  
        const info: ContractInfo = {
          name,
@@ -278,12 +320,12 @@
          return false;
        }
  
-       try {
-         return await contract.isActionMinted(actionId);
-       } catch (error) {
-         console.error("Failed to check action minted status:", error);
-         return false;
-       }
+        try {
+          return await readActionMintedSafe(contract, actionId);
+        } catch (error) {
+          console.error("Failed to check action minted status:", error);
+          return false;
+        }
      },
      [contract, contractDiagnostics]
    );
@@ -340,13 +382,13 @@
            }
          }
  
-         // Preflight check: verify nonce matches on-chain
-         const onChainNonce = await contract.getNonce(signedRequest.to);
-         if (BigInt(onChainNonce) !== signedRequest.nonce) {
-           setMintStatus({ isLoading: false, txHash: null, error: "Nonce mismatch" });
-           toast.error("Nonce đã thay đổi trên blockchain. Vui lòng bấm Mint lại để lấy chữ ký mới.");
-           return null;
-         }
+          // Preflight check: verify nonce matches on-chain (use safe helper)
+          const onChainNonce = await readUserNonceSafe(contract, signedRequest.to);
+          if (BigInt(onChainNonce) !== signedRequest.nonce) {
+            setMintStatus({ isLoading: false, txHash: null, error: "Nonce mismatch" });
+            toast.error("Nonce đã thay đổi trên blockchain. Vui lòng bấm Mint lại để lấy chữ ký mới.");
+            return null;
+          }
  
          // Prepare request struct
          const mintRequest = {
