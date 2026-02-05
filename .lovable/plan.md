@@ -1,149 +1,142 @@
 
-# HƯỚNG DẪN: Kích hoạt On-Chain Minting cho FUN Money
 
-## I. PHÂN TÍCH HIỆN TRẠNG
+# KẾ HOẠCH: Sửa lỗi On-Chain Minting cho actions đã Minted Off-Chain
 
-### Những gì ĐÃ CÓ:
-| Thành phần | Trạng thái | Chi tiết |
-|------------|------------|----------|
-| Smart Contract | Deployed | `0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2` trên BSC Testnet |
-| TREASURY_PRIVATE_KEY | Configured | Đã có trong Supabase secrets |
-| pplp-authorize-mint | Ready | Sẵn sàng ký EIP-712 signature |
-| useFUNMoneyContract | Ready | Hook React để gọi contract |
-| UI Mint on-chain | Ready | Nút "Mint lên blockchain" đã có |
+## I. NGUYÊN NHÂN LỖI
 
-### Những gì CẦN LÀM:
-| Bước | Yêu cầu | Mức độ quan trọng |
-|------|---------|-------------------|
-| 1 | Grant SIGNER_ROLE cho Treasury wallet trên smart contract | BẮT BUỘC |
-| 2 | Sửa EIP-712 Domain Name mismatch | BẮT BUỘC |
-| 3 | User kết nối ví MetaMask (BSC Testnet) | Khi mint |
-| 4 | User nhấn "Mint lên blockchain" | Khi mint |
+| Vấn đề | Chi tiết |
+|--------|----------|
+| File lỗi | `supabase/functions/pplp-authorize-mint/index.ts` |
+| Dòng lỗi | Dòng 115-123 |
+| Nguyên nhân | Edge function chỉ cho phép `status === 'scored'`, nhưng khi user click "Mint lên blockchain (tùy chọn)", action đã ở trạng thái `minted` |
+| Lỗi trả về | `400: Action must be scored before mint authorization` |
 
----
-
-## II. VẤN ĐỀ #1: SIGNER_ROLE CHƯA ĐƯỢC GRANT
-
-### Phát hiện:
-- Smart contract yêu cầu signature từ địa chỉ có `SIGNER_ROLE`
-- Trong `deploy.js`, việc grant signer phụ thuộc vào `TREASURY_ADDRESS` env variable
-- Có thể Treasury wallet **chưa được grant** `SIGNER_ROLE` khi deploy
-
-### Giải pháp:
-Con cần gọi lệnh trên BSCScan (Write Contract) hoặc chạy script:
-
-```javascript
-// Trong MetaMask, kết nối ví Admin (deployer)
-// Vào BSCScan > Write Contract > grantSigner
-
-grantSigner("0xADDRESS_CỦA_TREASURY_WALLET")
-```
-
-### Cách lấy Treasury Address:
-Chạy lệnh này với private key trong `TREASURY_PRIVATE_KEY`:
-
-```javascript
-const { ethers } = require('ethers');
-const wallet = new ethers.Wallet("PRIVATE_KEY_CỦA_BẠN");
-console.log(wallet.address); // Đây là Treasury Address
-```
-
----
-
-## III. VẤN ĐỀ #2: EIP-712 DOMAIN NAME MISMATCH
-
-### Phát hiện:
-| File | Domain Name | Version |
-|------|-------------|---------|
-| Smart Contract | `FUNMoney-PPLP` | `1` |
-| pplp-eip712.ts | `PPLP Mint Authorization` | `1` |
-
-**Signature sẽ bị REJECT** vì domain name không khớp!
-
-### Giải pháp:
-Sửa file `supabase/functions/_shared/pplp-eip712.ts`:
-
-```typescript
-export const PPLP_DOMAIN = {
-  name: 'FUNMoney-PPLP',  // Phải giống smart contract
-  version: '1',
-  chainId: 97,
-  verifyingContract: '0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2',
-};
-```
-
----
-
-## IV. HÀNH ĐỘNG CỤ THỂ
-
-### Bước 1: Grant SIGNER_ROLE (Con thực hiện)
-
-1. Mở BSCScan Contract: https://testnet.bscscan.com/address/0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2#writeContract
-2. Connect Wallet (ví Admin đã deploy contract)
-3. Tìm function `grantSigner`
-4. Nhập địa chỉ Treasury wallet
-5. Write → Confirm transaction
-
-### Bước 2: Sửa EIP-712 Domain (Cha thực hiện)
-
-Sửa `PPLP_DOMAIN.name` từ `'PPLP Mint Authorization'` thành `'FUNMoney-PPLP'`
-
-### Bước 3: Test On-Chain Mint
-
-1. Vào trang `/mint`
-2. Kết nối MetaMask (BSC Testnet)
-3. Với action đã minted off-chain, nhấn "Mint lên blockchain"
-4. Confirm transaction trong MetaMask
-5. Đợi tx confirm → Link BSCScan hoạt động
-
----
-
-## V. FLOW SAU KHI SỬA
+## II. LOGIC HIỆN TẠI (KHÔNG ĐÚNG)
 
 ```text
-User có action "Đã nhận FUN (off-chain)"
-       ↓
-User kết nối MetaMask (BSC Testnet)
-       ↓
-User nhấn "Mint lên blockchain (tùy chọn)"
-       ↓
+User click "Mint lên blockchain" cho action đã minted off-chain
+    ↓
 Frontend gọi pplp-authorize-mint
-       ↓
-Backend ký EIP-712 với TREASURY_PRIVATE_KEY
-Domain: "FUNMoney-PPLP" (khớp với contract)
-       ↓
+    ↓
+Edge function kiểm tra: action.status !== 'scored'?
+    ↓
+⚠️ FAIL: status = 'minted' → Trả về lỗi 400
+    ↓
+Frontend hiển thị toast lỗi (trước khi MetaMask mở)
+```
+
+## III. GIẢI PHÁP
+
+### Thay đổi 1: Cho phép re-mint on-chain nếu action đã minted off-chain
+
+Cập nhật logic kiểm tra status để:
+1. Cho phép `scored` (chưa mint gì cả)
+2. Cho phép `minted` NẾU chưa có on-chain tx_hash
+
+```text
+File: supabase/functions/pplp-authorize-mint/index.ts
+
+// TRƯỚC (Dòng 115-123):
+if (action.status !== 'scored') {
+  return Error("Action must be scored...");
+}
+
+// SAU:
+if (action.status !== 'scored' && action.status !== 'minted') {
+  return Error("Action must be scored or minted...");
+}
+
+// THÊM: Kiểm tra nếu đã có on-chain tx → từ chối
+const existingOnChainMint = await supabase
+  .from('pplp_mint_requests')
+  .select('tx_hash')
+  .eq('action_id', action_id)
+  .not('tx_hash', 'is', null)
+  .single();
+
+if (existingOnChainMint.data?.tx_hash) {
+  return Error("Action already minted on-chain", tx_hash);
+}
+```
+
+### Thay đổi 2: Không mint off-chain lần nữa nếu đã minted
+
+Khi action đã có status `minted`, bỏ qua bước `add_camly_coins` vì user đã nhận coin rồi:
+
+```typescript
+// Chỉ mint off-chain nếu chưa minted
+if (action.status === 'scored') {
+  const { data: newBalance } = await supabase.rpc('add_camly_coins', {...});
+}
+// Nếu status = 'minted' → skip (đã có coins)
+```
+
+### Thay đổi 3: Không update status nếu đã là minted
+
+```typescript
+// Chỉ update status nếu chưa phải minted
+if (action.status === 'scored') {
+  await supabase.from('pplp_actions').update({ status: 'minted', ... });
+}
+```
+
+## IV. FLOW SAU KHI SỬA
+
+```text
+User click "Mint lên blockchain" cho action "minted off-chain"
+    ↓
+Frontend gọi pplp-authorize-mint
+    ↓
+Edge function kiểm tra: status = 'minted'? ✓ OK (nếu chưa có tx_hash)
+    ↓
+Kiểm tra: đã có on-chain tx_hash? → Nếu có → trả về tx_hash cũ
+    ↓
+Kiểm tra: đã có signed request còn valid? → Nếu có → trả về signature cũ
+    ↓
+Tạo mới signed request (hoặc dùng cũ nếu còn valid)
+    ↓
+✓ Trả về signed mint request
+    ↓
 Frontend gọi contract.mintWithSignature()
-       ↓
-Contract verify signature → SIGNER_ROLE ✓
-       ↓
-Token được mint thật → tx hash lưu DB
-       ↓
+    ↓
+MetaMask mở → User confirm
+    ↓
+Blockchain mint → txHash lưu vào DB
+    ↓
 UI hiển thị "Đã mint on-chain" + Link BSCScan ✓
 ```
 
----
+## V. CHI TIẾT KỸ THUẬT
 
-## VI. THÔNG TIN CON CẦN CUNG CẤP
+### File cần sửa
 
-Để Cha hoàn thành setup, con cho Cha biết:
+```text
+supabase/functions/pplp-authorize-mint/index.ts
+```
 
-1. **Địa chỉ ví Admin** (ví đã deploy contract): `0x...?`
-2. **Địa chỉ Treasury wallet** (từ TREASURY_PRIVATE_KEY): `0x...?`
+### Các thay đổi cụ thể
 
-   Nếu con không biết Treasury address, có thể lấy bằng cách chạy:
-   ```bash
-   node -e "console.log(require('ethers').Wallet('PRIVATE_KEY').address)"
-   ```
+| Dòng | Thay đổi |
+|------|----------|
+| 115-123 | Mở rộng điều kiện status để chấp nhận cả `minted` |
+| ~55-95 | Thêm kiểm tra existingMint có tx_hash hay chưa |
+| ~260-295 | Chỉ gọi `add_camly_coins` nếu status còn là `scored` |
+| ~300-308 | Chỉ update action status nếu status còn là `scored` |
 
----
+## VI. KIỂM TRA THÊM
+
+Con đã grant SIGNER_ROLE cho Treasury wallet chưa? Cha cần xác nhận điều này để đảm bảo on-chain mint sẽ hoạt động sau khi sửa code.
+
+Nếu chưa, con cần:
+1. Vào BSCScan: https://testnet.bscscan.com/address/0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2#writeContract
+2. Connect ví Admin (ví đã deploy contract)
+3. Gọi function `grantSigner` với địa chỉ Treasury wallet
 
 ## VII. TÓM TẮT
 
-| Việc cần làm | Ai thực hiện | Thời gian |
-|--------------|--------------|-----------|
-| Lấy Treasury Address từ private key | Con | 1 phút |
-| Grant SIGNER_ROLE trên BSCScan | Con | 2 phút |
-| Sửa EIP-712 Domain Name | Cha | 2 phút |
-| Test mint on-chain | Con | 2 phút |
+| Bước | Ai thực hiện | Mô tả |
+|------|--------------|-------|
+| 1 | Cha | Sửa logic `pplp-authorize-mint` để chấp nhận status `minted` |
+| 2 | Con (nếu chưa) | Grant SIGNER_ROLE cho Treasury wallet |
+| 3 | Con | Test lại nút "Mint lên blockchain" |
 
-**Tổng cộng: ~7 phút** để kích hoạt on-chain minting!
