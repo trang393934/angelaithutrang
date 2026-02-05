@@ -245,8 +245,15 @@ export function useFUNMoneyContract() {
 
   // Request mint authorization from PPLP Engine
   const requestMintAuthorization = useCallback(async (actionId: string): Promise<SignedMintRequest | null> => {
-    if (!address) {
-      toast.error("Vui lòng kết nối ví trước");
+    // Validate address format
+    if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      toast.error("Vui lòng kết nối ví MetaMask trước");
+      return null;
+    }
+    
+    // Prevent test/placeholder addresses
+    if (address.startsWith("0x1234567890")) {
+      toast.error("Địa chỉ ví không hợp lệ. Vui lòng kết nối ví thật.");
       return null;
     }
 

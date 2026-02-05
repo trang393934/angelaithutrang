@@ -13,7 +13,8 @@
    Wallet
  } from "lucide-react";
  import { useFUNMoneyContract } from "@/hooks/useFUNMoneyContract";
- import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
+import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
+import { toast } from "sonner";
  import { useState } from "react";
  import { formatDistanceToNow } from "date-fns";
  import { vi } from "date-fns/locale";
@@ -67,7 +68,7 @@
  };
  
  export function FUNMoneyMintCard({ action, onMintSuccess }: Props) {
-   const { isConnected, connect } = useWeb3Wallet();
+  const { isConnected, connect, address } = useWeb3Wallet();
    const { executeMint, mintStatus } = useFUNMoneyContract();
    const [isMinting, setIsMinting] = useState(false);
    const [txHash, setTxHash] = useState<string | null>(null);
@@ -83,8 +84,14 @@
  
    const handleMint = async () => {
      if (!isConnected) {
-       connect();
-       return;
+      await connect();
+      return; // Stop here, user needs to click again after connecting
+    }
+
+    // Double-check address after connect
+    if (!address || address.startsWith("0x1234567890")) {
+      toast.error("Ví chưa kết nối đúng. Vui lòng thử lại.");
+      return;
      }
  
      setIsMinting(true);
