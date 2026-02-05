@@ -50,7 +50,7 @@ serve(async (req) => {
     }
 
     // ============================================
-    // CHECK IDEMPOTENCY - Each action can only mint once
+    // CHECK IDEMPOTENCY - Check if already minted on-chain
     // ============================================
 
     const { data: existingMint } = await supabase
@@ -60,6 +60,7 @@ serve(async (req) => {
       .single();
 
     if (existingMint) {
+      // If already minted on-chain, return the tx_hash
       if (existingMint.status === 'minted') {
         return new Response(
           JSON.stringify({ 
@@ -71,7 +72,7 @@ serve(async (req) => {
         );
       }
       
-      // Return existing signed request if still valid
+      // Return existing signed request if still valid (for re-try on-chain mint)
       if (existingMint.status === 'signed' && new Date(existingMint.valid_before) > new Date()) {
         return new Response(
           JSON.stringify({
@@ -112,13 +113,25 @@ serve(async (req) => {
       );
     }
 
-    if (action.status !== 'scored') {
+    // Allow both 'scored' (new) and 'minted' (off-chain only, need on-chain)
+    if (action.status !== 'scored' && action.status !== 'minted') {
       return new Response(
         JSON.stringify({ 
-          error: 'Action must be scored before mint authorization', 
+          error: 'Action must be scored or minted (off-chain) before on-chain mint authorization', 
           current_status: action.status 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if already has on-chain tx_hash (shouldn't happen but double-check)
+    if (existingMint?.tx_hash) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Action already minted on-chain',
+          tx_hash: existingMint.tx_hash
+        }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -258,61 +271,73 @@ serve(async (req) => {
     }
 
     // ============================================
-    // ALSO MINT OFF-CHAIN (FUN Money equivalent) for immediate use
+    // MINT OFF-CHAIN (FUN Money) - Only if not already minted
     // ============================================
 
-    const { data: newBalance, error: coinError } = await supabase
-      .rpc('add_camly_coins', {
-        _user_id: action.actor_id,
-        _amount: rewardAmount,
-        _transaction_type: 'pplp_reward',
-        _description: `PPLP Reward: ${action.platform_id}/${action.action_type}`,
-        _purity_score: score.light_score,
-        _metadata: {
-          action_id: action.id,
-          platform_id: action.platform_id,
-          action_type: action.action_type,
-          pillars: {
-            S: score.pillar_s,
-            T: score.pillar_t,
-            H: score.pillar_h,
-            C: score.pillar_c,
-            U: score.pillar_u,
-          },
-          multipliers: {
-            Q: score.mult_q,
-            I: score.mult_i,
-            K: score.mult_k,
-          },
-          light_score: score.light_score,
-          on_chain_pending: !!signedRequest,
-        }
-      });
+    let newBalance = null;
+    
+    // Only add coins if action is still 'scored' (first time mint)
+    if (action.status === 'scored') {
+      const { data: balance, error: coinError } = await supabase
+        .rpc('add_camly_coins', {
+          _user_id: action.actor_id,
+          _amount: rewardAmount,
+          _transaction_type: 'pplp_reward',
+          _description: `PPLP Reward: ${action.platform_id}/${action.action_type}`,
+          _purity_score: score.light_score,
+          _metadata: {
+            action_id: action.id,
+            platform_id: action.platform_id,
+            action_type: action.action_type,
+            pillars: {
+              S: score.pillar_s,
+              T: score.pillar_t,
+              H: score.pillar_h,
+              C: score.pillar_c,
+              U: score.pillar_u,
+            },
+            multipliers: {
+              Q: score.mult_q,
+              I: score.mult_i,
+              K: score.mult_k,
+            },
+            light_score: score.light_score,
+            on_chain_pending: !!signedRequest,
+          }
+        });
 
-    if (coinError) {
-      console.error('Failed to add coins:', coinError);
-      // Don't fail - on-chain mint is still possible
+      if (coinError) {
+        console.error('Failed to add coins:', coinError);
+        // Don't fail - on-chain mint is still possible
+      } else {
+        newBalance = balance;
+      }
+    } else {
+      console.log(`[PPLP Mint] Skipping off-chain mint - action ${action.id} already minted off-chain`);
     }
 
     // ============================================
     // UPDATE ACTION STATUS
     // ============================================
 
-    await supabase
-      .from('pplp_actions')
-      .update({ 
-        status: 'minted',
-        minted_at: new Date().toISOString(),
-        mint_request_hash: mintPayload.actionId,
-      })
-      .eq('id', action.id);
+    // Only update status if not already minted
+    if (action.status === 'scored') {
+      await supabase
+        .from('pplp_actions')
+        .update({ 
+          status: 'minted',
+          minted_at: new Date().toISOString(),
+          mint_request_hash: mintPayload.actionId,
+        })
+        .eq('id', action.id);
 
-    // Update PoPL score
-    await supabase.rpc('update_popl_score', {
-      _user_id: action.actor_id,
-      _action_type: action.action_type.toLowerCase(),
-      _is_positive: true
-    });
+      // Update PoPL score
+      await supabase.rpc('update_popl_score', {
+        _user_id: action.actor_id,
+        _action_type: action.action_type.toLowerCase(),
+        _is_positive: true
+      });
+    }
 
     console.log(`[PPLP Mint] Action ${action.id}: Authorized ${rewardAmount} FUN Money to ${wallet_address}`);
 
