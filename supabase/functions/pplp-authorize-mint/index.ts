@@ -29,6 +29,8 @@ const CONTRACT_ABI = [
   "function attesterThreshold() view returns (uint256)",
   "function actions(bytes32) view returns (bool allowed, uint32 version, bool deprecated)",
   "function lockWithPPLP(address user, string action, uint256 amount, bytes32 evidenceHash, bytes[] sigs)",
+  "function govRegisterAction(string action, uint8 actionType)",
+  "function guardianGov() view returns (address)",
 ];
 
 // PPLP EIP-712 domain
@@ -367,15 +369,13 @@ serve(async (req) => {
     }
 
     // ============================================
-    // EXECUTE ON-CHAIN lockWithPPLP TRANSACTION
+    // CHECK & REGISTER ACTION IF NEEDED
     // ============================================
     
     let txHash: string | null = null;
     
     if (signature && signerPrivateKey) {
       try {
-        console.log(`[PPLP Lock] Submitting lockWithPPLP transaction...`);
-        
         // Add 0x prefix if missing
         const formattedKey = signerPrivateKey.startsWith("0x") 
           ? signerPrivateKey 
@@ -384,6 +384,40 @@ serve(async (req) => {
         // Create signer connected to provider
         const signer = new ethers.Wallet(formattedKey, rpcResult.provider);
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+        
+        // Check if action is registered
+        const actionInfo = await contract.actions(actionHash);
+        console.log(`[PPLP Lock] Action "${actionName}" status:`, {
+          allowed: actionInfo.allowed,
+          version: actionInfo.version,
+          deprecated: actionInfo.deprecated,
+        });
+        
+        // If action not registered, register it first
+        if (!actionInfo.allowed) {
+          console.log(`[PPLP Lock] Action "${actionName}" not registered. Registering via govRegisterAction...`);
+          
+          // Verify we are the guardianGov
+          const guardianGov = await contract.guardianGov();
+          console.log(`[PPLP Lock] guardianGov: ${guardianGov}, signer: ${signer.address}`);
+          
+          if (guardianGov.toLowerCase() !== signer.address.toLowerCase()) {
+            console.error(`[PPLP Lock] Signer is NOT guardianGov. Cannot register action.`);
+            throw new Error(`Signer (${signer.address}) is not guardianGov (${guardianGov})`);
+          }
+          
+          // Register action with actionType = 1 (PPLP)
+          const regTx = await contract.govRegisterAction(actionName, 1);
+          console.log(`[PPLP Lock] ⏳ Registering action TX: ${regTx.hash}`);
+          await regTx.wait(1);
+          console.log(`[PPLP Lock] ✓ Action "${actionName}" registered successfully!`);
+        }
+        
+        // ============================================
+        // EXECUTE ON-CHAIN lockWithPPLP TRANSACTION
+        // ============================================
+        
+        console.log(`[PPLP Lock] Submitting lockWithPPLP transaction...`);
         
         // Call lockWithPPLP(user, actionName, amount, evidenceHash, [signature])
         const tx = await contract.lockWithPPLP(
