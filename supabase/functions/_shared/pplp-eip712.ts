@@ -10,7 +10,7 @@
 // ============================================
 
 export const PPLP_DOMAIN = {
-  name: 'PPLP Mint Authorization',
+  name: 'FUNMoney-PPLP',
   version: '1',
   chainId: 97, // BSC Testnet
   verifyingContract: '0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2', // FUNMoney Contract
