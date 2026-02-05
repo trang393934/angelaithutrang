@@ -29,6 +29,8 @@ export const FUN_MONEY_ABI = [
   // PPLP MINT ENGINE
   // ============================================
   "function mintWithSignature((address to, uint256 amount, bytes32 actionId, bytes32 evidenceHash, uint32 policyVersion, uint64 validAfter, uint64 validBefore, uint256 nonce) req, bytes signature)",
+  // Legacy overload (some deployed versions flatten params instead of tuple)
+  "function mintWithSignature(address to, uint256 amount, bytes32 actionId, bytes32 evidenceHash, uint32 policyVersion, uint64 validAfter, uint64 validBefore, uint256 nonce, bytes signature)",
   
   // Mint state
   "function mintedAction(bytes32 actionId) view returns (bool)",
