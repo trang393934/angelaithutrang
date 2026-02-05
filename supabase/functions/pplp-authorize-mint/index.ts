@@ -78,13 +78,17 @@ serve(async (req) => {
       
       // Return existing signed request if still valid (for re-try on-chain mint)
       if (existingMint.status === 'signed' && new Date(existingMint.valid_before) > new Date()) {
+        // IMPORTANT: Scale amount to 18 decimals when returning existing mint
+        // Database stores raw FUN amount, but smart contract expects wei (× 10^18)
+        const scaledAmount = (BigInt(existingMint.amount) * BigInt(10 ** 18)).toString();
+        
         return new Response(
           JSON.stringify({
             success: true,
             message: 'Returning existing valid mint request',
             mint_request: {
               to: existingMint.recipient_address,
-              amount: existingMint.amount.toString(),
+              amount: scaledAmount,
               actionId: existingMint.action_hash,
               evidenceHash: existingMint.evidence_hash,
               policyVersion: existingMint.policy_version.toString(),
