@@ -1,129 +1,128 @@
 
-## What’s actually happening (root cause)
-From the latest browser console logs, even **simple read-only calls** like `mintingEnabled()` and `isActionMinted()` are reverting with:
+## Tóm tắt lỗi hiện tại (đã xác định được nguyên nhân)
+Edge Function `pplp-authorize-mint` trả `503` với `"All RPC endpoints failed validation"` vì bước “validate RPC + lấy nonce on-chain” đang **chỉ gọi `getNonce(address)`**, và call này đang **revert `require(false)` trên tất cả RPC testnet**.
 
-- `execution reverted (no data present; likely require(false)...)`
+Log cho thấy:
+- RPC mainnet (từ secret `BSC_RPC_URL` đang trỏ `https://bsc-dataseed.binance.org/`) bị loại vì `chainId = 56` (đúng).
+- Các RPC testnet `chainId = 97` đều qua được bước `getCode(...)` (có bytecode), nhưng **`getNonce(address)` revert “no data present; require(false)”**.
 
-In our Solidity contract (`contracts/FUNMoney.sol`), those getters are auto-generated/public and **cannot revert**. So when they revert, it means:
+Vì trong `contracts/FUNMoney.sol`, `getNonce()` là `view` và không thể revert, nên kết luận hợp lý nhất là:
+- Contract đang deployed tại `0x1aa8...` trên BSC Testnet **không có hàm `getNonce(address)`** (phiên bản cũ/ch khác), và khi gọi selector `getNonce` thì fallback của contract revert `require(false)`.
+- Nhưng contract có khả năng vẫn có `public mapping mintNonces(address)`, nên **đọc nonce đúng phải fallback qua `mintNonces(address)`**.
 
-1) The wallet provider is **not actually talking to the real BSC Testnet chain**, even if the UI thinks chainId is 97, **or**
-2) The wallet is on a chain where `0x1aa8...` is **not the FUNMoney contract** (different code / fallback reverts), which is consistent with “require(false) with no data”.
+=> Giải pháp: làm hệ thống tương thích cả 2 biến thể contract:
+- Ưu tiên `getNonce(address)`
+- Nếu revert/missing revert data thì fallback `mintNonces(address)`
 
-Additionally, backend logs show `BSC_RPC_URL` calls returning `"0x"` (cannot decode result), which strongly suggests the backend RPC is also pointing to the wrong network (often mainnet), or is not reaching a proper BSC testnet node.
-
-So the mint flow can never work reliably until:
-- The frontend verifies the wallet is on the real BSC Testnet (not just “chainId says 97”), and
-- The backend uses a correct BSC Testnet RPC.
-
----
-
-## Goals of this fix
-1) Stop showing the misleading “contract/ABI or wrong network” error by adding **real diagnostics**.
-2) Make the app **self-correct** network issues:
-   - Detect if wallet RPC/network is wrong.
-   - Provide a one-click “Reset BSC Testnet network” action.
-3) Ensure backend nonce-reading uses a **known-good BSC Testnet RPC** and fails loudly if not reachable.
+Đồng thời frontend cũng cần đổi cách đọc nonce + check minted để tránh lỗi tương tự ở UI.
 
 ---
 
-## Step-by-step implementation plan
-
-### A) Frontend: make network detection reliable (not just “chainId state”)
-**Files**
-- `src/hooks/useWeb3Wallet.ts`
-- `src/hooks/useFUNMoneyContract.ts`
-- `src/components/mint/FUNMoneyMintCard.tsx`
-- (optional UI) `src/components/mint/FUNMoneyBalanceCard.tsx`
-
-**Changes**
-1) **Fix `useWeb3Wallet.connect()` to always re-read chainId after switching**
-   - Current logic sets `chainId: 97` in state even if the underlying provider situation is inconsistent.
-   - Update flow:
-     - Read `eth_chainId`
-     - If not 97: switch network
-     - Read `eth_chainId` again and store the real value
-
-2) **Add a “real BSC Testnet sanity check”**
-   In `useFUNMoneyContract` (and/or wallet hook), add:
-   - `provider.getBlockNumber()` and compare against an expected minimum threshold for BSC testnet (currently ~88M+ per BscScan).
-   - If block number is far too low (e.g., < 10,000,000), show a clear error:
-     - “Bạn đang dùng RPC/Network không phải BSC Testnet thật. Hãy reset network trong ví.”
-
-3) **Contract code check before any contract reads**
-   Before calling `mintingEnabled()`, `isActionMinted()`, etc:
-   - `const code = await provider.getCode(contractAddress)`
-   - If `code === "0x"` → show “Contract chưa được deploy trên network này”
-   - If `code !== "0x"` but calls still revert → show “Network RPC đang trỏ sai chain hoặc contract address không khớp trên network hiện tại”
-
-4) **Unify wallet usage to avoid double-hook drift**
-   `FUNMoneyMintCard.tsx` currently uses `useWeb3Wallet()` and `useFUNMoneyContract()` at the same time (two separate states).
-   - Refactor so `FUNMoneyMintCard` uses wallet state/actions returned from `useFUNMoneyContract` (e.g., `connect`, `isConnected`, `address`) and remove its direct `useWeb3Wallet` usage.
-   - This reduces inconsistent state (one hook thinks connected, the other doesn’t / wrong chainId).
-
-5) **Add a “Reset BSC Testnet” button in the mint UI when sanity check fails**
-   - Add a button that runs a helper:
-     - `wallet_addEthereumChain` with **multiple** known RPC URLs (not just one)
-     - then `wallet_switchEthereumChain`
-   - Even if MetaMask won’t always overwrite an existing network’s RPC, this gives the user a guided recovery path.
-
-**User-visible result**
-- Instead of a generic red error, the UI will explain exactly:
-  - “Bạn đang ở sai chain” vs
-  - “RPC của BSC Testnet trong ví đang sai” vs
-  - “Contract không tồn tại trên chain hiện tại”.
+## Mục tiêu của lần fix này
+1) Edge Function không còn 503, lấy được nonce on-chain ổn định.
+2) Frontend đọc nonce/minted trạng thái an toàn (không còn “require(false)” do gọi nhầm function selector).
+3) Khi vẫn lỗi, trả về thông tin chẩn đoán rõ ràng “RPC ok nhưng contract thiếu method nào”.
 
 ---
 
-### B) Backend: make on-chain nonce fetch deterministic (and stop silently falling back to nonce=0)
-**File**
+## Phần A — Sửa backend function `pplp-authorize-mint` (nguyên nhân 503)
+### A1) Làm nonce fetch tương thích 2 phiên bản contract
+**File:** `supabase/functions/pplp-authorize-mint/index.ts`
+
+**Thay đổi:**
+- Trong `getValidatedBscProvider(...)`, thay vì ABI chỉ có `getNonce`, dùng ABI gồm cả:
+  - `function getNonce(address user) view returns (uint256)`
+  - `function mintNonces(address user) view returns (uint256)`
+- Logic:
+  1. Try `getNonce(walletAddress)`
+  2. Nếu fail với dạng lỗi `CALL_EXCEPTION`/`missing revert data`/`require(false)`:
+     - Try `mintNonces(walletAddress)`
+  3. Nếu `mintNonces` cũng fail => coi endpoint đó invalid và `continue`.
+
+**Logging thêm để debug:**
+- Log nonce method đã dùng: `getNonce` hay `mintNonces`.
+- Lưu “failure reason” theo từng RPC (chainId mismatch, code missing, nonce method fail…).
+
+### A2) Trả 503 kèm chẩn đoán rõ hơn (để lần sau không đoán mò)
+- Khi tất cả RPC fail, response 503 sẽ include danh sách rút gọn:
+  - RPC URL
+  - reason cuối cùng (ví dụ: `wrong chainId`, `no code`, `nonce methods reverted`, `timeout`)
+Điều này giúp phân biệt:
+- “RPC chết thật” vs “RPC sống nhưng contract interface mismatch”.
+
+### A3) Dọn RPC list
+- Loại endpoint đang 521 (omniatech) ra khỏi list (vì hiện tại chắc chắn fail).
+- Thêm 1–2 endpoint public đáng tin (ví dụ Ankr / BlockPI) để tăng tỉ lệ thành công.
+
+Lưu ý: `BSC_RPC_URL` hiện đang trỏ mainnet (chainId 56) nên sẽ luôn fail validation; backend vẫn hoạt động vì sẽ bỏ qua và dùng fallback list. Tuy nhiên để tối ưu tốc độ, ta sẽ:
+- Nếu custom RPC chainId != 97 -> skip ngay (đã có), và giảm timeout một chút để không kéo dài request.
+
+---
+
+## Phần B — Sửa frontend hook `useFUNMoneyContract` để không gọi “function không tồn tại”
+### B1) Tạo helper đọc nonce “an toàn”
+**File:** `src/hooks/useFUNMoneyContract.ts`
+
+**Thay đổi:**
+- Thêm hàm helper:
+  - `readUserNonce(address)`:
+    - try `contract.getNonce(address)`
+    - if fails -> try `contract.mintNonces(address)`
+    - nếu cả hai fail -> throw error “Contract không hỗ trợ getNonce/mintNonces”
+- Thay tất cả chỗ đang gọi:
+  - `contract.getNonce(address)` (trong `fetchContractInfo`)
+  - `contract.getNonce(signedRequest.to)` (trong preflight nonce check trước khi mint)
+  bằng `readUserNonce(...)`
+
+### B2) Tạo helper check minted “an toàn”
+- Tương tự:
+  - `readActionMinted(actionId)`:
+    - try `contract.isActionMinted(actionId)`
+    - if fails -> try `contract.mintedAction(actionId)`
+- Thay trong:
+  - `isActionMinted(...)`
+  - và các chỗ preflight.
+
+### B3) Nâng verifyContract: không chỉ check code, mà check được “nonce read”
+Hiện `verifyContract` chỉ check:
+- blockNumber
+- getCode != 0x
+
+Cập nhật:
+- Sau khi code tồn tại, thử gọi `readUserNonce(address)` (hoặc 1 address hợp lệ) để xác thực “interface đúng”.
+- Nếu không đọc được nonce bằng cả 2 cách:
+  - Show diagnostics rõ: “Contract tại địa chỉ này không phải FUNMoney PPLP hoặc là bản không tương thích”.
+
+---
+
+## Phần C — Test end-to-end (bắt buộc)
+### C1) Test backend function trực tiếp
+- Dùng tool call Edge Function (authenticated) với 1 `action_id` đang `minted/scored` trong DB (đã thấy có).
+- Dùng 1 `wallet_address` hợp lệ.
+Kỳ vọng:
+- Không còn 503
+- Response trả `success: true` và có `mint_request.nonce`
+
+### C2) Test UI
+1) Vào trang Mint
+2) Connect ví (BSC Testnet 97)
+3) Đảm bảo “contract info” load được (không bị revert do `getNonce`)
+4) Click “Mint lên blockchain”
+5) Nếu tx fail: phải thấy custom error decode rõ (InvalidSigner, InvalidNonce, …), không còn “require(false) mơ hồ”.
+
+---
+
+## Phạm vi thay đổi (danh sách file sẽ đụng)
 - `supabase/functions/pplp-authorize-mint/index.ts`
-
-**Changes**
-1) Replace “best effort” RPC usage with a **validated RPC selection**
-   - Build a small list of BSC Testnet RPC endpoints inside the function (fallback list).
-   - Try in order:
-     - Create provider
-     - `await provider.getNetwork()` must be chainId 97
-     - `await provider.getCode(PPLP_DOMAIN.verifyingContract)` must be non-`0x`
-     - Then call `getNonce()`
-   - If all fail: return a **clear 503** with message:
-     - “Backend cannot reach BSC Testnet RPC. Please try again later.”
-
-2) Keep current idempotency, but ensure nonce mismatch invalidation still works
-   - If existing mint request is signed but nonce differs from on-chain → expire and re-sign.
-
-3) Apply best practice: replace `.single()` with `.maybeSingle()` for `pplp_mint_requests`
-   - Prevents edge cases when no row exists from becoming an error path.
-
-**Result**
-- Backend always signs using a nonce from a confirmed BSC Testnet RPC.
-- If backend cannot confirm chain 97 + correct contract bytecode, it won’t produce signatures that are “valid-looking but unusable”.
+- `src/hooks/useFUNMoneyContract.ts`
+- (Không bắt buộc, chỉ khi cần UI phụ): `src/components/mint/FUNMoneyMintCard.tsx`
 
 ---
 
-### C) End-to-end test plan (what we’ll verify after implementation)
-1) Open `/mint`, connect wallet.
-2) Verify “contract info” loads:
-   - `name/symbol/balance/mintingEnabled` no longer throw `require(false)`.
-3) Click “Mint lên blockchain (tùy chọn)”
-   - Preflight checks pass
-   - `staticCall` either succeeds or returns a decoded custom error (InvalidSigner, RequestExpired, etc.)
-4) Confirm MetaMask tx → success.
-5) `pplp_mint_requests` updates to `minted` with `tx_hash`.
+## Vì sao cách này fix đúng lỗi của con
+Lỗi 503 hiện tại không phải “RPC không tới được testnet”, mà là “RPC tới được nhưng bước validate bắt buộc gọi `getNonce()` — trong khi contract đang deployed không có hàm đó”.
+Cho phép fallback `mintNonces()` sẽ:
+- làm validate pass,
+- backend lấy được nonce đúng,
+- và flow mint tiếp tục chạy.
 
----
-
-## Why this plan should fix your exact screenshot
-Your screenshot’s red error is the fallback for “missing revert data / require(false)”.
-We now know the **same require(false happens for basic read calls** (mintingEnabled/isActionMinted), so the issue is upstream of EIP-712/nonces: it’s a network/provider mismatch.
-
-This plan fixes that by:
-- Detecting the mismatch deterministically,
-- Guiding the wallet to a known-good RPC/network configuration,
-- Preventing backend from using an RPC that returns empty results.
-
----
-
-## Scope / tradeoffs
-- This avoids deploying a new on-chain contract (not needed).
-- Most work is improved network correctness + diagnostics; once reads work, your custom error decoding will also start working (because revert data will exist when the real contract is called).
