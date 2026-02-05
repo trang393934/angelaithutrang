@@ -1,97 +1,140 @@
 
-# KẾ HOẠCH: Sửa lỗi Database Constraint cho PPLP Scoring
 
-## I. VẤN ĐỀ PHÁT HIỆN
+# KẾ HOẠCH: Sửa BSCScan Link và Kích hoạt On-Chain Minting
 
-**Lỗi từ logs:**
-```
-new row for relation "pplp_scores" violates check constraint "pplp_scores_multiplier_i_check"
-```
+## I. VẤN ĐỀ
 
-### Phân tích chi tiết:
+### Hiện trạng:
+- Contract **đã deploy** tại: `0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2`
+- Hệ thống đang mint **OFF-CHAIN** (chỉ cộng Camly Coins trong database)
+- UI hiển thị link BSCScan nhưng **không có tx hash thật** → báo lỗi
 
-| Constraint | Yêu cầu | Giá trị thực tế | Trạng thái |
-|------------|---------|-----------------|------------|
-| `multiplier_i` | **≥ 1.0** AND ≤ 5.0 | 0.87 | **VI PHẠM** |
-| `multiplier_q` | ≥ 1.0 AND ≤ 3.0 | 1.80 | OK |
-| `multiplier_k` | ≥ 0.0 AND ≤ 1.0 | 0.94 | OK |
-
-### Nguyên nhân gốc rễ:
-- Config trong `pplp_action_caps`: `multiplier_ranges.I = [0.5, 5.0]`
-- Công thức: `I = 0.5 + (5.0 - 0.5) × iNormalized`
-- Với `iNormalized = 0.1` (beneficiaries=1 / 10): `I = 0.5 + 4.5 × 0.1 = 0.95`
-- **Kết quả 0.95 < 1.0** → Vi phạm constraint!
-
----
+### Nguyên nhân:
+| Thành phần | Trạng thái | Vấn đề |
+|------------|------------|--------|
+| Smart Contract | Đã deploy ✅ | Không có vấn đề |
+| `pplp-authorize-mint` | Ký EIP-712 signature | Thiếu `TREASURY_PRIVATE_KEY` để ký? |
+| `useFUNMoneyContract` | Sẵn sàng gọi contract | User cần kết nối ví và nhấn "Claim" |
+| `FUNMoneyMintCard` | Hiển thị link khi có `minted_at` | **BUG**: Link không có tx hash thật |
 
 ## II. GIẢI PHÁP
 
-### Có 2 lựa chọn:
+### Bước 1: Sửa UI - Ẩn link BSCScan khi không có tx hash thật
 
-**Option A: Sửa Database Constraint** (Khuyến nghị)
-- Thay đổi constraint `multiplier_i >= 0.5` thay vì `>= 1.0`
-- Ít thay đổi code, phù hợp với thiết kế ban đầu
+**File:** `src/components/mint/FUNMoneyMintCard.tsx`
 
-**Option B: Sửa Range Config trong Code**
-- Thay đổi range từ `[0.5, 5.0]` thành `[1.0, 5.0]`
-- Cần update cả DB table `pplp_action_caps`
+**Thay đổi:**
+- Chỉ hiển thị link BSCScan khi có `txHash` thật (không phải null/undefined)
+- Thêm kiểm tra `tx_hash` từ database (nếu có)
+- Nếu chưa có on-chain tx, hiển thị nút "Claim on-chain" để user mint lên blockchain
 
----
+```typescript
+// Trước:
+{(txHash || action.minted_at) && (
+  <Button onClick={() => window.open(`.../${txHash}`, "_blank")}>
 
-## III. CHI TIẾT THỰC HIỆN (Option A - Khuyến nghị)
-
-### Bước 1: Database Migration
-
-```sql
--- Sửa constraint cho multiplier_i từ >= 1.0 thành >= 0.5
-ALTER TABLE pplp_scores DROP CONSTRAINT pplp_scores_multiplier_i_check;
-ALTER TABLE pplp_scores ADD CONSTRAINT pplp_scores_multiplier_i_check 
-  CHECK (multiplier_i >= 0.5 AND multiplier_i <= 5.0);
+// Sau:
+{txHash && txHash !== 'null' && (
+  <Button onClick={() => window.open(`.../${txHash}`, "_blank")}>
 ```
 
-### Bước 2: Chạy lại scoring cho các actions pending
+### Bước 2: Thêm trạng thái "Minted Off-chain" 
 
-Gọi `pplp-batch-processor` để chấm điểm lại tất cả actions đang pending.
+Phân biệt rõ:
+- `minted_offchain`: Đã cộng Camly Coins, chưa on-chain
+- `minted_onchain`: Có tx hash thật từ blockchain
 
----
+**Thay đổi UI:**
+- Actions đã minted off-chain: Hiển thị "Đã nhận FUN" + nút "Mint on-chain (tùy chọn)"
+- Actions đã mint on-chain: Hiển thị "Đã mint" + link BSCScan
+
+### Bước 3: Kiểm tra Treasury Key
+
+Cần đảm bảo `TREASURY_PRIVATE_KEY` được cấu hình đúng trong Supabase secrets để ký EIP-712 signature cho on-chain minting.
+
+## III. CHI TIẾT THAY ĐỔI
+
+### File 1: `src/components/mint/FUNMoneyMintCard.tsx`
+
+```typescript
+// Cập nhật interface để bao gồm tx_hash
+interface PPLPAction {
+  id: string;
+  action_type: string;
+  platform_id: string;
+  status: string;
+  created_at: string;
+  minted_at?: string;
+  tx_hash?: string;  // Thêm field tx_hash
+  pplp_scores?: Array<{...}>;
+}
+
+// Cập nhật STATUS_CONFIG để phân biệt
+const STATUS_CONFIG: Record<string, {...}> = {
+  // ... existing
+  minted: { label: "Đã nhận FUN", color: "bg-blue-100 text-blue-700", icon: CheckCircle2 },
+};
+
+// Sửa logic hiển thị BSCScan link
+const actualTxHash = txHash || action.tx_hash;
+const hasOnChainTx = actualTxHash && actualTxHash !== 'null' && actualTxHash.startsWith('0x');
+
+// Trong render:
+{isMinted ? (
+  <div className="space-y-2">
+    <Button variant="outline" className="w-full" disabled>
+      <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
+      {hasOnChainTx ? "Đã mint on-chain" : "Đã nhận FUN (off-chain)"}
+    </Button>
+    
+    {hasOnChainTx ? (
+      // Hiển thị link BSCScan
+      <Button variant="ghost" size="sm" className="w-full text-xs"
+        onClick={() => window.open(`https://testnet.bscscan.com/tx/${actualTxHash}`, "_blank")}>
+        <ExternalLink className="mr-1 h-3 w-3" />
+        Xem trên BSCScan
+      </Button>
+    ) : (
+      // Hiển thị nút mint on-chain (tùy chọn)
+      <Button variant="ghost" size="sm" className="w-full text-xs text-amber-600"
+        onClick={handleMint}>
+        <Coins className="mr-1 h-3 w-3" />
+        Mint lên blockchain (tùy chọn)
+      </Button>
+    )}
+  </div>
+) : ...}
+```
+
+### File 2: `src/hooks/usePPLPActions.ts` (nếu cần)
+
+Đảm bảo query bao gồm `tx_hash` từ `pplp_mint_requests` table nếu có.
 
 ## IV. FLOW SAU KHI SỬA
 
 ```text
-User hỏi Angel AI
-       ↓
-Submit PPLP Action (với enriched metadata)
-       ↓
-pplp-score-action chấm điểm
-       ↓
-✅ Light Score = 84.35 (PASS)
-✅ multiplier_i = 0.87 (hợp lệ với constraint mới >= 0.5)
-       ↓
-Insert vào pplp_scores thành công
-       ↓
-Auto-mint FUN Money
-       ↓
-User thấy "Sẵn sàng claim" 🎉
+1. User thực hiện action (hỏi AI, đăng bài...)
+2. PPLP Engine chấm điểm → PASS
+3. ✅ OFF-CHAIN: Camly Coins được cộng ngay lập tức
+4. UI hiển thị: "Đã nhận FUN (off-chain)" - KHÔNG có link BSCScan
+5. (TÙY CHỌN) User kết nối ví → Nhấn "Mint lên blockchain"
+6. ✅ ON-CHAIN: Transaction được submit → có tx hash thật
+7. UI hiển thị: "Đã mint on-chain" + Link BSCScan hoạt động
 ```
-
----
 
 ## V. KẾT QUẢ MONG ĐỢI
 
-Sau khi sửa:
-- 10+ actions đang pending sẽ được chấm điểm thành công
-- Light Score ~84 sẽ PASS threshold
-- FUN Money được mint tự động
-- UI Mint page hiển thị "Đã mint" với Light Score
-
----
+| Trạng thái | UI hiển thị | BSCScan Link |
+|------------|-------------|--------------|
+| Minted off-chain | "Đã nhận FUN" + nút Mint on-chain | Ẩn |
+| Minted on-chain | "Đã mint on-chain" | Hiển thị ✅ |
 
 ## VI. THỜI GIAN THỰC HIỆN
 
-| Bước | Việc cần làm | Thời gian |
-|------|--------------|-----------|
-| 1 | Chạy migration sửa constraint | 1 phút |
-| 2 | Chạy batch processor | 2 phút |
-| 3 | Verify kết quả | 2 phút |
+| Bước | Thời gian |
+|------|-----------|
+| Sửa FUNMoneyMintCard.tsx | 3 phút |
+| Kiểm tra usePPLPActions | 2 phút |
+| Deploy & Test | 2 phút |
+| **Tổng** | ~7 phút |
 
-**Tổng cộng:** ~5 phút
