@@ -14,14 +14,15 @@
    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
  };
  
- // BSC Testnet RPC fallback list
- const BSC_TESTNET_RPC_LIST = [
-   "https://data-seed-prebsc-1-s1.binance.org:8545",
-   "https://data-seed-prebsc-2-s1.binance.org:8545",
-   "https://data-seed-prebsc-1-s2.binance.org:8545",
-   "https://data-seed-prebsc-2-s2.binance.org:8545",
-   "https://bsc-testnet.public.blastapi.io",
- ];
+// BSC Testnet RPC fallback list (updated 2026 - blastapi deprecated)
+const BSC_TESTNET_RPC_LIST = [
+  "https://bsc-testnet-rpc.publicnode.com",
+  "https://data-seed-prebsc-1-s1.binance.org:8545",
+  "https://data-seed-prebsc-2-s1.binance.org:8545",
+  "https://data-seed-prebsc-1-s2.binance.org:8545",
+  "https://data-seed-prebsc-2-s2.binance.org:8545",
+  "https://endpoints.omniatech.io/v1/bsc/testnet/public",
+];
  
  const BSC_TESTNET_CHAIN_ID = 97n;
  
@@ -70,19 +71,17 @@
          continue;
        }
  
-       // 4. Fetch nonce
-       const nonceAbi = [
-         "function getNonce(address user) view returns (uint256)",
-         "function mintNonces(address user) view returns (uint256)",
-       ];
-       const contract = new ethers.Contract(contractAddress, nonceAbi, provider);
- 
-       let nonce: bigint;
-       try {
-         nonce = await Promise.race([contract.getNonce(walletAddress), timeout]);
-       } catch {
-         nonce = await Promise.race([contract.mintNonces(walletAddress), timeout]);
-       }
+        // 4. Fetch nonce using only getNonce (the correct function name in our contract)
+        const nonceAbi = ["function getNonce(address user) view returns (uint256)"];
+        const contract = new ethers.Contract(contractAddress, nonceAbi, provider);
+
+        let nonce: bigint;
+        try {
+          nonce = await Promise.race([contract.getNonce(walletAddress), timeout]);
+        } catch (nonceError) {
+          console.warn(`[PPLP Mint] RPC ${rpcUrl} getNonce call failed:`, nonceError);
+          continue;
+        }
  
        console.log(`[PPLP Mint] ✓ Valid RPC ${rpcUrl} - block ${blockNumber}, nonce ${nonce}`);
        return { provider, nonce, blockNumber };
