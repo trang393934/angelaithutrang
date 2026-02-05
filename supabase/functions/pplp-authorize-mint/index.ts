@@ -258,7 +258,7 @@ serve(async (req) => {
     }
 
     // ============================================
-    // ALSO MINT OFF-CHAIN (Camly Coins) for immediate use
+    // ALSO MINT OFF-CHAIN (FUN Money equivalent) for immediate use
     // ============================================
 
     const { data: newBalance, error: coinError } = await supabase
@@ -314,7 +314,7 @@ serve(async (req) => {
       _is_positive: true
     });
 
-    console.log(`[PPLP Mint] Action ${action.id}: Authorized ${rewardAmount} Camly Coins to ${wallet_address}`);
+    console.log(`[PPLP Mint] Action ${action.id}: Authorized ${rewardAmount} FUN Money to ${wallet_address}`);
 
     // ============================================
     // RESPONSE
