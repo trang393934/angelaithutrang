@@ -81,6 +81,21 @@ export const FUN_MONEY_ABI = [
   "event SignerRemoved(address indexed signer)",
   "event Paused(address account)",
   "event Unpaused(address account)",
+  
+  // ============================================
+  // CUSTOM ERRORS (for better error messages)
+  // ============================================
+  "error InvalidNonce(uint256 expected, uint256 provided)",
+  "error InvalidSigner(address recovered)",
+  "error PolicyVersionMismatch(uint32 expected, uint32 provided)",
+  "error RequestExpired(uint64 validBefore, uint256 currentTime)",
+  "error RequestTooEarly(uint64 validAfter, uint256 currentTime)",
+  "error AmountBelowMinimum(uint256 amount, uint256 minimum)",
+  "error AmountAboveMaximum(uint256 amount, uint256 maximum)",
+  "error ActionAlreadyMinted(bytes32 actionId)",
+  "error EpochCapExceeded(uint256 requested, uint256 remaining)",
+  "error UserEpochCapExceeded(uint256 requested, uint256 remaining)",
+  "error MintingDisabled()",
 ] as const;
 
 // Contract addresses per network
@@ -126,3 +141,18 @@ export interface SignedMintRequest extends MintRequest {
   signature: string;
   signer: string;
 }
+
+// Error name mapping for user-friendly messages
+export const MINT_ERROR_MESSAGES: Record<string, string> = {
+  InvalidNonce: "Nonce không khớp với blockchain. Vui lòng thử lại.",
+  InvalidSigner: "Chữ ký không hợp lệ. Treasury wallet có thể chưa được cấp quyền SIGNER_ROLE.",
+  PolicyVersionMismatch: "Phiên bản chính sách không khớp.",
+  RequestExpired: "Yêu cầu đã hết hạn. Vui lòng tạo yêu cầu mới.",
+  RequestTooEarly: "Yêu cầu chưa đến thời gian hiệu lực.",
+  AmountBelowMinimum: "Số lượng mint quá thấp.",
+  AmountAboveMaximum: "Số lượng mint vượt quá giới hạn.",
+  ActionAlreadyMinted: "Action này đã được mint trước đó.",
+  EpochCapExceeded: "Đã đạt giới hạn mint của epoch.",
+  UserEpochCapExceeded: "Bạn đã đạt giới hạn mint cá nhân trong epoch này.",
+  MintingDisabled: "Tính năng mint đang tạm dừng.",
+};

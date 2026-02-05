@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { ethers } from "ethers";
 import { useWeb3Wallet } from "./useWeb3Wallet";
-import { FUN_MONEY_ABI, FUN_MONEY_ADDRESSES, SignedMintRequest } from "@/lib/funMoneyABI";
+import { FUN_MONEY_ABI, FUN_MONEY_ADDRESSES, SignedMintRequest, MINT_ERROR_MESSAGES } from "@/lib/funMoneyABI";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -173,6 +173,14 @@ export function useFUNMoneyContract() {
         throw new Error("Action này đã được mint trước đó");
       }
 
+      // Preflight check: verify nonce matches on-chain
+      const onChainNonce = await contract.getNonce(signedRequest.to);
+      if (BigInt(onChainNonce) !== signedRequest.nonce) {
+        setMintStatus({ isLoading: false, txHash: null, error: "Nonce mismatch" });
+        toast.error("Nonce đã thay đổi trên blockchain. Vui lòng bấm Mint lại để lấy chữ ký mới.");
+        return null;
+      }
+
       // Prepare request struct
       const mintRequest = {
         to: signedRequest.to,
@@ -217,6 +225,18 @@ export function useFUNMoneyContract() {
       
       if (error.reason) {
         errorMessage = error.reason;
+      } else if (error.shortMessage) {
+        // Try to extract custom error name from shortMessage
+        const shortMsg = error.shortMessage;
+        for (const [errorName, message] of Object.entries(MINT_ERROR_MESSAGES)) {
+          if (shortMsg.includes(errorName)) {
+            errorMessage = message;
+            break;
+          }
+        }
+        if (errorMessage === "Mint thất bại") {
+          errorMessage = shortMsg;
+        }
       } else if (error.message) {
         // Parse common errors
         if (error.message.includes("action already minted")) {
@@ -231,6 +251,10 @@ export function useFUNMoneyContract() {
           errorMessage = "Đã đạt giới hạn cá nhân";
         } else if (error.message.includes("user rejected")) {
           errorMessage = "Người dùng từ chối giao dịch";
+        } else if (error.message.includes("InvalidNonce")) {
+          errorMessage = MINT_ERROR_MESSAGES.InvalidNonce;
+        } else if (error.message.includes("InvalidSigner")) {
+          errorMessage = MINT_ERROR_MESSAGES.InvalidSigner;
         } else {
           errorMessage = error.message;
         }

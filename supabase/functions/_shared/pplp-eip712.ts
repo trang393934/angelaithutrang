@@ -235,7 +235,7 @@ export function createMintPayload(params: {
   actionId: string;
   evidenceHash: string;
   policyVersion: number;
-  nonce: number;
+  nonce: bigint | number | string;
   validityHours?: number;
 }): MintRequestPayload {
   const now = Math.floor(Date.now() / 1000);
@@ -253,6 +253,11 @@ export function createMintPayload(params: {
   const hexPart = evidenceHash.slice(2);
   evidenceHash = '0x' + hexPart.padStart(64, '0');
   
+  // Normalize nonce to bigint (accepts bigint, number, or string)
+  const normalizedNonce = typeof params.nonce === 'bigint' 
+    ? params.nonce 
+    : BigInt(params.nonce);
+  
   return {
     to: params.recipientAddress,
     // Scale to 18 decimals (FUN Money has 18 decimals like ETH)
@@ -262,7 +267,7 @@ export function createMintPayload(params: {
     policyVersion: params.policyVersion,
     validAfter: now,
     validBefore: now + validitySeconds,
-    nonce: BigInt(params.nonce),
+    nonce: normalizedNonce,
   };
 }
 
