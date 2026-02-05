@@ -23,8 +23,8 @@ export const MINT_REQUEST_TYPES = {
     { name: 'actionId', type: 'bytes32' },
     { name: 'evidenceHash', type: 'bytes32' },
     { name: 'policyVersion', type: 'uint32' },
-    { name: 'validAfter', type: 'uint256' },
-    { name: 'validBefore', type: 'uint256' },
+    { name: 'validAfter', type: 'uint64' },
+    { name: 'validBefore', type: 'uint64' },
     { name: 'nonce', type: 'uint256' },
   ],
 };
@@ -255,7 +255,8 @@ export function createMintPayload(params: {
   
   return {
     to: params.recipientAddress,
-    amount: BigInt(params.amount),
+    // Scale to 18 decimals (FUN Money has 18 decimals like ETH)
+    amount: BigInt(params.amount) * BigInt(10 ** 18),
     actionId: uuidToBytes32(params.actionId),
     evidenceHash: evidenceHash,
     policyVersion: params.policyVersion,
