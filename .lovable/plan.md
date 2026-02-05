@@ -1,147 +1,129 @@
 
-## Mục tiêu
-Fix lỗi `require(false)` khi bấm **“Mint lên blockchain (tùy chọn)”** bằng cách đồng bộ **nonce** đúng theo **on-chain nonce** (thay vì nonce trong database), đồng thời cải thiện thông báo lỗi để lần sau thấy rõ “InvalidNonce / InvalidSigner / Expired…” thay vì `require(false)`.
+## What’s actually happening (root cause)
+From the latest browser console logs, even **simple read-only calls** like `mintingEnabled()` and `isActionMinted()` are reverting with:
+
+- `execution reverted (no data present; likely require(false)...)`
+
+In our Solidity contract (`contracts/FUNMoney.sol`), those getters are auto-generated/public and **cannot revert**. So when they revert, it means:
+
+1) The wallet provider is **not actually talking to the real BSC Testnet chain**, even if the UI thinks chainId is 97, **or**
+2) The wallet is on a chain where `0x1aa8...` is **not the FUNMoney contract** (different code / fallback reverts), which is consistent with “require(false) with no data”.
+
+Additionally, backend logs show `BSC_RPC_URL` calls returning `"0x"` (cannot decode result), which strongly suggests the backend RPC is also pointing to the wrong network (often mainnet), or is not reaching a proper BSC testnet node.
+
+So the mint flow can never work reliably until:
+- The frontend verifies the wallet is on the real BSC Testnet (not just “chainId says 97”), and
+- The backend uses a correct BSC Testnet RPC.
 
 ---
 
-## Chẩn đoán ngắn gọn (nguyên nhân gốc)
-- Smart contract `FUNMoney.mintWithSignature()` kiểm tra:
-  - `req.nonce == mintNonces[req.to]`
-- Con đã kiểm tra **on-chain nonce = 0**.
-- Nhưng backend function hiện đang gọi `get_next_nonce(actor_id)` (database) → trả về **1** cho lần đầu (vì hàm DB “insert 1 / increment rồi trả về”), dẫn đến:
-  - `req.nonce = 1` nhưng `mintNonces[to] = 0` → revert **InvalidNonce**.
-- Vì frontend ABI chưa khai báo custom errors nên Ethers thường hiện chung chung `require(false)`.
+## Goals of this fix
+1) Stop showing the misleading “contract/ABI or wrong network” error by adding **real diagnostics**.
+2) Make the app **self-correct** network issues:
+   - Detect if wallet RPC/network is wrong.
+   - Provide a one-click “Reset BSC Testnet network” action.
+3) Ensure backend nonce-reading uses a **known-good BSC Testnet RPC** and fails loudly if not reachable.
 
 ---
 
-## Hướng sửa (tổng quan)
-1. **Backend function `pplp-authorize-mint`**: lấy nonce trực tiếp từ blockchain bằng RPC (BSC Testnet), dùng nonce đó để sign EIP-712.
-2. **Idempotency đúng**: nếu đã có `existingMint` nhưng nonce đã “cũ” so với chain → tự động “invalidate/expire” record cũ và ký lại với nonce mới.
-3. **Frontend**:
-   - Trước khi submit tx, đọc on-chain nonce và so với nonce trong signedRequest; nếu lệch thì yêu cầu “bấm mint lại” để lấy chữ ký mới.
-   - Thêm **custom error signatures** vào ABI để hiển thị lỗi rõ ràng (InvalidNonce, PolicyVersionMismatch, RequestExpired…).
+## Step-by-step implementation plan
 
----
-
-## Các bước triển khai chi tiết
-
-### 1) Backend: dùng on-chain nonce thay cho `get_next_nonce`
-**File**: `supabase/functions/pplp-authorize-mint/index.ts`
-
-- Thêm RPC provider từ secret đã có: `BSC_RPC_URL`
-- Tạo contract reader tối giản để đọc nonce:
-  - ABI fragment: `function getNonce(address user) view returns (uint256)` (hoặc `mintNonces(address)` đều được)
-  - Contract address lấy từ `PPLP_DOMAIN.verifyingContract` (đang là `0x1aa8...`)
-
-**Logic nonce mới**:
-- `onChainNonce = await contract.getNonce(wallet_address)`
-- Khi tạo payload/signature: dùng `onChainNonce` (không dùng DB nonce nữa)
-
-**Idempotency khi có existingMint**:
-- Nếu `existingMint.status === 'signed'` và chưa hết hạn:
-  - Nếu `BigInt(existingMint.nonce) === onChainNonce`: trả về existingMint (đã scale amount rồi)
-  - Nếu khác: coi signature cũ là invalid
-    - Update `pplp_mint_requests`: set `status='expired'`, `signature=null` (hoặc `status='invalidated'` nếu enum cho phép), rồi tiếp tục flow ký mới bằng `onChainNonce`.
-
-**Ghi DB**:
-- Upsert mint request với `nonce = onChainNonce` và `status='signed'`.
-
-> Kết quả: chữ ký luôn khớp với nonce thực tế của contract, không còn lệch “DB 1 / chain 0”.
-
----
-
-### 2) Backend: cập nhật helper để nhận nonce dạng bigint an toàn
-**File**: `supabase/functions/_shared/pplp-eip712.ts`
-
-Hiện `createMintPayload()` nhận `nonce: number` rồi `BigInt(params.nonce)`.
-- Sửa để nhận `nonce: bigint | number | string` (ưu tiên bigint) nhằm tránh lỗi kiểu và tránh phụ thuộc Number.
-- Bên trong normalize về `BigInt(nonce)`.
-
----
-
-### 3) Backend: (khuyến nghị) thêm authentication + ownership check (tránh lỗ hổng ký hộ)
-Hiện function đang dùng service role và **không kiểm tra user**, ai có `action_id` cũng có thể xin chữ ký mint về ví bất kỳ.
-Sửa theo hướng:
-- Tạo supabase client bằng anon/auth header từ request để gọi `supabase.auth.getUser()` (hoặc `getClaims()`), xác định user đang đăng nhập.
-- Verify `action.actor_id === user.id`; nếu không → 403.
-- (Tuỳ chọn) cho phép admin bypass.
-
-Điều này không trực tiếp chữa `require(false)` nhưng là bảo vệ cực quan trọng vì function này ký mint.
-
----
-
-### 4) Frontend: kiểm tra nonce trước khi submit để tránh revert
-**File**: `src/hooks/useFUNMoneyContract.ts`
-
-Trong `mintWithSignature()`:
-- Gọi `const currentNonce = await contract.getNonce(signedRequest.to)`
-- Nếu `BigInt(currentNonce) !== signedRequest.nonce`:
-  - Hiện toast: “Nonce đã thay đổi, vui lòng bấm Mint lại để lấy chữ ký mới.”
-  - Dừng (không submit tx).
-
----
-
-### 5) Frontend: thêm custom errors vào ABI để hết “require(false)”
-**File**: `src/lib/funMoneyABI.ts`
-
-Bổ sung các khai báo error để Ethers decode được:
-- `error InvalidNonce(uint256 expected, uint256 provided)`
-- `error InvalidSigner(address recovered)`
-- `error PolicyVersionMismatch(uint32 expected, uint32 provided)`
-- `error RequestExpired(uint64 validBefore, uint256 currentTime)`
-- `error RequestTooEarly(uint64 validAfter, uint256 currentTime)`
-- `error AmountBelowMinimum(uint256 amount, uint256 minimum)`
-- `error AmountAboveMaximum(uint256 amount, uint256 maximum)`
-- `error ActionAlreadyMinted(bytes32 actionId)`
-- `error EpochCapExceeded(uint256 requested, uint256 remaining)`
-- `error UserEpochCapExceeded(uint256 requested, uint256 remaining)`
-- `error MintingDisabled()`
-- …
-
-Sau đó trong catch block, ưu tiên đọc:
-- `error.shortMessage`
-- `error.reason`
-- hoặc parse `error.data` khi có.
-
----
-
-## Kiểm thử (end-to-end)
-1. Vào `/mint`, chọn action đang lỗi (trong DB thấy action gần nhất là `dc9d1e22-...`).
-2. Bấm “Mint lên blockchain”:
-   - Backend sẽ trả về signed request với `nonce` đúng bằng `contract.getNonce(to)` (đang 0).
-   - MetaMask mở, confirm → tx thành công.
-3. Sau khi tx success:
-   - `pplp_mint_requests.tx_hash` được update.
-   - UI hiển thị “Đã mint on-chain” và hiện link BSCScan.
-4. Test retry:
-   - Nếu bấm lại, frontend sẽ check `isActionMinted(bytes32)` và báo “Action đã mint” (không gửi tx).
-5. Test lệch nonce:
-   - Mint thành công xong (nonce on-chain tăng lên 1), nếu cố dùng signature cũ (nonce 0) → frontend phải chặn trước khi submit.
-
----
-
-## Rủi ro & lưu ý
-- RPC call (BSC_RPC_URL) có thể chậm/timeout: cần timeout + retry nhẹ ở backend.
-- Nếu user đổi ví, nonce khác hoàn toàn: backend phải dùng nonce theo `wallet_address` hiện tại (đã đúng với thiết kế mới).
-- Nếu action đã “minted off-chain” từ lâu, vẫn OK; on-chain mint là optional.
-
----
-
-## Deliverables (những thứ sẽ được sửa)
-- `supabase/functions/pplp-authorize-mint/index.ts`
-  - Lấy on-chain nonce, ký theo nonce on-chain, invalidate existing signature nếu lệch nonce.
-  - (Khuyến nghị) thêm auth + ownership check.
-- `supabase/functions/_shared/pplp-eip712.ts`
-  - `createMintPayload` nhận nonce dạng bigint an toàn.
+### A) Frontend: make network detection reliable (not just “chainId state”)
+**Files**
+- `src/hooks/useWeb3Wallet.ts`
 - `src/hooks/useFUNMoneyContract.ts`
-  - Preflight check nonce on-chain trước khi submit.
-  - Cải thiện error parsing.
-- `src/lib/funMoneyABI.ts`
-  - Thêm custom errors để hiển thị lỗi rõ ràng.
+- `src/components/mint/FUNMoneyMintCard.tsx`
+- (optional UI) `src/components/mint/FUNMoneyBalanceCard.tsx`
+
+**Changes**
+1) **Fix `useWeb3Wallet.connect()` to always re-read chainId after switching**
+   - Current logic sets `chainId: 97` in state even if the underlying provider situation is inconsistent.
+   - Update flow:
+     - Read `eth_chainId`
+     - If not 97: switch network
+     - Read `eth_chainId` again and store the real value
+
+2) **Add a “real BSC Testnet sanity check”**
+   In `useFUNMoneyContract` (and/or wallet hook), add:
+   - `provider.getBlockNumber()` and compare against an expected minimum threshold for BSC testnet (currently ~88M+ per BscScan).
+   - If block number is far too low (e.g., < 10,000,000), show a clear error:
+     - “Bạn đang dùng RPC/Network không phải BSC Testnet thật. Hãy reset network trong ví.”
+
+3) **Contract code check before any contract reads**
+   Before calling `mintingEnabled()`, `isActionMinted()`, etc:
+   - `const code = await provider.getCode(contractAddress)`
+   - If `code === "0x"` → show “Contract chưa được deploy trên network này”
+   - If `code !== "0x"` but calls still revert → show “Network RPC đang trỏ sai chain hoặc contract address không khớp trên network hiện tại”
+
+4) **Unify wallet usage to avoid double-hook drift**
+   `FUNMoneyMintCard.tsx` currently uses `useWeb3Wallet()` and `useFUNMoneyContract()` at the same time (two separate states).
+   - Refactor so `FUNMoneyMintCard` uses wallet state/actions returned from `useFUNMoneyContract` (e.g., `connect`, `isConnected`, `address`) and remove its direct `useWeb3Wallet` usage.
+   - This reduces inconsistent state (one hook thinks connected, the other doesn’t / wrong chainId).
+
+5) **Add a “Reset BSC Testnet” button in the mint UI when sanity check fails**
+   - Add a button that runs a helper:
+     - `wallet_addEthereumChain` with **multiple** known RPC URLs (not just one)
+     - then `wallet_switchEthereumChain`
+   - Even if MetaMask won’t always overwrite an existing network’s RPC, this gives the user a guided recovery path.
+
+**User-visible result**
+- Instead of a generic red error, the UI will explain exactly:
+  - “Bạn đang ở sai chain” vs
+  - “RPC của BSC Testnet trong ví đang sai” vs
+  - “Contract không tồn tại trên chain hiện tại”.
 
 ---
 
-## Tiêu chí hoàn thành
-- Bấm “Mint lên blockchain” không còn `require(false)`.
-- Nếu có lỗi thì hiển thị đúng nguyên nhân (InvalidNonce/InvalidSigner/Expired…).
-- On-chain mint thành công ít nhất 1 action, ghi nhận `tx_hash` vào backend.
+### B) Backend: make on-chain nonce fetch deterministic (and stop silently falling back to nonce=0)
+**File**
+- `supabase/functions/pplp-authorize-mint/index.ts`
+
+**Changes**
+1) Replace “best effort” RPC usage with a **validated RPC selection**
+   - Build a small list of BSC Testnet RPC endpoints inside the function (fallback list).
+   - Try in order:
+     - Create provider
+     - `await provider.getNetwork()` must be chainId 97
+     - `await provider.getCode(PPLP_DOMAIN.verifyingContract)` must be non-`0x`
+     - Then call `getNonce()`
+   - If all fail: return a **clear 503** with message:
+     - “Backend cannot reach BSC Testnet RPC. Please try again later.”
+
+2) Keep current idempotency, but ensure nonce mismatch invalidation still works
+   - If existing mint request is signed but nonce differs from on-chain → expire and re-sign.
+
+3) Apply best practice: replace `.single()` with `.maybeSingle()` for `pplp_mint_requests`
+   - Prevents edge cases when no row exists from becoming an error path.
+
+**Result**
+- Backend always signs using a nonce from a confirmed BSC Testnet RPC.
+- If backend cannot confirm chain 97 + correct contract bytecode, it won’t produce signatures that are “valid-looking but unusable”.
+
+---
+
+### C) End-to-end test plan (what we’ll verify after implementation)
+1) Open `/mint`, connect wallet.
+2) Verify “contract info” loads:
+   - `name/symbol/balance/mintingEnabled` no longer throw `require(false)`.
+3) Click “Mint lên blockchain (tùy chọn)”
+   - Preflight checks pass
+   - `staticCall` either succeeds or returns a decoded custom error (InvalidSigner, RequestExpired, etc.)
+4) Confirm MetaMask tx → success.
+5) `pplp_mint_requests` updates to `minted` with `tx_hash`.
+
+---
+
+## Why this plan should fix your exact screenshot
+Your screenshot’s red error is the fallback for “missing revert data / require(false)”.
+We now know the **same require(false happens for basic read calls** (mintingEnabled/isActionMinted), so the issue is upstream of EIP-712/nonces: it’s a network/provider mismatch.
+
+This plan fixes that by:
+- Detecting the mismatch deterministically,
+- Guiding the wallet to a known-good RPC/network configuration,
+- Preventing backend from using an RPC that returns empty results.
+
+---
+
+## Scope / tradeoffs
+- This avoids deploying a new on-chain contract (not needed).
+- Most work is improved network correctness + diagnostics; once reads work, your custom error decoding will also start working (because revert data will exist when the real contract is called).
