@@ -367,6 +367,48 @@ serve(async (req) => {
     }
 
     // ============================================
+    // EXECUTE ON-CHAIN lockWithPPLP TRANSACTION
+    // ============================================
+    
+    let txHash: string | null = null;
+    
+    if (signature && signerPrivateKey) {
+      try {
+        console.log(`[PPLP Lock] Submitting lockWithPPLP transaction...`);
+        
+        // Add 0x prefix if missing
+        const formattedKey = signerPrivateKey.startsWith("0x") 
+          ? signerPrivateKey 
+          : `0x${signerPrivateKey}`;
+        
+        // Create signer connected to provider
+        const signer = new ethers.Wallet(formattedKey, rpcResult.provider);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+        
+        // Call lockWithPPLP(user, actionName, amount, evidenceHash, [signature])
+        const tx = await contract.lockWithPPLP(
+          wallet_address,     // user address
+          actionName,         // action string (e.g., "QUESTION_ASK")
+          amountWei,          // amount in wei
+          evidenceHash,       // evidence hash
+          [signature]         // array of signatures (we have 1 attester)
+        );
+        
+        console.log(`[PPLP Lock] ⏳ Transaction sent: ${tx.hash}`);
+        
+        // Wait for confirmation (1 block)
+        const receipt = await tx.wait(1);
+        txHash = receipt.hash;
+        
+        console.log(`[PPLP Lock] ✓ Transaction confirmed: ${txHash} in block ${receipt.blockNumber}`);
+      } catch (txError: any) {
+        console.error(`[PPLP Lock] On-chain transaction failed:`, txError?.message || txError);
+        // Don't fail the whole request - off-chain minting can still proceed
+        // The signature is stored for manual/retry submission
+      }
+    }
+
+    // ============================================
     // STORE MINT REQUEST
     // ============================================
 
@@ -384,7 +426,9 @@ serve(async (req) => {
         nonce: onChainNonce.toString(),
         signature: signature,
         signer_address: signerAddress,
-        status: signature ? "signed" : "pending",
+        status: txHash ? "minted" : (signature ? "signed" : "pending"),
+        tx_hash: txHash,
+        minted_at: txHash ? new Date().toISOString() : null,
       },
       { onConflict: "action_id" }
     );
@@ -481,9 +525,13 @@ serve(async (req) => {
           signature: signature,
           signer: signerAddress,
         },
-        message: signature
-          ? "PPLP Lock request signed and ready. Token đã được cộng off-chain. On-chain lock cần Treasury gọi lockWithPPLP."
-          : "Token đã được cộng off-chain. Chưa có TREASURY_PRIVATE_KEY để ký on-chain.",
+        tx_hash: txHash,
+        on_chain_success: !!txHash,
+        message: txHash
+          ? `✓ Token đã được lock on-chain thành công! TX: ${txHash}`
+          : (signature
+            ? "Token đã được cộng off-chain. On-chain lock đang chờ xử lý."
+            : "Token đã được cộng off-chain. Chưa có TREASURY_PRIVATE_KEY để ký on-chain."),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
