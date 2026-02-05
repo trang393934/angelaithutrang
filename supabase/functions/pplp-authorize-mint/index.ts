@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { ethers } from "https://esm.sh/ethers@6.16.0";
 import {
   signMintRequest,
   createMintPayload,
@@ -27,9 +28,11 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const signerPrivateKey = Deno.env.get('TREASURY_PRIVATE_KEY');
+    const bscRpcUrl = Deno.env.get('BSC_RPC_URL');
     
     // Debug: Log if private key is available (not the key itself!)
     console.log(`[PPLP Mint] Treasury private key configured: ${!!signerPrivateKey}, length: ${signerPrivateKey?.length || 0}`);
+    console.log(`[PPLP Mint] BSC RPC URL configured: ${!!bscRpcUrl}`);
     
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
@@ -57,6 +60,24 @@ serve(async (req) => {
     // CHECK IDEMPOTENCY - Check if already minted on-chain
     // ============================================
 
+    // First, fetch on-chain nonce for the wallet address
+    let onChainNonce = BigInt(0);
+    if (bscRpcUrl) {
+      try {
+        const provider = new ethers.JsonRpcProvider(bscRpcUrl);
+        const contractAddress = PPLP_DOMAIN.verifyingContract;
+        const nonceAbi = ["function getNonce(address user) view returns (uint256)"];
+        const contract = new ethers.Contract(contractAddress, nonceAbi, provider);
+        onChainNonce = await contract.getNonce(wallet_address);
+        console.log(`[PPLP Mint] On-chain nonce for ${wallet_address}: ${onChainNonce}`);
+      } catch (rpcError) {
+        console.error('[PPLP Mint] Failed to fetch on-chain nonce, using 0:', rpcError);
+        // Continue with nonce 0 - worst case signature won't work and user can retry
+      }
+    } else {
+      console.warn('[PPLP Mint] BSC_RPC_URL not configured, using nonce 0');
+    }
+
     const { data: existingMint } = await supabase
       .from('pplp_mint_requests')
       .select('*')
@@ -76,8 +97,12 @@ serve(async (req) => {
         );
       }
       
-      // Return existing signed request if still valid (for re-try on-chain mint)
-      if (existingMint.status === 'signed' && new Date(existingMint.valid_before) > new Date()) {
+      // Check if existing signed request is still valid AND nonce matches on-chain
+      if (existingMint.status === 'signed' && new Date(existingMint.valid_before) > new Date() && existingMint.signature) {
+        const existingNonce = BigInt(existingMint.nonce);
+        
+        // If nonce matches on-chain, return existing signature
+        if (existingNonce === onChainNonce) {
         // IMPORTANT: Scale amount to 18 decimals when returning existing mint
         // Database stores raw FUN amount, but smart contract expects wei (× 10^18)
         const scaledAmount = (BigInt(existingMint.amount) * BigInt(10 ** 18)).toString();
@@ -101,6 +126,15 @@ serve(async (req) => {
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+        } else {
+          // Nonce mismatch - invalidate old signature and create new one
+          console.log(`[PPLP Mint] Nonce mismatch for action ${action_id}: DB=${existingNonce}, on-chain=${onChainNonce}. Creating new signature.`);
+          await supabase
+            .from('pplp_mint_requests')
+            .update({ status: 'expired', signature: null })
+            .eq('action_id', action_id);
+          // Continue to create new signature below
+        }
       }
     }
 
@@ -203,19 +237,12 @@ serve(async (req) => {
     }
 
     // ============================================
-    // GET NONCE (Atomic increment)
+    // USE ON-CHAIN NONCE (not database)
     // ============================================
 
-    const { data: nonce, error: nonceError } = await supabase
-      .rpc('get_next_nonce', { _user_id: action.actor_id });
-
-    if (nonceError) {
-      console.error('Failed to get nonce:', nonceError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate nonce' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Use the on-chain nonce we fetched earlier
+    const nonce = onChainNonce;
+    console.log(`[PPLP Mint] Using on-chain nonce: ${nonce}`);
 
     // ============================================
     // CREATE MINT PAYLOAD
@@ -227,7 +254,7 @@ serve(async (req) => {
       actionId: action.id,
       evidenceHash: action.evidence_hash || '0x' + '0'.repeat(64),
       policyVersion: parseInt(action.policy_version?.replace('v', '') || '1'),
-      nonce: nonce,
+      nonce: nonce, // Now bigint from on-chain
       validityHours: 24,
     });
 
