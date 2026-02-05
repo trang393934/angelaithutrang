@@ -27,6 +27,10 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const signerPrivateKey = Deno.env.get('TREASURY_PRIVATE_KEY');
+    
+    // Debug: Log if private key is available (not the key itself!)
+    console.log(`[PPLP Mint] Treasury private key configured: ${!!signerPrivateKey}, length: ${signerPrivateKey?.length || 0}`);
+    
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const { action_id, wallet_address }: MintAuthorizationRequest = await req.json();
@@ -102,7 +106,7 @@ serve(async (req) => {
 
     const { data: action, error: actionError } = await supabase
       .from('pplp_actions')
-      .select('*, pplp_scores(*)')
+      .select('*')
       .eq('id', action_id)
       .single();
 
@@ -135,10 +139,16 @@ serve(async (req) => {
       );
     }
 
-    const score = action.pplp_scores?.[0];
+    // Fetch score separately (no FK relationship in Supabase)
+    const { data: score, error: scoreError } = await supabase
+      .from('pplp_scores')
+      .select('*')
+      .eq('action_id', action_id)
+      .single();
+
     if (!score) {
       return new Response(
-        JSON.stringify({ error: 'Score record not found for action' }),
+        JSON.stringify({ error: 'Score record not found for action', scoreError }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
