@@ -231,7 +231,7 @@ export async function submitPPLPAction(
  * 
  * This is the PRIMARY method for Light Economy integration.
  * After submission, the action is automatically scored and if passed,
- * Camly Coins are minted directly to the user.
+ * FUN Money is minted directly to the user.
  * 
  * Flow: Submit → Score → Auto-Mint (if passed)
  */
