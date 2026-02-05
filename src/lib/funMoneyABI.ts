@@ -1,7 +1,10 @@
 /**
- * FUN Money Contract ABI
+ * FUN Money Contract ABI (FUNMoneyProductionV1_2_1)
  * 
- * Essential functions for frontend integration with the FUNMoney BEP-20 token.
+ * This is the ACTUAL ABI of the deployed contract on BSC Testnet.
+ * Flow: lockWithPPLP() → activate() → claim() → transfer()
+ * 
+ * Contract: 0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2
  */
 
 export const FUN_MONEY_ABI = [
@@ -12,92 +15,79 @@ export const FUN_MONEY_ABI = [
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",
   "function totalSupply() view returns (uint256)",
-  "function balanceOf(address owner) view returns (uint256)",
+  "function balanceOf(address a) view returns (uint256)",
   "function transfer(address to, uint256 amount) returns (bool)",
   "function approve(address spender, uint256 amount) returns (bool)",
-  "function allowance(address owner, address spender) view returns (uint256)",
   "function transferFrom(address from, address to, uint256 amount) returns (bool)",
   
   // ============================================
-  // ERC-20 PERMIT (Gasless Approvals)
+  // PPLP VESTING/LOCK ENGINE
   // ============================================
-  "function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)",
-  "function nonces(address owner) view returns (uint256)",
-  "function DOMAIN_SEPARATOR() view returns (bytes32)",
+  
+  // Main minting function - requires attester signatures
+  "function lockWithPPLP(address user, string action, uint256 amount, bytes32 evidenceHash, bytes[] sigs)",
+  
+  // Vesting transitions: locked → activated → claimable
+  "function activate(uint256 amount)",
+  "function claim(uint256 amount)",
   
   // ============================================
-  // PPLP MINT ENGINE
+  // READ STATE
   // ============================================
-  "function mintWithSignature((address to, uint256 amount, bytes32 actionId, bytes32 evidenceHash, uint32 policyVersion, uint64 validAfter, uint64 validBefore, uint256 nonce) req, bytes signature)",
-  // Legacy overload (some deployed versions flatten params instead of tuple)
-  "function mintWithSignature(address to, uint256 amount, bytes32 actionId, bytes32 evidenceHash, uint32 policyVersion, uint64 validAfter, uint64 validBefore, uint256 nonce, bytes signature)",
   
-  // Mint state
-  "function mintedAction(bytes32 actionId) view returns (bool)",
-  "function mintNonces(address user) view returns (uint256)",
-  "function getNonce(address user) view returns (uint256)",
-  "function isActionMinted(bytes32 actionId) view returns (bool)",
+  // User allocation: { locked, activated }
+  "function alloc(address) view returns (uint256 locked, uint256 activated)",
   
-  // ============================================
-  // EPOCH CAPS
-  // ============================================
-  "function epochDurationSec() view returns (uint256)",
+  // Nonces mapping (for signature replay protection)
+  "function nonces(address) view returns (uint256)",
+  
+  // Attester system
+  "function isAttester(address) view returns (bool)",
+  "function attesterThreshold() view returns (uint256)",
+  
+  // Action registry
+  "function actions(bytes32) view returns (bool allowed, uint32 version, bool deprecated)",
+  
+  // Epoch caps
+  "function epochDuration() view returns (uint256)",
   "function epochMintCap() view returns (uint256)",
-  "function userEpochCap() view returns (uint256)",
-  "function mintedInEpoch(uint256 epoch) view returns (uint256)",
-  "function userMintedInEpoch(uint256 epoch, address user) view returns (uint256)",
-  "function currentEpoch() view returns (uint256)",
-  "function remainingEpochCapacity() view returns (uint256)",
-  "function remainingUserCapacity(address user) view returns (uint256)",
+  "function epochs(bytes32) view returns (uint64 start, uint256 minted)",
+  
+  // Governance
+  "function guardianGov() view returns (address)",
+  "function communityPool() view returns (address)",
+  "function pauseTransitions() view returns (bool)",
+  
+  // Aggregate helpers
+  "function totalLocked(address[] calldata users) view returns (uint256 sum)",
+  "function totalActivated(address[] calldata users) view returns (uint256 sum)",
+  
+  // Constants
+  "function MAX_SIGS() view returns (uint256)",
+  "function PPLP_TYPEHASH() view returns (bytes32)",
   
   // ============================================
-  // ADMIN FUNCTIONS
+  // GOVERNANCE (requires guardianGov)
   // ============================================
-  "function mintingEnabled() view returns (bool)",
-  "function currentPolicyVersion() view returns (uint32)",
-  "function minMintAmount() view returns (uint256)",
-  "function maxMintAmount() view returns (uint256)",
-  "function domainSeparator() view returns (bytes32)",
-  
-  // Roles
-  "function ADMIN_ROLE() view returns (bytes32)",
-  "function SIGNER_ROLE() view returns (bytes32)",
-  "function GOVERNOR_ROLE() view returns (bytes32)",
-  "function PAUSER_ROLE() view returns (bytes32)",
-  "function hasRole(bytes32 role, address account) view returns (bool)",
-  
-  // Pausable
-  "function paused() view returns (bool)",
+  "function govRegisterAction(string name, uint32 version)",
+  "function govDeprecateAction(string name, uint32 newVersion)",
+  "function govSetAttester(address attester, bool allowed)",
+  "function govSetAttesterThreshold(uint256 newThreshold)",
+  "function govPauseTransitions(bool paused)",
+  "function govRecycleExcessToCommunity(uint256 amount)",
   
   // ============================================
   // EVENTS
   // ============================================
   "event Transfer(address indexed from, address indexed to, uint256 value)",
   "event Approval(address indexed owner, address indexed spender, uint256 value)",
-  "event MintAuthorized(address indexed to, uint256 amount, bytes32 indexed actionId, bytes32 evidenceHash, uint32 policyVersion, uint64 validAfter, uint64 validBefore, uint256 nonce, address indexed signer)",
-  "event EpochParamsUpdated(uint256 epochDurationSec, uint256 epochMintCap, uint256 userEpochCap)",
-  "event MintingEnabledUpdated(bool enabled)",
-  "event PolicyVersionUpdated(uint32 newVersion)",
-  "event MintLimitsUpdated(uint256 minAmount, uint256 maxAmount)",
-  "event SignerAdded(address indexed signer)",
-  "event SignerRemoved(address indexed signer)",
-  "event Paused(address account)",
-  "event Unpaused(address account)",
-  
-  // ============================================
-  // CUSTOM ERRORS (for better error messages)
-  // ============================================
-  "error InvalidNonce(uint256 expected, uint256 provided)",
-  "error InvalidSigner(address recovered)",
-  "error PolicyVersionMismatch(uint32 expected, uint32 provided)",
-  "error RequestExpired(uint64 validBefore, uint256 currentTime)",
-  "error RequestTooEarly(uint64 validAfter, uint256 currentTime)",
-  "error AmountBelowMinimum(uint256 amount, uint256 minimum)",
-  "error AmountAboveMaximum(uint256 amount, uint256 maximum)",
-  "error ActionAlreadyMinted(bytes32 actionId)",
-  "error EpochCapExceeded(uint256 requested, uint256 remaining)",
-  "error UserEpochCapExceeded(uint256 requested, uint256 remaining)",
-  "error MintingDisabled()",
+  "event PureLoveAccepted(address indexed user, bytes32 indexed action, uint256 amount, uint32 version)",
+  "event ActionRegistered(bytes32 indexed action, uint32 version)",
+  "event ActionDeprecated(bytes32 indexed action, uint32 oldVersion, uint32 newVersion)",
+  "event AttesterUpdated(address indexed attester, bool allowed)",
+  "event AttesterThresholdUpdated(uint256 oldThreshold, uint256 newThreshold)",
+  "event TransitionsPaused(bool paused)",
+  "event ExcessRecycled(uint256 amount)",
 ] as const;
 
 // Contract addresses per network
@@ -106,7 +96,7 @@ export const FUN_MONEY_ADDRESSES: Record<number, string> = {
   97: "0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2", // BSC Testnet
 };
 
-// EIP-712 Domain for signing
+// EIP-712 Domain for PPLP signatures (used by attesters)
 export const FUN_MONEY_DOMAIN = {
   name: "FUNMoney-PPLP",
   version: "1",
@@ -114,20 +104,50 @@ export const FUN_MONEY_DOMAIN = {
   verifyingContract: "0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2",
 };
 
-// MintRequest types for EIP-712
-export const MINT_REQUEST_TYPES = {
-  MintRequest: [
-    { name: "to", type: "address" },
+// PPLP Lock Request types for EIP-712 (attester signing)
+export const PPLP_LOCK_TYPES = {
+  PPLPLock: [
+    { name: "user", type: "address" },
+    { name: "action", type: "bytes32" },
     { name: "amount", type: "uint256" },
-    { name: "actionId", type: "bytes32" },
     { name: "evidenceHash", type: "bytes32" },
-    { name: "policyVersion", type: "uint32" },
-    { name: "validAfter", type: "uint64" },
-    { name: "validBefore", type: "uint64" },
     { name: "nonce", type: "uint256" },
   ],
 } as const;
 
+export interface PPLPLockRequest {
+  user: string;
+  action: string; // action name string (will be hashed in contract)
+  amount: bigint;
+  evidenceHash: string;
+  nonce: bigint;
+}
+
+export interface SignedPPLPLockRequest extends PPLPLockRequest {
+  signatures: string[]; // multiple attester signatures required
+  signers: string[];
+}
+
+// User allocation state
+export interface UserAllocation {
+  locked: bigint;
+  activated: bigint;
+  claimable: bigint; // = activated (can claim up to this)
+}
+
+// Error messages
+export const PPLP_ERROR_MESSAGES: Record<string, string> = {
+  "not allowed": "Action này chưa được đăng ký hoặc đã bị deprecate.",
+  "threshold": "Chưa đủ số lượng chữ ký attester.",
+  "duplicate sig": "Có chữ ký bị trùng lặp.",
+  "invalid sig": "Chữ ký attester không hợp lệ.",
+  "paused": "Hệ thống đang tạm dừng transitions.",
+  "epoch cap": "Đã đạt giới hạn mint trong epoch này.",
+  "exceed locked": "Số lượng activate vượt quá locked.",
+  "exceed activated": "Số lượng claim vượt quá activated.",
+};
+
+// Legacy export for backward compatibility
 export interface MintRequest {
   to: string;
   amount: bigint;
@@ -144,17 +164,5 @@ export interface SignedMintRequest extends MintRequest {
   signer: string;
 }
 
-// Error name mapping for user-friendly messages
-export const MINT_ERROR_MESSAGES: Record<string, string> = {
-  InvalidNonce: "Nonce không khớp với blockchain. Vui lòng thử lại.",
-  InvalidSigner: "Chữ ký không hợp lệ. Treasury wallet có thể chưa được cấp quyền SIGNER_ROLE.",
-  PolicyVersionMismatch: "Phiên bản chính sách không khớp.",
-  RequestExpired: "Yêu cầu đã hết hạn. Vui lòng tạo yêu cầu mới.",
-  RequestTooEarly: "Yêu cầu chưa đến thời gian hiệu lực.",
-  AmountBelowMinimum: "Số lượng mint quá thấp.",
-  AmountAboveMaximum: "Số lượng mint vượt quá giới hạn.",
-  ActionAlreadyMinted: "Action này đã được mint trước đó.",
-  EpochCapExceeded: "Đã đạt giới hạn mint của epoch.",
-  UserEpochCapExceeded: "Bạn đã đạt giới hạn mint cá nhân trong epoch này.",
-  MintingDisabled: "Tính năng mint đang tạm dừng.",
-};
+// Legacy error messages (kept for backward compatibility)
+export const MINT_ERROR_MESSAGES = PPLP_ERROR_MESSAGES;
