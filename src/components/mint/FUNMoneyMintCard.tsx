@@ -25,6 +25,7 @@
    status: string;
    created_at: string;
    minted_at?: string;
+  mint_request_hash?: string | null;
    pplp_scores?: Array<{
      light_score: number;
      final_reward: number;
@@ -35,6 +36,11 @@
      pillar_u: number;
      decision: string;
    }>;
+  pplp_mint_requests?: Array<{
+    tx_hash: string | null;
+    status: string;
+    minted_at: string | null;
+  }>;
  }
  
  interface Props {
@@ -56,7 +62,7 @@
  const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
    pending: { label: "Đang xử lý", color: "bg-yellow-100 text-yellow-700", icon: Clock },
    scored: { label: "Sẵn sàng claim", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
-   minted: { label: "Đã mint", color: "bg-blue-100 text-blue-700", icon: CheckCircle2 },
+  minted: { label: "Đã nhận FUN", color: "bg-blue-100 text-blue-700", icon: CheckCircle2 },
    failed: { label: "Thất bại", color: "bg-red-100 text-red-700", icon: AlertCircle },
  };
  
@@ -67,8 +73,13 @@
    const [txHash, setTxHash] = useState<string | null>(null);
  
    const score = action.pplp_scores?.[0];
+  const mintRequest = action.pplp_mint_requests?.[0];
    const statusConfig = STATUS_CONFIG[action.status] || STATUS_CONFIG.pending;
    const StatusIcon = statusConfig.icon;
+  
+  // Determine if we have a valid on-chain transaction hash
+  const actualTxHash = txHash || mintRequest?.tx_hash;
+  const hasOnChainTx = actualTxHash && actualTxHash !== 'null' && actualTxHash.startsWith('0x');
  
    const handleMint = async () => {
      if (!isConnected) {
@@ -87,7 +98,7 @@
    };
  
    const canMint = action.status === "scored" && score?.decision === "pass" && !isMinting;
-   const isMinted = action.status === "minted" || txHash;
+  const isMinted = action.status === "minted" || txHash || mintRequest?.status === 'minted';
  
    return (
      <Card className={`transition-all ${canMint ? "hover:shadow-lg hover:border-amber-400" : ""}`}>
@@ -167,18 +178,38 @@
            <div className="space-y-2">
              <Button variant="outline" className="w-full" disabled>
                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
-               Đã mint thành công
+              {hasOnChainTx ? "Đã mint on-chain" : "Đã nhận FUN (off-chain)"}
              </Button>
-             {(txHash || action.minted_at) && (
+            {hasOnChainTx ? (
                <Button
                  variant="ghost"
                  size="sm"
                  className="w-full text-xs"
-                 onClick={() => window.open(`https://testnet.bscscan.com/tx/${txHash}`, "_blank")}
+                onClick={() => window.open(`https://testnet.bscscan.com/tx/${actualTxHash}`, "_blank")}
                >
                  <ExternalLink className="mr-1 h-3 w-3" />
                  Xem trên BSCScan
                </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs text-amber-600 hover:text-amber-700"
+                onClick={handleMint}
+                disabled={isMinting}
+              >
+                {isMinting ? (
+                  <>
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    Đang mint...
+                  </>
+                ) : (
+                  <>
+                    <Coins className="mr-1 h-3 w-3" />
+                    Mint lên blockchain (tùy chọn)
+                  </>
+                )}
+              </Button>
              )}
            </div>
          ) : canMint ? (

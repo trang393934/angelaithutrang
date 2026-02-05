@@ -19,6 +19,7 @@ export interface PPLPAction {
   scored_at: string | null;
   minted_at: string | null;
   created_at: string;
+  mint_request_hash: string | null;
   pplp_scores?: Array<{
     light_score: number;
     final_reward: number;
@@ -28,6 +29,11 @@ export interface PPLPAction {
     pillar_c: number;
     pillar_u: number;
     decision: string;
+  }>;
+  pplp_mint_requests?: Array<{
+    tx_hash: string | null;
+    status: string;
+    minted_at: string | null;
   }>;
 }
 
@@ -60,7 +66,7 @@ export function usePPLPActions() {
     try {
       const { data, error } = await supabase
         .from("pplp_actions")
-        .select("*, pplp_scores(*)")
+        .select("*, pplp_scores(*), pplp_mint_requests(*)")
         .eq("actor_id", user.id)
         .order("created_at", { ascending: false })
         .limit(limit);
