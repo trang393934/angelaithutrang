@@ -1,140 +1,149 @@
 
+# HƯỚNG DẪN: Kích hoạt On-Chain Minting cho FUN Money
 
-# KẾ HOẠCH: Sửa BSCScan Link và Kích hoạt On-Chain Minting
+## I. PHÂN TÍCH HIỆN TRẠNG
 
-## I. VẤN ĐỀ
+### Những gì ĐÃ CÓ:
+| Thành phần | Trạng thái | Chi tiết |
+|------------|------------|----------|
+| Smart Contract | Deployed | `0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2` trên BSC Testnet |
+| TREASURY_PRIVATE_KEY | Configured | Đã có trong Supabase secrets |
+| pplp-authorize-mint | Ready | Sẵn sàng ký EIP-712 signature |
+| useFUNMoneyContract | Ready | Hook React để gọi contract |
+| UI Mint on-chain | Ready | Nút "Mint lên blockchain" đã có |
 
-### Hiện trạng:
-- Contract **đã deploy** tại: `0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2`
-- Hệ thống đang mint **OFF-CHAIN** (chỉ cộng Camly Coins trong database)
-- UI hiển thị link BSCScan nhưng **không có tx hash thật** → báo lỗi
+### Những gì CẦN LÀM:
+| Bước | Yêu cầu | Mức độ quan trọng |
+|------|---------|-------------------|
+| 1 | Grant SIGNER_ROLE cho Treasury wallet trên smart contract | BẮT BUỘC |
+| 2 | Sửa EIP-712 Domain Name mismatch | BẮT BUỘC |
+| 3 | User kết nối ví MetaMask (BSC Testnet) | Khi mint |
+| 4 | User nhấn "Mint lên blockchain" | Khi mint |
 
-### Nguyên nhân:
-| Thành phần | Trạng thái | Vấn đề |
-|------------|------------|--------|
-| Smart Contract | Đã deploy ✅ | Không có vấn đề |
-| `pplp-authorize-mint` | Ký EIP-712 signature | Thiếu `TREASURY_PRIVATE_KEY` để ký? |
-| `useFUNMoneyContract` | Sẵn sàng gọi contract | User cần kết nối ví và nhấn "Claim" |
-| `FUNMoneyMintCard` | Hiển thị link khi có `minted_at` | **BUG**: Link không có tx hash thật |
+---
 
-## II. GIẢI PHÁP
+## II. VẤN ĐỀ #1: SIGNER_ROLE CHƯA ĐƯỢC GRANT
 
-### Bước 1: Sửa UI - Ẩn link BSCScan khi không có tx hash thật
+### Phát hiện:
+- Smart contract yêu cầu signature từ địa chỉ có `SIGNER_ROLE`
+- Trong `deploy.js`, việc grant signer phụ thuộc vào `TREASURY_ADDRESS` env variable
+- Có thể Treasury wallet **chưa được grant** `SIGNER_ROLE` khi deploy
 
-**File:** `src/components/mint/FUNMoneyMintCard.tsx`
+### Giải pháp:
+Con cần gọi lệnh trên BSCScan (Write Contract) hoặc chạy script:
 
-**Thay đổi:**
-- Chỉ hiển thị link BSCScan khi có `txHash` thật (không phải null/undefined)
-- Thêm kiểm tra `tx_hash` từ database (nếu có)
-- Nếu chưa có on-chain tx, hiển thị nút "Claim on-chain" để user mint lên blockchain
+```javascript
+// Trong MetaMask, kết nối ví Admin (deployer)
+// Vào BSCScan > Write Contract > grantSigner
 
-```typescript
-// Trước:
-{(txHash || action.minted_at) && (
-  <Button onClick={() => window.open(`.../${txHash}`, "_blank")}>
-
-// Sau:
-{txHash && txHash !== 'null' && (
-  <Button onClick={() => window.open(`.../${txHash}`, "_blank")}>
+grantSigner("0xADDRESS_CỦA_TREASURY_WALLET")
 ```
 
-### Bước 2: Thêm trạng thái "Minted Off-chain" 
+### Cách lấy Treasury Address:
+Chạy lệnh này với private key trong `TREASURY_PRIVATE_KEY`:
 
-Phân biệt rõ:
-- `minted_offchain`: Đã cộng Camly Coins, chưa on-chain
-- `minted_onchain`: Có tx hash thật từ blockchain
+```javascript
+const { ethers } = require('ethers');
+const wallet = new ethers.Wallet("PRIVATE_KEY_CỦA_BẠN");
+console.log(wallet.address); // Đây là Treasury Address
+```
 
-**Thay đổi UI:**
-- Actions đã minted off-chain: Hiển thị "Đã nhận FUN" + nút "Mint on-chain (tùy chọn)"
-- Actions đã mint on-chain: Hiển thị "Đã mint" + link BSCScan
+---
 
-### Bước 3: Kiểm tra Treasury Key
+## III. VẤN ĐỀ #2: EIP-712 DOMAIN NAME MISMATCH
 
-Cần đảm bảo `TREASURY_PRIVATE_KEY` được cấu hình đúng trong Supabase secrets để ký EIP-712 signature cho on-chain minting.
+### Phát hiện:
+| File | Domain Name | Version |
+|------|-------------|---------|
+| Smart Contract | `FUNMoney-PPLP` | `1` |
+| pplp-eip712.ts | `PPLP Mint Authorization` | `1` |
 
-## III. CHI TIẾT THAY ĐỔI
+**Signature sẽ bị REJECT** vì domain name không khớp!
 
-### File 1: `src/components/mint/FUNMoneyMintCard.tsx`
+### Giải pháp:
+Sửa file `supabase/functions/_shared/pplp-eip712.ts`:
 
 ```typescript
-// Cập nhật interface để bao gồm tx_hash
-interface PPLPAction {
-  id: string;
-  action_type: string;
-  platform_id: string;
-  status: string;
-  created_at: string;
-  minted_at?: string;
-  tx_hash?: string;  // Thêm field tx_hash
-  pplp_scores?: Array<{...}>;
-}
-
-// Cập nhật STATUS_CONFIG để phân biệt
-const STATUS_CONFIG: Record<string, {...}> = {
-  // ... existing
-  minted: { label: "Đã nhận FUN", color: "bg-blue-100 text-blue-700", icon: CheckCircle2 },
+export const PPLP_DOMAIN = {
+  name: 'FUNMoney-PPLP',  // Phải giống smart contract
+  version: '1',
+  chainId: 97,
+  verifyingContract: '0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2',
 };
-
-// Sửa logic hiển thị BSCScan link
-const actualTxHash = txHash || action.tx_hash;
-const hasOnChainTx = actualTxHash && actualTxHash !== 'null' && actualTxHash.startsWith('0x');
-
-// Trong render:
-{isMinted ? (
-  <div className="space-y-2">
-    <Button variant="outline" className="w-full" disabled>
-      <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
-      {hasOnChainTx ? "Đã mint on-chain" : "Đã nhận FUN (off-chain)"}
-    </Button>
-    
-    {hasOnChainTx ? (
-      // Hiển thị link BSCScan
-      <Button variant="ghost" size="sm" className="w-full text-xs"
-        onClick={() => window.open(`https://testnet.bscscan.com/tx/${actualTxHash}`, "_blank")}>
-        <ExternalLink className="mr-1 h-3 w-3" />
-        Xem trên BSCScan
-      </Button>
-    ) : (
-      // Hiển thị nút mint on-chain (tùy chọn)
-      <Button variant="ghost" size="sm" className="w-full text-xs text-amber-600"
-        onClick={handleMint}>
-        <Coins className="mr-1 h-3 w-3" />
-        Mint lên blockchain (tùy chọn)
-      </Button>
-    )}
-  </div>
-) : ...}
 ```
 
-### File 2: `src/hooks/usePPLPActions.ts` (nếu cần)
+---
 
-Đảm bảo query bao gồm `tx_hash` từ `pplp_mint_requests` table nếu có.
+## IV. HÀNH ĐỘNG CỤ THỂ
 
-## IV. FLOW SAU KHI SỬA
+### Bước 1: Grant SIGNER_ROLE (Con thực hiện)
+
+1. Mở BSCScan Contract: https://testnet.bscscan.com/address/0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2#writeContract
+2. Connect Wallet (ví Admin đã deploy contract)
+3. Tìm function `grantSigner`
+4. Nhập địa chỉ Treasury wallet
+5. Write → Confirm transaction
+
+### Bước 2: Sửa EIP-712 Domain (Cha thực hiện)
+
+Sửa `PPLP_DOMAIN.name` từ `'PPLP Mint Authorization'` thành `'FUNMoney-PPLP'`
+
+### Bước 3: Test On-Chain Mint
+
+1. Vào trang `/mint`
+2. Kết nối MetaMask (BSC Testnet)
+3. Với action đã minted off-chain, nhấn "Mint lên blockchain"
+4. Confirm transaction trong MetaMask
+5. Đợi tx confirm → Link BSCScan hoạt động
+
+---
+
+## V. FLOW SAU KHI SỬA
 
 ```text
-1. User thực hiện action (hỏi AI, đăng bài...)
-2. PPLP Engine chấm điểm → PASS
-3. ✅ OFF-CHAIN: Camly Coins được cộng ngay lập tức
-4. UI hiển thị: "Đã nhận FUN (off-chain)" - KHÔNG có link BSCScan
-5. (TÙY CHỌN) User kết nối ví → Nhấn "Mint lên blockchain"
-6. ✅ ON-CHAIN: Transaction được submit → có tx hash thật
-7. UI hiển thị: "Đã mint on-chain" + Link BSCScan hoạt động
+User có action "Đã nhận FUN (off-chain)"
+       ↓
+User kết nối MetaMask (BSC Testnet)
+       ↓
+User nhấn "Mint lên blockchain (tùy chọn)"
+       ↓
+Frontend gọi pplp-authorize-mint
+       ↓
+Backend ký EIP-712 với TREASURY_PRIVATE_KEY
+Domain: "FUNMoney-PPLP" (khớp với contract)
+       ↓
+Frontend gọi contract.mintWithSignature()
+       ↓
+Contract verify signature → SIGNER_ROLE ✓
+       ↓
+Token được mint thật → tx hash lưu DB
+       ↓
+UI hiển thị "Đã mint on-chain" + Link BSCScan ✓
 ```
 
-## V. KẾT QUẢ MONG ĐỢI
+---
 
-| Trạng thái | UI hiển thị | BSCScan Link |
-|------------|-------------|--------------|
-| Minted off-chain | "Đã nhận FUN" + nút Mint on-chain | Ẩn |
-| Minted on-chain | "Đã mint on-chain" | Hiển thị ✅ |
+## VI. THÔNG TIN CON CẦN CUNG CẤP
 
-## VI. THỜI GIAN THỰC HIỆN
+Để Cha hoàn thành setup, con cho Cha biết:
 
-| Bước | Thời gian |
-|------|-----------|
-| Sửa FUNMoneyMintCard.tsx | 3 phút |
-| Kiểm tra usePPLPActions | 2 phút |
-| Deploy & Test | 2 phút |
-| **Tổng** | ~7 phút |
+1. **Địa chỉ ví Admin** (ví đã deploy contract): `0x...?`
+2. **Địa chỉ Treasury wallet** (từ TREASURY_PRIVATE_KEY): `0x...?`
 
+   Nếu con không biết Treasury address, có thể lấy bằng cách chạy:
+   ```bash
+   node -e "console.log(require('ethers').Wallet('PRIVATE_KEY').address)"
+   ```
+
+---
+
+## VII. TÓM TẮT
+
+| Việc cần làm | Ai thực hiện | Thời gian |
+|--------------|--------------|-----------|
+| Lấy Treasury Address từ private key | Con | 1 phút |
+| Grant SIGNER_ROLE trên BSCScan | Con | 2 phút |
+| Sửa EIP-712 Domain Name | Cha | 2 phút |
+| Test mint on-chain | Con | 2 phút |
+
+**Tổng cộng: ~7 phút** để kích hoạt on-chain minting!
