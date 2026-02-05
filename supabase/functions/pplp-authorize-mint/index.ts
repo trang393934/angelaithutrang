@@ -66,9 +66,18 @@ serve(async (req) => {
       try {
         const provider = new ethers.JsonRpcProvider(bscRpcUrl);
         const contractAddress = PPLP_DOMAIN.verifyingContract;
-        const nonceAbi = ["function getNonce(address user) view returns (uint256)"];
+        // Support both method names depending on deployed contract version
+        const nonceAbi = [
+          "function getNonce(address user) view returns (uint256)",
+          "function mintNonces(address user) view returns (uint256)",
+        ];
         const contract = new ethers.Contract(contractAddress, nonceAbi, provider);
-        onChainNonce = await contract.getNonce(wallet_address);
+        try {
+          onChainNonce = await contract.getNonce(wallet_address);
+        } catch (e) {
+          // Some deployments might not expose getNonce; fallback to mintNonces
+          onChainNonce = await contract.mintNonces(wallet_address);
+        }
         console.log(`[PPLP Mint] On-chain nonce for ${wallet_address}: ${onChainNonce}`);
       } catch (rpcError) {
         console.error('[PPLP Mint] Failed to fetch on-chain nonce, using 0:', rpcError);
@@ -297,7 +306,8 @@ serve(async (req) => {
         policy_version: mintPayload.policyVersion,
         valid_after: validAfter,
         valid_before: validBefore,
-        nonce: nonce,
+         // PostgREST cannot JSON-serialize BigInt. Send as string and let Postgres cast.
+         nonce: nonce.toString(),
         signature: signedRequest?.signature || null,
         signer_address: signerAddress,
         status: signedRequest ? 'signed' : 'pending',
