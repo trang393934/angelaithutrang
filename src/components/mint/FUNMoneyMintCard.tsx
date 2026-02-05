@@ -2,19 +2,19 @@
  import { Button } from "@/components/ui/button";
  import { Badge } from "@/components/ui/badge";
  import { Progress } from "@/components/ui/progress";
- import { 
-   Sparkles, 
-   Coins, 
-   Clock, 
-   CheckCircle2, 
+ import {
+   Sparkles,
+   Coins,
+   Clock,
+   CheckCircle2,
    AlertCircle,
    Loader2,
    ExternalLink,
-   Wallet
+   Wallet,
+   RefreshCw,
  } from "lucide-react";
  import { useFUNMoneyContract } from "@/hooks/useFUNMoneyContract";
-import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
-import { toast } from "sonner";
+ import { toast } from "sonner";
  import { useState } from "react";
  import { formatDistanceToNow } from "date-fns";
  import { vi } from "date-fns/locale";
@@ -26,7 +26,7 @@ import { toast } from "sonner";
    status: string;
    created_at: string;
    minted_at?: string;
-  mint_request_hash?: string | null;
+   mint_request_hash?: string | null;
    pplp_scores?: Array<{
      light_score: number;
      final_reward: number;
@@ -37,11 +37,11 @@ import { toast } from "sonner";
      pillar_u: number;
      decision: string;
    }>;
-  pplp_mint_requests?: Array<{
-    tx_hash: string | null;
-    status: string;
-    minted_at: string | null;
-  }>;
+   pplp_mint_requests?: Array<{
+     tx_hash: string | null;
+     status: string;
+     minted_at: string | null;
+   }>;
  }
  
  interface Props {
@@ -63,35 +63,59 @@ import { toast } from "sonner";
  const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
    pending: { label: "Đang xử lý", color: "bg-yellow-100 text-yellow-700", icon: Clock },
    scored: { label: "Sẵn sàng claim", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
-  minted: { label: "Đã nhận FUN", color: "bg-blue-100 text-blue-700", icon: CheckCircle2 },
+   minted: { label: "Đã nhận FUN", color: "bg-blue-100 text-blue-700", icon: CheckCircle2 },
    failed: { label: "Thất bại", color: "bg-red-100 text-red-700", icon: AlertCircle },
  };
  
  export function FUNMoneyMintCard({ action, onMintSuccess }: Props) {
-  const { isConnected, connect, address } = useWeb3Wallet();
-   const { executeMint, mintStatus } = useFUNMoneyContract();
+   // Use unified wallet/contract state from useFUNMoneyContract
+   const {
+     isConnected,
+     connect,
+     address,
+     hasWallet,
+     executeMint,
+     mintStatus,
+     contractDiagnostics,
+     networkDiagnostics,
+     walletError,
+     resetBSCNetwork,
+   } = useFUNMoneyContract();
+ 
    const [isMinting, setIsMinting] = useState(false);
    const [txHash, setTxHash] = useState<string | null>(null);
+   const [isResettingNetwork, setIsResettingNetwork] = useState(false);
  
    const score = action.pplp_scores?.[0];
-  const mintRequest = action.pplp_mint_requests?.[0];
+   const mintRequest = action.pplp_mint_requests?.[0];
    const statusConfig = STATUS_CONFIG[action.status] || STATUS_CONFIG.pending;
    const StatusIcon = statusConfig.icon;
-  
-  // Determine if we have a valid on-chain transaction hash
-  const actualTxHash = txHash || mintRequest?.tx_hash;
-  const hasOnChainTx = actualTxHash && actualTxHash !== 'null' && actualTxHash.startsWith('0x');
+ 
+   // Determine if we have a valid on-chain transaction hash
+   const actualTxHash = txHash || mintRequest?.tx_hash;
+   const hasOnChainTx = actualTxHash && actualTxHash !== "null" && actualTxHash.startsWith("0x");
+ 
+   // Check for network/contract issues
+   const hasNetworkIssue = networkDiagnostics && !networkDiagnostics.isValidChain;
+   const hasContractIssue = contractDiagnostics && !contractDiagnostics.isContractValid;
+   const networkError = networkDiagnostics?.rpcError || contractDiagnostics?.error || walletError;
  
    const handleMint = async () => {
      if (!isConnected) {
-      await connect();
-      return; // Stop here, user needs to click again after connecting
-    }
-
-    // Double-check address after connect
-    if (!address || address.startsWith("0x1234567890")) {
-      toast.error("Ví chưa kết nối đúng. Vui lòng thử lại.");
-      return;
+       await connect();
+       return; // Stop here, user needs to click again after connecting
+     }
+ 
+     // Double-check address after connect
+     if (!address || address.startsWith("0x1234567890")) {
+       toast.error("Ví chưa kết nối đúng. Vui lòng thử lại.");
+       return;
+     }
+ 
+     // Check for network issues before minting
+     if (hasNetworkIssue || hasContractIssue) {
+       toast.error(networkError || "Network hoặc contract không hợp lệ. Vui lòng reset network.");
+       return;
      }
  
      setIsMinting(true);
@@ -104,8 +128,25 @@ import { toast } from "sonner";
      }
    };
  
-   const canMint = action.status === "scored" && score?.decision === "pass" && !isMinting;
-  const isMinted = action.status === "minted" || txHash || mintRequest?.status === 'minted';
+   const handleResetNetwork = async () => {
+     setIsResettingNetwork(true);
+     try {
+       const success = await resetBSCNetwork();
+       if (success) {
+         toast.success("Đã reset BSC Testnet. Vui lòng kết nối lại.");
+         // Reconnect after reset
+         await connect();
+       } else {
+         toast.error("Không thể reset network. Vui lòng reset thủ công trong MetaMask.");
+       }
+     } finally {
+       setIsResettingNetwork(false);
+     }
+   };
+ 
+   const canMint =
+     action.status === "scored" && score?.decision === "pass" && !isMinting && !hasNetworkIssue && !hasContractIssue;
+   const isMinted = action.status === "minted" || txHash || mintRequest?.status === "minted";
  
    return (
      <Card className={`transition-all ${canMint ? "hover:shadow-lg hover:border-amber-400" : ""}`}>
@@ -140,7 +181,7 @@ import { toast } from "sonner";
                <span className="font-bold text-amber-600">{score.light_score}/100</span>
              </div>
              <Progress value={score.light_score} className="h-2" />
-             
+ 
              {/* 5 Pillars mini view */}
              <div className="grid grid-cols-5 gap-1 text-xs">
                <div className="text-center p-1 rounded bg-red-50 dark:bg-red-900/20">
@@ -174,9 +215,42 @@ import { toast } from "sonner";
                <Coins className="h-5 w-5 text-amber-600" />
                <span className="text-sm font-medium">Reward</span>
              </div>
-             <span className="text-xl font-bold text-amber-600">
-               +{score.final_reward.toLocaleString()} FUN
-             </span>
+             <span className="text-xl font-bold text-amber-600">+{score.final_reward.toLocaleString()} FUN</span>
+           </div>
+         )}
+ 
+         {/* Network/Contract Error Warning */}
+         {isConnected && (hasNetworkIssue || hasContractIssue) && (
+           <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 space-y-2">
+             <div className="flex items-start gap-2">
+               <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+               <div className="text-sm text-red-700 dark:text-red-300">
+                 <p className="font-medium">Network/Contract không hợp lệ</p>
+                 <p className="text-xs mt-1">{networkError}</p>
+                 {contractDiagnostics?.blockNumber && (
+                   <p className="text-xs mt-1">Block: {contractDiagnostics.blockNumber.toLocaleString()}</p>
+                 )}
+               </div>
+             </div>
+             <Button
+               variant="outline"
+               size="sm"
+               className="w-full text-red-600 border-red-300 hover:bg-red-100"
+               onClick={handleResetNetwork}
+               disabled={isResettingNetwork}
+             >
+               {isResettingNetwork ? (
+                 <>
+                   <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                   Đang reset...
+                 </>
+               ) : (
+                 <>
+                   <RefreshCw className="mr-2 h-3 w-3" />
+                   Reset BSC Testnet Network
+                 </>
+               )}
+             </Button>
            </div>
          )}
  
@@ -185,42 +259,42 @@ import { toast } from "sonner";
            <div className="space-y-2">
              <Button variant="outline" className="w-full" disabled>
                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
-              {hasOnChainTx ? "Đã mint on-chain" : "Đã nhận FUN (off-chain)"}
+               {hasOnChainTx ? "Đã mint on-chain" : "Đã nhận FUN (off-chain)"}
              </Button>
-            {hasOnChainTx ? (
+             {hasOnChainTx ? (
                <Button
                  variant="ghost"
                  size="sm"
                  className="w-full text-xs"
-                onClick={() => window.open(`https://testnet.bscscan.com/tx/${actualTxHash}`, "_blank")}
+                 onClick={() => window.open(`https://testnet.bscscan.com/tx/${actualTxHash}`, "_blank")}
                >
                  <ExternalLink className="mr-1 h-3 w-3" />
                  Xem trên BSCScan
                </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-xs text-amber-600 hover:text-amber-700"
-                onClick={handleMint}
-                disabled={isMinting}
-              >
-                {isMinting ? (
-                  <>
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                    Đang mint...
-                  </>
-                ) : (
-                  <>
-                    <Coins className="mr-1 h-3 w-3" />
-                    Mint lên blockchain (tùy chọn)
-                  </>
-                )}
-              </Button>
+             ) : (
+               <Button
+                 variant="ghost"
+                 size="sm"
+                 className="w-full text-xs text-amber-600 hover:text-amber-700"
+                 onClick={handleMint}
+                 disabled={isMinting}
+               >
+                 {isMinting ? (
+                   <>
+                     <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                     Đang mint...
+                   </>
+                 ) : (
+                   <>
+                     <Coins className="mr-1 h-3 w-3" />
+                     Mint lên blockchain (tùy chọn)
+                   </>
+                 )}
+               </Button>
              )}
            </div>
          ) : canMint ? (
-           <Button 
+           <Button
              onClick={handleMint}
              disabled={isMinting}
              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
@@ -255,9 +329,7 @@ import { toast } from "sonner";
          )}
  
          {/* Error message */}
-         {mintStatus.error && (
-           <p className="text-xs text-red-500 text-center">{mintStatus.error}</p>
-         )}
+         {mintStatus.error && <p className="text-xs text-red-500 text-center">{mintStatus.error}</p>}
        </CardContent>
      </Card>
    );
