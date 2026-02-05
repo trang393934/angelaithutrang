@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { submitPPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
 
 const VERSION = "v2.0.1";
 console.log(`[analyze-reward-question ${VERSION}] Function initialized at ${new Date().toISOString()}`);
@@ -617,8 +617,8 @@ serve(async (req) => {
     });
 
     // ============= PPLP Integration =============
-    // Submit to PPLP engine for Light Score tracking
-    const pplpResult = await submitPPLPAction(supabase, {
+    // Submit to PPLP engine for Light Score tracking + AUTO SCORING
+    const pplpResult = await submitAndScorePPLPAction(supabase, {
       action_type: PPLP_ACTION_TYPES.QUESTION_ASK,
       actor_id: userId,
       metadata: {
@@ -646,7 +646,7 @@ serve(async (req) => {
     });
     
     if (pplpResult.success) {
-      console.log(`[PPLP] Question action submitted: ${pplpResult.action_id}`);
+      console.log(`[PPLP] Question action submitted: ${pplpResult.action_id}, scored=${pplpResult.scored}, minted=${pplpResult.minted}`);
     }
     // ============= End PPLP Integration =============
 
