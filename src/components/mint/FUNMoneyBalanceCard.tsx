@@ -4,29 +4,53 @@
  import { Skeleton } from "@/components/ui/skeleton";
  import { ExternalLink, Wallet, RefreshCw, Coins, TrendingUp } from "lucide-react";
  import { useFUNMoneyContract } from "@/hooks/useFUNMoneyContract";
- import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
- import { useEffect, useState } from "react";
+ import { useCallback, useEffect, useState } from "react";
  import funMoneyLogo from "@/assets/fun-money-logo.png";
  
  export function FUNMoneyBalanceCard() {
-   const { isConnected, address, connect, hasWallet, shortAddress } = useWeb3Wallet();
-   const { contractInfo, fetchContractInfo, getContractAddress } = useFUNMoneyContract();
+   // useFUNMoneyContract already calls useWeb3Wallet internally - don't call it separately
+   const { 
+     isConnected, 
+     address, 
+     contractInfo, 
+     fetchContractInfo, 
+     getContractAddress 
+   } = useFUNMoneyContract();
+   
    const [isLoading, setIsLoading] = useState(false);
+   const [hasWallet, setHasWallet] = useState(false);
+ 
+   // Check if wallet exists on client side only
+   useEffect(() => {
+     setHasWallet(typeof window !== "undefined" && typeof (window as any).ethereum !== "undefined");
+   }, []);
  
    const contractAddress = getContractAddress();
+ 
+   const handleRefresh = useCallback(async () => {
+     setIsLoading(true);
+     await fetchContractInfo();
+     setIsLoading(false);
+   }, [fetchContractInfo]);
  
    useEffect(() => {
      if (isConnected && contractAddress) {
        handleRefresh();
      }
-   }, [isConnected, contractAddress]);
+   }, [isConnected, contractAddress, handleRefresh]);
  
-   const handleRefresh = async () => {
-     setIsLoading(true);
-     await fetchContractInfo();
-     setIsLoading(false);
-   };
+   const handleConnect = useCallback(async () => {
+     if (typeof window !== "undefined" && (window as any).ethereum) {
+       try {
+         await (window as any).ethereum.request({ method: "eth_requestAccounts" });
+         // Refresh will happen via the useEffect above when isConnected changes
+       } catch (error) {
+         console.error("Failed to connect wallet:", error);
+       }
+     }
+   }, []);
  
+   // Render logic - all hooks have been called above this point
    if (!hasWallet) {
      return (
        <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
@@ -66,7 +90,7 @@
              Kết nối ví để xem số dư FUN Money và claim reward về ví.
            </p>
            <Button 
-             onClick={connect}
+             onClick={handleConnect}
              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
            >
              <Wallet className="mr-2 h-4 w-4" />
@@ -76,6 +100,8 @@
        </Card>
      );
    }
+ 
+   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
  
    return (
      <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
