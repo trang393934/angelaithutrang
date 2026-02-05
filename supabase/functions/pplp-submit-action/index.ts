@@ -213,6 +213,51 @@ serve(async (req) => {
 
     console.log(`[PPLP] Action submitted: ${action.id} by ${userId} - ${body.platform_id}/${body.action_type} | canonical: ${canonicalHash.slice(0, 18)}...`);
 
+    // Auto-trigger scoring immediately after successful submit
+    let scoreResult = null;
+    try {
+      const scoreResponse = await fetch(`${supabaseUrl}/functions/v1/pplp-score-action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+        body: JSON.stringify({ action_id: action.id }),
+      });
+      
+      if (scoreResponse.ok) {
+        scoreResult = await scoreResponse.json();
+        console.log(`[PPLP] Auto-scored action ${action.id}: decision=${scoreResult.decision}, light_score=${scoreResult.light_score}`);
+      } else {
+        console.warn(`[PPLP] Auto-scoring returned non-ok status: ${scoreResponse.status}`);
+      }
+    } catch (scoreError) {
+      console.error('[PPLP] Auto-scoring failed, will be processed by batch:', scoreError);
+      // Continue without failing - batch processor will handle later
+    }
+
+    // Return response with score result if available
+    if (scoreResult && scoreResult.success) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          action_id: action.id,
+          status: scoreResult.decision === 'pass' ? 'scored' : 'rejected',
+          policy_version: policy.version,
+          canonical_hash: canonicalHash,
+          evidence_hash: evidenceHash,
+          base_reward: baseReward,
+          light_score: scoreResult.light_score,
+          final_reward: scoreResult.final_reward,
+          auto_scored: true,
+          message: scoreResult.decision === 'pass' 
+            ? `Action scored successfully! Light Score: ${scoreResult.light_score}` 
+            : 'Action submitted but did not pass scoring threshold.',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -222,7 +267,8 @@ serve(async (req) => {
         canonical_hash: canonicalHash,
         evidence_hash: evidenceHash,
         base_reward: baseReward,
-        message: 'Action submitted successfully. Awaiting scoring.',
+        auto_scored: false,
+        message: 'Action submitted successfully. Scoring will be processed shortly.',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
