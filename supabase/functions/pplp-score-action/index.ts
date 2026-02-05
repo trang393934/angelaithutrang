@@ -219,8 +219,14 @@ serve(async (req) => {
 
     if (action.status !== 'pending') {
       return new Response(
-        JSON.stringify({ error: 'Action already scored', current_status: action.status }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: true,
+          message: 'Action already scored',
+          current_status: action.status,
+          action_id: action.id,
+          decision: action.status === 'minted' ? 'pass' : 'pass',
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
