@@ -240,6 +240,10 @@ export function createMintPayload(params: {
 }): MintRequestPayload {
   const now = Math.floor(Date.now() / 1000);
   const validitySeconds = (params.validityHours || 24) * 3600;
+  // Buffer to avoid small clock skews between server time and blockchain time
+  // (prevents RequestTooEarly right after authorization)
+  const validAfter = Math.max(0, now - 60);
+  const WEI = 10n ** 18n;
   
   // Ensure evidenceHash is exactly 32 bytes (64 hex chars)
   let evidenceHash = params.evidenceHash;
@@ -261,11 +265,11 @@ export function createMintPayload(params: {
   return {
     to: params.recipientAddress,
     // Scale to 18 decimals (FUN Money has 18 decimals like ETH)
-    amount: BigInt(params.amount) * BigInt(10 ** 18),
+    amount: BigInt(params.amount) * WEI,
     actionId: uuidToBytes32(params.actionId),
     evidenceHash: evidenceHash,
     policyVersion: params.policyVersion,
-    validAfter: now,
+    validAfter,
     validBefore: now + validitySeconds,
     nonce: normalizedNonce,
   };

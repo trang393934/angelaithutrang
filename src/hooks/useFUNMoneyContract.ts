@@ -27,6 +27,47 @@ interface ContractInfo {
   userNonce: number;
 }
 
+function extractRevertData(err: any): string | null {
+  const candidates: unknown[] = [
+    err?.data,
+    err?.info?.error?.data,
+    err?.error?.data,
+    err?.cause?.data,
+    err?.cause?.info?.error?.data,
+  ];
+
+  for (const c of candidates) {
+    if (typeof c === "string" && c.startsWith("0x") && c.length > 2 && c !== "0x") return c;
+    if (c && typeof c === "object") {
+      const maybe = (c as any)?.data;
+      if (typeof maybe === "string" && maybe.startsWith("0x") && maybe.length > 2 && maybe !== "0x") return maybe;
+    }
+  }
+
+  return null;
+}
+
+function formatMintErrorFromParsedError(parsed: { name: string; args: any[] }): string {
+  const base = MINT_ERROR_MESSAGES[parsed.name];
+  if (parsed.name === "InvalidNonce") {
+    const expected = parsed.args?.[0]?.toString?.() ?? String(parsed.args?.[0] ?? "");
+    const provided = parsed.args?.[1]?.toString?.() ?? String(parsed.args?.[1] ?? "");
+    return `${base || "Nonce không khớp"} (expected ${expected}, got ${provided})`;
+  }
+  if (parsed.name === "PolicyVersionMismatch") {
+    const expected = parsed.args?.[0]?.toString?.() ?? String(parsed.args?.[0] ?? "");
+    const provided = parsed.args?.[1]?.toString?.() ?? String(parsed.args?.[1] ?? "");
+    return `${base || "Phiên bản chính sách không khớp"} (expected ${expected}, got ${provided})`;
+  }
+  if (parsed.name === "RequestTooEarly") {
+    return base || "Yêu cầu chưa đến thời gian hiệu lực.";
+  }
+  if (parsed.name === "RequestExpired") {
+    return base || "Yêu cầu đã hết hạn.";
+  }
+  return base || `Mint thất bại: ${parsed.name}`;
+}
+
 // Get ethereum provider from window
 function getEthereumProvider(): ethers.BrowserProvider | null {
   if (typeof window !== "undefined" && (window as any).ethereum) {
@@ -45,6 +86,8 @@ export function useFUNMoneyContract() {
     txHash: null,
     error: null,
   });
+
+  const iface = useMemo(() => new ethers.Interface(FUN_MONEY_ABI as any), []);
 
   // Get contract address for current chain
   const getContractAddress = useCallback(() => {
@@ -167,10 +210,47 @@ export function useFUNMoneyContract() {
     setMintStatus({ isLoading: true, txHash: null, error: null });
 
     try {
+      // Network guard
+      if (chainId && chainId !== 97) {
+        throw new Error("Vui lòng chuyển mạng sang BSC Testnet (chainId 97) rồi thử lại.");
+      }
+
       // Check if already minted
       const alreadyMinted = await isActionMinted(signedRequest.actionId);
       if (alreadyMinted) {
         throw new Error("Action này đã được mint trước đó");
+      }
+
+      // Policy version guard
+      try {
+        const onChainPolicyVersion = await contract.currentPolicyVersion();
+        if (Number(onChainPolicyVersion) !== signedRequest.policyVersion) {
+          throw new Error(
+            formatMintErrorFromParsedError({
+              name: "PolicyVersionMismatch",
+              args: [onChainPolicyVersion, signedRequest.policyVersion],
+            })
+          );
+        }
+      } catch {
+        // If policy version read fails, continue (we'll simulate below)
+      }
+
+      // Signer role guard (prevents opaque reverts)
+      if (signedRequest.signer) {
+        let hasSignerRole: boolean | null = null;
+        try {
+          const signerRole = await contract.SIGNER_ROLE();
+          hasSignerRole = await contract.hasRole(signerRole, signedRequest.signer);
+        } catch {
+          hasSignerRole = null;
+        }
+
+        if (hasSignerRole === false) {
+          throw new Error(
+            "Treasury chưa được cấp SIGNER_ROLE trên contract (cần admin gọi grantSigner)."
+          );
+        }
       }
 
       // Preflight check: verify nonce matches on-chain
@@ -192,6 +272,9 @@ export function useFUNMoneyContract() {
         validBefore: signedRequest.validBefore,
         nonce: signedRequest.nonce,
       };
+
+      // Simulation first: gives accurate revert reason + prevents wasting gas
+      await contract.mintWithSignature.staticCall(mintRequest, signedRequest.signature);
 
       // Execute mint transaction
       const tx = await contract.mintWithSignature(mintRequest, signedRequest.signature);
@@ -222,41 +305,69 @@ export function useFUNMoneyContract() {
       console.error("Mint failed:", error);
       
       let errorMessage = "Mint thất bại";
-      
-      if (error.reason) {
-        errorMessage = error.reason;
-      } else if (error.shortMessage) {
-        // Try to extract custom error name from shortMessage
-        const shortMsg = error.shortMessage;
-        for (const [errorName, message] of Object.entries(MINT_ERROR_MESSAGES)) {
-          if (shortMsg.includes(errorName)) {
-            errorMessage = message;
-            break;
+
+      // 1) Try decode custom errors from revert data
+      const revertData = extractRevertData(error);
+      if (revertData) {
+        try {
+          const parsed = iface.parseError(revertData);
+          if (parsed?.name) {
+            errorMessage = formatMintErrorFromParsedError({ name: parsed.name, args: parsed.args as any[] });
           }
+        } catch {
+          // ignore
         }
-        if (errorMessage === "Mint thất bại") {
-          errorMessage = shortMsg;
-        }
-      } else if (error.message) {
-        // Parse common errors
-        if (error.message.includes("action already minted")) {
-          errorMessage = "Action này đã được mint";
-        } else if (error.message.includes("expired")) {
-          errorMessage = "Request đã hết hạn";
-        } else if (error.message.includes("invalid signer")) {
-          errorMessage = "Chữ ký không hợp lệ";
-        } else if (error.message.includes("epoch cap")) {
-          errorMessage = "Đã đạt giới hạn epoch";
-        } else if (error.message.includes("user cap")) {
-          errorMessage = "Đã đạt giới hạn cá nhân";
-        } else if (error.message.includes("user rejected")) {
-          errorMessage = "Người dùng từ chối giao dịch";
-        } else if (error.message.includes("InvalidNonce")) {
-          errorMessage = MINT_ERROR_MESSAGES.InvalidNonce;
-        } else if (error.message.includes("InvalidSigner")) {
-          errorMessage = MINT_ERROR_MESSAGES.InvalidSigner;
-        } else {
-          errorMessage = error.message;
+      }
+
+      // 2) If no revert data (common when ABI/contract mismatch), show explicit guidance
+      if (
+        errorMessage === "Mint thất bại" &&
+        (String(error?.shortMessage || "").includes("missing revert data") ||
+          String(error?.shortMessage || "").includes("could not decode") ||
+          String(error?.message || "").includes("missing revert data") ||
+          String(error?.message || "").includes("could not decode") ||
+          String(error?.message || "").includes("require(false)"))
+      ) {
+        errorMessage =
+          "Lỗi contract/ABI hoặc sai mạng. Hãy kiểm tra bạn đang ở BSC Testnet (97) và địa chỉ contract FUN Money đúng.";
+      }
+      
+      if (errorMessage === "Mint thất bại") {
+        if (error.reason) {
+          errorMessage = error.reason;
+        } else if (error.shortMessage) {
+          // Try to extract custom error name from shortMessage
+          const shortMsg = error.shortMessage;
+          for (const [errorName, message] of Object.entries(MINT_ERROR_MESSAGES)) {
+            if (shortMsg.includes(errorName)) {
+              errorMessage = message;
+              break;
+            }
+          }
+          if (errorMessage === "Mint thất bại") {
+            errorMessage = shortMsg;
+          }
+        } else if (error.message) {
+          // Parse common errors
+          if (error.message.includes("action already minted")) {
+            errorMessage = "Action này đã được mint";
+          } else if (error.message.includes("expired")) {
+            errorMessage = "Request đã hết hạn";
+          } else if (error.message.includes("invalid signer")) {
+            errorMessage = "Chữ ký không hợp lệ";
+          } else if (error.message.includes("epoch cap")) {
+            errorMessage = "Đã đạt giới hạn epoch";
+          } else if (error.message.includes("user cap")) {
+            errorMessage = "Đã đạt giới hạn cá nhân";
+          } else if (error.message.includes("user rejected")) {
+            errorMessage = "Người dùng từ chối giao dịch";
+          } else if (error.message.includes("InvalidNonce")) {
+            errorMessage = MINT_ERROR_MESSAGES.InvalidNonce;
+          } else if (error.message.includes("InvalidSigner")) {
+            errorMessage = MINT_ERROR_MESSAGES.InvalidSigner;
+          } else {
+            errorMessage = error.message;
+          }
         }
       }
 
@@ -265,7 +376,7 @@ export function useFUNMoneyContract() {
       
       return null;
     }
-  }, [contract, signer, isActionMinted, fetchContractInfo]);
+  }, [contract, signer, isActionMinted, fetchContractInfo, chainId, iface]);
 
   // Request mint authorization from PPLP Engine
   const requestMintAuthorization = useCallback(async (actionId: string): Promise<SignedMintRequest | null> => {
