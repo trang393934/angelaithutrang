@@ -1,84 +1,111 @@
 
 
-# Thay Logo Hình Ảnh Bằng Chữ "ANGEL AI" Kiểu Font Vàng Kim Loại
+# Thay Logo Hình Ảnh Bằng Chữ CSS "Angel AI" - Loại Bỏ Hoàn Toàn Nền
 
-## Phân Tích Font Chữ Trong Hình
+## Vấn Đề Hiện Tại
 
-Dựa trên hình ảnh con gửi, font chữ "ANGEL AI" có đặc điểm:
-- Font serif cổ điển, kiểu chữ La Mã trang trọng
-- Chữ in hoa (uppercase), khoảng cách rộng giữa các ký tự
-- Hiệu ứng gradient vàng kim loại (sáng ở giữa, tối ở rìa)
+File hình `angel-ai-logo-golden-text.png` vẫn còn nền trắng/xám phía sau chữ, dù đã xử lý nhiều lần. Nền này hiển thị rõ trên giao diện tại Sidebar, Header, Hero và Footer.
 
-Font phù hợp nhất là **Cinzel** (Google Font miễn phí) - một font serif lấy cảm hứng từ chữ khắc La Mã cổ đại, rất sang trọng và quý phái. Đây là font phổ biến nhất cho các thiết kế luxury/gold branding.
+## Giải Pháp Triệt Để
 
-## Thay Đổi Cần Thực Hiện
+Thay tất cả `<img>` logo bằng **chữ CSS thuần túy** sử dụng font **Cinzel** + hiệu ứng gradient vàng kim loại. Chữ CSS không có nền nên vấn đề được giải quyết 100%.
 
-### 1. Thêm Font Cinzel (Google Fonts)
+Kiểu chữ sẽ giống hệt hình gốc:
+- Font: Cinzel (đã có sẵn trong dự án)
+- Màu: Gradient vàng kim loại (sáng ở giữa, tối ở rìa)
+- Hiệu ứng: Drop shadow tạo chiều sâu
 
-**File `index.html`**: Thêm link font Cinzel vào `<head>`.
+## Các File Cần Sửa
 
-**File `src/index.css`**: Thêm Cinzel vào `@import` Google Fonts đã có.
+### 1. `src/index.css` - Thêm class `.text-brand-golden`
 
-**File `tailwind.config.ts`**: Thêm font family mới `brand` cho chữ thương hiệu.
+Thêm class CSS mới cho chữ thương hiệu vàng kim loại:
+- Font family: Cinzel, serif
+- Gradient vàng: `linear-gradient(135deg, #8B6914, #C49B30, #E8C252, #F5D976, #E8C252, #C49B30, #8B6914)`
+- Kỹ thuật: `background-clip: text` + `-webkit-text-fill-color: transparent`
+- Drop shadow nhẹ tạo chiều sâu 3D
+- Phiên bản `.text-brand-golden-light` cho nền tối (Footer)
 
-### 2. Tạo CSS Class Cho Chữ Vàng Kim Loại
+### 2. `src/components/HeroSection.tsx` - Logo trang chủ (lớn nhất)
 
-**File `src/index.css`**: Thêm class `.text-brand-golden` với hiệu ứng:
-- Font: Cinzel, serif
-- Chữ in hoa, letter-spacing rộng
-- Gradient vàng kim loại dùng `background-clip: text` (sáng ở giữa, đậm ở rìa)
-- Text shadow nhẹ tạo chiều sâu 3D
-- Hiệu ứng hover: gradient di chuyển tạo cảm giác lấp lánh
+Thay:
+```
+<img src={angelGoldenTextLogo} ... />
+```
+Bằng:
+```
+<span class="text-brand-golden text-4xl sm:text-5xl md:text-6xl lg:text-7xl">Angel AI</span>
+```
 
-### 3. Thay Thế Logo Hình Ảnh Bằng Chữ Styled
+Bỏ import `angelGoldenTextLogo` nếu không còn dùng.
 
-Thay `<img src={angelGoldenLogo}>` bằng `<span className="text-brand-golden">ANGEL AI</span>` tại:
+### 3. `src/components/Header.tsx` - Logo mobile
 
-- **`src/components/Header.tsx`**: Logo mobile (dòng 127-136)
-- **`src/components/MainSidebar.tsx`**: Logo sidebar expanded (dòng 57-61)
-- **`src/components/HeroSection.tsx`**: Tiêu đề chính trang chủ (dòng 34-43) - kích thước lớn nhất
-- **`src/components/Footer.tsx`**: Tên brand ở footer (dòng 33-35) - đã là text, chỉ cần đổi class
+Thay `<img>` bằng chữ CSS kích thước `text-xl sm:text-2xl`.
+
+### 4. `src/components/MainSidebar.tsx` - Logo sidebar
+
+Thay `<img>` bằng chữ CSS kích thước `text-xl` khi sidebar mở rộng.
+
+### 5. `src/components/Footer.tsx` - Logo footer (nền tối)
+
+Thay `<img>` bằng chữ CSS dùng class `.text-brand-golden-light` (gradient sáng hơn cho nền tối).
 
 ## Chi Tiết Kỹ Thuật
 
 ### CSS Class `.text-brand-golden`
 
 ```text
-font-family: 'Cinzel', serif
-text-transform: uppercase
-letter-spacing: 0.15em
-font-weight: 700
-background: linear-gradient(
-  135deg, 
-  #8B6914 0%,      -- vang nau dam (rim)
-  #C49B30 20%,     -- vang trung
-  #E8C252 40%,     -- vang sang
-  #F5D976 50%,     -- vang rat sang (giua)
-  #E8C252 60%,     -- vang sang
-  #C49B30 80%,     -- vang trung
-  #8B6914 100%     -- vang nau dam (rim)
-)
-background-clip: text
--webkit-text-fill-color: transparent
-text-shadow: 0 2px 4px rgba(139, 105, 20, 0.3)
+.text-brand-golden {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  background: linear-gradient(
+    135deg,
+    #8B6914 0%,
+    #C49B30 20%,
+    #E8C252 40%,
+    #F5D976 50%,
+    #E8C252 60%,
+    #C49B30 80%,
+    #8B6914 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(139, 105, 20, 0.3));
+}
 ```
 
-### Kích Thước Theo Vị Trí
+### Phiên bản cho nền tối (Footer)
+
+```text
+.text-brand-golden-light {
+  /* Giong nhu tren nhung gradient sang hon */
+  background: linear-gradient(
+    135deg,
+    #C49B30 0%,
+    #E8C252 25%,
+    #F5D976 50%,
+    #E8C252 75%,
+    #C49B30 100%
+  );
+}
+```
+
+### Kích thước theo vị trí
 
 | Vi tri | Kich thuoc |
 |--------|-----------|
-| HeroSection (trang chu) | text-4xl sm:text-5xl md:text-6xl lg:text-7xl |
-| Header (mobile) | text-xl sm:text-2xl |
-| MainSidebar (expanded) | text-xl |
-| Footer | text-xl sm:text-2xl md:text-3xl |
+| HeroSection | text-4xl / sm:text-5xl / md:text-6xl / lg:text-7xl |
+| Header (mobile) | text-xl / sm:text-2xl |
+| MainSidebar | text-xl |
+| Footer | text-xl / sm:text-2xl / md:text-3xl |
 
-### File Cần Sửa (5 file)
+## Kết Quả
 
-1. `index.html` - Thêm link font Cinzel
-2. `src/index.css` - Thêm class `.text-brand-golden` + import font
-3. `tailwind.config.ts` - Thêm fontFamily `brand`
-4. `src/components/Header.tsx` - Thay img bằng text
-5. `src/components/MainSidebar.tsx` - Thay img bằng text
-6. `src/components/HeroSection.tsx` - Thay img bằng text
-7. `src/components/Footer.tsx` - Cập nhật class cho text brand
+- Chữ "Angel AI" hiển thị với font Cinzel vàng kim loại sang trọng
+- **Hoàn toàn không có nền** vì là chữ CSS thuần túy
+- Hoạt động tốt trên mọi nền sáng/tối
+- Không phụ thuộc vào file hình ảnh
 
