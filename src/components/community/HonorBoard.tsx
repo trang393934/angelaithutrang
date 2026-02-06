@@ -32,35 +32,50 @@ const StatItem = ({
     transition={{ delay, duration: 0.4 }}
     className="relative group"
   >
-    {/* Metallic Gold 3D border effect - outer glow (brighter) */}
-    <div className="absolute -inset-[4px] rounded-full bg-gradient-to-b from-yellow-300 via-amber-400 to-yellow-500 opacity-100 shadow-[0_0_12px_rgba(255,215,0,0.6)] group-hover:shadow-[0_0_20px_rgba(255,215,0,0.8)] transition-all duration-300" />
+    {/* Outer glow - bright gold shimmer */}
+    <div className="absolute -inset-[4px] rounded-full opacity-100 shadow-[0_0_16px_rgba(255,215,0,0.7)] group-hover:shadow-[0_0_24px_rgba(255,215,0,0.9)] transition-all duration-300"
+      style={{ background: 'linear-gradient(180deg, #FFE082 0%, #FFD54F 30%, #FFC107 50%, #FFB300 70%, #FF8F00 100%)' }}
+    />
     
-    {/* Metallic Gold 3D border - middle highlight (brighter) */}
-    <div className="absolute -inset-[3px] rounded-full bg-gradient-to-b from-yellow-200 via-yellow-300 to-amber-400 shadow-[0_0_8px_rgba(255,223,0,0.5)]" />
+    {/* Middle metallic band */}
+    <div className="absolute -inset-[3px] rounded-full"
+      style={{ background: 'linear-gradient(180deg, #FFF8E1 0%, #FFE082 25%, #FFD54F 50%, #FFC107 75%, #FFB300 100%)' }}
+    />
     
-    {/* Inner bright highlight for 3D depth */}
-    <div className="absolute -inset-[2px] rounded-full bg-gradient-to-b from-yellow-100 via-amber-200 to-yellow-400 shadow-[inset_0_2px_4px_rgba(255,255,255,1),inset_0_-2px_4px_rgba(180,130,0,0.4)]" />
+    {/* Inner highlight for 3D depth */}
+    <div className="absolute -inset-[2px] rounded-full shadow-[inset_0_2px_6px_rgba(255,255,255,1),inset_0_-2px_6px_rgba(180,130,0,0.5)]"
+      style={{ background: 'linear-gradient(180deg, #FFFDE7 0%, #FFF9C4 30%, #FFE082 60%, #FFD54F 100%)' }}
+    />
     
-    {/* Main content */}
-    <div className="relative flex items-center justify-between px-5 py-3 rounded-full bg-gradient-to-r from-primary-deep via-primary to-primary-deep text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+    {/* Main content - rich dark gold background */}
+    <div className="relative flex items-center justify-between px-5 py-3 rounded-full text-white overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #5D4037 0%, #795548 20%, #8D6E63 40%, #6D4C41 60%, #5D4037 80%, #4E342E 100%)', boxShadow: '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,235,170,0.2)' }}
+    >
+      {/* Shimmer sweep on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,245,200,0.3) 45%, transparent 55%)' }}
+      />
+      
       {/* Left side - Icon and label */}
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm border border-yellow-400/30">
-          <Icon className="w-4 h-4 text-white" />
+      <div className="flex items-center gap-3 relative">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm border border-yellow-400/40"
+          style={{ background: 'linear-gradient(135deg, rgba(255,215,0,0.25) 0%, rgba(255,235,170,0.15) 100%)' }}
+        >
+          <Icon className="w-4 h-4 text-yellow-200 drop-shadow-[0_0_3px_rgba(255,215,0,0.6)]" />
         </div>
-        <span className="font-semibold text-sm tracking-wide uppercase">{label}</span>
+        <span className="font-semibold text-sm tracking-wide uppercase text-yellow-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{label}</span>
       </div>
       
       {/* Right side - Value */}
-      <div className="flex items-center gap-1.5">
-        <span className="font-bold text-lg tracking-wider">
+      <div className="flex items-center gap-1.5 relative">
+        <span className="font-bold text-lg tracking-wider text-yellow-100 drop-shadow-[0_0_4px_rgba(255,215,0,0.4)]">
           {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
         </span>
         {isCoin && (
           <motion.span
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="text-yellow-300"
+            className="text-yellow-300 drop-shadow-[0_0_4px_rgba(255,215,0,0.6)]"
           >
             ©
           </motion.span>
@@ -224,14 +239,25 @@ export function HonorBoard() {
           </div>
           
           <h2 className="text-2xl font-bold tracking-wider uppercase relative">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
+            <span className="text-transparent bg-clip-text drop-shadow-[0_0_12px_rgba(255,215,0,0.6)]"
+              style={{
+                backgroundImage: 'linear-gradient(135deg, #8B6914 0%, #C49B30 15%, #E8C252 30%, #F5D976 45%, #FFF4C8 55%, #F5D976 65%, #E8C252 80%, #C49B30 90%, #8B6914 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+              }}
+            >
               {t("leaderboard.honorBoard")}
             </span>
             {/* Sparkle overlay effect */}
             <motion.span
-              className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-white to-yellow-100 opacity-0"
-              animate={{ opacity: [0, 0.8, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-0 text-transparent bg-clip-text opacity-0"
+              style={{
+                backgroundImage: 'linear-gradient(135deg, transparent 20%, rgba(255,255,255,0.95) 50%, transparent 80%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+              }}
+              animate={{ opacity: [0, 0.9, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             >
               {t("leaderboard.honorBoard")}
             </motion.span>
