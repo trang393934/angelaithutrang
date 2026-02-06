@@ -396,6 +396,13 @@ const AdminDashboard = () => {
                 <Heart className="w-4 h-4" />
                 Quỹ
               </Link>
+              <Link
+                to="/admin/mint-stats"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-divine-gold hover:bg-amber-50 transition-colors"
+              >
+                <Sparkles className="w-4 h-4" />
+                FUN Money
+              </Link>
               <button
                 onClick={() => signOut().then(() => navigate("/"))}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
