@@ -10,7 +10,389 @@ export interface PPLPKnowledgeTemplate {
   title: string;
   description: string;
   icon: string;
-  category: 'mint_guide' | 'pillars' | 'distribution' | 'actions' | 'anti_fraud' | 'policy_json';
+  category: 'mint_guide' | 'pillars' | 'distribution' | 'actions' | 'anti_fraud' | 'policy_json' | 'technical_spec';
+  content: string;
+}
+
+// Technical Spec template content
+const TECHNICAL_SPEC_CONTENT = `# PPLP TECHNICAL SPEC v1.0 + SMART CONTRACT FUN MONEY MINT ENGINE
+
+## 1. MỤC TIÊU HỆ THỐNG
+
+PPLP phải làm được 6 việc kỹ thuật (đo được, audit được):
+
+1. **Chuẩn hóa "Light Action"** - Hành động tạo giá trị Ánh Sáng thành dữ liệu có cấu trúc
+2. **Thu thập bằng chứng (Evidence)** + chống gian lận
+3. **Chấm điểm (Light Score)** theo 5 trụ cột PPLP
+4. **Quyết định Mint** theo công thức multiplier
+5. **Cập nhật Reputation** (Light Reputation/Badge/Score)
+6. **Audit/Governance**: minh bạch, truy vết, khiếu nại
+
+---
+
+## 2. KIẾN TRÚC HỆ THỐNG (System Architecture)
+
+### 2.1 Các thành phần
+
+#### A. Platform Adapters (FUN Platforms)
+- FUN Profile, FUN Academy, FUN Charity, FUN Earth, FUN Play
+- FUN Farm, FUN Market, FUN Wallet, FUNLife/Cosmic Game
+- FUN Trading, FUN Invest, FUN Legal, FUN Planet, Angel AI
+- **Mỗi platform phát sinh Action Event + Evidence**
+
+#### B. PPLP Engine (Rule Engine + Scoring)
+- Nhận action + evidence
+- Tính điểm 5 trụ cột
+- Tính reward theo mint formula
+- Gửi "Mint Authorization" xuống blockchain
+
+#### C. Angel AI (Light Oracle)
+- Chấm Quality/Impact
+- Phát hiện spam/collusion/anomaly
+- Gợi ý multiplier (không tự quyết tuyệt đối nếu governance yêu cầu)
+
+#### D. Identity & Reputation Layer
+- FUN Profile DID (hybrid)
+- Reputation gating (cap, tier)
+
+#### E. On-chain FUN Money Mint Engine
+- BEP-20 token (FUN Money)
+- Mint chỉ khi có chữ ký/ủy quyền từ PPLP Signer + cap theo epoch
+
+#### F. FUN Legal / Governance
+- Policy/ruleset versioning
+- Dispute workflow + slashing (tuỳ pha)
+
+---
+
+## 3. DATA MODEL (Chuẩn hóa dữ liệu)
+
+### 3.1 Action Types (enum)
+
+Ví dụ action type chuẩn hóa:
+- LEARN_COMPLETE
+- PROJECT_SUBMIT
+- MENTOR_HELP
+- CONTENT_CREATE
+- CONTENT_REVIEW
+- DONATE
+- VOLUNTEER
+- TREE_PLANT
+- CLEANUP_EVENT
+- FARM_DELIVERY
+- MARKET_FAIR_TRADE
+- BUG_BOUNTY
+- GOV_PROPOSAL
+- DISPUTE_RESOLVE
+- DAILY_RITUAL (FUNLife)
+
+### 3.2 LightAction Object (Off-chain canonical)
+
+\\\`\\\`\\\`json
+{
+  "actionId": "uuid-or-hash",
+  "platformId": "FUN_ACADEMY",
+  "actionType": "LEARN_COMPLETE",
+  "actor": "0xUserAddress",
+  "timestamp": 1730000000,
+  "metadata": {
+    "courseId": "COURSE_001",
+    "lessonCount": 12,
+    "durationSec": 5400,
+    "language": "vi"
+  },
+  "evidence": [
+    {"type":"QUIZ_SCORE", "value": 92, "uri":"ipfs://..."},
+    {"type":"CERT", "uri":"ipfs://..."}
+  ],
+  "impact": {
+    "beneficiaries": 1,
+    "measurableOutcome": "passed",
+    "impactUri": "ipfs://..."
+  },
+  "integrity": {
+    "deviceHash":"...",
+    "sessionSignals":"...",
+    "antiSybilScore": 0.86
+  }
+}
+\\\`\\\`\\\`
+
+### 3.3 Evidence Anchoring
+
+- Evidence lưu off-chain (IPFS/Arweave/DB)
+- Anchor hash lên chain hoặc ký số:
+  - \\\`evidenceHash = keccak256(canonical_json)\\\`
+- Mint request phải chứa: evidenceHash, policyVersion, actionId
+
+---
+
+## 4. PPLP SCORING & MINT FORMULA
+
+### 4.1 5 Pillars Score (0–100 mỗi trụ cột)
+
+| Pillar | Ý nghĩa |
+|--------|---------|
+| S | Service to Life (0–100) |
+| T | Truth & Transparency (0–100) |
+| H | Healing & Compassion (0–100) |
+| C | Contribution Durability (0–100) |
+| U | Unity Alignment (0–100) |
+
+### 4.2 Công thức Light Score
+
+\\\`\\\`\\\`
+LightScore = 0.25×S + 0.20×T + 0.20×H + 0.20×C + 0.15×U
+\\\`\\\`\\\`
+
+### 4.3 Threshold theo Action Type
+
+| Action | Light Score | Truth | Service | Unity |
+|--------|-------------|-------|---------|-------|
+| LEARN_COMPLETE | ≥60 | ≥70 | - | - |
+| DONATE | ≥65 | ≥80 | ≥70 | - |
+| MENTOR_HELP | ≥70 | - | - | ≥70 |
+| CONTENT_CREATE | ≥65 | - | - | - |
+
+### 4.4 Mint Formula
+
+\\\`\\\`\\\`
+FUN Mint = BaseReward × Q × I × K
+\\\`\\\`\\\`
+
+Trong đó:
+- **BaseReward**: theo actionType + platform (đơn vị FUN)
+- **Q = QualityMultiplier** (0.5 – 3.0): Angel AI + community signals + rubric
+- **I = ImpactMultiplier** (0.5 – 5.0): impact proofs + verified partner
+- **K = IntegrityMultiplier** (0 – 1.0): antiSybilScore, anomaly detection, stake tier
+
+### 4.5 Reward Cap & Rate Limit
+
+Để chống farm:
+- Cap theo epoch (ngày/tuần): epochMintCap
+- Cap theo user: userDailyCap, userEpochCap
+- Cap theo actionType: actionTypeCap
+- Diminishing returns khi spam: lặp action quá dày → giảm Q hoặc BaseReward
+
+---
+
+## 5. ANTI-FRAUD SPEC
+
+### 5.1 MVP Anti-Sybil (nhẹ nhàng)
+
+- Device fingerprint (hash)
+- Rate limit
+- Social graph signals (FUN Profile)
+- Reputation gating:
+  - Tier 0: cap thấp
+  - Tier 1+: cap tăng khi history tốt
+
+### 5.2 Nâng cấp (Future)
+
+- Proof-of-personhood (tuỳ khu vực)
+- zk-attestation
+- Stake-for-trust (dùng Camly Coin/FUN Money) để mở cap thưởng cao hơn
+- Random audit + dispute
+
+---
+
+## 6. ON-CHAIN INTERFACE SPEC (Mint Authorization)
+
+### 6.1 Mint Request Payload (EIP-712)
+
+| Trường | Type | Mô tả |
+|--------|------|-------|
+| to | address | User address |
+| amount | uint256 | Amount to mint |
+| actionId | bytes32 | Unique action ID |
+| evidenceHash | bytes32 | Hash of evidence |
+| policyVersion | uint32 | Policy version |
+| validAfter | uint64 | Start time |
+| validBefore | uint64 | Expiry time |
+| nonce | uint256 | User nonce |
+
+### 6.2 Quy tắc
+
+- Mỗi actionId chỉ mint 1 lần (idempotent)
+- Request hết hạn → reject
+- Signer phải là PPLP Signer (đa chữ ký / governance)
+
+---
+
+## 7. FUN MONEY SMART CONTRACT — MINT ENGINE
+
+### Contract: FUNMoney.sol (Solidity / BEP-20)
+
+\\\`\\\`\\\`solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+/*
+  FUN Money (BEP-20/ERC-20) + PPLP Mint Engine
+  - Mint authorized by off-chain PPLP signer
+  - Prevent double-mint per actionId
+  - Epoch mint cap + user epoch cap
+  - EIP-712 typed signature verification
+*/
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+contract FUNMoney is ERC20, AccessControl, EIP712 {
+    using ECDSA for bytes32;
+
+    bytes32 public constant ADMIN_ROLE  = DEFAULT_ADMIN_ROLE;
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 public constant SIGNER_ROLE = keccak256("SIGNER_ROLE");
+
+    // Mint replay protection
+    mapping(bytes32 => bool) public mintedAction;
+
+    // Nonce per user
+    mapping(address => uint256) public nonces;
+
+    // Epoch caps
+    uint256 public epochDurationSec = 1 days;
+    mapping(uint256 => uint256) public mintedInEpoch;
+
+    uint256 public epochMintCap;
+    uint256 public userEpochCap;
+    mapping(uint256 => mapping(address => uint256)) public userMintedInEpoch;
+
+    bool public mintingEnabled = true;
+
+    bytes32 public constant MINT_TYPEHASH = keccak256(
+        "MintRequest(address to,uint256 amount,bytes32 actionId,bytes32 evidenceHash,uint32 policyVersion,uint64 validAfter,uint64 validBefore,uint256 nonce)"
+    );
+
+    struct MintRequest {
+        address to;
+        uint256 amount;
+        bytes32 actionId;
+        bytes32 evidenceHash;
+        uint32 policyVersion;
+        uint64 validAfter;
+        uint64 validBefore;
+        uint256 nonce;
+    }
+
+    function mintWithSignature(MintRequest calldata req, bytes calldata signature) external {
+        require(mintingEnabled, "minting disabled");
+        require(req.to != address(0), "to=0");
+        require(req.amount > 0, "amount=0");
+        require(block.timestamp >= req.validAfter, "too early");
+        require(block.timestamp <= req.validBefore, "expired");
+        require(!mintedAction[req.actionId], "action already minted");
+        require(req.nonce == nonces[req.to], "bad nonce");
+
+        bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(
+            MINT_TYPEHASH,
+            req.to, req.amount, req.actionId, req.evidenceHash,
+            req.policyVersion, req.validAfter, req.validBefore, req.nonce
+        )));
+
+        address recovered = digest.recover(signature);
+        require(hasRole(SIGNER_ROLE, recovered), "invalid signer");
+
+        uint256 epoch = block.timestamp / epochDurationSec;
+        require(mintedInEpoch[epoch] + req.amount <= epochMintCap, "epoch cap exceeded");
+        require(userMintedInEpoch[epoch][req.to] + req.amount <= userEpochCap, "user cap exceeded");
+
+        mintedAction[req.actionId] = true;
+        nonces[req.to] += 1;
+        mintedInEpoch[epoch] += req.amount;
+        userMintedInEpoch[epoch][req.to] += req.amount;
+
+        _mint(req.to, req.amount);
+    }
+}
+\\\`\\\`\\\`
+
+### 7.1 Flow triển khai
+
+1. **Off-chain PPLP Engine** tính amount theo công thức Base × Q × I × K
+2. **Engine tạo MintRequest** (actionId, evidenceHash, policyVersion, time window, nonce)
+3. **PPLP Signer** (multisig/guardian) ký EIP-712
+4. **Platform hoặc user** gọi mintWithSignature(req, sig)
+5. **On-chain kiểm tra**:
+   - actionId chưa mint
+   - nonce đúng
+   - signer hợp lệ
+   - caps không vượt
+   - chưa hết hạn
+6. **Mint thành công** → event log để audit
+
+---
+
+## 8. POLICY VERSIONING
+
+- Request chứa policyVersion
+- policyVersion map sang policy file off-chain (IPFS hash)
+- Governance cập nhật policyVersion khi chỉnh threshold/caps/formula
+- Khuyến nghị: lưu mapping policyVersion -> policyHash on-chain
+
+---
+
+## 9. MVP TRIỂN KHAI (30–60 ngày)
+
+### Tuần 1–2
+- FUN Profile DID + basic reputation tier
+- PPLP Engine v0: scoring đơn giản, rule per actionType
+- Deploy FUNMoney contract (testnet)
+
+### Tuần 3–4
+- Angel AI v0: quality scoring (spam detection)
+- FUN Academy Learn & Earn v0 + FUN Charity v0
+- Mint pipeline end-to-end
+
+### Tuần 5–8
+- Add caps tuning + dispute reporting
+- Dashboard audit: minted per epoch / top actions / fraud flags
+- Prepare mainnet launch + signer multisig
+
+---
+
+## 10. HỢP ĐỒNG ĐÃ DEPLOY
+
+### BSC Testnet (Chain ID: 97)
+- **Contract**: FUNMoneyProductionV1_2_1
+- **Address**: 0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2
+- **Treasury Wallet**: 0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D
+
+### Vesting Flow (3 bước)
+1. lockWithPPLP() - Backend khóa token vào Treasury
+2. activate() - User kích hoạt
+3. claim() - User nhận về ví
+
+### EIP-712 Domain
+- name: "FUNMoney-PPLP"
+- version: "1"
+- chainId: 97
+- verifyingContract: 0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2
+
+---
+
+## 11. TÓM TẮT
+
+| Thành phần | Công nghệ |
+|------------|-----------|
+| Token | BEP-20 (FUN Money) |
+| Scoring | PPLP Engine (5 pillars) |
+| Oracle | Angel AI |
+| Signature | EIP-712 |
+| Anti-Fraud | Device fingerprint + rate limit + reputation tier |
+| Governance | Multisig + policy versioning |
+
+**Nguyên tắc cốt lõi**: Mint-to-Unity — thưởng cho đóng góp thực sự tạo giá trị cho cộng đồng, KHÔNG thưởng cho đầu cơ/gian lận.`;
+
+export interface PPLPKnowledgeTemplate {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: 'mint_guide' | 'pillars' | 'distribution' | 'actions' | 'anti_fraud' | 'policy_json' | 'technical_spec';
   content: string;
 }
 
@@ -992,6 +1374,14 @@ Risk Score = Σ(Signal Weight × Signal Value)
 4. FUN Legal xử lý tranh chấp phức tạp
 
 **Nguyên tắc**: Công bằng, minh bạch, bảo vệ người dùng trung thực.`
+  },
+  {
+    id: 'technical-spec-v1',
+    title: 'Technical Spec PPLP v1.0 + Smart Contract',
+    description: 'Kiến trúc hệ thống, data model, scoring formula, on-chain interface và Solidity code cho FUN Money Mint Engine',
+    icon: '⚙️',
+    category: 'technical_spec',
+    content: TECHNICAL_SPEC_CONTENT
   }
 ];
 
