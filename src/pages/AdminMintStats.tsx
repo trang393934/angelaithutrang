@@ -40,6 +40,24 @@ const ACTION_LABELS: Record<string, string> = {
   LEARN_COMPLETE: "Học tập",
 };
 
+const ACTION_SHORT: Record<string, string> = {
+  QUESTION_ASK: "Hỏi",
+  POST_CREATE: "Bài",
+  GRATITUDE_PRACTICE: "Ơn",
+  CONTENT_CREATE: "N.dung",
+  JOURNAL_WRITE: "N.ký",
+  LEARN_COMPLETE: "Học",
+};
+
+const ACTION_ICONS: Record<string, string> = {
+  QUESTION_ASK: "💬",
+  POST_CREATE: "📢",
+  GRATITUDE_PRACTICE: "🙏",
+  CONTENT_CREATE: "✍️",
+  JOURNAL_WRITE: "📝",
+  LEARN_COMPLETE: "📚",
+};
+
 interface UserPPLPRow {
   actor_id: string;
   display_name: string | null;
@@ -387,12 +405,12 @@ const AdminMintStats = () => {
 
   const SortHeader = ({ label, sortKeyName, className = "" }: { label: string; sortKeyName: SortKey; className?: string }) => (
     <TableHead
-      className={`cursor-pointer hover:text-primary transition-colors select-none whitespace-nowrap ${className}`}
+      className={`cursor-pointer hover:text-primary transition-colors select-none whitespace-nowrap px-2 py-2 text-xs ${className}`}
       onClick={() => toggleSort(sortKeyName)}
     >
-      <span className="flex items-center gap-1">
+      <span className="flex items-center gap-0.5">
         {label}
-        <ArrowUpDown className={`w-3 h-3 ${sortKey === sortKeyName ? "text-primary" : "text-muted-foreground/40"}`} />
+        <ArrowUpDown className={`w-2.5 h-2.5 flex-shrink-0 ${sortKey === sortKeyName ? "text-primary" : "text-muted-foreground/40"}`} />
       </span>
     </TableHead>
   );
@@ -583,102 +601,148 @@ const AdminMintStats = () => {
         </div>
 
         {/* Main Table */}
-        <Card className="border-divine-gold/20">
+        <Card className="border-primary/20">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Coins className="w-5 h-5 text-divine-gold" />
+            <CardTitle className="text-base flex items-center gap-2">
+              <Coins className="w-5 h-5 text-primary" />
               Chi tiết FUN Money theo User ({filteredRows.length} users)
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30">
-                    <TableHead className="w-12 text-center">#</TableHead>
-                    <SortHeader label="User" sortKeyName="display_name" className="min-w-[160px]" />
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-muted/30 border-b">
+                    <th className="px-2 py-2 text-center text-muted-foreground font-medium w-8">#</th>
+                    <th
+                      className="px-2 py-2 text-left font-medium cursor-pointer hover:text-primary transition-colors min-w-[130px]"
+                      onClick={() => toggleSort("display_name")}
+                    >
+                      <span className="flex items-center gap-0.5">
+                        User
+                        <ArrowUpDown className={`w-2.5 h-2.5 flex-shrink-0 ${sortKey === "display_name" ? "text-primary" : "text-muted-foreground/40"}`} />
+                      </span>
+                    </th>
                     {ACTION_TYPES.map((at) => (
-                      <SortHeader
+                      <th
                         key={at}
-                        label={ACTION_LABELS[at]}
-                        sortKeyName={at}
-                        className="text-right"
-                      />
+                        className="px-1.5 py-2 text-center font-medium cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => toggleSort(at)}
+                        title={ACTION_LABELS[at]}
+                      >
+                        <span className="flex flex-col items-center gap-0.5 leading-tight">
+                          <span className="text-base">{ACTION_ICONS[at]}</span>
+                          <span className="text-[10px] leading-none">{ACTION_SHORT[at]}</span>
+                          <ArrowUpDown className={`w-2 h-2 flex-shrink-0 ${sortKey === at ? "text-primary" : "text-muted-foreground/30"}`} />
+                        </span>
+                      </th>
                     ))}
-                    <SortHeader label="Tổng FUN" sortKeyName="total_fun" className="text-right" />
-                    <SortHeader label="Pass" sortKeyName="total_passed" className="text-center" />
-                    <SortHeader label="Avg LS" sortKeyName="avg_light_score" className="text-center" />
-                    <TableHead className="text-center whitespace-nowrap">Mint</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+                    <th
+                      className="px-2 py-2 text-center font-semibold cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => toggleSort("total_fun")}
+                    >
+                      <span className="flex flex-col items-center gap-0.5 leading-tight">
+                        <span className="text-base">💰</span>
+                        <span className="text-[10px] leading-none">Tổng</span>
+                        <ArrowUpDown className={`w-2 h-2 flex-shrink-0 ${sortKey === "total_fun" ? "text-primary" : "text-muted-foreground/30"}`} />
+                      </span>
+                    </th>
+                    <th
+                      className="px-2 py-2 text-center font-medium cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => toggleSort("total_passed")}
+                    >
+                      <span className="flex flex-col items-center gap-0.5 leading-tight">
+                        <span className="text-base">✅</span>
+                        <span className="text-[10px] leading-none">P/F</span>
+                        <ArrowUpDown className={`w-2 h-2 flex-shrink-0 ${sortKey === "total_passed" ? "text-primary" : "text-muted-foreground/30"}`} />
+                      </span>
+                    </th>
+                    <th
+                      className="px-2 py-2 text-center font-medium cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => toggleSort("avg_light_score")}
+                    >
+                      <span className="flex flex-col items-center gap-0.5 leading-tight">
+                        <span className="text-base">⭐</span>
+                        <span className="text-[10px] leading-none">LS</span>
+                        <ArrowUpDown className={`w-2 h-2 flex-shrink-0 ${sortKey === "avg_light_score" ? "text-primary" : "text-muted-foreground/30"}`} />
+                      </span>
+                    </th>
+                    <th className="px-2 py-2 text-center font-medium">
+                      <span className="flex flex-col items-center gap-0.5 leading-tight">
+                        <span className="text-base">⛏️</span>
+                        <span className="text-[10px] leading-none">Mint</span>
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
                   {filteredRows.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={ACTION_TYPES.length + 5} className="text-center py-12 text-muted-foreground">
+                    <tr>
+                      <td colSpan={ACTION_TYPES.length + 5} className="text-center py-12 text-muted-foreground">
                         {searchQuery ? "Không tìm thấy user nào" : "Chưa có dữ liệu PPLP"}
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                   ) : (
                     filteredRows.map((row, idx) => (
-                      <TableRow key={row.actor_id} className="hover:bg-muted/30">
-                        <TableCell className="text-center text-muted-foreground text-sm">{idx + 1}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
+                      <tr key={row.actor_id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                        <td className="px-2 py-2.5 text-center text-muted-foreground">{idx + 1}</td>
+                        <td className="px-2 py-2.5">
+                          <div className="flex items-center gap-1.5">
                             {row.avatar_url ? (
-                              <img src={row.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                              <img src={row.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                             ) : (
-                              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Users className="w-3.5 h-3.5 text-primary" />
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Users className="w-3 h-3 text-primary" />
                               </div>
                             )}
-                            <span className="font-medium text-sm truncate max-w-[120px]">
+                            <span className="font-medium truncate max-w-[100px]" title={row.display_name || row.actor_id}>
                               {row.display_name || row.actor_id.slice(0, 8) + "..."}
                             </span>
                           </div>
-                        </TableCell>
+                        </td>
                         {ACTION_TYPES.map((at) => {
                           const d = row.by_type[at];
                           return (
-                            <TableCell key={at} className="text-right text-sm tabular-nums">
+                            <td key={at} className="px-1.5 py-2.5 text-center tabular-nums">
                               {d && d.fun > 0 ? (
                                 <span className="font-medium">{formatNum(d.fun)}</span>
                               ) : (
-                                <span className="text-muted-foreground/40">—</span>
+                                <span className="text-muted-foreground/30">—</span>
                               )}
                               {d && (d.passed > 0 || d.failed > 0) && (
-                                <div className="text-[10px] text-muted-foreground">
+                                <div className="text-[9px] leading-none mt-0.5">
                                   <span className="text-green-600">{d.passed}✓</span>
-                                  {d.failed > 0 && <span className="text-red-400 ml-1">{d.failed}✗</span>}
+                                  {d.failed > 0 && <span className="text-red-400 ml-0.5">{d.failed}✗</span>}
                                 </div>
                               )}
-                            </TableCell>
+                            </td>
                           );
                         })}
-                        <TableCell className="text-right font-bold text-sm tabular-nums text-divine-gold">
+                        <td className="px-2 py-2.5 text-center font-bold tabular-nums text-primary">
                           {formatNum(row.total_fun)}
-                        </TableCell>
-                        <TableCell className="text-center text-sm">
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
                           <span className="text-green-600 font-medium">{row.total_passed}</span>
-                          <span className="text-muted-foreground/40 mx-0.5">/</span>
+                          <span className="text-muted-foreground/30">/</span>
                           <span className="text-red-400">{row.total_failed}</span>
-                        </TableCell>
-                        <TableCell className="text-center text-sm">
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
                           {row.avg_light_score > 0 ? (
                             <span className={row.avg_light_score >= 60 ? "text-green-600 font-medium" : "text-amber-600"}>
                               {row.avg_light_score}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground/40">—</span>
+                            <span className="text-muted-foreground/30">—</span>
                           )}
-                        </TableCell>
-                        <TableCell className="text-center">
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
                           {getMintBadge(row.mint_status)}
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     ))
                   )}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
