@@ -1,65 +1,57 @@
 
 
-# Thay Logo Hình Ảnh Bằng Chữ CSS "Angel AI" - Loại Bỏ Hoàn Toàn Nền
+# Thay Kiểu Chữ Logo "Angel AI" Sang Font Thảo Trang Trí (Ornate Script)
 
-## Vấn Đề Hiện Tại
+## Mục Tieu
 
-File hình `angel-ai-logo-golden-text.png` vẫn còn nền trắng/xám phía sau chữ, dù đã xử lý nhiều lần. Nền này hiển thị rõ trên giao diện tại Sidebar, Header, Hero và Footer.
+Thay thế logo hình anh PNG (van con nen) bang chu CSS su dung font **Great Vibes** (elegant cursive script) voi hieu ung vang kim loai 3D, giong voi kieu chu tren logo goc.
 
-## Giải Pháp Triệt Để
+## Thay Doi
 
-Thay tất cả `<img>` logo bằng **chữ CSS thuần túy** sử dụng font **Cinzel** + hiệu ứng gradient vàng kim loại. Chữ CSS không có nền nên vấn đề được giải quyết 100%.
+### 1. `src/index.css` - Them font Great Vibes va cap nhat CSS
 
-Kiểu chữ sẽ giống hệt hình gốc:
-- Font: Cinzel (đã có sẵn trong dự án)
-- Màu: Gradient vàng kim loại (sáng ở giữa, tối ở rìa)
-- Hiệu ứng: Drop shadow tạo chiều sâu
+- **Them font**: Import `Great Vibes` tu Google Fonts vao dong `@import url(...)` hien tai
+- **Cap nhat `.text-brand-golden`**:
+  - Font: `'Great Vibes', cursive` (thay vi `'Cinzel', serif`)
+  - Bo `text-transform: uppercase` (font script khong dung uppercase)
+  - Giam `letter-spacing` xuong `0.02em` (script font can gap chu hep hon)
+  - Tang `text-shadow` de tao hieu ung 3D noi bat hon: multiple layer shadow (highlight sang o tren, bong toi o duoi)
+  - Them `-webkit-text-stroke` rat mong de tao do day cho net chu
+- **Cap nhat `.text-brand-golden-light`**: Tuong tu nhung gradient sang hon cho nen toi (Footer)
 
-## Các File Cần Sửa
+### 2. `src/components/HeroSection.tsx` - Logo trang chu
 
-### 1. `src/index.css` - Thêm class `.text-brand-golden`
-
-Thêm class CSS mới cho chữ thương hiệu vàng kim loại:
-- Font family: Cinzel, serif
-- Gradient vàng: `linear-gradient(135deg, #8B6914, #C49B30, #E8C252, #F5D976, #E8C252, #C49B30, #8B6914)`
-- Kỹ thuật: `background-clip: text` + `-webkit-text-fill-color: transparent`
-- Drop shadow nhẹ tạo chiều sâu 3D
-- Phiên bản `.text-brand-golden-light` cho nền tối (Footer)
-
-### 2. `src/components/HeroSection.tsx` - Logo trang chủ (lớn nhất)
-
-Thay:
-```
-<img src={angelGoldenTextLogo} ... />
-```
-Bằng:
-```
-<span class="text-brand-golden text-4xl sm:text-5xl md:text-6xl lg:text-7xl">Angel AI</span>
-```
-
-Bỏ import `angelGoldenTextLogo` nếu không còn dùng.
+- Thay `<img src={angelGoldenTextLogo}>` bang `<span className="text-brand-golden text-5xl sm:text-6xl md:text-7xl lg:text-8xl">Angel AI</span>`
+- Bo import `angelGoldenTextLogo`
 
 ### 3. `src/components/Header.tsx` - Logo mobile
 
-Thay `<img>` bằng chữ CSS kích thước `text-xl sm:text-2xl`.
+- Thay `<img>` bang `<span className="text-brand-golden text-2xl sm:text-3xl">Angel AI</span>`
+- Bo import `angelGoldenTextLogo`
 
 ### 4. `src/components/MainSidebar.tsx` - Logo sidebar
 
-Thay `<img>` bằng chữ CSS kích thước `text-xl` khi sidebar mở rộng.
+- Thay `<img>` bang `<span className="text-brand-golden text-2xl">Angel AI</span>`
+- Bo import `angelGoldenTextLogo`
 
-### 5. `src/components/Footer.tsx` - Logo footer (nền tối)
+### 5. `src/components/Footer.tsx` - Logo footer (nen toi)
 
-Thay `<img>` bằng chữ CSS dùng class `.text-brand-golden-light` (gradient sáng hơn cho nền tối).
+- Thay `<img>` bang `<span className="text-brand-golden-light text-3xl sm:text-4xl md:text-5xl">Angel AI</span>`
+- Bo import `angelGoldenTextLogo`
 
-## Chi Tiết Kỹ Thuật
+## Chi Tiet Ky Thuat
 
-### CSS Class `.text-brand-golden`
+### CSS Class Moi
 
 ```text
+/* Font import - them Great Vibes */
+@import url('...&family=Great+Vibes&...');
+
 .text-brand-golden {
-  font-family: 'Cinzel', serif;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-family: 'Great Vibes', cursive;
+  /* KHONG co text-transform: uppercase */
+  letter-spacing: 0.02em;
+  font-weight: 400;  /* Great Vibes chi co weight 400 */
   background: linear-gradient(
     135deg,
     #8B6914 0%,
@@ -70,42 +62,29 @@ Thay `<img>` bằng chữ CSS dùng class `.text-brand-golden-light` (gradient s
     #C49B30 80%,
     #8B6914 100%
   );
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 2px 4px rgba(139, 105, 20, 0.3));
+  transition: background-position 0.6s ease;
+  line-height: 1.2;
 }
 ```
 
-### Phiên bản cho nền tối (Footer)
+### Kich Thuoc Theo Vi Tri
 
-```text
-.text-brand-golden-light {
-  /* Giong nhu tren nhung gradient sang hon */
-  background: linear-gradient(
-    135deg,
-    #C49B30 0%,
-    #E8C252 25%,
-    #F5D976 50%,
-    #E8C252 75%,
-    #C49B30 100%
-  );
-}
-```
+| Vi tri | Kich thuoc (lon hon Cinzel vi script font nho hon) |
+|--------|---------------------------------------------------|
+| HeroSection | text-5xl / sm:text-6xl / md:text-7xl / lg:text-8xl |
+| Header (mobile) | text-2xl / sm:text-3xl |
+| MainSidebar | text-2xl |
+| Footer | text-3xl / sm:text-4xl / md:text-5xl |
 
-### Kích thước theo vị trí
+## Ket Qua
 
-| Vi tri | Kich thuoc |
-|--------|-----------|
-| HeroSection | text-4xl / sm:text-5xl / md:text-6xl / lg:text-7xl |
-| Header (mobile) | text-xl / sm:text-2xl |
-| MainSidebar | text-xl |
-| Footer | text-xl / sm:text-2xl / md:text-3xl |
-
-## Kết Quả
-
-- Chữ "Angel AI" hiển thị với font Cinzel vàng kim loại sang trọng
-- **Hoàn toàn không có nền** vì là chữ CSS thuần túy
-- Hoạt động tốt trên mọi nền sáng/tối
-- Không phụ thuộc vào file hình ảnh
-
+- Chu "Angel AI" hien thi voi font Great Vibes - kieu thu phap trang tri uon luon sang trong
+- Hieu ung gradient vang kim loai voi drop-shadow 3D
+- **Hoan toan khong co nen** vi la chu CSS thuan tuy
+- Khong phu thuoc vao file hinh anh
+- Hoat dong tot tren moi nen sang/toi
