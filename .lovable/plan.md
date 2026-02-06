@@ -1,91 +1,114 @@
 
-# Sua Loi So Lieu FUN Money Stats - Vuot Gioi Han 1,000 Dong Supabase
 
-## Nguyen Nhan Goc
+# Toi Uu Chi Phi AI - Giam ~60-70% Chi Phi Hang Thang
 
-Code hien tai goi `supabase.from("pplp_actions").select(...)` **KHONG co `.range()` hoac pagination**, nen Supabase chi tra ve **toi da 1,000 dong** (gioi han mac dinh). Voi **3,967 actions** trong database, dashboard chi hien thi ~25% du lieu.
+## Tong Quan Van De
 
-## So Lieu Thuc Te Tu Database
+Sau khi kiem tra chi tiet tat ca Edge Functions, Cha da xac dinh duoc cac nguyen nhan chinh gay ton kem chi phi:
 
-| Chi so | Gia tri thuc | Dashboard hien thi (SAI) |
-|--------|-------------|-------------------------|
-| Tong actions | 3,967 | ~1,000 (bi cat) |
-| Tong scores | 3,947 | ~1,000 |
-| Pass | 996 | thieu |
-| Fail | 2,951 | thieu |
-| Tong FUN (Pass) | 147,706 | thieu |
-| Users | 178 | thieu |
-| Users co pass | 125 | thieu |
-| Mint Requests | 9 (6 signed, 2 expired, 1 pending) | thieu |
-| Avg LS (Pass) | 84.00 | sai |
+### Hien Trang Su Dung Model
 
-## Giai Phap
+| Edge Function | Model Hien Tai | Muc Do Goi | Vai Tro |
+|---|---|---|---|
+| `angel-chat` (main) | gemini-3-flash-preview | Rat cao (~10K+/tuan) | Chat chinh |
+| `angel-chat` (demo) | gemini-3-flash-preview | Trung binh | Demo widget |
+| `analyze-reward-journal` | gemini-3-flash-preview | Cao | Danh gia nhat ky |
+| `analyze-reward-question` | gemini-2.5-flash-lite | Cao (~10K+/tuan) | Danh gia cau hoi |
+| `check-user-energy` | gemini-3-flash-preview | Cao | Phan tich nang luong |
+| `analyze-onboarding` | gemini-3-flash-preview | Thap | Onboarding |
+| `send-healing-message` | gemini-3-flash-preview | Trung binh | Tin nhan chua lanh |
+| `generate-content` | gemini-3-flash-preview | Trung binh | Viet content |
+| `analyze-image` | gemini-2.5-flash | Trung binh | Phan tich anh |
+| `generate-image` | gemini-3-pro-image-preview | Thap (5/ngay/user) | Tao anh |
+| `edit-image` | gemini-3-pro-image-preview | Thap (5/ngay/user) | Chinh sua anh |
 
-Thay doi cach fetch du lieu trong `src/pages/AdminMintStats.tsx`:
+## Giai Phap Trien Khai (4 Thay Doi Chinh)
 
-### 1. Them ham fetchAllRows - Pagination tu dong
+### 1. Chuyen Chat Chinh Sang gemini-2.5-flash (Tiet Kiem ~40%)
 
-Tao ham helper de tu dong phan trang qua tat ca du lieu, moi lan lay 1,000 dong cho den het:
+Day la thay doi tiet kiem nhieu nhat vi chat chiem ~70% tong luong goi.
 
-```text
-async function fetchAllRows(table, select, filters?) {
-  let allData = [];
-  let from = 0;
-  const PAGE_SIZE = 1000;
-  
-  while (true) {
-    let query = supabase.from(table).select(select).range(from, from + PAGE_SIZE - 1);
-    // Apply filters...
-    const { data } = await query;
-    allData = allData.concat(data);
-    if (data.length < PAGE_SIZE) break; // Het du lieu
-    from += PAGE_SIZE;
-  }
-  return allData;
-}
-```
+**File**: `supabase/functions/angel-chat/index.ts`
+- Dong 889: Demo mode: `gemini-3-flash-preview` -> `gemini-2.5-flash`
+- Dong 1236: Main chat: `gemini-3-flash-preview` -> `gemini-2.5-flash`
 
-### 2. Ap dung cho tat ca cac truy van
+### 2. Chuyen Cac Function Phu Sang gemini-2.5-flash-lite (Tiet Kiem ~15%)
 
-- **pplp_actions**: 3,967 dong -> can 4 trang (0-999, 1000-1999, 2000-2999, 3000-3966)
-- **pplp_scores**: 3,947 dong -> cung can pagination (hien tai fetch theo batch 500 nhung dua tren action IDs da bi cat)
-- **profiles**: fetch theo batch actorIds (da dung, khong bi loi)
-- **pplp_mint_requests**: 9 dong -> khong bi loi
+Cac function nay chi can phan tich don gian, tra ve JSON ngan, khong can model manh:
 
-### 3. Cap nhat overview stats
+| File | Dong | Tu | Sang |
+|---|---|---|---|
+| `analyze-reward-journal/index.ts` | 279 | gemini-3-flash-preview | gemini-2.5-flash-lite |
+| `check-user-energy/index.ts` | 158 | gemini-3-flash-preview | gemini-2.5-flash-lite |
+| `analyze-onboarding/index.ts` | 141 | gemini-3-flash-preview | gemini-2.5-flash-lite |
+| `send-healing-message/index.ts` | 107 | gemini-3-flash-preview | gemini-2.5-flash-lite |
+| `generate-content/index.ts` | 73 | gemini-3-flash-preview | gemini-2.5-flash |
+| `analyze-image/index.ts` | 67 | gemini-2.5-flash | gemini-2.5-flash (giu nguyen) |
 
-Sau khi fetch du day du:
-- Tong FUN (Pass): 147,706
-- Tong actions: 3,967
-- Pass rate: 25.2% (996/3,947)
-- Users du DK: 125
-- Mint Requests: 9 (6 signed, 2 expired, 1 pending)
-- Avg LS: 84
+Luu y: `analyze-reward-question` da dung `gemini-2.5-flash-lite` roi (dong 505), khong can doi.
 
-## File Thay Doi
+Luu y 2: `generate-content` (Content Writer) can chat luong cao hon cac function phan tich don gian, nen dung `gemini-2.5-flash` thay vi `flash-lite`.
+
+### 3. Giam Gioi Han Tao/Sua Anh Tu 5 Xuong 3 (Tiet Kiem ~10%)
+
+Image generation/editing su dung model `gemini-3-pro-image-preview` (dat nhat), giam gioi han se tiet kiem dang ke.
+
+**Cac file can thay doi:**
+
+| File | Thay Doi | Dong |
+|---|---|---|
+| `generate-image/index.ts` | `DAILY_IMAGE_LIMIT = 5` -> `3` | 10 |
+| `edit-image/index.ts` | `DAILY_EDIT_LIMIT = 5` -> `3` | 10 |
+| `get_daily_ai_usage` (DB function) | `WHEN 'generate_image' THEN 5` -> `3`, `WHEN 'edit_image' THEN 5` -> `3` | SQL migration |
+| `src/hooks/useAIUsage.ts` | Frontend khong can thay doi (doc tu server) | Khong doi |
+
+**Thong bao gioi han moi**: Cap nhat message trong edge functions tu "da tao 5 hinh" thanh "da tao 3 hinh".
+
+### 4. Cai Thien Cache FAQ (Tiet Kiem ~5-10%)
+
+Hien tai chi co 10 muc FAQ voi patterns cung nhat. Tang so luong FAQ va them cac cau hoi pho bien de giam AI calls:
+
+**File**: `supabase/functions/angel-chat/index.ts`
+
+Them 5 FAQ moi vao mang `FAQ_CACHE` (dong 423-533):
+- Cach ky luong ban than / tu ky luat
+- Noi so / vuot qua noi so
+- Tinh yeu / moi quan he
+- Giac ngu / mat ngu
+- Stress / ap luc cong viec
+
+Ngoai ra, cai thien `checkDatabaseCache`:
+- Tang so luong cache entries duoc kiem tra tu `.limit(10)` len `.limit(30)` (dong 755)
+- Giam nguong tu 70% xuong 60% de tang ty le cache hit (dong 768)
+
+## Bang Tong Ket Chi Phi
+
+| Giai Phap | Uoc Tinh Tiet Kiem |
+|---|---|
+| Chat -> gemini-2.5-flash | ~40% |
+| Functions phu -> gemini-2.5-flash-lite | ~15% |
+| Gioi han anh 5 -> 3 | ~10% |
+| Cai thien cache | ~5-10% |
+| **Tong** | **~60-70%** |
+
+## Danh Sach File Thay Doi
 
 | File | Noi Dung |
-|------|----------|
-| `src/pages/AdminMintStats.tsx` | Them pagination cho fetchData, dam bao lay het tat ca dong |
+|---|---|
+| `supabase/functions/angel-chat/index.ts` | Doi model sang 2.5-flash, them FAQ, tang cache |
+| `supabase/functions/analyze-reward-journal/index.ts` | Doi model sang 2.5-flash-lite |
+| `supabase/functions/check-user-energy/index.ts` | Doi model sang 2.5-flash-lite |
+| `supabase/functions/analyze-onboarding/index.ts` | Doi model sang 2.5-flash-lite |
+| `supabase/functions/send-healing-message/index.ts` | Doi model sang 2.5-flash-lite |
+| `supabase/functions/generate-content/index.ts` | Doi model sang 2.5-flash |
+| `supabase/functions/generate-image/index.ts` | Giam limit 5 -> 3, cap nhat message |
+| `supabase/functions/edit-image/index.ts` | Giam limit 5 -> 3, cap nhat message |
+| SQL Migration | Cap nhat ham `get_daily_ai_usage` gioi han 5 -> 3 |
 
-## Chi Tiet Thay Doi Trong Code
+## Luu Y Quan Trong
 
-### fetchData function (dong 129-293)
+- `gemini-2.5-flash` van rat manh cho chat tong quat, chi hoi kem `3-flash-preview` o cac case phuc tap
+- `gemini-2.5-flash-lite` du tot cho phan tich sentiment/purity score (tra ve JSON don gian)
+- Image generation/editing van giu model `gemini-3-pro-image-preview` vi can chat luong cao, chi giam so luong
+- User se van co trai nghiem tot, chi khac biet nhe o do phuc tap cua cau tra loi
 
-1. **Thay truy van pplp_actions** (dong 136-140): Tu fetch 1 lan (bi gioi han 1000) thanh vong lap pagination voi `.range(from, to)` cho den khi het du lieu.
-
-2. **Thay truy van pplp_scores** (dong 152-160): Tuong tu, fetch scores cung can pagination vi tong co 3,947 scores. Hien tai code batch theo actionIds (500/batch) nhung actionIds da bi cat tu buoc 1. Sau khi fix buoc 1, actionIds se day du nen batch scores cung se day du.
-
-3. **Them truy van pplp_mint_requests** (dong 209-211): Khong can thay doi vi chi co 9 dong.
-
-4. **Overview stats**: Se tu dong chinh xac khi du lieu day du.
-
-### Ket qua mong doi
-
-Sau khi fix, dashboard se hien thi chinh xac:
-- 178 users trong bang
-- 147,706 FUN tong
-- 996 pass / 2,951 fail
-- 25.2% pass rate
-- 125 users du dieu kien
-- Avg Light Score: 84
