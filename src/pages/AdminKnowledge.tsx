@@ -37,6 +37,7 @@ interface KnowledgeDocument {
   is_processed: boolean;
   created_at: string;
   folder_id: string | null;
+  extracted_content: string | null;
 }
 
 type ProcessedFilter = "all" | "processed" | "pending";
@@ -1090,7 +1091,7 @@ const AdminKnowledge = () => {
                 <BookOpen className="w-5 h-5" />
                 Tài liệu PPLP - Hướng dẫn Mint FUN Money
                 <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                  {importedPPLPDocs.size}/{PPLP_KNOWLEDGE_TEMPLATES.length} đã import
+                  {documents.filter(d => d.title.startsWith('[PPLP]')).length} tài liệu
                 </span>
               </h2>
               <p className="text-sm text-foreground-muted mt-1">
@@ -1111,63 +1112,201 @@ const AdminKnowledge = () => {
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    Import tất cả
+                    Import mẫu PPLP
                   </>
                 )}
               </button>
             )}
           </div>
 
-          <div className="space-y-3">
-            {PPLP_KNOWLEDGE_TEMPLATES.map((template) => {
-              const isImported = importedPPLPDocs.has(template.id);
-              const isImporting = importingPPLP === template.id;
+          {/* Show ALL PPLP Documents (imported from any source) */}
+          <div className="space-y-3 mb-6">
+            {documents
+              .filter(doc => doc.title.startsWith('[PPLP]') || doc.folder_id === folders.find(f => f.name === PPLP_FOLDER_NAME)?.id)
+              .map((doc) => {
+                const isGoogleUrl = doc.file_url?.includes('docs.google.com');
+                
+                return (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 rounded-xl border bg-green-50 border-green-200"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-2xl flex-shrink-0">{getFileIcon(doc.file_type, doc.file_name)}</span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-medium text-foreground">{doc.title}</h3>
+                          {isGoogleUrl && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full flex-shrink-0">
+                              Google Docs
+                            </span>
+                          )}
+                          {doc.is_processed && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full flex-shrink-0">
+                              ✓ Đã xử lý
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-foreground-muted truncate">{doc.description}</p>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-foreground-muted">
+                          <span>{formatFileSize(doc.file_size)}</span>
+                          <span>•</span>
+                          <span>{new Date(doc.created_at).toLocaleDateString("vi-VN")}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* View Full Button */}
+                      <button
+                        onClick={() => {
+                          const content = doc.extracted_content;
+                          if (content) {
+                            const newWindow = window.open('', '_blank');
+                            if (newWindow) {
+                              newWindow.document.write(`
+                                <html>
+                                  <head>
+                                    <title>${doc.title}</title>
+                                    <style>
+                                      body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 900px; margin: 0 auto; line-height: 1.6; }
+                                      pre { white-space: pre-wrap; word-wrap: break-word; background: #f5f5f5; padding: 1rem; border-radius: 8px; }
+                                      h1 { color: #4f46e5; }
+                                    </style>
+                                  </head>
+                                  <body>
+                                    <h1>${doc.title}</h1>
+                                    <p><em>${doc.description || ''}</em></p>
+                                    <hr/>
+                                    <pre>${content}</pre>
+                                  </body>
+                                </html>
+                              `);
+                              newWindow.document.close();
+                            }
+                          } else if (doc.file_url) {
+                            window.open(doc.file_url, '_blank');
+                          } else {
+                            toast.info('Nội dung chưa được trích xuất');
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-pale text-primary hover:bg-primary hover:text-white transition-colors text-sm"
+                        title="Xem đầy đủ"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span className="hidden sm:inline">Xem</span>
+                      </button>
 
-              return (
-                <div
-                  key={template.id}
-                  className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
-                    isImported 
-                      ? "bg-green-50 border-green-200" 
-                      : "bg-primary-pale/20 border-primary-pale hover:border-primary"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{template.icon}</span>
-                    <div>
-                      <h3 className="font-medium text-foreground">{template.title}</h3>
-                      <p className="text-sm text-foreground-muted">{template.description}</p>
+                      {/* Download Button */}
+                      <button
+                        onClick={() => {
+                          const content = doc.extracted_content;
+                          if (content) {
+                            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${doc.title.replace(/[^a-zA-Z0-9\u00C0-\u024F\u1E00-\u1EFF]/g, '_')}.txt`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            toast.success('Đã tải xuống!');
+                          } else if (doc.file_url) {
+                            window.open(doc.file_url, '_blank');
+                          } else {
+                            toast.error('Không có nội dung để tải');
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-colors text-sm"
+                        title="Tải về"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span className="hidden sm:inline">Tải về</span>
+                      </button>
+
+                      {/* Sync Button for Google Docs */}
+                      {isGoogleUrl && (
+                        <button
+                          onClick={() => handleSyncDocument(doc)}
+                          disabled={syncingDocId === doc.id}
+                          className={`p-2 rounded-lg transition-colors ${
+                            syncingDocId === doc.id 
+                              ? "text-primary bg-primary/10 cursor-not-allowed" 
+                              : "text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white"
+                          }`}
+                          title="Đồng bộ lại từ Google"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${syncingDocId === doc.id ? 'animate-spin' : ''}`} />
+                        </button>
+                      )}
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => handleDelete(doc)}
+                        className="p-2 rounded-lg text-red-500 bg-red-50 hover:bg-red-500 hover:text-white transition-colors"
+                        title="Xóa tài liệu"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                  
-                  {isImported ? (
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle className="w-5 h-5" />
-                      <span className="text-sm font-medium">Đã import</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleImportPPLPTemplate(template)}
-                      disabled={isImporting || importingAllPPLP}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors"
-                    >
-                      {isImporting ? (
-                        <>
-                          <Sparkles className="w-4 h-4 animate-pulse" />
-                          <span>Đang import...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4" />
-                          <span>Import vào KB</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            
+            {documents.filter(doc => doc.title.startsWith('[PPLP]') || doc.folder_id === folders.find(f => f.name === PPLP_FOLDER_NAME)?.id).length === 0 && (
+              <div className="text-center py-8 text-foreground-muted">
+                <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>Chưa có tài liệu PPLP nào</p>
+                <p className="text-sm">Import từ mẫu bên dưới hoặc từ Google Docs</p>
+              </div>
+            )}
           </div>
+
+          {/* Template Import Section */}
+          {PPLP_KNOWLEDGE_TEMPLATES.filter(t => !importedPPLPDocs.has(t.id)).length > 0 && (
+            <div className="border-t border-primary-pale pt-4">
+              <h3 className="text-sm font-medium text-foreground-muted mb-3">📝 Mẫu tài liệu có sẵn để import:</h3>
+              <div className="space-y-2">
+                {PPLP_KNOWLEDGE_TEMPLATES.filter(t => !importedPPLPDocs.has(t.id)).map((template) => {
+                  const isImporting = importingPPLP === template.id;
+
+                  return (
+                    <div
+                      key={template.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-primary-pale/20 border-primary-pale hover:border-primary transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{template.icon}</span>
+                        <div>
+                          <h3 className="font-medium text-foreground text-sm">{template.title}</h3>
+                          <p className="text-xs text-foreground-muted">{template.description}</p>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => handleImportPPLPTemplate(template)}
+                        disabled={isImporting || importingAllPPLP}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-white text-sm hover:bg-primary-deep disabled:opacity-50 transition-colors"
+                      >
+                        {isImporting ? (
+                          <>
+                            <Sparkles className="w-3 h-3 animate-pulse" />
+                            <span>Importing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-3 h-3" />
+                            <span>Import</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Google URL Import */}
