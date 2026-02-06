@@ -188,11 +188,11 @@ export function GlobalSearch({
     : 0;
 
   const inputClasses = variant === "community"
-    ? "pl-9 pr-10 h-10 bg-white/10 border-0 rounded-full text-sm text-white placeholder:text-white/50 focus:bg-white/20 focus:ring-2 focus:ring-white/30"
+    ? "pl-9 pr-10 h-10 bg-white/70 border-2 border-yellow-600/30 rounded-full text-sm text-black placeholder:text-black/60 focus:bg-white/90 focus:ring-2 focus:ring-yellow-500/40 shadow-[inset_0_1px_3px_rgba(0,0,0,0.1)]"
     : "pl-9 pr-10 h-10 bg-muted/50 border-border/50 rounded-full text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30";
 
   const iconClasses = variant === "community"
-    ? "text-white/60"
+    ? "text-black/70"
     : "text-muted-foreground";
 
   return (
