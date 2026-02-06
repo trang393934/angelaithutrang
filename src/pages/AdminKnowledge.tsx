@@ -1907,48 +1907,46 @@ const DocumentItem = ({
                 <FolderInput className="w-4 h-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 p-0">
-              <div className="px-2 py-1.5 text-xs font-semibold text-foreground-muted border-b">
+            <DropdownMenuContent align="end" className="w-56 p-0 max-h-80 overflow-y-auto">
+              <div className="px-2 py-1.5 text-xs font-semibold text-foreground-muted border-b sticky top-0 bg-popover z-10">
                 Di chuyển đến thư mục
               </div>
-              <ScrollArea className="max-h-64">
-                <div className="p-1">
-                  {folders.map((folder) => (
-                    <DropdownMenuItem 
-                      key={folder.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (doc.folder_id !== folder.id) {
-                          onMoveToFolder(doc, folder.id);
-                        }
-                      }}
-                      className={doc.folder_id === folder.id ? "bg-primary-pale/50" : ""}
-                    >
-                      <Folder className="w-4 h-4 mr-2 text-primary" />
-                      {folder.name}
-                      {doc.folder_id === folder.id && (
-                        <CheckCircle className="w-3 h-3 ml-auto text-green-600" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
+              <div className="p-1">
+                {folders.map((folder) => (
                   <DropdownMenuItem 
+                    key={folder.id}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (doc.folder_id !== null) {
-                        onMoveToFolder(doc, null);
+                      if (doc.folder_id !== folder.id) {
+                        onMoveToFolder(doc, folder.id);
                       }
                     }}
-                    className={doc.folder_id === null ? "bg-primary-pale/50" : ""}
+                    className={doc.folder_id === folder.id ? "bg-primary-pale/50" : ""}
                   >
-                    <Folder className="w-4 h-4 mr-2 text-foreground-muted" />
-                    Chưa phân loại
-                    {doc.folder_id === null && (
+                    <Folder className="w-4 h-4 mr-2 text-primary" />
+                    {folder.name}
+                    {doc.folder_id === folder.id && (
                       <CheckCircle className="w-3 h-3 ml-auto text-green-600" />
                     )}
                   </DropdownMenuItem>
-                </div>
-              </ScrollArea>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (doc.folder_id !== null) {
+                      onMoveToFolder(doc, null);
+                    }
+                  }}
+                  className={doc.folder_id === null ? "bg-primary-pale/50" : ""}
+                >
+                  <Folder className="w-4 h-4 mr-2 text-foreground-muted" />
+                  Chưa phân loại
+                  {doc.folder_id === null && (
+                    <CheckCircle className="w-3 h-3 ml-auto text-green-600" />
+                  )}
+                </DropdownMenuItem>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
