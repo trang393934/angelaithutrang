@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600&family=Great+Vibes&family=Cinzel:wght@400;500;600;700;800;900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.cdnfonts.com/css/sweet-dreams');
 
 @layer base {
   :root {
@@ -370,8 +371,8 @@
 
   /* Brand Golden Text - Ornate Script with Metallic Gold Effect */
   .text-brand-golden {
-    font-family: 'Great Vibes', cursive;
-    letter-spacing: 0.02em;
+    font-family: 'Sweet Dreams', 'Great Vibes', cursive;
+    letter-spacing: 0.03em;
     font-weight: 400;
     background: linear-gradient(
       135deg,
@@ -399,8 +400,8 @@
 
   /* Brand golden for dark backgrounds (footer, etc.) */
   .text-brand-golden-light {
-    font-family: 'Great Vibes', cursive;
-    letter-spacing: 0.02em;
+    font-family: 'Sweet Dreams', 'Great Vibes', cursive;
+    letter-spacing: 0.03em;
     font-weight: 400;
     background: linear-gradient(
       135deg,
