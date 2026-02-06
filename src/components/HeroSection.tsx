@@ -33,7 +33,7 @@ export const HeroSection = () => {
 
           {/* Main Title - Golden Logo */}
           <h1 className="mb-4 opacity-0 animate-fade-in-slow animate-delay-200 flex justify-center">
-            <img src={angelGoldenTextLogo} alt="Angel AI" className="h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain drop-shadow-[0_4px_8px_rgba(139,105,20,0.5)]" />
+            <img src={angelGoldenTextLogo} alt="Angel AI" className="h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain mix-blend-multiply drop-shadow-[0_4px_8px_rgba(139,105,20,0.5)]" />
           </h1>
 
           {/* Tagline - Main */}
