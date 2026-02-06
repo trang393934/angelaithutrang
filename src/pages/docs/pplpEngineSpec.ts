@@ -459,27 +459,25 @@ export const engineSpecSections = [
     ],
     eip712: {
       domain: {
-        name: "FUNMoney-PPLP",
-        version: "1",
-        chainId: "56 (BNB mainnet)",
-        verifyingContract: "CONTRACT_ADDRESS"
+        name: "FUN Money",
+        version: "1.2.1",
+        chainId: "97 (BSC Testnet) / 56 (BSC Mainnet)",
+        verifyingContract: "0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2"
       },
       types: {
-        MintRequest: [
-          { name: "to", type: "address" },
+        PureLoveProof: [
+          { name: "user", type: "address" },
+          { name: "actionHash", type: "bytes32" },
           { name: "amount", type: "uint256" },
-          { name: "actionId", type: "bytes32" },
           { name: "evidenceHash", type: "bytes32" },
-          { name: "policyVersion", type: "uint32" },
-          { name: "validAfter", type: "uint64" },
-          { name: "validBefore", type: "uint64" },
           { name: "nonce", type: "uint256" }
         ]
       },
       notes: [
-        "Nếu FUN Money dùng 18 decimals, amount phải là reward × 10^18",
-        "actionIdBytes32 = keccak256(\"PPLP:\" + actionUUID)",
-        "Signer không nằm trong app server: tách Signer Service / dùng KMS/HSM"
+        "FUN Money dùng 18 decimals, amount phải là reward × 10^18",
+        "actionHash = keccak256(toUtf8Bytes(actionName))",
+        "Attester (Treasury) ký PureLoveProof, contract verify via ecrecover",
+        "EIP-712 domain PHẢI khớp: name='FUN Money', version='1.2.1'"
       ]
     }
   },

@@ -78,7 +78,7 @@ interface EIP712Type {
 interface EIP712Data {
   domain: EIP712Domain;
   types: {
-    MintRequest: EIP712Type[];
+    PureLoveProof: EIP712Type[];
   };
   notes: string[];
 }
@@ -340,9 +340,9 @@ export const POPLEngineSpecSection = ({ section, index, isExpanded, onToggle }: 
                     </div>
 
                     <div className="bg-emerald-50/30 rounded-lg p-4 border border-emerald-100">
-                      <h4 className="font-bold text-emerald-700 mb-3">MintRequest Types</h4>
+                      <h4 className="font-bold text-emerald-700 mb-3">PureLoveProof Types</h4>
                       <div className="space-y-1 font-mono text-xs">
-                        {section.eip712.types.MintRequest.map((t, i) => (
+                        {section.eip712.types.PureLoveProof.map((t, i) => (
                           <p key={i} className="text-emerald-700">
                             <span className="text-teal-600">{t.name}</span>: {t.type}
                           </p>

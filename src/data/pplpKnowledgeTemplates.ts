@@ -360,8 +360,8 @@ contract FUNMoney is ERC20, AccessControl, EIP712 {
 3. claim() - User nhận về ví
 
 ### EIP-712 Domain
-- name: "FUNMoney-PPLP"
-- version: "1"
+- name: "FUN Money"
+- version: "1.2.1"
 - chainId: 97
 - verifyingContract: 0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2
 
@@ -821,23 +821,21 @@ const SIGNER_PK = process.env.SIGNER_PK!;
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS!;
 const CHAIN_ID = Number(process.env.CHAIN_ID || "56");
 
-// EIP-712 domain phải khớp với contract
+// EIP-712 domain phải khớp với contract: EIP712("FUN Money", "1.2.1")
 const DOMAIN = {
-  name: "FUNMoney-PPLP",
-  version: "1",
+  name: "FUN Money",
+  version: "1.2.1",
   chainId: CHAIN_ID,
   verifyingContract: CONTRACT_ADDRESS,
 };
 
+// PureLoveProof struct — MUST match contract PPLP_TYPEHASH
 const TYPES = {
-  MintRequest: [
-    { name: "to", type: "address" },
+  PureLoveProof: [
+    { name: "user", type: "address" },
+    { name: "actionHash", type: "bytes32" },
     { name: "amount", type: "uint256" },
-    { name: "actionId", type: "bytes32" },
     { name: "evidenceHash", type: "bytes32" },
-    { name: "policyVersion", type: "uint32" },
-    { name: "validAfter", type: "uint64" },
-    { name: "validBefore", type: "uint64" },
     { name: "nonce", type: "uint256" },
   ],
 };
