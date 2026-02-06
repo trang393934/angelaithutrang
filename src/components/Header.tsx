@@ -125,7 +125,7 @@ export const Header = () => {
           )}
           {/* Logo - Hidden on desktop since MainSidebar has it, show only on mobile */}
           <Link to="/" className={`flex lg:hidden items-center shrink-0 group min-w-0 transition-transform duration-500 ${isScrolled ? 'scale-90' : 'scale-100'}`}>
-            <img src={angelGoldenTextLogo} alt="Angel AI" className="h-8 sm:h-10 w-auto object-contain mix-blend-multiply drop-shadow-[0_2px_4px_rgba(139,105,20,0.4)]" />
+            <img src={angelGoldenTextLogo} alt="Angel AI" className="h-8 sm:h-10 w-auto object-contain drop-shadow-[0_2px_4px_rgba(139,105,20,0.4)]" />
           </Link>
 
           {/* Search Bar - Desktop - centered */}
