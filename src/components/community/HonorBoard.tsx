@@ -47,35 +47,38 @@ const StatItem = ({
       style={{ background: 'linear-gradient(180deg, #FFFDE7 0%, #FFF9C4 30%, #FFE082 60%, #FFD54F 100%)' }}
     />
     
-    {/* Main content - rich dark gold background */}
+    {/* Main content - metallic gold 3D background */}
     <div className="relative flex items-center justify-between px-5 py-3 rounded-full text-white overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #5D4037 0%, #795548 20%, #8D6E63 40%, #6D4C41 60%, #5D4037 80%, #4E342E 100%)', boxShadow: '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,235,170,0.2)' }}
+      style={{ 
+        background: 'linear-gradient(180deg, #D4A017 0%, #C49B30 15%, #B8860B 30%, #A67C00 50%, #8B6914 70%, #7A5C00 85%, #6B4F00 100%)',
+        boxShadow: '0 3px 10px rgba(0,0,0,0.35), inset 0 2px 3px rgba(255,235,170,0.5), inset 0 -1px 3px rgba(100,70,0,0.4)' 
+      }}
     >
       {/* Shimmer sweep on hover */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,245,200,0.3) 45%, transparent 55%)' }}
+        style={{ background: 'linear-gradient(105deg, transparent 25%, rgba(255,245,200,0.4) 45%, transparent 60%)' }}
       />
       
       {/* Left side - Icon and label */}
       <div className="flex items-center gap-3 relative">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm border border-yellow-400/40"
-          style={{ background: 'linear-gradient(135deg, rgba(255,215,0,0.25) 0%, rgba(255,235,170,0.15) 100%)' }}
+        <div className="w-8 h-8 rounded-full flex items-center justify-center border border-yellow-300/50"
+          style={{ background: 'linear-gradient(135deg, rgba(255,235,170,0.35) 0%, rgba(255,215,0,0.2) 100%)' }}
         >
-          <Icon className="w-4 h-4 text-yellow-200 drop-shadow-[0_0_3px_rgba(255,215,0,0.6)]" />
+          <Icon className="w-4 h-4 text-yellow-100 drop-shadow-[0_0_3px_rgba(255,215,0,0.6)]" />
         </div>
-        <span className="font-semibold text-sm tracking-wide uppercase text-yellow-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{label}</span>
+        <span className="font-bold text-sm tracking-wide uppercase text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">{label}</span>
       </div>
       
       {/* Right side - Value */}
       <div className="flex items-center gap-1.5 relative">
-        <span className="font-bold text-lg tracking-wider text-yellow-100 drop-shadow-[0_0_4px_rgba(255,215,0,0.4)]">
+        <span className="font-bold text-lg tracking-wider text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">
           {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
         </span>
         {isCoin && (
           <motion.span
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="text-yellow-300 drop-shadow-[0_0_4px_rgba(255,215,0,0.6)]"
+            className="text-yellow-200 drop-shadow-[0_0_4px_rgba(255,215,0,0.6)]"
           >
             ©
           </motion.span>
