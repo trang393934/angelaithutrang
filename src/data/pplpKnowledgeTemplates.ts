@@ -5,14 +5,7 @@
  * Angel AI sẽ học để trả lời user về quy trình mint FUN Money
  */
 
-export interface PPLPKnowledgeTemplate {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  category: 'mint_guide' | 'pillars' | 'distribution' | 'actions' | 'anti_fraud' | 'policy_json' | 'technical_spec';
-  content: string;
-}
+// Interface defined after ENGINE_SPEC_CONTENT below
 
 // Technical Spec template content
 const TECHNICAL_SPEC_CONTENT = `# PPLP TECHNICAL SPEC v1.0 + SMART CONTRACT FUN MONEY MINT ENGINE
@@ -387,12 +380,574 @@ contract FUNMoney is ERC20, AccessControl, EIP712 {
 
 **Nguyên tắc cốt lõi**: Mint-to-Unity — thưởng cho đóng góp thực sự tạo giá trị cho cộng đồng, KHÔNG thưởng cho đầu cơ/gian lận.`;
 
+// Engine Spec v1.0 content
+const ENGINE_SPEC_CONTENT = `# PPLP ENGINE SPEC v1.0
+
+## 0. TECH BASELINE (Khuyến nghị triển khai)
+
+| Component | Technology |
+|-----------|------------|
+| API | Node.js (NestJS/Express) hoặc Go (Gin) |
+| DB | PostgreSQL |
+| Queue | Redis + BullMQ (hoặc SQS) |
+| Storage Evidence | IPFS/Arweave (production), S3 (MVP) |
+| Signature | EIP-712 (ethers v6) |
+| Observability | OpenTelemetry + Grafana/Datadog |
+
+---
+
+## 1. DOMAIN MODEL (Entities chính)
+
+| Entity | Mô tả |
+|--------|-------|
+| **User** | Địa chỉ ví + hồ sơ FUN Profile (DID optional) |
+| **Platform** | 1 trong các FUN platforms |
+| **Action** | Hành động tạo giá trị (canonical) |
+| **Evidence** | Bằng chứng (URI + hash + type) |
+| **Score** | Điểm 5 trụ cột + multipliers + kết quả pass/fail |
+| **MintAuthorization** | Request đã được ký EIP-712 |
+| **FraudSignal** | Tín hiệu bot/sybil/collusion/spam |
+| **Policy** | Versioned scoring rules |
+| **Dispute** | Khiếu nại/điều tra (FUN Legal) |
+
+---
+
+## 2. API ENDPOINTS v1.0 (REST)
+
+### 2.1 Auth / Identity
+
+**POST /v1/auth/nonce**
+\`\`\`json
+// Input
+{ "address": "0x..." }
+// Output
+{ "nonce": "random-string", "expiresAt": 1730000000 }
+\`\`\`
+
+**POST /v1/auth/verify** - Verify SIWE
+\`\`\`json
+// Input
+{ "address":"0x...", "signature":"0x...", "nonce":"..." }
+// Output
+{ "token":"jwt...", "userId":"uuid" }
+\`\`\`
+
+### 2.2 Submit Action (Platform gọi)
+
+**POST /v1/actions**
+\`\`\`json
+// Input
+{
+  "platformId": "FUN_ACADEMY",
+  "actionType": "LEARN_COMPLETE",
+  "actor": "0xUser",
+  "timestamp": 1730000000,
+  "metadata": {"courseId":"COURSE_001","durationSec":5400,"quizScore":92},
+  "evidence": [{"type":"QUIZ_SCORE","uri":"ipfs://..."}],
+  "impact": {"beneficiaries":1,"outcome":"passed"},
+  "integrity": {"deviceHash":"...","antiSybilScore":0.86}
+}
+// Output
+{ "actionId":"uuid", "status":"RECEIVED" }
+\`\`\`
+
+### 2.3 Get Action
+
+**GET /v1/actions/:actionId**
+\`\`\`json
+{
+  "actionId": "...",
+  "status": "SCORED|PENDING|REJECTED|MINT_AUTHORIZED|MINTED",
+  "evidenceHash": "0x...",
+  "policyVersion": 12
+}
+\`\`\`
+
+### 2.4 Score / Evaluate Action
+
+**POST /v1/actions/:actionId/evaluate** (Internal/admin/job worker)
+\`\`\`json
+{
+  "actionId": "...",
+  "policyVersion": 12,
+  "pillars": {"S":78,"T":90,"H":70,"C":65,"U":80},
+  "lightScore": 76.7,
+  "multipliers": {"Q":1.4,"I":1.2,"K":0.92},
+  "baseReward": 200,
+  "rewardAmount": 309,
+  "decision": "PASS"
+}
+\`\`\`
+
+### 2.5 Mint Authorization (EIP-712)
+
+**POST /v1/mint/authorize**
+\`\`\`json
+// Input
+{ "actionId":"uuid", "to":"0xUser", "validForSec":600 }
+// Output
+{
+  "mintRequest": {
+    "to": "0xUser",
+    "amount": "309",
+    "actionId": "0xActionIdBytes32",
+    "evidenceHash": "0x...",
+    "policyVersion": 12,
+    "validAfter": 1730000000,
+    "validBefore": 1730000600,
+    "nonce": "5"
+  },
+  "signature": "0x..."
+}
+\`\`\`
+
+### 2.6 Mint Status Callback
+
+**POST /v1/mint/confirm** - Backend nhận event on-chain
+\`\`\`json
+{ "txHash":"0x...", "actionId":"0x...", "to":"0x...", "amount":"309", "blockNumber":123456 }
+\`\`\`
+
+### 2.7 Policy
+
+- **GET /v1/policies/current**
+- **GET /v1/policies/:version**
+- **POST /v1/policies** (admin) - Upload policy JSON + set version
+
+### 2.8 Fraud / Signals
+
+- **POST /v1/fraud/signals** - Platform/AngelAI gửi tín hiệu nghi ngờ
+- **GET /v1/fraud/users/:address** - Lịch sử tín hiệu + risk score
+
+### 2.9 Disputes (FUN Legal)
+
+- **POST /v1/disputes**
+- **GET /v1/disputes/:id**
+- **POST /v1/disputes/:id/resolve** (admin/arb)
+
+---
+
+## 3. DB SCHEMA (PostgreSQL)
+
+### users
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK |
+| address | varchar(42) | UNIQUE NOT NULL |
+| did | text | NULL |
+| tier | int | NOT NULL DEFAULT 0 |
+| created_at | timestamptz | |
+
+### platforms
+| Column | Type | Notes |
+|--------|------|-------|
+| id | text | PK (FUN_PROFILE, FUN_ACADEMY…) |
+| name | text | |
+| is_enabled | bool | |
+
+### actions
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK |
+| platform_id | text | FK platforms(id) |
+| action_type | text | |
+| actor_address | varchar(42) | |
+| timestamp | timestamptz | |
+| metadata | jsonb | |
+| impact | jsonb | |
+| integrity | jsonb | |
+| status | text | RECEIVED, PENDING, SCORED, REJECTED, MINT_AUTHORIZED, MINTED |
+| canonical_hash | text | keccak256 of canonical json |
+| evidence_hash | text | keccak256 evidence bundle |
+| policy_version | int | |
+| created_at | timestamptz | |
+
+### evidences
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK |
+| action_id | uuid | FK actions(id) |
+| type | text | |
+| uri | text | |
+| content_hash | text | NULL |
+| created_at | timestamptz | |
+
+### scores
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK |
+| action_id | uuid | UNIQUE FK actions(id) |
+| pillar_s | int | |
+| pillar_t | int | |
+| pillar_h | int | |
+| pillar_c | int | |
+| pillar_u | int | |
+| light_score | numeric(5,2) | |
+| base_reward | numeric(38,0) | |
+| mult_q | numeric(6,3) | |
+| mult_i | numeric(6,3) | |
+| mult_k | numeric(6,3) | |
+| reward_amount | numeric(38,0) | |
+| decision | text | PASS/FAIL |
+| reason_codes | text[] | |
+| computed_at | timestamptz | |
+
+### mint_authorizations
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK |
+| action_id | uuid | UNIQUE FK actions(id) |
+| to_address | varchar(42) | |
+| amount | numeric(38,0) | |
+| action_id_bytes32 | text | |
+| evidence_hash | text | |
+| policy_version | int | |
+| valid_after | bigint | |
+| valid_before | bigint | |
+| nonce | numeric(38,0) | |
+| signature | text | |
+| signer_address | varchar(42) | |
+| status | text | SIGNED, SUBMITTED, CONFIRMED, EXPIRED, REVOKED |
+| tx_hash | text | NULL |
+| created_at | timestamptz | |
+
+### fraud_signals
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK |
+| actor_address | varchar(42) | |
+| action_id | uuid | NULL |
+| signal_type | text | SYBIL, BOT, COLLUSION, SPAM, WASH |
+| severity | int | 1-5 |
+| details | jsonb | |
+| source | text | ANGEL_AI, PLATFORM, COMMUNITY |
+| created_at | timestamptz | |
+
+### policies
+| Column | Type | Notes |
+|--------|------|-------|
+| version | int | PK |
+| policy_hash | text | |
+| policy_json | jsonb | |
+| created_at | timestamptz | |
+
+### disputes
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK |
+| action_id | uuid | |
+| actor_address | varchar(42) | |
+| reason | text | |
+| evidence | jsonb | |
+| status | text | OPEN, REVIEW, RESOLVED, REJECTED |
+| resolution | jsonb | NULL |
+| created_at | timestamptz | |
+
+---
+
+## 4. SCORING ENGINE — RUBRIC
+
+### 4.1 Quy tắc chung (Áp dụng mọi platform)
+
+#### Pillars Scoring Rubric (0–100)
+| Pillar | Ý nghĩa |
+|--------|---------|
+| S (Service to Life) | 0=không lợi ích, 100=lợi ích rõ ràng cho nhiều người |
+| T (Truth/Transparency) | 0=không chứng cứ, 100=chứng cứ đầy đủ/đối chiếu được |
+| H (Healing/Compassion) | 0=không tạo nâng đỡ, 100=chữa lành/giảm khổ rõ |
+| C (Contribution Durability) | 0=thoáng qua, 100=tạo tài sản/giá trị dài hạn |
+| U (Unity Alignment) | 0=gây chia rẽ, 100=tăng kết nối/hợp tác/cùng thắng |
+
+#### Multipliers
+| Multiplier | Range | Ý nghĩa |
+|------------|-------|---------|
+| Q (Quality) | 1.0–3.0 | Nội dung/hành động chất lượng cao |
+| I (Impact) | 1.0–5.0 | Tác động đo được lớn |
+| K (Integrity) | 0.0–1.0 | Rủi ro gian lận thấp |
+
+#### Threshold mặc định
+- T >= 70 (min transparency)
+- K >= 0.60 (min integrity)
+- LightScore >= 60 (min overall)
+
+---
+
+## 5. RUBRIC THEO TỪNG PLATFORM (Master Charter)
+
+### 5.1 Angel — AI Ánh Sáng Platform
+- **Actions**: AI_REVIEW_HELPFUL, FRAUD_REPORT_VALID, MODEL_IMPROVEMENT, MODERATION_HELP
+- **Threshold**: T >= 80, K >= 0.75
+- **Q tăng mạnh** khi community confirms "helpful/accurate"
+- **I tăng** khi giảm spam/fraud measurable
+
+### 5.2 FUN Profile — Web3 Social Network
+- **Actions**: CONTENT_CREATE, CONTENT_REVIEW, MENTOR_HELP, COMMUNITY_BUILD
+- **BaseReward**: Create: 50–200, Mentor: 100–500
+- **Threshold**: T >= 70, U >= 65, K >= 0.70 (anti-spam strict)
+- **Q** dựa vào watch/reads + saves + review quality
+- **I** dựa vào số người học/được giúp
+
+### 5.3 FUN Play — Web3 Video Platform
+- **Actions**: VIDEO_PUBLISH, VIDEO_EDU_SERIES, VIEW_QUALITY_SESSION
+- **BaseReward**: Creator: 100–1000, Viewer: 1–10 (anti-farm)
+- **Threshold**: Creator: LightScore >= 65, T >= 70; Viewer: K >= 0.85
+- **Q** = retention + reports low + transcript quality
+- **I** = course conversions, community outcomes
+
+### 5.4 FUN Planet — Game for Kids
+- **Actions**: KID_QUEST_COMPLETE, PARENT_VERIFY, TEACHER_BADGE
+- **Threshold**: T dựa vào parent/teacher attest (>=80), U/H trọng số cao
+- **Anti-fraud**: family/device graph, cap chặt
+
+### 5.5 FUN Charity — Pure-Love Charity Network
+- **Actions**: DONATE, VOLUNTEER, CAMPAIGN_DELIVERY_PROOF, IMPACT_REPORT
+- **Threshold**: T >= 85 (bắt buộc), S >= 75, K >= 0.80
+- **I** dựa vào verified delivery + partner attestation
+- **Q** dựa vào chứng từ/hồ sơ minh bạch
+
+### 5.6 FUN Farm — Farm to Table
+- **Actions**: FARM_DELIVERY, QUALITY_CERT, WASTE_REDUCTION, FAIR_TRADE_ORDER
+- **Threshold**: T >= 80 (traceability), C >= 70 (bền vững)
+- **I** = kg delivered, waste reduced, beneficiaries
+- **Q** = rating verified buyers, no fake reviews
+
+### 5.7 FUN Academy — Learn & Earn
+- **Actions**: LEARN_COMPLETE, QUIZ_PASS, PROJECT_SUBMIT, PEER_REVIEW, MENTOR_HELP
+- **Threshold**: LEARN_COMPLETE: T >= 70, LightScore >= 60; PROJECT_SUBMIT: C >= 70, T >= 75
+- **Q** = rubric chấm bài + peer review quality
+- **I** = learner helps others / produces reusable assets
+
+### 5.8 FUN Legal — Apply Cosmic Laws
+- **Actions**: GOV_PROPOSAL, POLICY_REVIEW, DISPUTE_RESOLVE, LEGAL_TEMPLATE_CREATE
+- **Threshold**: T >= 85 (độ chuẩn), U >= 70 (công tâm & hợp nhất)
+- **Q** = arbitration outcome quality
+- **I** = số tranh chấp giải quyết, giảm rủi ro
+
+### 5.9 FUN Earth — Environmental & Re-greening
+- **Actions**: TREE_PLANT, CLEANUP_EVENT, PARTNER_VERIFIED_REPORT
+- **Threshold**: T >= 80 (proof), S/H/U trọng số cao
+- **I** = verified hectares, kg waste, survival rate cây
+- **Q** = evidence quality + partner confirmation
+
+### 5.10 FUN Trading
+- **Actions**: RISK_LESSON_COMPLETE, PAPER_TRADE_DISCIPLINE, JOURNAL_SUBMIT
+- **Rule quan trọng**: Không thưởng "đánh bạc lời"; thưởng cho kỷ luật/học/nhật ký
+- **Threshold**: C >= 70, T >= 70
+- **Q** = consistency streak, risk controls
+- **I** = mentoring others về kỷ luật
+
+### 5.11 FUN Invest
+- **Actions**: DUE_DILIGENCE_REPORT, MENTOR_STARTUP, IMPACT_KPI_REVIEW
+- **Threshold**: T >= 85, C >= 75
+- **I** = startup outcomes, jobs created, impact KPI achieved
+- **Q** = peer-reviewed diligence quality
+
+### 5.12 FUNLife / COSMIC GAME (Game of Life)
+- **Actions**: DAILY_RITUAL, UNITY_MISSION_COMPLETE, SERVICE_QUEST
+- **Threshold**: K >= 0.7, U/H cao
+- **Q** = consistency streak + community witness
+- **I** = service quest beneficiaries
+
+### 5.13 FUN Market — Marketplace
+- **Actions**: FAIR_TRADE_ORDER, SELLER_VERIFIED_DELIVERY, REVIEW_HELPFUL
+- **Threshold**: T >= 80, K >= 0.75
+- **Q** = low dispute rate + helpful reviews
+- **I** = supports small businesses / fair pricing
+
+### 5.14 FUN Wallet — Our Own Bank
+- **Actions**: RECEIVE_REWARD, DONATE_FROM_WALLET, PAYMENT_FOR_SERVICE
+- **Rule quan trọng**: Không thưởng "farm tx". Reward chỉ cho hành vi có ngữ nghĩa
+- **Threshold**: K >= 0.85
+- **I** = donation impact / service transactions
+
+---
+
+## 6. POLICY JSON FORMAT (Versioned)
+
+\`\`\`json
+{
+  "version": 12,
+  "global": {
+    "minTruth": 70,
+    "minIntegrity": 60,
+    "minLightScore": 60,
+    "weights": {"S":0.25,"T":0.20,"H":0.20,"C":0.20,"U":0.15}
+  },
+  "platforms": {
+    "FUN_ACADEMY": {
+      "actions": {
+        "LEARN_COMPLETE": {
+          "baseReward": 200,
+          "thresholds": {"T":70,"LightScore":60,"K":60},
+          "multipliers": {"Q":[0.8,2.0],"I":[0.8,1.5],"K":[0.6,1.0]}
+        },
+        "PROJECT_SUBMIT": {
+          "baseReward": 500,
+          "thresholds": {"T":75,"C":70,"LightScore":65,"K":65},
+          "multipliers": {"Q":[1.0,3.0],"I":[1.0,2.5],"K":[0.65,1.0]}
+        }
+      }
+    },
+    "FUN_CHARITY": {
+      "actions": {
+        "DONATE": {
+          "baseReward": 300,
+          "thresholds": {"T":85,"S":75,"LightScore":65,"K":80},
+          "multipliers": {"Q":[1.0,2.5],"I":[1.0,5.0],"K":[0.8,1.0]}
+        }
+      }
+    }
+  }
+}
+\`\`\`
+
+---
+
+## 7. EIP-712 SIGNING SCRIPT (TypeScript/Node.js)
+
+### Yêu cầu
+- Node 18+
+- ethers v6
+- Private key signer (PPLP signer) lưu trong vault/ENV (production dùng KMS/HSM)
+
+### signMintRequest.ts
+
+\`\`\`typescript
+import "dotenv/config";
+import { ethers } from "ethers";
+
+const RPC_URL = process.env.RPC_URL!;
+const SIGNER_PK = process.env.SIGNER_PK!;
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS!;
+const CHAIN_ID = Number(process.env.CHAIN_ID || "56");
+
+// EIP-712 domain phải khớp với contract
+const DOMAIN = {
+  name: "FUNMoney-PPLP",
+  version: "1",
+  chainId: CHAIN_ID,
+  verifyingContract: CONTRACT_ADDRESS,
+};
+
+const TYPES = {
+  MintRequest: [
+    { name: "to", type: "address" },
+    { name: "amount", type: "uint256" },
+    { name: "actionId", type: "bytes32" },
+    { name: "evidenceHash", type: "bytes32" },
+    { name: "policyVersion", type: "uint32" },
+    { name: "validAfter", type: "uint64" },
+    { name: "validBefore", type: "uint64" },
+    { name: "nonce", type: "uint256" },
+  ],
+};
+
+const ABI = ["function nonces(address) view returns (uint256)"];
+
+export type MintRequest = {
+  to: string;
+  amount: bigint;
+  actionId: string;       // bytes32
+  evidenceHash: string;   // bytes32
+  policyVersion: number;  // uint32
+  validAfter: number;     // uint64
+  validBefore: number;    // uint64
+  nonce: bigint;          // uint256
+};
+
+async function signMintRequest() {
+  const provider = new ethers.JsonRpcProvider(RPC_URL);
+  const signer = new ethers.Wallet(SIGNER_PK, provider);
+  const token = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+
+  const to = "0xUserAddress";
+  const amount = 309n * 10n ** 18n; // 309 FUN (18 decimals)
+  const actionId = ethers.keccak256(ethers.toUtf8Bytes("PPLP:action-uuid"));
+  const evidenceHash = ethers.keccak256(ethers.toUtf8Bytes("evidence-data"));
+  const policyVersion = 12;
+
+  const now = Math.floor(Date.now() / 1000);
+  const validAfter = now;
+  const validBefore = now + 600; // 10 minutes
+
+  const nonce: bigint = await token.nonces(to);
+
+  const req: MintRequest = {
+    to, amount, actionId, evidenceHash,
+    policyVersion, validAfter, validBefore, nonce
+  };
+
+  const signature = await signer.signTypedData(DOMAIN, TYPES, req);
+
+  console.log("REQUEST:", req);
+  console.log("SIGNATURE:", signature);
+  console.log("SIGNER:", await signer.getAddress());
+}
+
+signMintRequest();
+\`\`\`
+
+### Lưu ý quan trọng: Decimals & Amount
+- Nếu FUN Money dùng 18 decimals, amount phải là \`reward * 10^18\`
+- Engine luôn lưu \`amountAtomic\` (đơn vị nhỏ nhất)
+
+---
+
+## 8. ACTIONID BYTES32 CHUẨN HÓA
+
+Khuyến nghị tạo actionIdBytes32 từ uuid:
+\`\`\`typescript
+actionIdBytes32 = keccak256("PPLP:" + actionUUID)
+\`\`\`
+
+Hoặc nếu action đã có canonical_hash thì dùng luôn (bytes32).
+
+---
+
+## 9. PRODUCTION CHECKLIST
+
+### Security
+- [ ] Signer KHÔNG nằm trong app server thường → tách Signer Service / dùng KMS/HSM
+- [ ] Private keys được encrypt và lưu an toàn
+
+### Governance
+- [ ] Policy versioning bắt buộc
+- [ ] Audit logs đầy đủ
+- [ ] Event indexer xác nhận minted (txHash, block)
+
+### Anti-Fraud
+- [ ] Rate limit pipeline hoạt động
+- [ ] Fraud signals được log và xử lý
+
+### Dispute Resolution
+- [ ] Dispute workflow (FUN Legal) để "sửa sai" minh bạch
+- [ ] SLA cho review: 48-72 giờ
+
+### Monitoring
+- [ ] Dashboard: minted per epoch, top actions, fraud flags
+- [ ] Alerting cho anomalies
+
+---
+
+## 10. TÓM TẮT FLOW
+
+\`\`\`
+Platform → Submit Action → PPLP Engine → Score (5 Pillars) 
+    → Calculate Reward (Base × Q × I × K)
+    → Create MintRequest → Sign (EIP-712)
+    → User/Platform calls mintWithSignature()
+    → On-chain verification → Mint FUN Money
+    → Event log → Indexer confirms → Update status
+\`\`\`
+
+**Nguyên tắc**: Mint-to-Unity — thưởng cho đóng góp thực sự, KHÔNG thưởng cho gian lận/đầu cơ.`;
+
 export interface PPLPKnowledgeTemplate {
   id: string;
   title: string;
   description: string;
   icon: string;
-  category: 'mint_guide' | 'pillars' | 'distribution' | 'actions' | 'anti_fraud' | 'policy_json' | 'technical_spec';
+  category: 'mint_guide' | 'pillars' | 'distribution' | 'actions' | 'anti_fraud' | 'policy_json' | 'technical_spec' | 'engine_spec';
   content: string;
 }
 
@@ -1382,6 +1937,14 @@ Risk Score = Σ(Signal Weight × Signal Value)
     icon: '⚙️',
     category: 'technical_spec',
     content: TECHNICAL_SPEC_CONTENT
+  },
+  {
+    id: 'engine-spec-v1',
+    title: 'PPLP Engine Spec v1.0 (API + DB + Rubric)',
+    description: 'API endpoints v1.0 (REST), PostgreSQL schema, scoring rubric theo từng platform, EIP-712 signing script',
+    icon: '🔧',
+    category: 'engine_spec',
+    content: ENGINE_SPEC_CONTENT
   }
 ];
 
