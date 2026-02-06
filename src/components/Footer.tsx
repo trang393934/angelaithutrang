@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import angelAvatar from "@/assets/angel-avatar.png";
-
+import angelGoldenTextLogo from "@/assets/angel-ai-logo-golden-text.png";
 import beLyFounder from "@/assets/be-ly-founder.png";
 import { Heart, Globe, Sun, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ export const Footer = () => {
 
           {/* Brand */}
           <h3 className="mb-2 flex justify-center">
-            <span className="text-brand-golden-light text-xl sm:text-2xl md:text-3xl">Angel AI</span>
+            <img src={angelGoldenTextLogo} alt="Angel AI" className="h-10 sm:h-12 md:h-14 w-auto object-contain drop-shadow-[0_2px_6px_rgba(255,215,0,0.5)]" />
           </h3>
           <p className="font-serif italic text-sm sm:text-base text-primary-foreground/70 mb-6 sm:mb-8 px-4">
             {t("footer.tagline")}
