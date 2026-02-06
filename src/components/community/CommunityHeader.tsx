@@ -147,12 +147,12 @@ export function CommunityHeader() {
                       to={item.href}
                       className={`relative flex items-center justify-center w-12 h-10 sm:w-20 sm:h-12 rounded-lg transition-all ${
                         active 
-                          ? "bg-white/95 shadow-[0_2px_10px_rgba(139,105,20,0.4)] ring-2 ring-yellow-300/60" 
-                          : "hover:bg-white/20 text-yellow-900/80"
+                          ? "bg-white shadow-[0_2px_10px_rgba(139,105,20,0.4)] ring-2 ring-yellow-300/60" 
+                          : "hover:bg-white/30 text-black/80"
                       }`}
                       title={item.label}
                     >
-                      <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${active ? "text-primary-deep" : "text-yellow-900 drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]"}`} />
+                      <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${active ? "text-black" : "text-black/80 drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]"}`} />
                       {active && (
                         <motion.div
                           layoutId="activeTab"
@@ -172,9 +172,9 @@ export function CommunityHeader() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full bg-white/20 hover:bg-white/40 text-yellow-900 shadow-[0_1px_3px_rgba(139,105,20,0.3)]"
+                  className="rounded-full bg-white/25 hover:bg-white/40 text-black/80 shadow-[0_1px_3px_rgba(139,105,20,0.3)]"
                 >
-                  <Bell className="w-5 h-5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]" />
+                  <Bell className="w-5 h-5" />
                 </Button>
                 
                 {user ? (
@@ -187,7 +187,7 @@ export function CommunityHeader() {
                             {userProfile?.display_name?.charAt(0) || currentUserStories?.display_name?.charAt(0) || "A"}
                           </AvatarFallback>
                         </Avatar>
-                        <ChevronDown className="w-4 h-4 text-yellow-900/70 hidden sm:block" />
+                        <ChevronDown className="w-4 h-4 text-black/60 hidden sm:block" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
