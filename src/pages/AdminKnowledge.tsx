@@ -9,9 +9,15 @@ import {
   FileType, AlertCircle, FolderPlus, Folder,
   Edit2, X, ChevronDown, ChevronRight, GripVertical,
   Search, Filter, XCircle, Link as LinkIcon, ExternalLink, Eye,
-  History, RefreshCw
+  History, RefreshCw, BookOpen, Download
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
+import { 
+  PPLP_KNOWLEDGE_TEMPLATES, 
+  PPLP_FOLDER_NAME, 
+  getPPLPDocumentTitle,
+  type PPLPKnowledgeTemplate 
+} from "@/data/pplpKnowledgeTemplates";
 
 interface KnowledgeFolder {
   id: string;
@@ -78,6 +84,11 @@ const AdminKnowledge = () => {
   const [googlePreview, setGooglePreview] = useState<{ content: string; sourceType: string } | null>(null);
   const [syncingDocId, setSyncingDocId] = useState<string | null>(null);
 
+  // PPLP Documents state
+  const [importedPPLPDocs, setImportedPPLPDocs] = useState<Set<string>>(new Set());
+  const [importingPPLP, setImportingPPLP] = useState<string | null>(null);
+  const [importingAllPPLP, setImportingAllPPLP] = useState(false);
+
   // Filtered documents based on search and filters
   const filteredDocuments = useMemo(() => {
     return documents.filter(doc => {
@@ -124,7 +135,7 @@ const AdminKnowledge = () => {
 
   const fetchData = async () => {
     setIsLoading(true);
-    await Promise.all([fetchFolders(), fetchDocuments()]);
+    await Promise.all([fetchFolders(), fetchDocuments(), fetchImportedPPLPDocs()]);
     setIsLoading(false);
   };
 
@@ -154,6 +165,143 @@ const AdminKnowledge = () => {
       toast.error("Không thể tải danh sách tài liệu");
     } else {
       setDocuments(data || []);
+    }
+  };
+
+  // Fetch imported PPLP documents
+  const fetchImportedPPLPDocs = async () => {
+    const { data, error } = await supabase
+      .from("knowledge_documents")
+      .select("title")
+      .like("title", "[PPLP]%");
+
+    if (!error && data) {
+      const importedIds = new Set<string>();
+      PPLP_KNOWLEDGE_TEMPLATES.forEach(template => {
+        const expectedTitle = getPPLPDocumentTitle(template.title);
+        if (data.some(doc => doc.title === expectedTitle)) {
+          importedIds.add(template.id);
+        }
+      });
+      setImportedPPLPDocs(importedIds);
+    }
+  };
+
+  // Get or create PPLP folder
+  const getOrCreatePPLPFolder = async (): Promise<string | null> => {
+    // Check if folder exists
+    const { data: existingFolder } = await supabase
+      .from("knowledge_folders")
+      .select("id")
+      .eq("name", PPLP_FOLDER_NAME)
+      .single();
+
+    if (existingFolder) {
+      return existingFolder.id;
+    }
+
+    // Create folder
+    const { data: newFolder, error } = await supabase
+      .from("knowledge_folders")
+      .insert({
+        name: PPLP_FOLDER_NAME,
+        description: "Tài liệu về giao thức PPLP - Proof of Pure Love",
+        created_by: user?.id
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Error creating PPLP folder:", error);
+      return null;
+    }
+
+    await fetchFolders();
+    return newFolder?.id || null;
+  };
+
+  // Import single PPLP template
+  const handleImportPPLPTemplate = async (template: PPLPKnowledgeTemplate) => {
+    if (importedPPLPDocs.has(template.id)) {
+      toast.info("Tài liệu này đã được import");
+      return;
+    }
+
+    setImportingPPLP(template.id);
+
+    try {
+      const folderId = await getOrCreatePPLPFolder();
+      const title = getPPLPDocumentTitle(template.title);
+
+      const { error } = await supabase
+        .from("knowledge_documents")
+        .insert({
+          title,
+          description: template.description,
+          file_name: `pplp-${template.id}.txt`,
+          file_url: "",
+          file_type: "text/plain",
+          file_size: new Blob([template.content]).size,
+          extracted_content: template.content,
+          is_processed: true,
+          created_by: user?.id,
+          folder_id: folderId
+        });
+
+      if (error) throw error;
+
+      setImportedPPLPDocs(prev => new Set([...prev, template.id]));
+      toast.success(`Đã import "${template.title}" ✨`);
+      await fetchDocuments();
+    } catch (error) {
+      console.error("Import error:", error);
+      toast.error("Không thể import tài liệu");
+    } finally {
+      setImportingPPLP(null);
+    }
+  };
+
+  // Import all PPLP templates
+  const handleImportAllPPLP = async () => {
+    const notImported = PPLP_KNOWLEDGE_TEMPLATES.filter(t => !importedPPLPDocs.has(t.id));
+    
+    if (notImported.length === 0) {
+      toast.info("Tất cả tài liệu PPLP đã được import");
+      return;
+    }
+
+    setImportingAllPPLP(true);
+
+    try {
+      const folderId = await getOrCreatePPLPFolder();
+      
+      for (const template of notImported) {
+        const title = getPPLPDocumentTitle(template.title);
+        
+        await supabase
+          .from("knowledge_documents")
+          .insert({
+            title,
+            description: template.description,
+            file_name: `pplp-${template.id}.txt`,
+            file_url: "",
+            file_type: "text/plain",
+            file_size: new Blob([template.content]).size,
+            extracted_content: template.content,
+            is_processed: true,
+            created_by: user?.id,
+            folder_id: folderId
+          });
+      }
+
+      setImportedPPLPDocs(new Set(PPLP_KNOWLEDGE_TEMPLATES.map(t => t.id)));
+      toast.success(`Đã import ${notImported.length} tài liệu PPLP! ✨`);
+      await fetchDocuments();
+    } catch (error) {
+      console.error("Import all error:", error);
+      toast.error("Có lỗi khi import tài liệu");
+    } finally {
+      setImportingAllPPLP(false);
     }
   };
 
@@ -932,6 +1080,94 @@ const AdminKnowledge = () => {
               )}
             </button>
           </form>
+        </div>
+
+        {/* PPLP Documents Section */}
+        <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-serif text-xl font-semibold text-primary-deep flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
+                Tài liệu PPLP - Hướng dẫn Mint FUN Money
+                <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                  {importedPPLPDocs.size}/{PPLP_KNOWLEDGE_TEMPLATES.length} đã import
+                </span>
+              </h2>
+              <p className="text-sm text-foreground-muted mt-1">
+                Các tài liệu giúp Angel AI trả lời về quy trình mint FUN Money theo PPLP
+              </p>
+            </div>
+            {importedPPLPDocs.size < PPLP_KNOWLEDGE_TEMPLATES.length && (
+              <button
+                onClick={handleImportAllPPLP}
+                disabled={importingAllPPLP}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-sapphire-gradient text-white font-medium shadow-sacred hover:shadow-divine disabled:opacity-50 transition-all"
+              >
+                {importingAllPPLP ? (
+                  <>
+                    <Sparkles className="w-4 h-4 animate-pulse" />
+                    Đang import...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Import tất cả
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {PPLP_KNOWLEDGE_TEMPLATES.map((template) => {
+              const isImported = importedPPLPDocs.has(template.id);
+              const isImporting = importingPPLP === template.id;
+
+              return (
+                <div
+                  key={template.id}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
+                    isImported 
+                      ? "bg-green-50 border-green-200" 
+                      : "bg-primary-pale/20 border-primary-pale hover:border-primary"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{template.icon}</span>
+                    <div>
+                      <h3 className="font-medium text-foreground">{template.title}</h3>
+                      <p className="text-sm text-foreground-muted">{template.description}</p>
+                    </div>
+                  </div>
+                  
+                  {isImported ? (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle className="w-5 h-5" />
+                      <span className="text-sm font-medium">Đã import</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleImportPPLPTemplate(template)}
+                      disabled={isImporting || importingAllPPLP}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors"
+                    >
+                      {isImporting ? (
+                        <>
+                          <Sparkles className="w-4 h-4 animate-pulse" />
+                          <span>Đang import...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          <span>Import vào KB</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Google URL Import */}
