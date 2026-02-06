@@ -195,72 +195,88 @@ export function HonorBoard() {
         {/* Header with Angel AI logo and sparkling effect */}
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="relative">
-            {/* Sparkle effects around logo */}
-            <motion.div
-              animate={{ 
-                scale: [1, 1.2, 1],
-                opacity: [0.5, 1, 0.5]
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-primary-deep/30 to-primary/20 rounded-full blur-md"
-            />
+            {/* Rainbow rotating glow around logo */}
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-3 border border-dashed border-primary/30 rounded-full"
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              className="absolute -inset-3 rounded-full blur-md"
+              style={{
+                background: 'conic-gradient(from 0deg, #FF0000, #FF8800, #FFFF00, #00CC00, #0088FF, #8800FF, #FF00FF, #FF0000)',
+                opacity: 0.5,
+              }}
+            />
+            {/* Second rainbow ring spinning opposite */}
+            <motion.div
+              animate={{ rotate: -360 }}
+              transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+              className="absolute -inset-2 rounded-full"
+              style={{
+                background: 'conic-gradient(from 180deg, #FF0000, #FF8800, #FFFF00, #00CC00, #0088FF, #8800FF, #FF00FF, #FF0000)',
+                opacity: 0.35,
+                filter: 'blur(4px)',
+              }}
             />
             
-            {/* Floating sparkles */}
-            {[...Array(4)].map((_, i) => (
+            {/* Floating rainbow sparkles */}
+            {['#FF0000', '#FF8800', '#FFFF00', '#00CC00', '#0088FF', '#8800FF', '#FF00FF'].map((color, i) => (
               <motion.div
                 key={i}
                 animate={{
-                  y: [0, -10, 0],
+                  y: [0, -12, 0],
                   opacity: [0, 1, 0],
-                  scale: [0.5, 1, 0.5]
+                  scale: [0.4, 1.2, 0.4]
                 }}
                 transition={{
-                  duration: 1.5,
+                  duration: 1.8,
                   repeat: Infinity,
-                  delay: i * 0.3
+                  delay: i * 0.25
                 }}
                 className="absolute"
                 style={{
-                  top: `${-5 + i * 3}px`,
-                  left: `${-5 + i * 12}px`
+                  top: `${-8 + (i % 3) * 5}px`,
+                  left: `${-8 + i * 7}px`
                 }}
               >
-                <Sparkles className="w-3 h-3 text-primary" />
+                <Sparkles className="w-3 h-3" style={{ color }} />
               </motion.div>
             ))}
             
             <img 
               src={angelLogo} 
               alt="Angel AI" 
-              className="w-12 h-12 object-contain relative z-10 drop-shadow-[0_0_10px_rgba(21,101,192,0.4)]"
+              className="w-12 h-12 object-contain relative z-10 drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
             />
           </div>
           
           <h2 className="text-2xl font-bold tracking-wider uppercase relative">
-            <span className="text-transparent bg-clip-text drop-shadow-[0_0_12px_rgba(255,215,0,0.6)]"
+            {/* Rainbow gradient text */}
+            <motion.span
+              className="text-transparent bg-clip-text"
+              animate={{
+                backgroundPosition: ['0% 50%', '200% 50%'],
+              }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               style={{
-                backgroundImage: 'linear-gradient(135deg, #8B6914 0%, #C49B30 15%, #E8C252 30%, #F5D976 45%, #FFF4C8 55%, #F5D976 65%, #E8C252 80%, #C49B30 90%, #8B6914 100%)',
+                backgroundImage: 'linear-gradient(90deg, #FF0000, #FF8800, #FFFF00, #00CC00, #0088FF, #8800FF, #FF00FF, #FF0000, #FF8800, #FFFF00, #00CC00, #0088FF)',
+                backgroundSize: '200% 100%',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
+                filter: 'drop-shadow(0 0 8px rgba(255,100,200,0.4))',
               }}
             >
               {t("leaderboard.honorBoard")}
-            </span>
-            {/* Sparkle overlay effect */}
+            </motion.span>
+            {/* Shimmer sweep overlay */}
             <motion.span
-              className="absolute inset-0 text-transparent bg-clip-text opacity-0"
+              className="absolute inset-0 text-transparent bg-clip-text pointer-events-none"
               style={{
-                backgroundImage: 'linear-gradient(135deg, transparent 20%, rgba(255,255,255,0.95) 50%, transparent 80%)',
+                backgroundImage: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.9) 50%, transparent 70%)',
+                backgroundSize: '200% 100%',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
               }}
-              animate={{ opacity: [0, 0.9, 0] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              animate={{ backgroundPosition: ['-100% 0%', '200% 0%'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
             >
               {t("leaderboard.honorBoard")}
             </motion.span>
