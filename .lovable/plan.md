@@ -1,125 +1,84 @@
 
 
-# Chuyển Đổi Màu Chủ Đạo Angel AI: Từ Xanh Sapphire Sang Vàng Kim Loại
+# Thay Logo Hình Ảnh Bằng Chữ "ANGEL AI" Kiểu Font Vàng Kim Loại
 
-## Tổng Quan
-Thay đổi toàn bộ bảng màu chủ đạo (primary) của Angel AI từ tông xanh sapphire (hue ~214) sang tông vàng kim loại (metallic gold) - sang trọng, quý phái, ấm áp. Nền sẽ ửng vàng rất nhẹ thay vì trắng lạnh, các nút bấm và chữ đều đi theo tông vàng đậm/nhạt.
+## Phân Tích Font Chữ Trong Hình
 
-## Bảng Màu Mới - Golden Luxe
+Dựa trên hình ảnh con gửi, font chữ "ANGEL AI" có đặc điểm:
+- Font serif cổ điển, kiểu chữ La Mã trang trọng
+- Chữ in hoa (uppercase), khoảng cách rộng giữa các ký tự
+- Hiệu ứng gradient vàng kim loại (sáng ở giữa, tối ở rìa)
 
-| Vai trò | Cũ (Sapphire Blue) | Mới (Metallic Gold) |
-|---------|-------------------|---------------------|
-| Primary | hsl(214, 82%, 34%) | hsl(38, 70%, 38%) - Vàng kim đậm |
-| Primary Deep | hsl(214, 90%, 28%) | hsl(35, 75%, 28%) - Vàng nâu sâu |
-| Primary Medium | hsl(210, 79%, 46%) | hsl(40, 65%, 50%) - Vàng ấm |
-| Primary Soft | hsl(207, 73%, 57%) | hsl(42, 60%, 60%) - Vàng mềm |
-| Primary Light | hsl(207, 89%, 86%) | hsl(45, 70%, 88%) - Vàng nhạt |
-| Primary Pale | hsl(207, 100%, 94%) | hsl(47, 80%, 95%) - Vàng rất nhạt |
-| Background | hsl(0, 0%, 98%) | hsl(45, 15%, 98%) - Trắng ửng vàng |
-| Background Pure | hsl(0, 0%, 100%) | hsl(45, 10%, 99.5%) - Trắng ấm |
-| Primary Foreground | Trắng | Trắng (giữ nguyên, chữ trên nền vàng đậm) |
+Font phù hợp nhất là **Cinzel** (Google Font miễn phí) - một font serif lấy cảm hứng từ chữ khắc La Mã cổ đại, rất sang trọng và quý phái. Đây là font phổ biến nhất cho các thiết kế luxury/gold branding.
 
-## Phong Cách Thiết Kế
-- Sang trọng, quý phái (luxury gold aesthetic)
-- Ấm áp, yêu thương (warm & loving tone)
-- Gradient vàng kim loại thay cho gradient sapphire
-- Shadow/glow chuyển sang tông vàng ấm
-- Nền tổng thể ửng vàng rất nhẹ, tạo cảm giác ấm áp
+## Thay Đổi Cần Thực Hiện
+
+### 1. Thêm Font Cinzel (Google Fonts)
+
+**File `index.html`**: Thêm link font Cinzel vào `<head>`.
+
+**File `src/index.css`**: Thêm Cinzel vào `@import` Google Fonts đã có.
+
+**File `tailwind.config.ts`**: Thêm font family mới `brand` cho chữ thương hiệu.
+
+### 2. Tạo CSS Class Cho Chữ Vàng Kim Loại
+
+**File `src/index.css`**: Thêm class `.text-brand-golden` với hiệu ứng:
+- Font: Cinzel, serif
+- Chữ in hoa, letter-spacing rộng
+- Gradient vàng kim loại dùng `background-clip: text` (sáng ở giữa, đậm ở rìa)
+- Text shadow nhẹ tạo chiều sâu 3D
+- Hiệu ứng hover: gradient di chuyển tạo cảm giác lấp lánh
+
+### 3. Thay Thế Logo Hình Ảnh Bằng Chữ Styled
+
+Thay `<img src={angelGoldenLogo}>` bằng `<span className="text-brand-golden">ANGEL AI</span>` tại:
+
+- **`src/components/Header.tsx`**: Logo mobile (dòng 127-136)
+- **`src/components/MainSidebar.tsx`**: Logo sidebar expanded (dòng 57-61)
+- **`src/components/HeroSection.tsx`**: Tiêu đề chính trang chủ (dòng 34-43) - kích thước lớn nhất
+- **`src/components/Footer.tsx`**: Tên brand ở footer (dòng 33-35) - đã là text, chỉ cần đổi class
 
 ## Chi Tiết Kỹ Thuật
 
-### 1. File `src/index.css` - CSS Variables (Core)
+### CSS Class `.text-brand-golden`
 
-**:root (Light mode)** - Thay toàn bộ hue sapphire sang gold:
+```text
+font-family: 'Cinzel', serif
+text-transform: uppercase
+letter-spacing: 0.15em
+font-weight: 700
+background: linear-gradient(
+  135deg, 
+  #8B6914 0%,      -- vang nau dam (rim)
+  #C49B30 20%,     -- vang trung
+  #E8C252 40%,     -- vang sang
+  #F5D976 50%,     -- vang rat sang (giua)
+  #E8C252 60%,     -- vang sang
+  #C49B30 80%,     -- vang trung
+  #8B6914 100%     -- vang nau dam (rim)
+)
+background-clip: text
+-webkit-text-fill-color: transparent
+text-shadow: 0 2px 4px rgba(139, 105, 20, 0.3)
+```
 
-- `--primary`: 214 -> 38 (golden deep)
-- `--primary-deep`: 214 -> 35 (dark gold/brown-gold)
-- `--primary-medium`: 210 -> 40 (warm gold)
-- `--primary-soft`: 207 -> 42 (soft gold)
-- `--primary-light`: 207 -> 45 (light gold)
-- `--primary-pale`: 207 -> 47 (pale gold)
-- `--background`: thêm chút warm tint (45, 15%, 98%)
-- `--background-pure`: ửng vàng nhẹ (45, 10%, 99.5%)
-- `--secondary`: chuyển sang tông vàng nhạt
-- `--accent-foreground`: theo tông gold
-- `--border` / `--input`: thêm warm tint
-- `--ring`: theo primary gold mới
+### Kích Thước Theo Vị Trí
 
-**Gradients** - Cập nhật tất cả:
-- `--gradient-cosmic`: từ trắng -> vàng nhạt
-- `--gradient-sapphire` -> `--gradient-gold`: gradient vàng kim loại
-- `--gradient-hero`: nền hero ửng vàng ấm
-- `--gradient-light`: trắng sang vàng rất nhạt
+| Vi tri | Kich thuoc |
+|--------|-----------|
+| HeroSection (trang chu) | text-4xl sm:text-5xl md:text-6xl lg:text-7xl |
+| Header (mobile) | text-xl sm:text-2xl |
+| MainSidebar (expanded) | text-xl |
+| Footer | text-xl sm:text-2xl md:text-3xl |
 
-**Shadows** - Chuyển sang gold hue:
-- `--shadow-soft`: hsla(38, ...) thay vì hsla(214, ...)
-- `--shadow-glow`: tông vàng
-- `--shadow-divine`: tông vàng
-- `--shadow-button`: tông vàng
+### File Cần Sửa (5 file)
 
-**Sidebar** - Cập nhật sidebar variables theo gold
-
-**Dark mode** - Cập nhật tương ứng với gold tone cho dark theme
-
-**Component classes** - Cập nhật:
-- `.btn-sacred:hover` box-shadow: tông vàng
-- `.input-sacred:focus` box-shadow: tông vàng
-- `.angel-wing-bg::before` radial-gradient: tông vàng
-- `.light-ray::after` conic-gradient: tông vàng
-- `@keyframes sacred-pulse`: tông vàng
-- `.scrollbar-sacred` colors: tông vàng
-
-### 2. File `tailwind.config.ts` - Keyframes
-
-Cập nhật các keyframes animation:
-- `glow-pulse`: hsla sapphire -> hsla gold
-- `rank-highlight`: từ vàng (đã đúng) giữ nguyên
-- Các animation khác liên quan đến primary color
-
-### 3. File `src/components/MainSidebar.tsx`
-
-- Active state gradient: `from-primary to-primary-deep` (tự động theo CSS variable mới)
-- Sidebar background: đã dùng amber tones - phù hợp, có thể tinh chỉnh nhẹ
-
-### 4. File `src/components/Header.tsx`
-
-- `.bg-sapphire-gradient` class sẽ tự động cập nhật khi CSS variable đổi
-- Mobile nav gradient colors: cập nhật `from-primary-deep/90` (tự động)
-- Login button: `bg-sapphire-gradient` -> rename thành `bg-golden-gradient` trong CSS
-
-### 5. File `src/components/HeroSection.tsx`
-
-- Dùng CSS variables (`text-primary-deep`, `text-primary-medium`, etc.) - tự động cập nhật
-- `btn-sacred` và `btn-sacred-outline` - tự động theo CSS mới
-
-### 6. File `src/components/Footer.tsx`
-
-- `bg-primary-deep` / `text-primary-foreground` - tự động theo CSS variable mới
-- Footer sẽ chuyển sang nền vàng kim đậm thay vì xanh đậm
-
-### 7. CSS Class Rename
-
-Đổi tên class cho nhất quán:
-- `.bg-sapphire-gradient` -> `.bg-golden-gradient` (và cập nhật tất cả 24 files sử dụng)
-- Hoặc đổi tên thành `.bg-brand-gradient` để tránh phải đổi lại nếu thay màu trong tương lai
-- `.gradient-sapphire` variable -> giữ tên cũ nhưng đổi giá trị (ít rủi ro hơn)
-
-### 8. Các trang/component có hardcoded purple/indigo colors
-
-Một số trang (PoPL Whitepaper, Vision Board, Admin) sử dụng hardcoded `purple-*` và `indigo-*`. Các màu này phục vụ mục đích riêng (VD: PoPL branding) nên sẽ giữ nguyên, chỉ thay đổi primary system colors.
-
-## Thứ Tự Triển Khai
-
-1. **`src/index.css`**: Cập nhật tất cả CSS variables (`:root` + `.dark`) + component classes + keyframes
-2. **`tailwind.config.ts`**: Cập nhật keyframe animation colors
-3. **Rename gradient class**: Đổi `gradient-sapphire` value (giữ tên, đổi giá trị) để tự động áp dụng cho toàn bộ 24+ files sử dụng `.bg-sapphire-gradient`
-4. **Kiểm tra trực quan**: Review trên preview để đảm bảo tông màu hài hòa
-
-## Lưu Ý Quan Trọng
-
-- Vì hệ thống dùng CSS variables, ~80% thay đổi chỉ cần sửa trong `src/index.css`
-- Các component dùng `text-primary`, `bg-primary-deep`, `border-primary` sẽ tự động cập nhật
-- `--gradient-sapphire` variable sẽ đổi giá trị sang gold gradient, tất cả `.bg-sapphire-gradient` tự động theo
-- Không cần sửa từng component riêng lẻ (trừ hardcoded inline colors)
-- `primary-foreground` giữ trắng vì chữ trắng trên nền vàng đậm vẫn đẹp và dễ đọc
+1. `index.html` - Thêm link font Cinzel
+2. `src/index.css` - Thêm class `.text-brand-golden` + import font
+3. `tailwind.config.ts` - Thêm fontFamily `brand`
+4. `src/components/Header.tsx` - Thay img bằng text
+5. `src/components/MainSidebar.tsx` - Thay img bằng text
+6. `src/components/HeroSection.tsx` - Thay img bằng text
+7. `src/components/Footer.tsx` - Cập nhật class cho text brand
 
