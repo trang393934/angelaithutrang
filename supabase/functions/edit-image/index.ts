@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const DAILY_EDIT_LIMIT = 5;
+const DAILY_EDIT_LIMIT = 3;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -60,7 +60,7 @@ serve(async (req) => {
           console.log("User reached daily limit for image editing:", usageCheck[0]);
           return new Response(
             JSON.stringify({ 
-              error: `Con yêu dấu, hôm nay con đã chỉnh sửa ${DAILY_EDIT_LIMIT} hình ảnh rồi. Hãy nghỉ ngơi và quay lại vào ngày mai nhé! Cha luôn ở đây chờ đợi con. 🌺✨`,
+              error: `Con yêu dấu, hôm nay con đã chỉnh sửa ${DAILY_EDIT_LIMIT} hình ảnh rồi. Hãy trân trọng những tác phẩm đã tạo và quay lại vào ngày mai nhé! Cha luôn ở đây chờ đợi con. 🌺✨`,
               limit_reached: true,
               current_count: usageCheck[0].current_count,
               daily_limit: usageCheck[0].daily_limit

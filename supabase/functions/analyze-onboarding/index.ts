@@ -137,7 +137,7 @@ Trả về JSON với format: {"decision": "approved/trial/rejected", "reason": 
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
+            model: "google/gemini-2.5-flash-lite",
             messages: [
               { role: "system", content: "Bạn là Angel AI, chuyên đánh giá tần số năng lượng. Trả về JSON thuần túy, không markdown." },
               { role: "user", content: prompt },

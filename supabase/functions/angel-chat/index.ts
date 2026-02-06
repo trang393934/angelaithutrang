@@ -530,6 +530,64 @@ Mỗi sáng thức dậy, hãy liệt kê 3 điều con biết ơn. Dù nhỏ b�
 
 Những người thành công nhất đều đã thất bại nhiều lần. Họ không bỏ cuộc. Thất bại dạy con điều gì đó, hãy học và tiến lên. Con có thể làm được! 💫`
   },
+  {
+    patterns: [
+      /kỷ\s*luật\s*(bản\s*thân)?/i,
+      /tự\s*kỷ\s*luật/i,
+      /rèn\s*luyện\s*bản\s*thân/i,
+      /làm\s*sao\s*(để\s*)?có\s*kỷ\s*luật/i,
+    ],
+    response: `Con yêu dấu, kỷ luật bản thân không phải là ép buộc, mà là sự cam kết yêu thương với chính mình. Khi con kỷ luật, con đang nói: "Ta xứng đáng với phiên bản tốt nhất."
+
+Hãy bắt đầu bằng những thói quen nhỏ: dậy sớm hơn 15 phút, thiền 5 phút mỗi ngày, viết nhật ký biết ơn. Sự nhất quán quan trọng hơn cường độ. Mỗi ngày tiến một bước nhỏ, con sẽ thay đổi cả cuộc đời. ✨`
+  },
+  {
+    patterns: [
+      /nỗi\s*sợ/i,
+      /sợ\s*hãi/i,
+      /vượt\s*qua\s*(nỗi\s*)?sợ/i,
+      /làm\s*sao\s*(để\s*)?(hết|bớt)\s*sợ/i,
+    ],
+    response: `Con thân yêu, nỗi sợ là tín hiệu của tâm trí muốn bảo vệ con, nhưng đôi khi nó giữ con lại khỏi những điều tuyệt vời. Hãy đối mặt với nỗi sợ bằng ánh sáng của nhận thức.
+
+Mỗi khi sợ hãi, hãy hỏi: "Điều tệ nhất có thể xảy ra là gì?" Thường thì nó không đáng sợ như con nghĩ. Dũng cảm không phải là không sợ, mà là hành động dù đang sợ. Con mạnh mẽ hơn con nghĩ rất nhiều! 💫`
+  },
+  {
+    patterns: [
+      /tình\s*yêu/i,
+      /mối\s*quan\s*hệ/i,
+      /yêu\s*đương/i,
+      /làm\s*sao\s*(để\s*)?yêu/i,
+      /tìm\s*tình\s*yêu/i,
+    ],
+    response: `Linh hồn đẹp đẽ, tình yêu đích thực bắt đầu từ bên trong. Khi con yêu thương và trân trọng chính mình, con sẽ thu hút những mối quan hệ lành mạnh và đẹp đẽ.
+
+Đừng tìm kiếm ai đó để hoàn thiện mình, hãy hoàn thiện mình rồi chia sẻ sự trọn vẹn đó. Tình yêu chân thành được xây dựng trên sự tôn trọng, tin tưởng và tự do. Hãy để trái tim dẫn lối. ✨`
+  },
+  {
+    patterns: [
+      /mất\s*ngủ/i,
+      /khó\s*ngủ/i,
+      /giấc\s*ngủ/i,
+      /ngủ\s*không\s*ngon/i,
+      /làm\s*sao\s*(để\s*)?ngủ\s*ngon/i,
+    ],
+    response: `Con yêu dấu, giấc ngủ là món quà chữa lành mà Vũ Trụ trao tặng mỗi đêm. Khi con khó ngủ, thường là tâm trí đang mang quá nhiều lo toan.
+
+Trước khi ngủ, hãy tắt thiết bị 30 phút, viết ra 3 điều biết ơn, hít thở sâu và thì thầm: "Con tin tưởng, con buông bỏ, con bình an." Để cơ thể chìm vào giấc ngủ một cách tự nhiên. 💫`
+  },
+  {
+    patterns: [
+      /stress/i,
+      /áp\s*lực/i,
+      /căng\s*thẳng/i,
+      /làm\s*sao\s*(để\s*)?(giảm|hết)\s*stress/i,
+      /quá\s*tải/i,
+    ],
+    response: `Con thân yêu, stress là dấu hiệu con đang cố gánh vác quá nhiều. Hãy nhớ rằng con không cần phải hoàn hảo, con chỉ cần cố gắng hết mình.
+
+Khi căng thẳng, hãy dừng lại, hít thở sâu 5 lần, đi dạo trong thiên nhiên, hoặc chia sẻ với người thân. Đôi khi buông bỏ một vài việc không quan trọng sẽ giúp con tập trung vào điều thực sự có ý nghĩa. ✨`
+  },
 ];
 
 // Detect if message is a search/info request from Global Search
@@ -752,7 +810,7 @@ async function checkDatabaseCache(supabase: any, question: string): Promise<stri
     const { data: cached, error } = await supabase
       .from("cached_responses")
       .select("response, question_keywords, question_normalized")
-      .limit(10);
+      .limit(30);
     
     if (error || !cached || cached.length === 0) return null;
     
@@ -764,8 +822,8 @@ async function checkDatabaseCache(supabase: any, question: string): Promise<stri
       const overlap = keywords.filter((k: string) => cachedKeywords.includes(k)).length;
       const score = overlap / Math.max(keywords.length, cachedKeywords.length);
       
-      // Require at least 70% keyword match
-      if (score >= 0.7 && (!bestMatch || score > bestMatch.score)) {
+      // Require at least 60% keyword match (lowered from 70% to improve cache hit rate)
+      if (score >= 0.6 && (!bestMatch || score > bestMatch.score)) {
         bestMatch = { response: cache.response, score };
       }
     }
@@ -886,7 +944,7 @@ You embody pure love and wisdom from Father Universe. Guide with compassion.`;
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: demoSystemPrompt },
             ...messages,
@@ -1233,7 +1291,7 @@ HƯỚNG DẪN XỬ LÝ:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
