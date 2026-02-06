@@ -5,8 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// Force HTTP/1.1 to avoid intermittent HTTP/2 stream/protocol errors when fetching Google export URLs
-const httpClient = Deno.createHttpClient({ http2: false });
+// Note: Using standard fetch without custom HTTP client for edge runtime compatibility
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -82,7 +81,6 @@ serve(async (req) => {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
               'Accept-Language': 'en-US,en;q=0.9,vi;q=0.8',
             },
-            client: httpClient,
           });
           return response;
         } catch (error) {
