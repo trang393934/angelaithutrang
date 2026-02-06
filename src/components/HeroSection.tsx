@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Sparkles, PenLine } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
-import angelGoldenTextLogo from "@/assets/angel-ai-logo-golden-text.png";
+
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ChatDemoWidget } from "@/components/ChatDemoWidget";
 
@@ -32,7 +32,7 @@ export const HeroSection = () => {
 
           {/* Main Title - Golden Logo */}
           <h1 className="mb-4 opacity-0 animate-fade-in-slow animate-delay-200 flex justify-center">
-            <img src={angelGoldenTextLogo} alt="Angel AI" className="h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain drop-shadow-[0_4px_8px_rgba(139,105,20,0.5)]" />
+            <span className="text-brand-golden text-5xl sm:text-6xl md:text-7xl lg:text-8xl">Angel AI</span>
           </h1>
 
           {/* Tagline - Main */}

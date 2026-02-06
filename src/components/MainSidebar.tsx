@@ -18,7 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import angelAvatar from "@/assets/angel-avatar.png";
-import angelGoldenTextLogo from "@/assets/angel-ai-logo-golden-text.png";
+
 
 
 export function MainSidebar() {
@@ -55,7 +55,7 @@ export function MainSidebar() {
               </div>
             </div>
           ) : (
-            <img src={angelGoldenTextLogo} alt="Angel AI" className="h-8 w-auto object-contain drop-shadow-[0_2px_4px_rgba(139,105,20,0.4)]" />
+            <span className="text-brand-golden text-2xl">Angel AI</span>
           )}
         </div>
       </SidebarHeader>
