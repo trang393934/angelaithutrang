@@ -149,6 +149,29 @@ serve(async (req) => {
 
         engagementRewarded = true;
 
+        // ============= PPLP Integration: Engagement reward (10+ likes) =============
+        submitAndScorePPLPAction(supabase, {
+          action_type: PPLP_ACTION_TYPES.POST_ENGAGEMENT,
+          actor_id: question.user_id,
+          target_id: questionId,
+          metadata: {
+            question_id: questionId,
+            likes_count: newLikesCount,
+          },
+          impact: {
+            scope: 'group',
+            reach_count: newLikesCount,
+            quality_indicators: ['community_endorsed', 'high_engagement'],
+          },
+          integrity: {
+            source_verified: true,
+          },
+          reward_amount: ENGAGEMENT_REWARD,
+        }).then(r => {
+          if (r.success) console.log(`[PPLP] Engagement scored: ${r.action_id}, FUN: ${r.reward}`);
+        }).catch(e => console.warn('[PPLP] Engagement error:', e));
+        // ============= End PPLP Integration =============
+
         // Send notification to question author (via healing_messages)
         await supabase
           .from("healing_messages")

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { submitPPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -184,8 +184,8 @@ serve(async (req) => {
         rewarded = true;
         console.log(`Post creation reward given to user ${userId}: ${POST_CREATION_REWARD} coins`);
 
-        // ============= PPLP Integration =============
-        const pplpResult = await submitPPLPAction(supabase, {
+        // ============= PPLP Integration (Real-time scoring for FUN Money) =============
+        const pplpResult = await submitAndScorePPLPAction(supabase, {
           action_type: PPLP_ACTION_TYPES.POST_CREATE,
           actor_id: userId,
           target_id: newPost.id,
@@ -213,7 +213,7 @@ serve(async (req) => {
         });
         
         if (pplpResult.success) {
-          console.log(`[PPLP] Post creation action submitted: ${pplpResult.action_id}`);
+          console.log(`[PPLP] Post creation scored: ${pplpResult.action_id}, FUN reward: ${pplpResult.reward}`);
         }
         // ============= End PPLP Integration =============
       }
@@ -303,6 +303,29 @@ serve(async (req) => {
               .eq("id", tracking.id);
 
             console.log(`Post engagement reward given to user ${post.user_id}`);
+
+            // ============= PPLP Integration: Post engagement (5+ likes) =============
+            submitAndScorePPLPAction(supabase, {
+              action_type: PPLP_ACTION_TYPES.POST_ENGAGEMENT,
+              actor_id: post.user_id,
+              target_id: postId,
+              metadata: {
+                post_id: postId,
+                likes_count: newLikesCount,
+              },
+              impact: {
+                scope: 'group',
+                reach_count: newLikesCount,
+                quality_indicators: ['community_endorsed'],
+              },
+              integrity: {
+                source_verified: true,
+              },
+              reward_amount: POST_ENGAGEMENT_REWARD,
+            }).then(r => {
+              if (r.success) console.log(`[PPLP] Post engagement scored: ${r.action_id}, FUN: ${r.reward}`);
+            }).catch(e => console.warn('[PPLP] Post engagement error:', e));
+            // ============= End PPLP Integration =============
 
             return new Response(
               JSON.stringify({
@@ -428,6 +451,29 @@ serve(async (req) => {
 
       console.log(`Share rewards given to sharer ${userId} and post owner ${post.user_id}`);
 
+      // ============= PPLP Integration: Share content =============
+      submitAndScorePPLPAction(supabase, {
+        action_type: PPLP_ACTION_TYPES.SHARE_CONTENT,
+        actor_id: userId,
+        target_id: postId,
+        metadata: {
+          post_id: postId,
+          shared_to: 'community',
+        },
+        impact: {
+          scope: 'platform',
+          reach_count: 1,
+          quality_indicators: ['social_share', 'light_spreading'],
+        },
+        integrity: {
+          source_verified: true,
+        },
+        reward_amount: SHARE_REWARD,
+      }).then(r => {
+        if (r.success) console.log(`[PPLP] Share scored: ${r.action_id}, FUN: ${r.reward}`);
+      }).catch(e => console.warn('[PPLP] Share error:', e));
+      // ============= End PPLP Integration =============
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -497,8 +543,8 @@ serve(async (req) => {
 
         console.log(`Comment reward given to user ${userId}`);
 
-        // ============= PPLP Integration =============
-        const pplpResult = await submitPPLPAction(supabase, {
+        // ============= PPLP Integration (Real-time scoring for FUN Money) =============
+        const pplpResult = await submitAndScorePPLPAction(supabase, {
           action_type: PPLP_ACTION_TYPES.COMMENT_CREATE,
           actor_id: userId,
           target_id: postId,
@@ -525,7 +571,7 @@ serve(async (req) => {
         });
         
         if (pplpResult.success) {
-          console.log(`[PPLP] Comment action submitted: ${pplpResult.action_id}`);
+          console.log(`[PPLP] Comment scored: ${pplpResult.action_id}, FUN: ${pplpResult.reward}`);
         }
         // ============= End PPLP Integration =============
 

@@ -34,6 +34,52 @@ export const PPLP_ACTION_TYPES = {
 
 export type PPLPActionType = typeof PPLP_ACTION_TYPES[keyof typeof PPLP_ACTION_TYPES];
 
+// ========== Policy v1.0.1 Base Rewards (FUN Money) ==========
+// Maps action types to their base FUN reward according to Policy v1.0.1
+// These are used by pplp-score-action to calculate FUN Money rewards
+const POLICY_V101_BASE_REWARDS: Record<string, { baseFUN: number; platform: string; policyAction: string }> = {
+  // Angel AI Platform
+  QUESTION_ASK:      { baseFUN: 50,  platform: 'ANGEL_AI',    policyAction: 'AI_REVIEW_HELPFUL' },
+  FEEDBACK_GIVE:     { baseFUN: 60,  platform: 'ANGEL_AI',    policyAction: 'MODERATION_HELP' },
+  
+  // FUN Profile Platform (Community actions on Angel AI)
+  POST_CREATE:       { baseFUN: 70,  platform: 'FUN_PROFILE', policyAction: 'CONTENT_CREATE' },
+  CONTENT_CREATE:    { baseFUN: 70,  platform: 'FUN_PROFILE', policyAction: 'CONTENT_CREATE' },
+  COMMENT_CREATE:    { baseFUN: 40,  platform: 'FUN_PROFILE', policyAction: 'CONTENT_REVIEW' },
+  POST_ENGAGEMENT:   { baseFUN: 40,  platform: 'FUN_PROFILE', policyAction: 'CONTENT_REVIEW' },
+  SHARE_CONTENT:     { baseFUN: 40,  platform: 'FUN_PROFILE', policyAction: 'CONTENT_REVIEW' },
+  HELP_COMMUNITY:    { baseFUN: 120, platform: 'FUN_PROFILE', policyAction: 'COMMUNITY_BUILD' },
+  MENTOR_HELP:       { baseFUN: 150, platform: 'FUN_PROFILE', policyAction: 'MENTOR_HELP' },
+  IDEA_SUBMIT:       { baseFUN: 150, platform: 'FUN_PROFILE', policyAction: 'MENTOR_HELP' },
+  
+  // FUNLife Platform
+  JOURNAL_WRITE:     { baseFUN: 20,  platform: 'FUNLIFE',     policyAction: 'DAILY_RITUAL' },
+  GRATITUDE_PRACTICE:{ baseFUN: 20,  platform: 'FUNLIFE',     policyAction: 'DAILY_RITUAL' },
+  DAILY_LOGIN:       { baseFUN: 20,  platform: 'FUNLIFE',     policyAction: 'DAILY_RITUAL' },
+  
+  // FUN Charity Platform
+  DONATE_SUPPORT:    { baseFUN: 120, platform: 'FUN_CHARITY', policyAction: 'DONATE' },
+};
+
+/**
+ * Get Policy v1.0.1 base reward for an action type (in FUN Money units).
+ * Returns the base FUN reward or null if action type is not mapped.
+ */
+export function getPolicyBaseReward(
+  actionType: string,
+  _platformId?: string
+): number | null {
+  const mapping = POLICY_V101_BASE_REWARDS[actionType];
+  return mapping ? mapping.baseFUN : null;
+}
+
+/**
+ * Get the policy platform mapping for an action type
+ */
+export function getPolicyPlatform(actionType: string): string {
+  return POLICY_V101_BASE_REWARDS[actionType]?.platform || 'ANGEL_AI';
+}
+
 export interface PPLPActionInput {
   platform_id?: string;
   action_type: PPLPActionType;

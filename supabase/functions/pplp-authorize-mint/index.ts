@@ -385,6 +385,17 @@ serve(async (req) => {
         const signer = new ethers.Wallet(formattedKey, rpcResult.provider);
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
         
+        // Check if signer is an attester
+        const isAttester = await contract.isAttester(signer.address);
+        console.log(`[PPLP Lock] Signer ${signer.address} isAttester: ${isAttester}`);
+        
+        if (!isAttester) {
+          console.error(`[PPLP Lock] Signer is NOT an attester. guardianGov must call govSetAttester first.`);
+          const guardianGov = await contract.guardianGov();
+          console.error(`[PPLP Lock] guardianGov: ${guardianGov}. Ask them to call: govSetAttester(${signer.address}, true)`);
+          throw new Error(`Signer (${signer.address}) is not an attester. Contact guardianGov (${guardianGov}) to register.`);
+        }
+
         // Check if action is registered
         const actionInfo = await contract.actions(actionHash);
         console.log(`[PPLP Lock] Action "${actionName}" status:`, {
@@ -393,44 +404,30 @@ serve(async (req) => {
           deprecated: actionInfo.deprecated,
         });
         
-        // If action not registered, register it first
         if (!actionInfo.allowed) {
-          console.log(`[PPLP Lock] Action "${actionName}" not registered. Registering via govRegisterAction...`);
-          
-          // Verify we are the guardianGov
+          // Action not registered - cannot auto-register (Treasury is not guardianGov)
           const guardianGov = await contract.guardianGov();
-          console.log(`[PPLP Lock] guardianGov: ${guardianGov}, signer: ${signer.address}`);
-          
-          if (guardianGov.toLowerCase() !== signer.address.toLowerCase()) {
-            console.error(`[PPLP Lock] Signer is NOT guardianGov. Cannot register action.`);
-            throw new Error(`Signer (${signer.address}) is not guardianGov (${guardianGov})`);
-          }
-          
-          // Register action with actionType = 1 (PPLP)
-          const regTx = await contract.govRegisterAction(actionName, 1);
-          console.log(`[PPLP Lock] ⏳ Registering action TX: ${regTx.hash}`);
-          await regTx.wait(1);
-          console.log(`[PPLP Lock] ✓ Action "${actionName}" registered successfully!`);
+          console.error(`[PPLP Lock] Action "${actionName}" is NOT registered on-chain.`);
+          console.error(`[PPLP Lock] guardianGov (${guardianGov}) must call: govRegisterAction("${actionName}", 1)`);
+          throw new Error(`Action "${actionName}" not registered on-chain. Ask guardianGov to register it.`);
         }
         
         // ============================================
         // EXECUTE ON-CHAIN lockWithPPLP TRANSACTION
         // ============================================
         
-        console.log(`[PPLP Lock] Submitting lockWithPPLP transaction...`);
+        console.log(`[PPLP Lock] Submitting lockWithPPLP: user=${wallet_address}, action=${actionName}, amount=${amountWei.toString()} wei`);
         
-        // Call lockWithPPLP(user, actionName, amount, evidenceHash, [signature])
         const tx = await contract.lockWithPPLP(
-          wallet_address,     // user address
-          actionName,         // action string (e.g., "QUESTION_ASK")
-          amountWei,          // amount in wei
-          evidenceHash,       // evidence hash
-          [signature]         // array of signatures (we have 1 attester)
+          wallet_address,
+          actionName,
+          amountWei,
+          evidenceHash,
+          [signature]
         );
         
         console.log(`[PPLP Lock] ⏳ Transaction sent: ${tx.hash}`);
         
-        // Wait for confirmation (1 block)
         const receipt = await tx.wait(1);
         txHash = receipt.hash;
         
@@ -479,38 +476,10 @@ serve(async (req) => {
     // MINT OFF-CHAIN (FUN Money) - Only if not already minted
     // ============================================
 
-    let newBalance = null;
-
-    if (action.status === "scored") {
-      const { data: balance, error: coinError } = await supabase.rpc("add_camly_coins", {
-        _user_id: action.actor_id,
-        _amount: rewardAmount,
-        _transaction_type: "pplp_reward",
-        _description: `PPLP Reward: ${action.platform_id}/${action.action_type}`,
-        _purity_score: score.light_score,
-        _metadata: {
-          action_id: action.id,
-          platform_id: action.platform_id,
-          action_type: action.action_type,
-          pillars: {
-            S: score.pillar_s,
-            T: score.pillar_t,
-            H: score.pillar_h,
-            C: score.pillar_c,
-            U: score.pillar_u,
-          },
-          light_score: score.light_score,
-          on_chain_pending: !!signature,
-        },
-      });
-
-      if (coinError) {
-        console.error("Failed to add coins:", coinError);
-      } else {
-        newBalance = balance;
-      }
-
-      // Update action status
+    // FUN Money: Update action status based on on-chain result
+    // Do NOT add Camly Coins here - FUN Money is separate from Camly Coin
+    if (txHash) {
+      // On-chain success: mark as minted
       await supabase
         .from("pplp_actions")
         .update({
@@ -520,12 +489,16 @@ serve(async (req) => {
         })
         .eq("id", action.id);
 
-      // Update PoPL score
+      // Update PoPL score on successful mint
       await supabase.rpc("update_popl_score", {
         _user_id: action.actor_id,
         _action_type: action.action_type.toLowerCase(),
         _is_positive: true,
       });
+
+      console.log(`[PPLP Lock] ✓ Action ${action.id} minted on-chain: ${rewardAmount} FUN Money`);
+    } else {
+      console.log(`[PPLP Lock] Action ${action.id}: Off-chain signature stored, on-chain pending`);
     }
 
     console.log(`[PPLP Lock] Action ${action.id}: Authorized ${rewardAmount} FUN Money to ${wallet_address}`);
@@ -540,7 +513,7 @@ serve(async (req) => {
         action_id: action.id,
         actor_id: action.actor_id,
         reward_amount: rewardAmount,
-        new_balance: newBalance,
+        reward_unit: "FUN",
         light_score: score.light_score,
         pillars: {
           S: score.pillar_s,
@@ -562,10 +535,10 @@ serve(async (req) => {
         tx_hash: txHash,
         on_chain_success: !!txHash,
         message: txHash
-          ? `✓ Token đã được lock on-chain thành công! TX: ${txHash}`
+          ? `✓ ${rewardAmount} FUN Money đã được lock on-chain thành công! TX: ${txHash}`
           : (signature
-            ? "Token đã được cộng off-chain. On-chain lock đang chờ xử lý."
-            : "Token đã được cộng off-chain. Chưa có TREASURY_PRIVATE_KEY để ký on-chain."),
+            ? `Signature đã ký. On-chain lock đang chờ xử lý (${rewardAmount} FUN).`
+            : "Chưa có TREASURY_PRIVATE_KEY để ký on-chain."),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
