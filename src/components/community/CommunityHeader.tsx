@@ -98,9 +98,23 @@ export function CommunityHeader() {
   return (
     <>
       <div className="sticky top-0 z-50">
-        {/* Main Navigation Bar - Dark Blue Background */}
-        <header className="bg-primary-deep border-b border-primary/20 shadow-lg">
-          <div className="container mx-auto px-4">
+        {/* Main Navigation Bar - Bright Metallic Gold 3D */}
+        <header className="relative border-b border-yellow-400/40 shadow-[0_4px_20px_rgba(255,215,0,0.3)]"
+          style={{
+            background: 'linear-gradient(180deg, #C49B30 0%, #E8C252 15%, #F5D976 40%, #FFF4C8 55%, #F5D976 70%, #E8C252 85%, #C49B30 100%)',
+          }}
+        >
+          {/* Shimmer overlay */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute inset-0 opacity-30" style={{
+              background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.8) 45%, transparent 55%)',
+              animation: 'shimmer 4s ease-in-out infinite',
+            }} />
+          </div>
+          {/* Inner shadow for 3D depth */}
+          <div className="absolute inset-0 pointer-events-none rounded-none shadow-[inset_0_2px_4px_rgba(255,255,255,0.7),inset_0_-2px_6px_rgba(139,105,20,0.3)]" />
+          
+          <div className="container mx-auto px-4 relative">
             <div className="flex items-center justify-between h-14 sm:h-16">
               {/* Left: Logo & Search */}
               <div className="flex items-center gap-3 flex-1">
@@ -108,7 +122,7 @@ export function CommunityHeader() {
                   <img 
                     src={angelAiLogo} 
                     alt="Angel AI" 
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg object-contain"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
                   />
                 </Link>
                 
@@ -124,7 +138,7 @@ export function CommunityHeader() {
 
               {/* Center: Navigation Icons */}
               <nav className="flex items-center gap-1 sm:gap-2">
-                {navItems.map((item) => {
+              {navItems.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
                   return (
@@ -133,16 +147,17 @@ export function CommunityHeader() {
                       to={item.href}
                       className={`relative flex items-center justify-center w-12 h-10 sm:w-20 sm:h-12 rounded-lg transition-all ${
                         active 
-                          ? "bg-white text-primary-deep shadow-md" 
-                          : "hover:bg-white/10 text-white/80"
+                          ? "bg-white/95 shadow-[0_2px_10px_rgba(139,105,20,0.4)] ring-2 ring-yellow-300/60" 
+                          : "hover:bg-white/20 text-yellow-900/80"
                       }`}
                       title={item.label}
                     >
-                      <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${active ? "text-primary-deep" : "text-white"}`} />
+                      <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${active ? "text-primary-deep" : "text-yellow-900 drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]"}`} />
                       {active && (
                         <motion.div
                           layoutId="activeTab"
-                          className="absolute -bottom-[1px] left-2 right-2 h-[3px] bg-primary rounded-t-full"
+                          className="absolute -bottom-[1px] left-2 right-2 h-[3px] rounded-t-full"
+                          style={{ background: 'linear-gradient(90deg, #8B6914, #E8C252, #8B6914)' }}
                           initial={false}
                           transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                         />
@@ -157,22 +172,22 @@ export function CommunityHeader() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full bg-white/10 hover:bg-white/20 text-white"
+                  className="rounded-full bg-white/20 hover:bg-white/40 text-yellow-900 shadow-[0_1px_3px_rgba(139,105,20,0.3)]"
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-5 h-5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]" />
                 </Button>
                 
                 {user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="flex items-center gap-1">
-                        <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-white/50 cursor-pointer hover:ring-white transition-all">
+                        <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-yellow-200/70 cursor-pointer hover:ring-white transition-all shadow-[0_2px_8px_rgba(139,105,20,0.4)]">
                           <AvatarImage src={userProfile?.avatar_url || currentUserStories?.avatar_url || angelAvatar} />
                           <AvatarFallback className="bg-white text-primary-deep text-sm">
                             {userProfile?.display_name?.charAt(0) || currentUserStories?.display_name?.charAt(0) || "A"}
                           </AvatarFallback>
                         </Avatar>
-                        <ChevronDown className="w-4 h-4 text-white/70 hidden sm:block" />
+                        <ChevronDown className="w-4 h-4 text-yellow-900/70 hidden sm:block" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
@@ -229,7 +244,7 @@ export function CommunityHeader() {
                   </DropdownMenu>
                 ) : (
                   <Link to="/auth">
-                    <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-white/50 cursor-pointer hover:ring-white transition-all">
+                    <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-yellow-200/70 cursor-pointer hover:ring-white transition-all shadow-[0_2px_8px_rgba(139,105,20,0.4)]">
                       <AvatarImage src={angelAvatar} />
                       <AvatarFallback className="bg-white text-primary-deep text-sm">A</AvatarFallback>
                     </Avatar>
