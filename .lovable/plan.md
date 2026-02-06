@@ -1,115 +1,178 @@
 
 
-# Kế hoạch: Sửa lỗi Action "đang xử lý" không được chấm điểm tự động
+# Kế hoạch: Tạo Section PPLP Documents trên Admin Knowledge
 
-## Vấn đề đã xác định
+## Tổng quan
 
-### 1. Action pending mới nhất
-- **ID**: `663f26b8-7544-4eb0-9ee1-626d63b291c6`
-- **Thời gian**: 12:51 UTC (khoảng 30 phút trước)
-- **Status**: `pending` (chưa được chấm điểm)
-- **scored_at**: `null`
+Thêm một section mới vào trang `/admin/knowledge` để quản lý **tài liệu PPLP (Bằng chứng Tình yêu Thuần khiết)** - đây là các tài liệu hướng dẫn về quy trình mint FUN Money mà Angel AI sẽ học để trả lời user.
 
-### 2. Nguyên nhân gốc rễ
-Edge function `analyze-reward-question` hiện tại:
-- Dòng 621: Gọi `submitPPLPAction()` - chỉ **TẠO** action với status `pending`
-- **KHÔNG** gọi `submitAndScorePPLPAction()` - function này mới **TỰ ĐỘNG CHẤM ĐIỂM**
+## Thiết kế Section PPLP
 
-```typescript
-// Hiện tại (CHỈ TẠO, KHÔNG CHẤM ĐIỂM):
-const pplpResult = await submitPPLPAction(supabase, { ... });
+### Vị trí trên trang
+Section mới sẽ nằm **sau phần "Upload Tài Liệu Mới"** và **trước phần "Import từ Google Docs/Sheets"**, với giao diện thống nhất với các section khác.
 
-// Cần sửa thành (TẠO + CHẤM ĐIỂM NGAY):
-const pplpResult = await submitAndScorePPLPAction(supabase, { ... });
-```
+### Nội dung Section
 
-### 3. Tại sao các action cũ được scored?
-- Các action cũ được chấm điểm nhờ `pplp-batch-processor` chạy định kỳ
-- Nhưng batch processor chưa được trigger cho action mới nhất này
+**Card "Tài liệu PPLP - Hướng dẫn Mint FUN Money"** bao gồm:
 
----
+| Tính năng | Mô tả |
+|-----------|-------|
+| Mô tả section | Giải thích mục đích của tài liệu PPLP |
+| Danh sách tài liệu có sẵn | Hiển thị các template/hướng dẫn PPLP đã được tích hợp |
+| Nút thêm vào Knowledge | Cho phép admin nạp tài liệu PPLP vào hệ thống kiến thức |
+| Trạng thái đã import | Hiển thị tài liệu nào đã được thêm vào knowledge base |
 
-## Giải pháp
+### Tài liệu PPLP sẽ bao gồm
 
-### Bước 1: Sửa `analyze-reward-question` để chấm điểm ngay lập tức
-
-Thay đổi từ `submitPPLPAction` sang `submitAndScorePPLPAction`:
-
-```typescript
-// File: supabase/functions/analyze-reward-question/index.ts
-
-// Cập nhật import (dòng 3):
-import { 
-  submitAndScorePPLPAction,  // <-- Thêm function này
-  PPLP_ACTION_TYPES, 
-  generateContentHash 
-} from "../_shared/pplp-helper.ts";
-
-// Thay đổi dòng 621:
-const pplpResult = await submitAndScorePPLPAction(supabase, {
-  action_type: PPLP_ACTION_TYPES.QUESTION_ASK,
-  actor_id: userId,
-  // ... rest of params
-});
-
-// Log kết quả scoring
-if (pplpResult.success) {
-  console.log(`[PPLP] Action ${pplpResult.action_id} scored=${pplpResult.scored}, minted=${pplpResult.minted}`);
-}
-```
-
-### Bước 2: Deploy lại edge functions
-
-Deploy:
-- `analyze-reward-question` (với fix trên)
-- `pplp-score-action` (đảm bảo đã deploy)
-
-### Bước 3: Xử lý action pending hiện tại
-
-Chạy batch processor hoặc gọi trực tiếp `pplp-score-action` để chấm điểm action đang pending.
+1. **Hướng dẫn Mint FUN Money** - Quy trình 3 bước: Lock → Activate → Claim
+2. **5 Trụ cột PPLP** - Phụng sự, Chân thật, Chữa lành, Bền vững, Hợp nhất
+3. **Công thức phân phối FUN Money** - Community Genesis Pool → Platform → Partner → User
+4. **Các loại Light Actions** - 40+ loại hành động được thưởng
+5. **Quy tắc chống gian lận** - Anti-sybil, rate limits, reputation gating
 
 ---
 
 ## Chi tiết kỹ thuật
 
-### Flow sau khi fix:
+### Files cần tạo/sửa
 
-```text
-User gửi câu hỏi → angel-chat trả lời
-        ↓
-  analyzeAndReward() (Frontend)
-        ↓
-  analyze-reward-question (Edge Function)
-        ↓
-  submitAndScorePPLPAction()   ← SỬA Ở ĐÂY
-        ├─→ INSERT pplp_actions (status: pending)
-        └─→ CALL pplp-score-action 
-              ├─→ Tính Light Score
-              ├─→ UPDATE status → 'scored' hoặc 'minted'
-              └─→ Trả về kết quả
-        ↓
-  Action hiển thị ngay trong /mint với trạng thái "Sẵn sàng claim"
+| File | Thay đổi |
+|------|----------|
+| `src/pages/AdminKnowledge.tsx` | Thêm section PPLP Documents sau phần Upload |
+| `src/data/pplpKnowledgeTemplates.ts` | Tạo file chứa nội dung các tài liệu PPLP template |
+
+### Cấu trúc dữ liệu tài liệu PPLP
+
+```typescript
+interface PPLPKnowledgeTemplate {
+  id: string;
+  title: string;
+  description: string;
+  category: 'mint_guide' | 'pillars' | 'distribution' | 'actions' | 'anti_fraud';
+  content: string;  // Nội dung đầy đủ để import vào knowledge base
+}
 ```
 
-### Database state hiện tại:
-| action_id | status | scored_at |
-|-----------|--------|-----------|
-| 663f26b8... | **pending** | null |
-| dc9d1e22... | minted | 2026-02-05 07:45 |
-| 5a3ddd87... | minted | 2026-02-05 04:44 |
-| ... | scored | ... |
+### UI Components
 
-### File cần sửa:
-1. `supabase/functions/analyze-reward-question/index.ts`
-   - Dòng 3: Thêm import `submitAndScorePPLPAction`
-   - Dòng 621: Thay `submitPPLPAction` → `submitAndScorePPLPAction`
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  📜 Tài liệu PPLP - Hướng dẫn Mint FUN Money               │
+│  ─────────────────────────────────────────────────          │
+│  Các tài liệu giúp Angel AI trả lời về quy trình mint       │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ ✨ Hướng dẫn Mint FUN Money (3 bước)                  │  │
+│  │ Quy trình Lock → Activate → Claim                     │  │
+│  │                                        [✓ Đã import]  │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ 🏛️ 5 Trụ cột PPLP                                     │  │
+│  │ Phụng sự, Chân thật, Chữa lành, Bền vững, Hợp nhất   │  │
+│  │                                      [Import vào KB]  │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ 💰 Công thức phân phối FUN Money                      │  │
+│  │ Community Genesis → Platform → Partner → User         │  │
+│  │                                      [Import vào KB]  │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ ⚡ Các loại Light Actions (40+ loại)                  │  │
+│  │ Hành động được thưởng FUN Money                       │  │
+│  │                                      [Import vào KB]  │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ 🛡️ Quy tắc chống gian lận                             │  │
+│  │ Anti-sybil, rate limits, reputation gating            │  │
+│  │                                      [Import vào KB]  │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│                    [ 📥 Import tất cả vào Knowledge Base ]  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Logic xử lý
+
+1. **Kiểm tra tài liệu đã import**: Query bảng `knowledge_documents` với tiêu đề chứa `[PPLP]` prefix
+2. **Import tài liệu**: Insert vào `knowledge_documents` với:
+   - `title`: `[PPLP] {template.title}`
+   - `file_name`: `pplp-{template.id}.txt`
+   - `file_type`: `text/plain`
+   - `extracted_content`: nội dung từ template
+   - `is_processed`: `true`
+   - `folder_id`: Tạo/tìm folder "PPLP Documents"
+3. **Hiển thị trạng thái**: Badge "Đã import" hoặc nút "Import vào KB"
+
+---
+
+## Nội dung các tài liệu PPLP Template
+
+### 1. Hướng dẫn Mint FUN Money
+
+```text
+# HƯỚNG DẪN MINT FUN MONEY
+
+FUN Money là đồng tiền Ánh Sáng (Father's Light Money) được mint theo giá trị đóng góp 
+thông qua giao thức PPLP (Proof of Pure Love Protocol).
+
+## QUY TRÌNH MINT 3 BƯỚC
+
+### Bước 1: Lock (Khóa token)
+- Khi bạn thực hiện một "Light Action" (hành động Ánh Sáng), hệ thống sẽ tự động 
+  ghi nhận và khóa FUN Money tương ứng vào ví Treasury
+- Số FUN được tính theo công thức: BaseReward × QualityMultiplier × ImpactMultiplier
+- Trạng thái: "Đang khóa" (Locked)
+
+### Bước 2: Activate (Kích hoạt)
+- Truy cập trang /mint để xem các FUN Money đang khóa
+- Nhấn nút "Kích hoạt" để chuyển từ trạng thái "Locked" sang "Activated"
+- Cần kết nối ví MetaMask để thực hiện giao dịch on-chain
+
+### Bước 3: Claim (Nhận token)
+- Sau khi kích hoạt, nhấn nút "Nhận về ví" 
+- FUN Money sẽ được chuyển vào ví của bạn
+- Trạng thái: "Có thể chi tiêu" (Spendable)
+
+## LƯU Ý QUAN TRỌNG
+- Mỗi Light Action cần đạt Light Score tối thiểu 50 điểm
+- Giới hạn nhận thưởng: 8 FUN/ngày/người
+- Cần có ví Web3 (MetaMask) để claim FUN Money
+```
+
+### 2. 5 Trụ cột PPLP (tóm tắt từ poplData.ts)
+
+### 3. Công thức phân phối (từ cuộc trò chuyện trước)
+
+### 4. Các loại Light Actions (từ pplp-types.ts)
+
+### 5. Quy tắc chống gian lận (từ poplData.ts)
 
 ---
 
 ## Kết quả mong đợi
 
 Sau khi triển khai:
-1. Khi con chat với Angel AI, action sẽ được **chấm điểm ngay lập tức** (không cần đợi batch processor)
-2. Action mới sẽ xuất hiện trong /mint với trạng thái "Sẵn sàng claim" thay vì "Đang xử lý"
-3. Flow nhanh hơn ~15 phút (không cần đợi batch processor cycle)
+
+1. Admin có thể dễ dàng thêm các tài liệu PPLP vào knowledge base
+2. Angel AI sẽ học được kiến thức về:
+   - Cách mint FUN Money
+   - Ý nghĩa của PPLP và 5 trụ cột
+   - Công thức phân phối token
+   - Các hành động được thưởng
+3. User sẽ nhận được câu trả lời chính xác khi hỏi về mint FUN Money
+
+---
+
+## Thời gian ước tính
+
+| Công việc | Thời gian |
+|-----------|-----------|
+| Tạo file template PPLP | 1 session |
+| Thêm section vào AdminKnowledge | 1 session |
+| Test import và verify | 1 session |
+| **Tổng** | **2-3 sessions** |
 
