@@ -97,18 +97,20 @@ export const FUN_MONEY_ADDRESSES: Record<number, string> = {
 };
 
 // EIP-712 Domain for PPLP signatures (used by attesters)
+// MUST match contract: EIP712("FUN Money", "1.2.1")
 export const FUN_MONEY_DOMAIN = {
-  name: "FUNMoney-PPLP",
-  version: "1",
+  name: "FUN Money",
+  version: "1.2.1",
   chainId: 97, // BSC Testnet
   verifyingContract: "0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2",
 };
 
-// PPLP Lock Request types for EIP-712 (attester signing)
+// PureLoveProof types for EIP-712 (attester signing)
+// MUST match contract PPLP_TYPEHASH: PureLoveProof(address user,bytes32 actionHash,uint256 amount,bytes32 evidenceHash,uint256 nonce)
 export const PPLP_LOCK_TYPES = {
-  PPLPLock: [
+  PureLoveProof: [
     { name: "user", type: "address" },
-    { name: "action", type: "bytes32" },
+    { name: "actionHash", type: "bytes32" },
     { name: "amount", type: "uint256" },
     { name: "evidenceHash", type: "bytes32" },
     { name: "nonce", type: "uint256" },

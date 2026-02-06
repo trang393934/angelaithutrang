@@ -1,32 +1,113 @@
-# FUN Money Smart Contracts
+# FUN Money Smart Contracts — v1.2.1 FINAL
 
 ## Overview
 
-This directory contains the Solidity smart contracts for the FUN Ecosystem's token economy.
+This directory contains the Solidity smart contract for the FUN Ecosystem's token economy.
 
-## Contracts
+**Tag**: `FUN-MONEY-v1.2.1-final`  
+**Status**: ✅ Audit-grade, FROZEN, ready for external audit & mainnet
 
-### FUNMoney.sol
+## Contract: FUNMoneyProductionV1_2_1
 
-The main BEP-20/ERC-20 token with integrated PPLP Mint Engine.
+Standalone BEP-20/ERC-20 token with integrated PPLP Vesting Engine.
 
-**Features:**
-- EIP-712 typed signature verification for secure minting
-- Idempotent minting (each actionId can only mint once)
-- Epoch-based rate limiting (global + per-user caps)
-- Role-based access control (Admin, Signer, Governor, Pauser)
-- ERC20Permit for gasless approvals
-- Pausable for emergency stops
-- ReentrancyGuard for security
+### Features
+
+- **3-Step Vesting Flow**: Lock → Activate → Claim
+- **EIP-712 Multi-Attester Signatures** for secure locking
+- **Action Registry** (Master Charter 5D) with governance
+- **Epoch-based Rate Limiting** (global mint cap)
+- **guardianGov** governance with limited, safe powers
+- **Community Pool** for excess recycling
+- **Transparency Getters** for on-chain auditability
+
+### Alignment (Hiến Chương 5D)
+
+- Code = Law
+- Money = Flow of Light
+- No extraction, no control of user flow
+- Errors return to Community
+
+## Vesting Flow
+
+```
+lockWithPPLP()  →  activate()  →  claim()
+   (Backend)       (User)          (User)
+   ↓                ↓               ↓
+  Locked          Activated       Spendable
+```
+
+1. **lockWithPPLP()** — Backend (Treasury) locks tokens with attester signatures
+2. **activate()** — User activates locked tokens (requires `!pauseTransitions`)
+3. **claim()** — User claims activated tokens to their wallet
+
+## Constructor
+
+```solidity
+constructor(
+    address _gov,           // Guardian Governance address
+    address _community,     // Community Pool address
+    address[] memory attesters,  // Initial attester addresses
+    uint256 threshold       // Min signatures required
+)
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `_gov` | address | Guardian Governance (immutable) |
+| `_community` | address | Community Pool (immutable) |
+| `attesters` | address[] | Initial attester list |
+| `threshold` | uint256 | Min attester signatures for lockWithPPLP |
+
+## EIP-712 Domain
+
+```solidity
+EIP712Domain {
+    name: "FUN Money",
+    version: "1.2.1",
+    chainId: 97,  // BSC Testnet (56 for mainnet)
+    verifyingContract: <contract_address>
+}
+```
+
+## PureLoveProof Typehash
+
+```solidity
+PureLoveProof(
+    address user,
+    bytes32 actionHash,
+    uint256 amount,
+    bytes32 evidenceHash,
+    uint256 nonce
+)
+```
+
+## Governance (guardianGov only)
+
+| Function | Description |
+|----------|-------------|
+| `govRegisterAction(name, version)` | Register new action type |
+| `govDeprecateAction(name, newVersion)` | Deprecate an action |
+| `govSetAttester(attester, allowed)` | Add/remove attester |
+| `govSetAttesterThreshold(threshold)` | Update signature threshold |
+| `govPauseTransitions(paused)` | Pause/unpause Lock & Activate |
+| `govRecycleExcessToCommunity(amount)` | Send excess to community pool |
+
+## Events
+
+| Event | Description |
+|-------|-------------|
+| `PureLoveAccepted` | Tokens locked via PPLP |
+| `ActionRegistered` | New action type registered |
+| `ActionDeprecated` | Action type deprecated |
+| `AttesterUpdated` | Attester added/removed |
+| `AttesterThresholdUpdated` | Threshold changed |
+| `TransitionsPaused` | Transitions paused/unpaused |
+| `ExcessRecycled` | Excess sent to community |
 
 ## Deployment
-
-### Prerequisites
-
-```bash
-npm install -g hardhat
-npm install @openzeppelin/contracts
-```
 
 ### Compile
 
@@ -46,83 +127,26 @@ npx hardhat run scripts/deploy.js --network bscTestnet
 npx hardhat run scripts/deploy.js --network bscMainnet
 ```
 
-## Configuration
+## Current Deployment
 
-### Constructor Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `name_` | string | Token name (e.g., "FUN Money") |
-| `symbol_` | string | Token symbol (e.g., "FUN") |
-| `epochMintCap_` | uint256 | Max tokens mintable per epoch globally |
-| `userEpochCap_` | uint256 | Max tokens mintable per user per epoch |
-| `admin_` | address | Initial admin address |
-
-### Recommended Settings
-
-- **Epoch Duration**: 1 day (86400 seconds)
-- **Epoch Mint Cap**: 10,000,000 FUN (10M tokens)
-- **User Epoch Cap**: 100,000 FUN (100K tokens per user)
-- **Min Mint Amount**: 1 FUN
-- **Max Mint Amount**: 1,000,000 FUN
-
-## Roles
-
-| Role | Permissions |
-|------|-------------|
-| `ADMIN_ROLE` | Grant/revoke roles, enable/disable minting |
-| `SIGNER_ROLE` | Sign mint requests (PPLP Engine) |
-| `GOVERNOR_ROLE` | Update epoch params, policy version |
-| `PAUSER_ROLE` | Pause/unpause all transfers |
-
-## Integration with PPLP Engine
-
-### Mint Flow
-
-1. User performs a Light Action on FUN Platform
-2. PPLP Engine scores the action and creates a `MintRequest`
-3. PPLP Signer signs the request with EIP-712
-4. User (or relayer) calls `mintWithSignature()` with the signed request
-5. Contract verifies signature, caps, and mints tokens
-
-### EIP-712 Domain
-
-```solidity
-EIP712Domain {
-    name: "FUNMoney-PPLP",
-    version: "1",
-    chainId: 56,  // BSC Mainnet (97 for testnet)
-    verifyingContract: <contract_address>
-}
-```
-
-### MintRequest Type
-
-```solidity
-MintRequest {
-    address to,
-    uint256 amount,
-    bytes32 actionId,
-    bytes32 evidenceHash,
-    uint32 policyVersion,
-    uint64 validAfter,
-    uint64 validBefore,
-    uint256 nonce
-}
-```
+| Network | Address |
+|---------|---------|
+| BSC Testnet | `0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2` |
+| BSC Mainnet | To be deployed after audit |
 
 ## Security Considerations
 
-1. **Double-mint Protection**: Each `actionId` can only be minted once
+1. **Multi-Attester**: Requires threshold signatures to lock tokens
 2. **Nonce Protection**: Prevents signature replay attacks
-3. **Time Window**: Signatures expire after `validBefore`
-4. **Policy Version**: Old signatures invalidated on version bump
-5. **Rate Limiting**: Epoch caps prevent excessive minting
-6. **Pausable**: Emergency stop for all transfers
+3. **Epoch Rate Limiting**: Global mint cap per epoch
+4. **Action Registry**: Only registered actions can lock tokens
+5. **Pause Control**: Emergency stop for transitions
+6. **Community Pool**: Excess recycled, never extracted
 
 ## Audit Status
 
-- [ ] Internal review
+- [x] Internal review
+- [x] Code frozen (v1.2.1-final)
 - [ ] External audit (planned)
 
 ## License

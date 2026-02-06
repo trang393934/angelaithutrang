@@ -33,19 +33,20 @@ const CONTRACT_ABI = [
   "function guardianGov() view returns (address)",
 ];
 
-// PPLP EIP-712 domain
+// PPLP EIP-712 domain — MUST match contract: EIP712("FUN Money", "1.2.1")
 const PPLP_DOMAIN = {
-  name: "FUNMoney-PPLP",
-  version: "1",
+  name: "FUN Money",
+  version: "1.2.1",
   chainId: 97,
   verifyingContract: CONTRACT_ADDRESS,
 };
 
-// PPLP Lock typehash structure
+// PPLP PureLoveProof typehash structure
+// MUST match contract PPLP_TYPEHASH: PureLoveProof(address user,bytes32 actionHash,uint256 amount,bytes32 evidenceHash,uint256 nonce)
 const PPLP_LOCK_TYPES = {
-  PPLPLock: [
+  PureLoveProof: [
     { name: "user", type: "address" },
-    { name: "action", type: "bytes32" },
+    { name: "actionHash", type: "bytes32" },
     { name: "amount", type: "uint256" },
     { name: "evidenceHash", type: "bytes32" },
     { name: "nonce", type: "uint256" },
@@ -342,18 +343,18 @@ serve(async (req) => {
         signerAddress = signer.address;
         console.log(`[PPLP Lock] Signer address: ${signerAddress}`);
 
-        // Create EIP-712 typed data
+        // Create EIP-712 typed data — PureLoveProof struct
         const message = {
           user: wallet_address,
-          action: actionHash,
+          actionHash: actionHash,
           amount: amountWei,
           evidenceHash: evidenceHash,
           nonce: onChainNonce,
         };
         
-        console.log(`[PPLP Lock] Signing message:`, JSON.stringify({
+        console.log(`[PPLP Lock] Signing PureLoveProof:`, JSON.stringify({
           user: message.user,
-          action: message.action,
+          actionHash: message.actionHash,
           amount: message.amount.toString(),
           evidenceHash: message.evidenceHash,
           nonce: message.nonce.toString(),

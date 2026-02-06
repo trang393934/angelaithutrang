@@ -1,403 +1,419 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/*
-  ╔═══════════════════════════════════════════════════════════════════════╗
-  ║                     FUN Money (BEP-20/ERC-20)                         ║
-  ║                      + PPLP Mint Engine v1.0                          ║
-  ╠═══════════════════════════════════════════════════════════════════════╣
-  ║  - Mint authorized by off-chain PPLP signer                           ║
-  ║    (Angel AI + PPLP Engine + Governance)                              ║
-  ║  - Prevent double-mint per actionId (idempotent)                      ║
-  ║  - Epoch mint cap + user epoch cap                                    ║
-  ║  - EIP-712 typed signature verification                               ║
-  ╚═══════════════════════════════════════════════════════════════════════╝
-*/
+/**
+ * ============================================================
+ *  FUN MONEY — PRODUCTION v1.2.1 (FINAL)
+ * ============================================================
+ * Tag: FUN-MONEY-v1.2.1-final
+ *
+ * POLISH-ONLY RELEASE
+ * - No logic changes from v1.2
+ * - Added governance transparency events
+ * - Added global transparency getters (informational)
+ *
+ * ALIGNMENT:
+ * - Code = Law
+ * - Money = Flow of Light
+ * - No extraction, no control of user flow
+ * - Errors return to Community
+ *
+ * This contract is FINALIZED and ready for external audit
+ * and mainnet deployment after audit clearance.
+ */
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+/*//////////////////////////////////////////////////////////////
+                        CONTEXT
+//////////////////////////////////////////////////////////////*/
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address) {
+        return msg.sender;
+    }
+}
 
-contract FUNMoney is 
-    ERC20, 
-    ERC20Burnable, 
-    ERC20Permit, 
-    AccessControl, 
-    EIP712, 
-    Pausable,
-    ReentrancyGuard 
-{
-    using ECDSA for bytes32;
+/*//////////////////////////////////////////////////////////////
+                        ERC20 (OZ-style)
+//////////////////////////////////////////////////////////////*/
+abstract contract ERC20 is Context {
+    mapping(address => uint256) internal _balances;
+    mapping(address => mapping(address => uint256)) private _allowances;
+    uint256 internal _totalSupply;
 
-    // ═══════════════════════════════════════════════════════════════════
-    // ROLES
-    // ═══════════════════════════════════════════════════════════════════
-    
-    bytes32 public constant ADMIN_ROLE = DEFAULT_ADMIN_ROLE;
-    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 public constant SIGNER_ROLE = keccak256("SIGNER_ROLE"); // Trusted PPLP signers
-    bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE"); // For governance updates
+    string public name;
+    string public symbol;
+    uint8 public immutable decimals = 18;
 
-    // ═══════════════════════════════════════════════════════════════════
-    // MINT REPLAY PROTECTION
-    // ═══════════════════════════════════════════════════════════════════
-    
-    /// @notice Tracks which actionIds have been minted (idempotent)
-    mapping(bytes32 => bool) public mintedAction;
-    
-    /// @notice Nonce per user for signature replay protection
-    mapping(address => uint256) public mintNonces;
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    // ═══════════════════════════════════════════════════════════════════
-    // EPOCH CAPS
-    // ═══════════════════════════════════════════════════════════════════
-    
-    /// @notice Duration of each epoch in seconds (default: 1 day)
-    uint256 public epochDurationSec = 1 days;
-    
-    /// @notice Total tokens minted in each epoch
-    mapping(uint256 => uint256) public mintedInEpoch;
-    
-    /// @notice Maximum tokens that can be minted per epoch globally
-    uint256 public epochMintCap;
-    
-    /// @notice Maximum tokens each user can mint per epoch
-    uint256 public userEpochCap;
-    
-    /// @notice Tokens minted by each user in each epoch
-    mapping(uint256 => mapping(address => uint256)) public userMintedInEpoch;
-
-    // ═══════════════════════════════════════════════════════════════════
-    // POLICY / GOVERNANCE FLAGS
-    // ═══════════════════════════════════════════════════════════════════
-    
-    /// @notice Master switch for minting
-    bool public mintingEnabled = true;
-    
-    /// @notice Current policy version (must match signed requests)
-    uint32 public currentPolicyVersion = 1;
-    
-    /// @notice Minimum amount per mint (anti-dust)
-    uint256 public minMintAmount = 1e18; // 1 token
-    
-    /// @notice Maximum amount per single mint
-    uint256 public maxMintAmount = 1_000_000e18; // 1M tokens
-
-    // ═══════════════════════════════════════════════════════════════════
-    // EIP-712 TYPEHASH
-    // ═══════════════════════════════════════════════════════════════════
-    
-    /// @notice EIP-712 typehash for MintRequest
-    /// MintRequest(address to,uint256 amount,bytes32 actionId,bytes32 evidenceHash,uint32 policyVersion,uint64 validAfter,uint64 validBefore,uint256 nonce)
-    bytes32 public constant MINT_TYPEHASH = keccak256(
-        "MintRequest(address to,uint256 amount,bytes32 actionId,bytes32 evidenceHash,uint32 policyVersion,uint64 validAfter,uint64 validBefore,uint256 nonce)"
-    );
-
-    // ═══════════════════════════════════════════════════════════════════
-    // EVENTS
-    // ═══════════════════════════════════════════════════════════════════
-    
-    event MintAuthorized(
-        address indexed to,
-        uint256 amount,
-        bytes32 indexed actionId,
-        bytes32 evidenceHash,
-        uint32 policyVersion,
-        uint64 validAfter,
-        uint64 validBefore,
-        uint256 nonce,
-        address indexed signer
-    );
-
-    event EpochParamsUpdated(
-        uint256 epochDurationSec, 
-        uint256 epochMintCap, 
-        uint256 userEpochCap
-    );
-    
-    event MintingEnabledUpdated(bool enabled);
-    event PolicyVersionUpdated(uint32 newVersion);
-    event MintLimitsUpdated(uint256 minAmount, uint256 maxAmount);
-    event SignerAdded(address indexed signer);
-    event SignerRemoved(address indexed signer);
-
-    // ═══════════════════════════════════════════════════════════════════
-    // ERRORS
-    // ═══════════════════════════════════════════════════════════════════
-    
-    error MintingDisabled();
-    error InvalidRecipient();
-    error InvalidAmount();
-    error AmountBelowMinimum(uint256 amount, uint256 minimum);
-    error AmountAboveMaximum(uint256 amount, uint256 maximum);
-    error RequestTooEarly(uint64 validAfter, uint256 currentTime);
-    error RequestExpired(uint64 validBefore, uint256 currentTime);
-    error ActionAlreadyMinted(bytes32 actionId);
-    error InvalidNonce(uint256 expected, uint256 provided);
-    error InvalidSigner(address recovered);
-    error PolicyVersionMismatch(uint32 expected, uint32 provided);
-    error EpochCapExceeded(uint256 requested, uint256 remaining);
-    error UserEpochCapExceeded(uint256 requested, uint256 remaining);
-    error EpochDurationTooShort(uint256 provided, uint256 minimum);
-
-    // ═══════════════════════════════════════════════════════════════════
-    // CONSTRUCTOR
-    // ═══════════════════════════════════════════════════════════════════
-    
-    constructor(
-        string memory name_,
-        string memory symbol_,
-        uint256 epochMintCap_,
-        uint256 userEpochCap_,
-        address admin_
-    ) 
-        ERC20(name_, symbol_) 
-        ERC20Permit(name_)
-        EIP712("FUNMoney-PPLP", "1") 
-    {
-        require(admin_ != address(0), "Invalid admin");
-        
-        _grantRole(ADMIN_ROLE, admin_);
-        _grantRole(PAUSER_ROLE, admin_);
-        _grantRole(GOVERNOR_ROLE, admin_);
-        
-        epochMintCap = epochMintCap_;
-        userEpochCap = userEpochCap_;
+    constructor(string memory n, string memory s) {
+        name = n;
+        symbol = s;
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // ADMIN CONTROLS
-    // ═══════════════════════════════════════════════════════════════════
-    
-    /// @notice Enable or disable minting
-    function setMintingEnabled(bool enabled) external onlyRole(ADMIN_ROLE) {
-        mintingEnabled = enabled;
-        emit MintingEnabledUpdated(enabled);
+    function totalSupply() public view returns (uint256) {
+        return _totalSupply;
     }
 
-    /// @notice Update epoch parameters
-    function setEpochParams(
-        uint256 durationSec, 
-        uint256 epochCap, 
-        uint256 perUserCap
-    ) external onlyRole(GOVERNOR_ROLE) {
-        if (durationSec < 1 hours) {
-            revert EpochDurationTooShort(durationSec, 1 hours);
+    function balanceOf(address a) public view returns (uint256) {
+        return _balances[a];
+    }
+
+    function transfer(address to, uint256 amount) public returns (bool) {
+        _transfer(_msgSender(), to, amount);
+        return true;
+    }
+
+    function approve(address spender, uint256 amount) public returns (bool) {
+        _approve(_msgSender(), spender, amount);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public returns (bool) {
+        uint256 cur = _allowances[from][_msgSender()];
+        require(cur >= amount, "ALLOW");
+        unchecked {
+            _approve(from, _msgSender(), cur - amount);
         }
-        
-        epochDurationSec = durationSec;
-        epochMintCap = epochCap;
-        userEpochCap = perUserCap;
-        
-        emit EpochParamsUpdated(durationSec, epochCap, perUserCap);
+        _transfer(from, to, amount);
+        return true;
     }
 
-    /// @notice Update mint amount limits
-    function setMintLimits(
-        uint256 minAmount, 
-        uint256 maxAmount
-    ) external onlyRole(GOVERNOR_ROLE) {
-        require(minAmount <= maxAmount, "min > max");
-        minMintAmount = minAmount;
-        maxMintAmount = maxAmount;
-        emit MintLimitsUpdated(minAmount, maxAmount);
+    function _transfer(address from, address to, uint256 amount) internal {
+        require(to != address(0), "TO_0");
+        uint256 b = _balances[from];
+        require(b >= amount, "BAL");
+        unchecked {
+            _balances[from] = b - amount;
+        }
+        _balances[to] += amount;
+        emit Transfer(from, to, amount);
     }
 
-    /// @notice Update policy version (invalidates old signatures)
-    function setPolicyVersion(uint32 newVersion) external onlyRole(GOVERNOR_ROLE) {
-        require(newVersion > currentPolicyVersion, "Version must increase");
-        currentPolicyVersion = newVersion;
-        emit PolicyVersionUpdated(newVersion);
+    function _mint(address to, uint256 amount) internal {
+        require(to != address(0), "MINT_0");
+        _totalSupply += amount;
+        _balances[to] += amount;
+        emit Transfer(address(0), to, amount);
     }
 
-    /// @notice Add a trusted PPLP signer
-    function grantSigner(address signer) external onlyRole(ADMIN_ROLE) {
-        require(signer != address(0), "Invalid signer");
-        _grantRole(SIGNER_ROLE, signer);
-        emit SignerAdded(signer);
+    function _approve(address owner, address spender, uint256 amount) internal {
+        require(owner != address(0) && spender != address(0), "APPROVE_0");
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+}
+
+/*//////////////////////////////////////////////////////////////
+                        EIP-712
+//////////////////////////////////////////////////////////////*/
+abstract contract EIP712 {
+    bytes32 private immutable _HASHED_NAME;
+    bytes32 private immutable _HASHED_VERSION;
+    bytes32 private immutable _TYPE_HASH =
+        keccak256(
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+        );
+
+    constructor(string memory name, string memory version) {
+        _HASHED_NAME = keccak256(bytes(name));
+        _HASHED_VERSION = keccak256(bytes(version));
     }
 
-    /// @notice Remove a PPLP signer
-    function revokeSigner(address signer) external onlyRole(ADMIN_ROLE) {
-        _revokeRole(SIGNER_ROLE, signer);
-        emit SignerRemoved(signer);
-    }
-
-    /// @notice Pause all transfers (emergency)
-    function pause() external onlyRole(PAUSER_ROLE) {
-        _pause();
-    }
-
-    /// @notice Unpause transfers
-    function unpause() external onlyRole(PAUSER_ROLE) {
-        _unpause();
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
-    // CORE MINT WITH SIGNATURE
-    // ═══════════════════════════════════════════════════════════════════
-    
-    /// @notice Mint request structure
-    struct MintRequest {
-        address to;
-        uint256 amount;
-        bytes32 actionId;
-        bytes32 evidenceHash;
-        uint32 policyVersion;
-        uint64 validAfter;
-        uint64 validBefore;
-        uint256 nonce;
-    }
-
-    /// @notice Mint tokens with a signed authorization from PPLP
-    /// @param req The mint request parameters
-    /// @param signature EIP-712 signature from authorized signer
-    function mintWithSignature(
-        MintRequest calldata req, 
-        bytes calldata signature
-    ) external nonReentrant whenNotPaused {
-        // Basic validation
-        if (!mintingEnabled) revert MintingDisabled();
-        if (req.to == address(0)) revert InvalidRecipient();
-        if (req.amount == 0) revert InvalidAmount();
-        if (req.amount < minMintAmount) revert AmountBelowMinimum(req.amount, minMintAmount);
-        if (req.amount > maxMintAmount) revert AmountAboveMaximum(req.amount, maxMintAmount);
-
-        // Time window validation
-        if (block.timestamp < req.validAfter) {
-            revert RequestTooEarly(req.validAfter, block.timestamp);
-        }
-        if (block.timestamp > req.validBefore) {
-            revert RequestExpired(req.validBefore, block.timestamp);
-        }
-
-        // Policy version check
-        if (req.policyVersion != currentPolicyVersion) {
-            revert PolicyVersionMismatch(currentPolicyVersion, req.policyVersion);
-        }
-
-        // Replay protection: actionId only once (idempotent)
-        if (mintedAction[req.actionId]) {
-            revert ActionAlreadyMinted(req.actionId);
-        }
-
-        // Nonce check per user
-        if (req.nonce != mintNonces[req.to]) {
-            revert InvalidNonce(mintNonces[req.to], req.nonce);
-        }
-
-        // Verify EIP-712 signature
-        bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(
-            MINT_TYPEHASH,
-            req.to,
-            req.amount,
-            req.actionId,
-            req.evidenceHash,
-            req.policyVersion,
-            req.validAfter,
-            req.validBefore,
-            req.nonce
-        )));
-        
-        address recovered = digest.recover(signature);
-        if (!hasRole(SIGNER_ROLE, recovered)) {
-            revert InvalidSigner(recovered);
-        }
-
-        // Epoch caps
-        uint256 epoch = block.timestamp / epochDurationSec;
-        
-        uint256 remainingEpochCap = epochMintCap > mintedInEpoch[epoch] 
-            ? epochMintCap - mintedInEpoch[epoch] 
-            : 0;
-        if (req.amount > remainingEpochCap) {
-            revert EpochCapExceeded(req.amount, remainingEpochCap);
-        }
-
-        uint256 remainingUserCap = userEpochCap > userMintedInEpoch[epoch][req.to]
-            ? userEpochCap - userMintedInEpoch[epoch][req.to]
-            : 0;
-        if (req.amount > remainingUserCap) {
-            revert UserEpochCapExceeded(req.amount, remainingUserCap);
-        }
-
-        // State updates (before external call for CEI pattern)
-        mintedAction[req.actionId] = true;
-        mintNonces[req.to] += 1;
-        mintedInEpoch[epoch] += req.amount;
-        userMintedInEpoch[epoch][req.to] += req.amount;
-
-        // Mint tokens
-        _mint(req.to, req.amount);
-
-        emit MintAuthorized(
-            req.to,
-            req.amount,
-            req.actionId,
-            req.evidenceHash,
-            req.policyVersion,
-            req.validAfter,
-            req.validBefore,
-            req.nonce,
-            recovered
+    function _domainSeparatorV4() internal view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                _TYPE_HASH,
+                _HASHED_NAME,
+                _HASHED_VERSION,
+                block.chainid,
+                address(this)
+            )
         );
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // VIEW FUNCTIONS
-    // ═══════════════════════════════════════════════════════════════════
-    
-    /// @notice Get current epoch number
-    function currentEpoch() external view returns (uint256) {
-        return block.timestamp / epochDurationSec;
+    function _hashTypedDataV4(bytes32 structHash) internal view returns (bytes32) {
+        return keccak256(
+            abi.encodePacked("\x19\x01", _domainSeparatorV4(), structHash)
+        );
+    }
+}
+
+/*//////////////////////////////////////////////////////////////
+                    FUN MONEY — v1.2.1 FINAL
+//////////////////////////////////////////////////////////////*/
+contract FUNMoneyProductionV1_2_1 is ERC20, EIP712 {
+
+    /*//////////////////////////////////////////////////////////////
+                        GOVERNANCE
+    //////////////////////////////////////////////////////////////*/
+    address public immutable guardianGov;
+    modifier onlyGov() {
+        require(msg.sender == guardianGov, "NOT_GOV");
+        _;
     }
 
-    /// @notice Get remaining epoch mint capacity
-    function remainingEpochCapacity() external view returns (uint256) {
-        uint256 epoch = block.timestamp / epochDurationSec;
-        return epochMintCap > mintedInEpoch[epoch] 
-            ? epochMintCap - mintedInEpoch[epoch] 
-            : 0;
+    /*//////////////////////////////////////////////////////////////
+                        COMMUNITY POOL
+    //////////////////////////////////////////////////////////////*/
+    address public immutable communityPool;
+
+    /*//////////////////////////////////////////////////////////////
+                        ACTION REGISTRY (5D)
+    //////////////////////////////////////////////////////////////*/
+    struct ActionType {
+        bool allowed;
+        uint32 version;
+        bool deprecated;
     }
 
-    /// @notice Get remaining user epoch capacity
-    function remainingUserCapacity(address user) external view returns (uint256) {
-        uint256 epoch = block.timestamp / epochDurationSec;
-        return userEpochCap > userMintedInEpoch[epoch][user]
-            ? userEpochCap - userMintedInEpoch[epoch][user]
-            : 0;
+    mapping(bytes32 => ActionType) public actions;
+
+    /*//////////////////////////////////////////////////////////////
+                        ATTESTERS
+    //////////////////////////////////////////////////////////////*/
+    mapping(address => bool) public isAttester;
+    uint256 public attesterThreshold;
+    uint256 public constant MAX_SIGS = 5;
+
+    /*//////////////////////////////////////////////////////////////
+                        GOVERNANCE EVENTS (POLISH)
+    //////////////////////////////////////////////////////////////*/
+    event AttesterUpdated(address indexed attester, bool allowed);
+    event AttesterThresholdUpdated(uint256 oldThreshold, uint256 newThreshold);
+
+    /*//////////////////////////////////////////////////////////////
+                        PPLP STRUCT
+    //////////////////////////////////////////////////////////////*/
+    bytes32 public constant PPLP_TYPEHASH =
+        keccak256(
+            "PureLoveProof(address user,bytes32 actionHash,uint256 amount,bytes32 evidenceHash,uint256 nonce)"
+        );
+
+    mapping(address => uint256) public nonces;
+
+    /*//////////////////////////////////////////////////////////////
+                        RATE LIMIT (EPOCH)
+    //////////////////////////////////////////////////////////////*/
+    struct Epoch {
+        uint64 start;
+        uint256 minted;
     }
 
-    /// @notice Check if an action has been minted
-    function isActionMinted(bytes32 actionId) external view returns (bool) {
-        return mintedAction[actionId];
+    mapping(bytes32 => Epoch) public epochs;
+    uint256 public epochDuration = 1 days;
+    uint256 public epochMintCap = 1_000_000 ether;
+
+    /*//////////////////////////////////////////////////////////////
+                        STATE MACHINE
+    //////////////////////////////////////////////////////////////*/
+    struct Allocation {
+        uint256 locked;
+        uint256 activated;
     }
 
-    /// @notice Get the current nonce for a user
-    function getNonce(address user) external view returns (uint256) {
-        return mintNonces[user];
+    mapping(address => Allocation) public alloc;
+    bool public pauseTransitions;
+
+    /*//////////////////////////////////////////////////////////////
+                        EVENTS
+    //////////////////////////////////////////////////////////////*/
+    event PureLoveAccepted(
+        address indexed user,
+        bytes32 indexed action,
+        uint256 amount,
+        uint32 version
+    );
+
+    event ActionRegistered(bytes32 indexed action, uint32 version);
+    event ActionDeprecated(bytes32 indexed action, uint32 oldVersion, uint32 newVersion);
+    event TransitionsPaused(bool paused);
+    event ExcessRecycled(uint256 amount);
+
+    /*//////////////////////////////////////////////////////////////
+                        CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+    constructor(
+        address _gov,
+        address _community,
+        address[] memory attesters,
+        uint256 threshold
+    )
+        ERC20("FUN Money", "FUN")
+        EIP712("FUN Money", "1.2.1")
+    {
+        require(_gov != address(0) && _community != address(0), "INIT_0");
+        guardianGov = _gov;
+        communityPool = _community;
+        attesterThreshold = threshold;
+
+        for (uint256 i; i < attesters.length; i++) {
+            isAttester[attesters[i]] = true;
+        }
     }
 
-    /// @notice Get domain separator for EIP-712
-    function domainSeparator() external view returns (bytes32) {
-        return _domainSeparatorV4();
+    /*//////////////////////////////////////////////////////////////
+                    ACTION REGISTRY (MASTER CHARTER)
+    //////////////////////////////////////////////////////////////*/
+    function govRegisterAction(string calldata name, uint32 version) external onlyGov {
+        bytes32 h = keccak256(bytes(name));
+        actions[h] = ActionType(true, version, false);
+        emit ActionRegistered(h, version);
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // OVERRIDES
-    // ═══════════════════════════════════════════════════════════════════
-    
-    /// @notice Override transfer to respect pause
-    function _update(
-        address from,
-        address to,
-        uint256 value
-    ) internal override whenNotPaused {
-        super._update(from, to, value);
+    function govDeprecateAction(string calldata name, uint32 newVersion) external onlyGov {
+        bytes32 h = keccak256(bytes(name));
+        ActionType storage a = actions[h];
+        require(a.allowed && !a.deprecated, "BAD_ACTION");
+        uint32 old = a.version;
+        a.deprecated = true;
+        emit ActionDeprecated(h, old, newVersion);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    CORE: LOCK → ACTIVATE → CLAIM
+    //////////////////////////////////////////////////////////////*/
+    function lockWithPPLP(
+        address user,
+        string calldata action,
+        uint256 amount,
+        bytes32 evidenceHash,
+        bytes[] calldata sigs
+    ) external {
+        require(!pauseTransitions, "PAUSED");
+        require(sigs.length <= MAX_SIGS, "SIG_LIMIT");
+
+        bytes32 h = keccak256(bytes(action));
+        ActionType memory act = actions[h];
+        require(act.allowed && !act.deprecated, "ACTION_INVALID");
+
+        Epoch storage e = epochs[h];
+        if (block.timestamp > e.start + epochDuration) {
+            e.start = uint64(block.timestamp);
+            e.minted = 0;
+        }
+        require(e.minted + amount <= epochMintCap, "EPOCH_CAP");
+
+        bytes32 structHash =
+            keccak256(
+                abi.encode(
+                    PPLP_TYPEHASH,
+                    user,
+                    h,
+                    amount,
+                    evidenceHash,
+                    nonces[user]
+                )
+            );
+
+        bytes32 digest = _hashTypedDataV4(structHash);
+
+        uint256 valid;
+        address[] memory seen = new address[](MAX_SIGS);
+
+        for (uint256 i; i < sigs.length; i++) {
+            (bytes32 r, bytes32 s, uint8 v) = _split(sigs[i]);
+            address signer = ecrecover(digest, v, r, s);
+            if (!isAttester[signer]) continue;
+
+            bool dup;
+            for (uint256 j; j < valid; j++) {
+                if (seen[j] == signer) dup = true;
+            }
+            if (dup) continue;
+
+            seen[valid++] = signer;
+            if (valid >= attesterThreshold) break;
+        }
+        require(valid >= attesterThreshold, "SIGS_LOW");
+
+        nonces[user]++;
+
+        e.minted += amount;
+        _mint(address(this), amount);
+        alloc[user].locked += amount;
+
+        emit PureLoveAccepted(user, h, amount, act.version);
+    }
+
+    function activate(uint256 amount) external {
+        require(!pauseTransitions, "PAUSED");
+        Allocation storage a = alloc[msg.sender];
+        require(a.locked >= amount, "LOCK_LOW");
+        a.locked -= amount;
+        a.activated += amount;
+    }
+
+    function claim(uint256 amount) external {
+        Allocation storage a = alloc[msg.sender];
+        require(a.activated >= amount, "ACT_LOW");
+        a.activated -= amount;
+        _transfer(address(this), msg.sender, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    GOVERNANCE (SAFE & LIMITED)
+    //////////////////////////////////////////////////////////////*/
+    function govPauseTransitions(bool paused) external onlyGov {
+        pauseTransitions = paused;
+        emit TransitionsPaused(paused);
+    }
+
+    function govSetAttester(address attester, bool allowed) external onlyGov {
+        isAttester[attester] = allowed;
+        emit AttesterUpdated(attester, allowed);
+    }
+
+    function govSetAttesterThreshold(uint256 newThreshold) external onlyGov {
+        uint256 old = attesterThreshold;
+        attesterThreshold = newThreshold;
+        emit AttesterThresholdUpdated(old, newThreshold);
+    }
+
+    function govRecycleExcessToCommunity(uint256 amount) external onlyGov {
+        uint256 bal = _balances[address(this)];
+        require(amount <= bal, "EXCESS");
+        _transfer(address(this), communityPool, amount);
+        emit ExcessRecycled(amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    TRANSPARENCY GETTERS (INFORMATIONAL)
+    //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice Total FUN currently locked (not yet activated)
+     * @dev Informational only. Recommended to compute off-chain via indexer.
+     */
+    function totalLocked(address[] calldata users) external view returns (uint256 sum) {
+        for (uint256 i; i < users.length; i++) {
+            sum += alloc[users[i]].locked;
+        }
+    }
+
+    /**
+     * @notice Total FUN currently activated (claimable, not yet flowed)
+     * @dev Informational only. Recommended to compute off-chain via indexer.
+     */
+    function totalActivated(address[] calldata users) external view returns (uint256 sum) {
+        for (uint256 i; i < users.length; i++) {
+            sum += alloc[users[i]].activated;
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL
+    //////////////////////////////////////////////////////////////*/
+    function _split(bytes memory sig)
+        internal
+        pure
+        returns (bytes32 r, bytes32 s, uint8 v)
+    {
+        require(sig.length == 65, "SIG_LEN");
+        assembly {
+            r := mload(add(sig, 32))
+            s := mload(add(sig, 64))
+            v := byte(0, mload(add(sig, 96)))
+        }
+        if (v < 27) v += 27;
     }
 }
