@@ -452,7 +452,7 @@ const AdminMintStats = () => {
                 <img src={angelAvatar} alt="Angel AI" className="w-10 h-10 rounded-full shadow-soft" />
                 <div>
                   <h1 className="font-serif text-lg font-semibold text-primary-deep">FUN Money Stats</h1>
-                  <p className="text-xs text-foreground-muted">Thống kê PPLP On-Chain (KHÔNG phải Camly Coin)</p>
+                  <p className="text-xs text-foreground-muted">Thống kê PPLP On-Chain</p>
                 </div>
               </div>
             </div>
@@ -492,7 +492,7 @@ const AdminMintStats = () => {
           <p className="text-sm text-blue-700 dark:text-blue-300">
             <strong>⚡ FUN Money (On-Chain)</strong> — Token BEP-20 được đánh giá qua giao thức PPLP (Light Score ≥ 60).
             Dữ liệu từ <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">pplp_actions</code> + <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">pplp_scores</code>.
-            <span className="ml-2 text-xs opacity-70">KHÔNG phải Camly Coin off-chain.</span>
+            
           </p>
         </div>
 
