@@ -26,7 +26,7 @@ import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import angelAvatar from "@/assets/angel-avatar.png";
-import angelGoldenLogo from "@/assets/angel-ai-golden-logo.png";
+
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
 interface UserProfile {
@@ -124,15 +124,8 @@ export const Header = () => {
             </a>
           )}
           {/* Logo - Hidden on desktop since MainSidebar has it, show only on mobile */}
-          <Link to="/" className="flex lg:hidden items-center shrink-0 group min-w-0">
-            <img 
-              src={angelGoldenLogo} 
-              alt="ANGEL AI" 
-              className={`h-8 sm:h-9 w-auto object-contain drop-shadow-[0_2px_4px_rgba(180,130,20,0.4)]
-                group-hover:drop-shadow-[0_2px_8px_rgba(218,165,32,0.6)]
-                transition-all duration-500 ease-out
-                ${isScrolled ? 'scale-90' : 'scale-100'}`}
-            />
+          <Link to="/" className={`flex lg:hidden items-center shrink-0 group min-w-0 transition-transform duration-500 ${isScrolled ? 'scale-90' : 'scale-100'}`}>
+            <span className="text-brand-golden text-xl sm:text-2xl">ANGEL AI</span>
           </Link>
 
           {/* Search Bar - Desktop - centered */}

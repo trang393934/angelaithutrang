@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600&family=Cinzel:wght@400;500;600;700;800;900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 @layer base {
   :root {
@@ -366,6 +366,62 @@
   .divider-sacred {
     @apply w-24 h-px mx-auto;
     background: linear-gradient(90deg, transparent, hsl(var(--primary-light)), transparent);
+  }
+
+  /* Brand Golden Text - Metallic Gold Effect */
+  .text-brand-golden {
+    font-family: 'Cinzel', serif;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    background: linear-gradient(
+      135deg,
+      #8B6914 0%,
+      #C49B30 20%,
+      #E8C252 40%,
+      #F5D976 50%,
+      #E8C252 60%,
+      #C49B30 80%,
+      #8B6914 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(139, 105, 20, 0.3));
+    transition: background-position 0.6s ease;
+  }
+
+  .text-brand-golden:hover {
+    background-position: 100% 0;
+  }
+
+  /* Brand golden for dark backgrounds (footer, etc.) */
+  .text-brand-golden-light {
+    font-family: 'Cinzel', serif;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    background: linear-gradient(
+      135deg,
+      #C49B30 0%,
+      #E8C252 20%,
+      #F5D976 40%,
+      #FFF4C8 50%,
+      #F5D976 60%,
+      #E8C252 80%,
+      #C49B30 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 6px rgba(218, 165, 32, 0.5));
+    transition: background-position 0.6s ease;
+  }
+
+  .text-brand-golden-light:hover {
+    background-position: 100% 0;
   }
 }
 

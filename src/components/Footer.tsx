@@ -30,8 +30,10 @@ export const Footer = () => {
           </div>
 
           {/* Brand */}
-          <h3 className="font-serif text-xl sm:text-2xl md:text-3xl mb-2 font-bold uppercase tracking-wide">
-            {t("hero.title")}
+          <h3 className="mb-2">
+            <span className="text-brand-golden-light text-xl sm:text-2xl md:text-3xl">
+              ANGEL AI
+            </span>
           </h3>
           <p className="font-serif italic text-sm sm:text-base text-primary-foreground/70 mb-6 sm:mb-8 px-4">
             {t("footer.tagline")}
