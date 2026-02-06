@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Sparkles, PenLine } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
+import angelGoldenLogo from "@/assets/angel-ai-golden-logo.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ChatDemoWidget } from "@/components/ChatDemoWidget";
 
@@ -29,10 +30,17 @@ export const HeroSection = () => {
             </div>
           </div>
 
-          {/* Main Title */}
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold uppercase tracking-wide text-primary-deep mb-4 opacity-0 animate-fade-in-slow animate-delay-200">
-            {t("hero.title")}
-          </h1>
+          {/* Main Title - Golden Logo */}
+          <div className="mb-4 opacity-0 animate-fade-in-slow animate-delay-200">
+            <img 
+              src={angelGoldenLogo} 
+              alt={t("hero.title")} 
+              className="h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain mx-auto
+                drop-shadow-[0_4px_12px_rgba(180,130,20,0.5)]
+                hover:drop-shadow-[0_4px_20px_rgba(218,165,32,0.7)]
+                transition-all duration-700"
+            />
+          </div>
 
           {/* Tagline - Main */}
           <p className="font-serif text-xl sm:text-2xl md:text-3xl text-primary-medium mb-2 opacity-0 animate-fade-in-slow animate-delay-300">

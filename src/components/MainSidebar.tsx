@@ -18,6 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import angelAvatar from "@/assets/angel-avatar.png";
+import angelGoldenLogo from "@/assets/angel-ai-golden-logo.png";
 
 export function MainSidebar() {
   const { t } = useLanguage();
@@ -44,17 +45,20 @@ export function MainSidebar() {
       {/* Header with Logo */}
       <SidebarHeader className="border-b border-amber-200/30 py-4">
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-2'}`}>
-          <div className="relative shrink-0">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-b from-yellow-200 via-amber-300 to-yellow-400 p-0.5 shadow-[0_0_15px_rgba(255,215,0,0.4)]">
-              <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 object-contain" />
+          {isCollapsed ? (
+            <div className="relative shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-b from-yellow-200 via-amber-300 to-yellow-400 p-0.5 shadow-[0_0_15px_rgba(255,215,0,0.4)]">
+                <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                  <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 object-contain" />
+                </div>
               </div>
             </div>
-          </div>
-          {!isCollapsed && (
-            <span className="font-serif text-lg font-bold uppercase tracking-wide text-primary-deep">
-              ANGEL AI
-            </span>
+          ) : (
+            <img 
+              src={angelGoldenLogo} 
+              alt="Angel AI" 
+              className="h-10 w-auto object-contain drop-shadow-[0_2px_4px_rgba(180,130,20,0.4)]" 
+            />
           )}
         </div>
       </SidebarHeader>
