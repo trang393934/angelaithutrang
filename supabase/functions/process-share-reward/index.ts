@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { submitPPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -182,8 +182,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ============= PPLP Integration =============
-    const pplpResult = await submitPPLPAction(supabaseAdmin, {
+    // ============= PPLP Integration (Real-time scoring for FUN Money) =============
+    const pplpResult = await submitAndScorePPLPAction(supabaseAdmin, {
       action_type: PPLP_ACTION_TYPES.SHARE_CONTENT,
       actor_id: userId,
       target_id: contentId || contentHash,
@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
     });
     
     if (pplpResult.success) {
-      console.log(`[PPLP] Share action submitted: ${pplpResult.action_id}`);
+      console.log(`[PPLP] Share scored: ${pplpResult.action_id}, FUN: ${pplpResult.reward}`);
     }
     // ============= End PPLP Integration =============
 

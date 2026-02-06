@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getPolicyBaseReward } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -270,10 +271,12 @@ serve(async (req) => {
     let decision: 'pass' | 'fail' = thresholdCheck.pass ? 'pass' : 'fail';
     const failReasons = thresholdCheck.reasons;
 
-    // ========== 6. Calculate base reward ==========
-    const baseReward = config.base_reward || 100;
+    // ========== 6. Calculate base reward (Policy v1.0.1 FUN Money) ==========
+    // Priority: Policy v1.0.1 mapping > pplp_action_caps table > default 100
+    const policyBaseReward = getPolicyBaseReward(action.action_type, action.platform_id);
+    const baseReward = policyBaseReward ?? config.base_reward ?? 100;
     let finalReward = decision === 'pass' 
-      ? Math.round(baseReward * multipliers.Q * multipliers.I * multipliers.K)
+      ? Math.floor(baseReward * multipliers.Q * multipliers.I * multipliers.K)
       : 0;
 
     // ========== 7. Insert score record ==========
@@ -403,83 +406,49 @@ serve(async (req) => {
               };
             } else {
               // Apply diminishing returns and tier multiplier to final reward
-              const adjustedReward = Math.round(capResult.adjusted_reward * capMultiplier);
+              const adjustedReward = Math.floor(capResult.adjusted_reward * capMultiplier);
 
-              // Award Camly Coins
-              const { data: newBalance, error: coinError } = await supabase
-                .rpc('add_camly_coins', {
-                  _user_id: action.actor_id,
-                  _amount: adjustedReward,
-                  _transaction_type: 'pplp_reward',
-                  _description: `PPLP Mint: ${action.platform_id}/${action.action_type}`,
-                  _purity_score: lightScore / 100,
-                  _metadata: {
-                    action_id: action.id,
-                    platform_id: action.platform_id,
-                    action_type: action.action_type,
-                    pillars,
-                    multipliers,
-                    light_score: Math.round(lightScore * 100) / 100,
-                    base_reward: baseReward,
-                    original_reward: finalReward,
-                    adjusted_reward: adjustedReward,
-                    diminishing_multiplier: capResult.diminishing_multiplier,
-                    tier_multiplier: capMultiplier,
-                    user_tier: userTier?.tier || 0,
-                    action_count_today: capResult.action_count_today,
-                  }
+              // FUN Money: Keep status as "scored" - do NOT auto-mint Camly Coins
+              // User will claim FUN Money via pplp-authorize-mint -> lockWithPPLP on-chain
+              // Update final_reward in pplp_scores with the adjusted amount
+              await supabase
+                .from('pplp_scores')
+                .update({ final_reward: adjustedReward })
+                .eq('action_id', action.id);
+
+              // Update user tier stats
+              await supabase
+                .from('pplp_user_tiers')
+                .upsert({
+                  user_id: action.actor_id,
+                  total_actions_scored: 1,
+                  passed_actions: 1,
+                  updated_at: new Date().toISOString(),
+                }, { 
+                  onConflict: 'user_id',
+                  ignoreDuplicates: false 
                 });
 
-              if (!coinError) {
-                // Update action status to minted
-                await supabase
-                  .from('pplp_actions')
-                  .update({ 
-                    status: 'minted',
-                    minted_at: new Date().toISOString()
-                  })
-                  .eq('id', action.id);
+              // Increment tier counters
+              await supabase.rpc('update_user_tier', { _user_id: action.actor_id });
 
-                // Update PoPL score
-                await supabase.rpc('update_popl_score', {
-                  _user_id: action.actor_id,
-                  _action_type: action.action_type.toLowerCase(),
-                  _is_positive: true
-                });
+              // Override finalReward with adjusted value for response
+              finalReward = adjustedReward;
 
-                // Update user tier stats
-                await supabase
-                  .from('pplp_user_tiers')
-                  .upsert({
-                    user_id: action.actor_id,
-                    total_actions_scored: 1,
-                    passed_actions: 1,
-                    updated_at: new Date().toISOString(),
-                  }, { 
-                    onConflict: 'user_id',
-                    ignoreDuplicates: false 
-                  });
-
-                // Increment tier counters
-                await supabase.rpc('update_user_tier', { _user_id: action.actor_id });
-
-                mintResult = {
-                  auto_minted: true,
-                  original_reward: finalReward,
-                  adjusted_reward: adjustedReward,
-                  diminishing_multiplier: capResult.diminishing_multiplier,
-                  tier_multiplier: capMultiplier,
-                  user_tier: userTier?.tier || 0,
-                  action_count_today: capResult.action_count_today,
-                  max_daily: capResult.max_daily,
-                  new_balance: newBalance,
-                };
-
-                console.log(`[PPLP Auto-Mint] ✓ Action ${action.id}: Minted ${adjustedReward} (orig: ${finalReward}, tier x${capMultiplier}) to ${action.actor_id.slice(0, 8)}...`);
-              } else {
-                console.error('[PPLP Auto-Mint] Coin transfer failed:', coinError);
-                mintResult = { auto_minted: false, error: coinError.message };
-              }
+              mintResult = {
+                auto_minted: false,
+                status: 'scored',
+                message: 'FUN Money reward calculated. User can claim via /mint page.',
+                original_reward: Math.floor(baseReward * multipliers.Q * multipliers.I * multipliers.K),
+                adjusted_reward: adjustedReward,
+                diminishing_multiplier: capResult.diminishing_multiplier,
+                tier_multiplier: capMultiplier,
+                user_tier: userTier?.tier || 0,
+                action_count_today: capResult.action_count_today,
+                max_daily: capResult.max_daily,
+              };
+              
+              console.log(`[PPLP Score] ✓ Action ${action.id}: Scored ${adjustedReward} FUN (base: ${baseReward}, Q${multipliers.Q} * I${multipliers.I} * K${multipliers.K}, tier x${capMultiplier}) for ${action.actor_id.slice(0, 8)}...`);
             }
           }
         }

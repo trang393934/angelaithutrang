@@ -49,16 +49,26 @@
    onMintSuccess?: () => void;
  }
  
- const ACTION_LABELS: Record<string, string> = {
-   QUESTION_ASK: "Hỏi Angel AI",
-   JOURNAL_WRITE: "Viết nhật ký biết ơn",
-   CONTENT_CREATE: "Đăng bài cộng đồng",
-   DONATE: "Đóng góp/Tặng quà",
-   CONTENT_SHARE: "Chia sẻ nội dung",
-   COMMUNITY_HELP: "Giúp đỡ cộng đồng",
-   DAILY_LOGIN: "Đăng nhập hàng ngày",
-   VISION_CREATE: "Tạo Vision Board",
- };
+const ACTION_LABELS: Record<string, string> = {
+  QUESTION_ASK: "Hỏi Angel AI",
+  JOURNAL_WRITE: "Viết nhật ký biết ơn",
+  CONTENT_CREATE: "Đăng bài cộng đồng",
+  POST_CREATE: "Đăng bài cộng đồng",
+  COMMENT_CREATE: "Bình luận bài viết",
+  POST_ENGAGEMENT: "Tương tác bài viết",
+  SHARE_CONTENT: "Chia sẻ nội dung",
+  DONATE: "Đóng góp/Tặng quà",
+  DONATE_SUPPORT: "Đóng góp/Tặng quà",
+  CONTENT_SHARE: "Chia sẻ nội dung",
+  COMMUNITY_HELP: "Giúp đỡ cộng đồng",
+  HELP_COMMUNITY: "Xây dựng cộng đồng",
+  MENTOR_HELP: "Hỗ trợ người mới",
+  IDEA_SUBMIT: "Đề xuất ý tưởng",
+  FEEDBACK_GIVE: "Góp ý cải thiện",
+  DAILY_LOGIN: "Đăng nhập hàng ngày",
+  GRATITUDE_PRACTICE: "Thực hành biết ơn",
+  VISION_CREATE: "Tạo Vision Board",
+};
  
  const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
    pending: { label: "Đang xử lý", color: "bg-yellow-100 text-yellow-700", icon: Clock },
