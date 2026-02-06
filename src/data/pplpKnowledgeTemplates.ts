@@ -10,11 +10,514 @@ export interface PPLPKnowledgeTemplate {
   title: string;
   description: string;
   icon: string;
-  category: 'mint_guide' | 'pillars' | 'distribution' | 'actions' | 'anti_fraud';
+  category: 'mint_guide' | 'pillars' | 'distribution' | 'actions' | 'anti_fraud' | 'policy_json';
   content: string;
 }
 
 export const PPLP_KNOWLEDGE_TEMPLATES: PPLPKnowledgeTemplate[] = [
+  {
+    id: 'policy-json-v102',
+    title: 'PPLP + PUC Policy JSON v1.0.2 (Full Production)',
+    description: 'Production-ready policy file: actions + safe defaults + emergency + governance + migration + edge-cases + rate limiting + reputation decay + cross-platform bonus',
+    icon: '📋',
+    category: 'policy_json',
+    content: `# PPLP + PUC MINT POLICY v1.0.2 (FULL PRODUCTION)
+
+## TỔNG QUAN
+
+Đây là policy file production-ready đầy đủ cho hệ thống PPLP scoring và Proof of Unity Contribution (PUC) mint engine cho FUN Money.
+
+**Schema:** pplp.policy.v1
+**Phiên bản:** v1.0.2 (policyVersion: 3)
+**Có hiệu lực từ:** 2026-02-05T00:00:00Z
+
+### Tính năng chính:
+- Epoch cap: 5M FUN/ngày
+- Audit + review-hold cho mint lớn
+- Attestation bắt buộc cho các nền tảng nhạy cảm
+- Hard-cap Q×I product
+- Buffer smoothing và wallet-layer soft-lock
+- Emergency pause + circuit breaker
+- Governance rules và migration path
+- Rate limiting toàn cục
+- Reputation decay và cross-platform bonus
+
+### Nguyên tắc Mint-to-Unity:
+> "Thưởng cho các đóng góp đã xác minh phù hợp với Unity; KHÔNG thưởng cho đánh bạc/đầu cơ."
+
+---
+
+## CẤU HÌNH TOKEN
+
+| Thuộc tính | Giá trị |
+|------------|---------|
+| Symbol | FUN |
+| Decimals | 18 |
+| Unit | atomic |
+| Mint Request Valid (mặc định) | 600 giây |
+
+---
+
+## EPOCH SETTINGS
+
+| Thuộc tính | Giá trị |
+|------------|---------|
+| Duration | 86,400 giây (24 giờ) |
+| Total Mint Cap/Epoch | 5,000,000 FUN (5M) |
+| Platform Pool Mode | cap |
+| Platform Pool Rollover | false |
+
+---
+
+## GIỚI HẠN (CAPS)
+
+### Per User Daily Cap theo Tier
+
+| Tier | Daily Cap (FUN) |
+|------|-----------------|
+| 0 | 5,000 |
+| 1 | 20,000 |
+| 2 | 100,000 |
+| 3 | 250,000 |
+
+### Giới hạn lặp hành động (Per Day)
+
+| Action Type | Limit/Day |
+|-------------|-----------|
+| DAILY_RITUAL | 1 |
+| VIEW_QUALITY_SESSION | 10 |
+| CONTENT_CREATE | 3 |
+| REVIEW_HELPFUL | 5 |
+| DONATE | 3 |
+| TREE_PLANT | 5 |
+| VOLUNTEER | 3 |
+| FARM_DELIVERY | 5 |
+| DUE_DILIGENCE_REPORT | 2 |
+| CLEANUP_EVENT | 3 |
+| PROJECT_SUBMIT | 2 |
+| VIDEO_PUBLISH | 2 |
+| VIDEO_EDU_SERIES | 1 |
+| Mặc định | 5 |
+
+### Cooldowns (giây)
+
+| Action Type | Cooldown |
+|-------------|----------|
+| DONATE | 3,600 (1h) |
+| VOLUNTEER | 1,800 (30m) |
+| CAMPAIGN_DELIVERY_PROOF | 0 |
+| DISPUTE_RESOLVE | 0 |
+| PARTNER_VERIFIED_REPORT | 0 |
+
+---
+
+## SCORING SYSTEM
+
+### 5 Pillars (Trụ cột)
+
+| Pillar | Weight |
+|--------|--------|
+| S (Serving) | 25% |
+| T (Truth) | 20% |
+| H (Healing) | 20% |
+| C (Continuity) | 20% |
+| U (Unity) | 15% |
+
+### Công thức Light Score
+\`\`\`
+lightScore = 0.25×S + 0.20×T + 0.20×H + 0.20×C + 0.15×U
+\`\`\`
+
+### Ngưỡng toàn cục
+
+| Metric | Min Value |
+|--------|-----------|
+| Truth (T) | 70 |
+| Integrity (K) | 0.6 |
+| Light Score | 60 |
+
+### Multiplier Ranges
+
+| Multiplier | Min | Max |
+|------------|-----|-----|
+| Q (Quality) | 0.5 | 3.0 |
+| I (Impact) | 0.5 | 5.0 |
+| K (Integrity) | 0.0 | 1.0 |
+| Ux (Unity) | 0.5 | 2.5 |
+
+### Multiplier Caps
+- Max Q×I product: 10.0
+- Max amount per action: 500,000 FUN
+- Enforce tier Ux max: true
+
+---
+
+## UNITY SYSTEM
+
+### Unity Score Signals
+1. collaboration
+2. beneficiaryConfirmed
+3. communityEndorsement
+4. bridgeValue
+5. conflictResolution
+
+### Unity Multiplier Mapping
+
+| Unity Score Range | Ux Multiplier |
+|-------------------|---------------|
+| 0-49 | 0.5 |
+| 50-69 | 1.0 |
+| 70-84 | 1.5 |
+| 85-94 | 2.0 |
+| 95-100 | 2.3 |
+
+### Unity Bonuses
+- Partner Attested: +0.3 Ux (cap 2.5)
+- Beneficiary Confirmed: +0.2 Ux (cap 2.5)
+- Witness Count ≥3: +0.2 Ux (cap 2.5)
+
+### Anti-Collusion Rules
+- Witness uniqueness: enabled
+- Witness min tier: 1
+- Witness min account age: 14 ngày
+- Witness min anti-sybil score: 0.75
+- Witness graph distance min hops: 2
+- Max same witness pairs/epoch: 3
+- Penalty on suspicion: -0.3 Ux, cap to 1.5, force audit
+
+---
+
+## INTEGRITY SYSTEM
+
+### Anti-Sybil
+- Min anti-sybil score: 0.6
+- Dưới ngưỡng: K = 0, REJECT
+
+### Fraud Penalties
+
+| Fraud Type | K Value | Action | Ban Days |
+|------------|---------|--------|----------|
+| BOT | 0.0 | REJECT | 30 |
+| SYBIL | 0.0 | REJECT | 60 |
+| COLLUSION | 0.2 | REVIEW_HOLD | 14 |
+| SPAM | 0.3 | REJECT | 7 |
+| WASH | 0.0 | REVIEW_HOLD | 30 |
+
+### Stake-for-Trust
+- Enabled: true
+- Token: CAMLY
+- Boost max: 1.2
+- Behavior boost max: 1.1
+
+---
+
+## MINTING RULES
+
+### Công thức Mint
+\`\`\`
+amountAtomic = baseRewardAtomic × Q × I × K × Ux
+(sau đó áp dụng caps, audit rules, buffer, rounding)
+\`\`\`
+
+### Min/Max Amounts
+- Min mint: 1 FUN
+- Max mint per action: 500,000 FUN
+- Rounding: floor
+
+### Decision Rules
+- Fail thresholds → REJECT
+- Fraud review → REVIEW_HOLD
+- Audit triggered → REVIEW_HOLD
+- Missing attestation → REVIEW_HOLD
+- Rate limited → REJECT_AND_LOG
+- Pass → AUTHORIZE
+
+### Settlement Lanes
+
+**Fast Lane:**
+- Amount < 5,000 FUN
+- Không có fraud flags
+- Có attestation nếu cần
+
+**Review Lane:**
+- Amount ≥ 5,000 FUN
+- Hoặc top 1% epoch
+
+**Auto-Approve SLA:**
+- Sau 24h nếu: không fraud flags + có attestation
+
+---
+
+## AUDIT SYSTEM
+
+- Enabled: true
+- Trigger: ≥5,000 FUN hoặc top 1% epoch
+- Random sampling: 10% large mints, 1% all mints
+- Action: REVIEW_HOLD
+- Review SLA: 24h
+
+---
+
+## ATTESTATION
+
+### Required Platforms
+- FUN_CHARITY
+- FUN_EARTH
+- FUN_FARM
+- FUN_INVEST
+
+### Verification
+- Type: EIP712 hoặc ED25519
+- Witness count for Ux > 1.5: 1
+
+---
+
+## EMERGENCY CONTROLS
+
+### Pause Mint
+- Enabled: true
+- Roles: PAUSER_ROLE, GOV_COUNCIL_MULTISIG
+- Triggers: fraudSpike, systemAnomaly, oracleFailure, governanceVote
+- Cooldown: 1 hour
+- Auto-resume: false
+
+### Circuit Breaker
+- Enabled: true
+- Max mint/hour: 250,000 FUN
+- Action: PAUSE_AND_ALERT
+- Channels: SLACK_SECURITY, ONCALL_ENGINEERING
+
+---
+
+## RATE LIMITING
+
+| Metric | Limit |
+|--------|-------|
+| Global mints/second | 50 |
+| Per user mints/minute | 3 |
+| Burst allowance | 5 |
+| Action on limit | REJECT_AND_LOG |
+
+---
+
+## REPUTATION DECAY
+
+- Enabled: true
+- Inactivity threshold: 30 ngày
+- Decay: 5%/tháng
+- Min floor: 0.5
+- Restore by: NEW_VERIFIED_ACTIONS, COMMUNITY_SERVICE
+
+---
+
+## CROSS-PLATFORM BONUS
+
+- Enabled: true
+- Min platforms: 3
+- Bonus Ux: +0.1
+- Max bonus Ux: +0.3
+
+---
+
+## TIER DEFINITIONS
+
+| Tier | Verified Actions | Avg Light Score | Avg K | Max Ux |
+|------|------------------|-----------------|-------|--------|
+| 0 | 0 | 0 | 0.0 | 1.0 |
+| 1 | 10 | 65 | 0.7 | 1.5 |
+| 2 | 50 | 70 | 0.75 | 2.0 |
+| 3 | 200 | 75 | 0.8 | 2.5 |
+
+---
+
+## PLATFORM POOLS (Per Epoch)
+
+| Platform | Pool Size (FUN) |
+|----------|-----------------|
+| FUN_ACADEMY | 1,000,000 |
+| FUN_CHARITY | 750,000 |
+| FUN_EARTH | 750,000 |
+| FUNLIFE | 500,000 |
+| FUN_FARM | 400,000 |
+| FUN_PLAY | 400,000 |
+| FUN_PROFILE | 400,000 |
+| FUN_MARKET | 200,000 |
+| ANGEL_AI | 150,000 |
+| FUN_INVEST | 150,000 |
+| FUN_LEGAL | 100,000 |
+| FUN_PLANET | 50,000 |
+| FUN_TRADING | 50,000 |
+| RESERVE_BUFFER | 100,000 |
+| FUN_WALLET | 0 |
+
+---
+
+## ACTION CONFIGS BY PLATFORM
+
+### ANGEL_AI
+| Action | Base Reward | Min T | Min Light | Min K | Min U |
+|--------|-------------|-------|-----------|-------|-------|
+| AI_REVIEW_HELPFUL | 50 FUN | 80 | 65 | 0.7 | 60 |
+| FRAUD_REPORT_VALID | 120 FUN | 85 | 70 | 0.8 | 65 |
+| MODERATION_HELP | 60 FUN | 80 | 65 | 0.75 | 60 |
+| MODEL_IMPROVEMENT | 150 FUN | 85 | 70 | 0.8 | 60 |
+
+### FUN_PROFILE
+| Action | Base Reward | Min T | Min Light | Min K | Min U |
+|--------|-------------|-------|-----------|-------|-------|
+| CONTENT_CREATE | 70 FUN | 70 | 60 | 0.7 | 55 |
+| CONTENT_REVIEW | 40 FUN | 75 | 62 | 0.75 | 60 |
+| MENTOR_HELP | 150 FUN | 75 | 65 | 0.75 | 70 |
+| COMMUNITY_BUILD | 120 FUN | 70 | 65 | 0.75 | 75 |
+
+### FUN_PLAY
+| Action | Base Reward | Min T | Min Light | Min K | Min U |
+|--------|-------------|-------|-----------|-------|-------|
+| VIDEO_PUBLISH | 200 FUN | 70 | 65 | 0.75 | 60 |
+| VIDEO_EDU_SERIES | 500 FUN | 75 | 70 | 0.8 | 65 |
+| VIEW_QUALITY_SESSION | 2 FUN | 70 | 60 | 0.85 | 50 |
+
+### FUN_CHARITY
+| Action | Base Reward | Min T | Min S | Min Light | Min K | Min U |
+|--------|-------------|-------|-------|-----------|-------|-------|
+| DONATE | 120 FUN | 85 | 75 | 65 | 0.8 | 65 |
+| VOLUNTEER | 150 FUN | 80 | 75 | 65 | 0.75 | 70 |
+| CAMPAIGN_DELIVERY_PROOF | 250 FUN | 90 | 80 | 70 | 0.85 | 70 |
+| IMPACT_REPORT | 120 FUN | 90 | - | 70 | 0.85 | 65 |
+
+### FUN_ACADEMY
+| Action | Base Reward | Min T | Min Light | Min K | Min U |
+|--------|-------------|-------|-----------|-------|-------|
+| LEARN_COMPLETE | 200 FUN | 70 | 60 | 0.6 | 50 |
+| QUIZ_PASS | 50 FUN | 75 | 60 | 0.65 | 50 |
+| PROJECT_SUBMIT | 500 FUN | 75 | 65 | 0.65 | 60 |
+| PEER_REVIEW | 70 FUN | 75 | 62 | 0.7 | 60 |
+| MENTOR_HELP | 250 FUN | 75 | 68 | 0.75 | 70 |
+
+### FUN_EARTH
+| Action | Base Reward | Min T | Min S | Min Light | Min K | Min U |
+|--------|-------------|-------|-------|-----------|-------|-------|
+| TREE_PLANT | 90 FUN | 80 | 70 | 65 | 0.75 | 65 |
+| CLEANUP_EVENT | 150 FUN | 80 | 75 | 68 | 0.75 | 70 |
+| PARTNER_VERIFIED_REPORT | 220 FUN | 90 | - | 72 | 0.85 | 70 |
+
+### FUN_FARM
+| Action | Base Reward | Min T | Min C | Min Light | Min K | Min U |
+|--------|-------------|-------|-------|-----------|-------|-------|
+| FARM_DELIVERY | 80 FUN | 80 | 70 | 65 | 0.75 | 60 |
+| QUALITY_CERT | 120 FUN | 85 | 75 | 70 | 0.8 | 60 |
+| WASTE_REDUCTION | 150 FUN | 80 | 75 | 70 | 0.8 | 65 |
+| FAIR_TRADE_ORDER | 60 FUN | 80 | - | 65 | 0.75 | 65 |
+
+### FUN_LEGAL
+| Action | Base Reward | Min T | Min Light | Min K | Min U |
+|--------|-------------|-------|-----------|-------|-------|
+| GOV_PROPOSAL | 200 FUN | 85 | 70 | 0.8 | 70 |
+| POLICY_REVIEW | 120 FUN | 85 | 68 | 0.8 | 70 |
+| DISPUTE_RESOLVE | 300 FUN | 90 | 72 | 0.85 | 80 |
+| LEGAL_TEMPLATE_CREATE | 180 FUN | 88 | 70 | 0.85 | 70 |
+
+### FUN_INVEST
+| Action | Base Reward | Min T | Min C | Min Light | Min K | Min U |
+|--------|-------------|-------|-------|-----------|-------|-------|
+| DUE_DILIGENCE_REPORT | 250 FUN | 85 | 75 | 70 | 0.8 | 65 |
+| MENTOR_STARTUP | 300 FUN | 80 | 75 | 70 | 0.8 | 75 |
+| IMPACT_KPI_REVIEW | 200 FUN | 88 | - | 70 | 0.85 | 65 |
+
+### FUNLIFE
+| Action | Base Reward | Min T | Min S | Min Light | Min K | Min U |
+|--------|-------------|-------|-------|-----------|-------|-------|
+| DAILY_RITUAL | 20 FUN | 70 | - | 60 | 0.7 | 60 |
+| SERVICE_QUEST | 150 FUN | 75 | 70 | 65 | 0.75 | 70 |
+| UNITY_MISSION_COMPLETE | 250 FUN | 80 | - | 70 | 0.8 | 80 |
+
+### FUN_MARKET
+| Action | Base Reward | Min T | Min C | Min Light | Min K | Min U |
+|--------|-------------|-------|-------|-----------|-------|-------|
+| FAIR_TRADE_ORDER | 40 FUN | 80 | - | 65 | 0.75 | 65 |
+| SELLER_VERIFIED_DELIVERY | 80 FUN | 85 | 70 | 68 | 0.8 | 65 |
+| REVIEW_HELPFUL | 15 FUN | 75 | - | 62 | 0.8 | 60 |
+
+### FUN_WALLET
+| Action | Base Reward | Min T | Min Light | Min K | Min U |
+|--------|-------------|-------|-----------|-------|-------|
+| DONATE_FROM_WALLET | 30 FUN | 85 | 65 | 0.85 | 65 |
+| PAYMENT_FOR_SERVICE | 15 FUN | 80 | 62 | 0.85 | 60 |
+
+### FUN_TRADING
+| Action | Base Reward | Min T | Min C | Min Light | Min K | Min U |
+|--------|-------------|-------|-------|-----------|-------|-------|
+| RISK_LESSON_COMPLETE | 60 FUN | 70 | 65 | 62 | 0.7 | 55 |
+| PAPER_TRADE_DISCIPLINE | 80 FUN | 70 | 70 | 65 | 0.75 | 55 |
+| JOURNAL_SUBMIT | 50 FUN | 75 | 70 | 65 | 0.75 | 60 |
+
+### FUN_PLANET
+| Action | Base Reward | Min T | Min Light | Min K | Min U |
+|--------|-------------|-------|-----------|-------|-------|
+| KID_QUEST_COMPLETE | 10 FUN | 80 | 60 | 0.8 | 60 |
+| PARENT_VERIFY | 3 FUN | 85 | 65 | 0.85 | 60 |
+| TEACHER_BADGE | 50 FUN | 85 | 70 | 0.85 | 70 |
+
+---
+
+## GOVERNANCE
+
+- Policy update: MULTISIG_3_OF_5
+- Proposal cooldown: 7 ngày
+- Community vote threshold: 66%
+- Emergency override: FOUNDING_COUNCIL
+- Roles:
+  - SIGNER_ROLE: TSS_OR_MULTISIG
+  - PAUSER_ROLE: SECURITY_COUNCIL
+  - POLICY_ADMIN: GOVERNANCE_EXECUTOR
+
+---
+
+## MIGRATION
+
+- Previous version: 2
+- Backward compatible: true
+- Upgrade notes:
+  - v1.0.2 thêm emergency + governance + migration + edge-case handling
+  - Thêm rate limiting + reputation decay + cross-platform bonus + burn mechanism
+  - Không thay đổi actionType
+  - Khuyến nghị rotate signer mỗi 90 ngày
+
+---
+
+## BURN MECHANISM
+
+### Burn for Unity Boost
+- Enabled: true
+- Max Ux boost/epoch: 0.2
+- Burn per 0.1 Ux: 10 FUN
+
+### Charity Burn
+- Enabled: true
+- Default burn percent: 100%
+- FUN donated to burn charity pools được burn hoặc long-lock theo governance
+
+---
+
+## EDGE CASES
+
+### Platform Pool Depleted
+- Action: QUEUE_TO_NEXT_EPOCH
+- Priority for: FUN_CHARITY, FUN_EARTH
+- Notify user: true
+
+### Rollback Fraud After Mint
+- Enabled: true
+- Action: SLASH_TIER_AND_FREEZE
+- Note: Không forced token clawback trong MVP
+
+### Dispute Resolution
+- SLA: 72 giờ
+- Max appeals/epoch: 1
+- Appeal fee: 5 FUN
+- Fee burn: 50%
+- Auto-approve after SLA if clean: true`
+  },
   {
     id: 'mint-guide',
     title: 'Hướng dẫn Mint FUN Money (3 bước)',
