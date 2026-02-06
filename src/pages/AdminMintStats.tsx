@@ -131,32 +131,46 @@ const AdminMintStats = () => {
     setIsRefreshing(true);
     try {
       const dateFilter = getDateFilter();
+      const PAGE_SIZE = 1000;
 
-      // 1) Fetch pplp_actions + pplp_scores
-      let actionsQuery = supabase
-        .from("pplp_actions")
-        .select("id, actor_id, action_type, created_at");
-      if (dateFilter) actionsQuery = actionsQuery.gte("created_at", dateFilter);
-      const { data: actionsRaw, error: actionsErr } = await actionsQuery;
-      if (actionsErr) throw actionsErr;
+      // 1) Fetch ALL pplp_actions với pagination tự động (vượt giới hạn 1000 dòng)
+      type ActionRow = { id: string; actor_id: string; action_type: string; created_at: string };
+      let actionsRaw: ActionRow[] = [];
+      let from = 0;
+      while (true) {
+        let query = supabase
+          .from("pplp_actions")
+          .select("id, actor_id, action_type, created_at")
+          .range(from, from + PAGE_SIZE - 1);
+        if (dateFilter) query = query.gte("created_at", dateFilter);
+        const { data, error } = await query;
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        actionsRaw = actionsRaw.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
 
-      const actionIds = (actionsRaw || []).map((a) => a.id);
+      const actionIds = actionsRaw.map((a) => a.id);
 
-      // Fetch scores in batches of 500 to stay under limits
-      let allScores: Array<{
-        action_id: string;
-        decision: string;
-        final_reward: number;
-        light_score: number;
-      }> = [];
+      // 2) Fetch ALL pplp_scores với pagination (batch 500 IDs, mỗi batch paginate qua giới hạn 1000)
+      type ScoreRow = { action_id: string; decision: string; final_reward: number; light_score: number };
+      let allScores: ScoreRow[] = [];
       for (let i = 0; i < actionIds.length; i += 500) {
-        const batch = actionIds.slice(i, i + 500);
-        const { data: scoresData, error: scoresErr } = await supabase
-          .from("pplp_scores")
-          .select("action_id, decision, final_reward, light_score")
-          .in("action_id", batch);
-        if (scoresErr) throw scoresErr;
-        allScores = allScores.concat((scoresData || []) as typeof allScores);
+        const batchIds = actionIds.slice(i, i + 500);
+        let scoreFrom = 0;
+        while (true) {
+          const { data, error } = await supabase
+            .from("pplp_scores")
+            .select("action_id, decision, final_reward, light_score")
+            .in("action_id", batchIds)
+            .range(scoreFrom, scoreFrom + PAGE_SIZE - 1);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          allScores = allScores.concat(data as ScoreRow[]);
+          if (data.length < PAGE_SIZE) break;
+          scoreFrom += PAGE_SIZE;
+        }
       }
 
       // Build score map
