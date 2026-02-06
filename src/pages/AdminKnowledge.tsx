@@ -9,8 +9,15 @@ import {
   FileType, AlertCircle, FolderPlus, Folder,
   Edit2, X, ChevronDown, ChevronRight, GripVertical,
   Search, Filter, XCircle, Link as LinkIcon, ExternalLink, Eye,
-  History, RefreshCw, BookOpen, Download
+  History, RefreshCw, BookOpen, Download, FolderInput
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import angelAvatar from "@/assets/angel-avatar.png";
 import { 
   PPLP_KNOWLEDGE_TEMPLATES, 
@@ -369,6 +376,36 @@ const AdminKnowledge = () => {
     setDraggedDoc(null);
   };
 
+  // Move document to folder via button
+  const handleMoveToFolder = async (doc: KnowledgeDocument, targetFolderId: string | null) => {
+    if (doc.folder_id === targetFolderId) return;
+
+    try {
+      const { error } = await supabase
+        .from("knowledge_documents")
+        .update({ folder_id: targetFolderId })
+        .eq("id", doc.id);
+
+      if (error) throw error;
+
+      // Update local state immediately for smooth UX
+      setDocuments(prev => 
+        prev.map(d => 
+          d.id === doc.id 
+            ? { ...d, folder_id: targetFolderId } 
+            : d
+        )
+      );
+
+      const folderName = targetFolderId 
+        ? folders.find(f => f.id === targetFolderId)?.name 
+        : "Chưa phân loại";
+      toast.success(`Đã chuyển "${doc.title}" sang "${folderName}"`);
+    } catch (error) {
+      console.error("Move error:", error);
+      toast.error("Không thể di chuyển tài liệu");
+    }
+  };
   // Folder CRUD
   const handleSaveFolder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1607,6 +1644,7 @@ const AdminKnowledge = () => {
                     doc={doc} 
                     onDelete={handleDelete}
                     onSync={handleSyncDocument}
+                    onMoveToFolder={handleMoveToFolder}
                     isSyncing={syncingDocId === doc.id}
                     formatFileSize={formatFileSize}
                     getFileIcon={getFileIcon}
@@ -1615,6 +1653,7 @@ const AdminKnowledge = () => {
                     isDragging={draggedDoc?.id === doc.id}
                     showFolder
                     folderName={doc.folder_id ? folders.find(f => f.id === doc.folder_id)?.name : "Chưa phân loại"}
+                    folders={folders}
                   />
                 ))
               )}
@@ -1675,12 +1714,14 @@ const AdminKnowledge = () => {
                               doc={doc} 
                               onDelete={handleDelete}
                               onSync={handleSyncDocument}
+                              onMoveToFolder={handleMoveToFolder}
                               isSyncing={syncingDocId === doc.id}
                               formatFileSize={formatFileSize}
                               getFileIcon={getFileIcon}
                               onDragStart={handleDragStart}
                               onDragEnd={handleDragEnd}
                               isDragging={draggedDoc?.id === doc.id}
+                              folders={folders}
                             />
                           ))
                         )}
@@ -1727,12 +1768,14 @@ const AdminKnowledge = () => {
                         doc={doc} 
                         onDelete={handleDelete}
                         onSync={handleSyncDocument}
+                        onMoveToFolder={handleMoveToFolder}
                         isSyncing={syncingDocId === doc.id}
                         formatFileSize={formatFileSize}
                         getFileIcon={getFileIcon}
                         onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                         isDragging={draggedDoc?.id === doc.id}
+                        folders={folders}
                       />
                     ))
                   )}
@@ -1750,6 +1793,7 @@ const AdminKnowledge = () => {
           <ul className="space-y-2 text-sm text-foreground-muted">
             <li>• <strong>Tạo thư mục:</strong> Tổ chức tài liệu theo chủ đề như "Giáo lý", "Thiền định", "Tình yêu"...</li>
             <li>• <strong>Kéo thả:</strong> Giữ và kéo tài liệu để di chuyển giữa các thư mục</li>
+            <li>• <strong>Di chuyển nhanh:</strong> Nhấn nút <FolderInput className="w-4 h-4 inline mx-1" /> để chọn thư mục đích cho tài liệu</li>
             <li>• <strong>File TXT/MD/CSV/Excel:</strong> Nội dung sẽ được trích xuất tự động và Angel AI có thể sử dụng ngay</li>
             <li>• <strong>Google Docs/Sheets:</strong> Paste URL và nhấn "Lấy & Xem Trước" để import nội dung (file phải được chia sẻ công khai)</li>
             <li>• <strong className="text-blue-600">🔄 Đồng bộ lại:</strong> Với tài liệu Google, nhấn nút <RefreshCw className="w-3 h-3 inline mx-1" /> để cập nhật nội dung mới nhất từ bản gốc</li>
@@ -1768,6 +1812,7 @@ const DocumentItem = ({
   doc, 
   onDelete, 
   onSync,
+  onMoveToFolder,
   isSyncing,
   formatFileSize, 
   getFileIcon,
@@ -1775,11 +1820,13 @@ const DocumentItem = ({
   onDragEnd,
   isDragging,
   showFolder = false,
-  folderName
+  folderName,
+  folders = []
 }: { 
   doc: KnowledgeDocument; 
   onDelete: (doc: KnowledgeDocument) => void;
   onSync?: (doc: KnowledgeDocument) => void;
+  onMoveToFolder?: (doc: KnowledgeDocument, folderId: string | null) => void;
   isSyncing?: boolean;
   formatFileSize: (bytes: number) => string;
   getFileIcon: (type: string, fileName: string) => string;
@@ -1788,6 +1835,7 @@ const DocumentItem = ({
   isDragging: boolean;
   showFolder?: boolean;
   folderName?: string;
+  folders?: KnowledgeFolder[];
 }) => {
   // Check if this is a Google URL that can be synced
   const isGoogleUrl = doc.file_url?.includes('docs.google.com/document') || 
@@ -1846,6 +1894,61 @@ const DocumentItem = ({
         </div>
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
+        {/* Move to folder dropdown */}
+        {onMoveToFolder && folders.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="p-2 rounded-full text-primary hover:bg-primary-pale transition-colors"
+                title="Di chuyển đến thư mục"
+              >
+                <FolderInput className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5 text-xs font-semibold text-foreground-muted">
+                Di chuyển đến thư mục
+              </div>
+              <DropdownMenuSeparator />
+              {folders.map((folder) => (
+                <DropdownMenuItem 
+                  key={folder.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (doc.folder_id !== folder.id) {
+                      onMoveToFolder(doc, folder.id);
+                    }
+                  }}
+                  className={doc.folder_id === folder.id ? "bg-primary-pale/50" : ""}
+                >
+                  <Folder className="w-4 h-4 mr-2 text-primary" />
+                  {folder.name}
+                  {doc.folder_id === folder.id && (
+                    <CheckCircle className="w-3 h-3 ml-auto text-green-600" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (doc.folder_id !== null) {
+                    onMoveToFolder(doc, null);
+                  }
+                }}
+                className={doc.folder_id === null ? "bg-primary-pale/50" : ""}
+              >
+                <Folder className="w-4 h-4 mr-2 text-foreground-muted" />
+                Chưa phân loại
+                {doc.folder_id === null && (
+                  <CheckCircle className="w-3 h-3 ml-auto text-green-600" />
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        
         {isGoogleUrl && onSync && (
           <button
             onClick={(e) => { e.stopPropagation(); onSync(doc); }}
