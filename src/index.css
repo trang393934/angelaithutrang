@@ -259,25 +259,63 @@
     transform: translateY(-2px);
   }
 
-  /* Button Sacred Variants */
+  /* Button Sacred Variants - Metallic Gold Shine */
   .btn-sacred {
     @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-medium text-primary-foreground transition-all duration-500;
-    background: var(--gradient-sapphire);
-    box-shadow: var(--shadow-button);
+    background: linear-gradient(135deg, hsl(35, 75%, 28%) 0%, hsl(40, 70%, 42%) 25%, hsl(43, 80%, 55%) 50%, hsl(40, 70%, 42%) 75%, hsl(35, 75%, 28%) 100%);
+    background-size: 200% 100%;
+    box-shadow: var(--shadow-button), inset 0 1px 1px rgba(255, 235, 170, 0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-sacred::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 245, 200, 0.45), transparent);
+    transition: left 0.6s ease;
+  }
+
+  .btn-sacred:hover::before {
+    left: 150%;
   }
 
   .btn-sacred:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 24px -4px hsla(35, 75%, 28%, 0.4);
+    background-position: 100% 0;
+    box-shadow: 0 8px 24px -4px hsla(35, 75%, 28%, 0.4), 0 0 20px -4px hsla(43, 80%, 55%, 0.3), inset 0 1px 1px rgba(255, 235, 170, 0.5);
   }
 
   .btn-sacred-outline {
     @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-medium border-2 border-primary text-primary bg-transparent transition-all duration-500;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-sacred-outline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsla(43, 80%, 55%, 0.15), transparent);
+    transition: left 0.6s ease;
+  }
+
+  .btn-sacred-outline:hover::before {
+    left: 150%;
   }
 
   .btn-sacred-outline:hover {
-    @apply bg-primary text-primary-foreground;
+    @apply text-primary-foreground;
+    background: linear-gradient(135deg, hsl(35, 75%, 28%) 0%, hsl(40, 70%, 42%) 25%, hsl(43, 80%, 55%) 50%, hsl(40, 70%, 42%) 75%, hsl(35, 75%, 28%) 100%);
     transform: translateY(-1px);
+    box-shadow: 0 4px 16px -4px hsla(35, 75%, 28%, 0.4), inset 0 1px 1px rgba(255, 235, 170, 0.4);
   }
 
   /* Input Sacred */

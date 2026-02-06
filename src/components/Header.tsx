@@ -26,6 +26,7 @@ import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import angelAvatar from "@/assets/angel-avatar.png";
+import angelGoldenLogo from "@/assets/angel-ai-golden-logo.png";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
 interface UserProfile {
@@ -123,22 +124,15 @@ export const Header = () => {
             </a>
           )}
           {/* Logo - Hidden on desktop since MainSidebar has it, show only on mobile */}
-          <Link to="/" className="flex lg:hidden items-center gap-1 sm:gap-1.5 shrink-0 group min-w-0">
-            <div className={`relative transition-all duration-500 shrink-0 ${isScrolled ? 'scale-95' : 'scale-100'}`}>
-              <img 
-                src={angelAvatar} 
-                alt="ANGEL AI" 
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shadow-soft 
-                  group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/20
-                  transition-all duration-300 ease-out"
-              />
-            </div>
-            <span className={`font-serif text-base font-bold uppercase tracking-wide 
-              transition-all duration-500 ease-out whitespace-nowrap
-              group-hover:text-primary group-hover:tracking-wider
-              ${isScrolled ? 'text-primary-deep scale-95' : 'text-primary-deep scale-100'}`}>
-              ANGEL AI
-            </span>
+          <Link to="/" className="flex lg:hidden items-center shrink-0 group min-w-0">
+            <img 
+              src={angelGoldenLogo} 
+              alt="ANGEL AI" 
+              className={`h-8 sm:h-9 w-auto object-contain drop-shadow-[0_2px_4px_rgba(180,130,20,0.4)]
+                group-hover:drop-shadow-[0_2px_8px_rgba(218,165,32,0.6)]
+                transition-all duration-500 ease-out
+                ${isScrolled ? 'scale-90' : 'scale-100'}`}
+            />
           </Link>
 
           {/* Search Bar - Desktop - centered */}
