@@ -1091,7 +1091,7 @@ const AdminKnowledge = () => {
                 <BookOpen className="w-5 h-5" />
                 Tài liệu PPLP - Hướng dẫn Mint FUN Money
                 <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                  {documents.filter(d => d.title.startsWith('[PPLP]')).length} tài liệu
+                  {documents.filter(d => d.title.startsWith('[PPLP]') || d.folder_id === folders.find(f => f.name === PPLP_FOLDER_NAME)?.id).length} tài liệu
                 </span>
               </h2>
               <p className="text-sm text-foreground-muted mt-1">
