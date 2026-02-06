@@ -17,6 +17,7 @@ export default {
         serif: ['Be Vietnam Pro', 'Noto Sans', 'Roboto', 'system-ui', 'sans-serif'],
         sans: ['Be Vietnam Pro', 'Noto Sans', 'Roboto', 'system-ui', 'sans-serif'],
         display: ['Be Vietnam Pro', 'Noto Sans', 'system-ui', 'sans-serif'],
+        brand: ['Cinzel', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
