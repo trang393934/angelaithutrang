@@ -1,131 +1,114 @@
 
-# Cap Nhat FUN MONEY v1.2.1 FINAL Vao Toan Bo He Thong Angel AI
+# Sua Loi Thong Ke: Tach Biet FUN Money (On-Chain) va Camly Coin (Off-Chain)
 
-## Tong Quan
+## Van De Hien Tai
 
-Cap nhat ma nguon hop dong thong minh va **tat ca cac file lien quan** de dong bo voi ban FUN MONEY Production v1.2.1 (FINAL) da deploy tren BSC Testnet. Bao gom cap nhat EIP-712 domain, PPLP typehash, deploy script, ABI, va backend edge function.
+Bang thong ke truoc do dang **lay du lieu tu bang `camly_coin_transactions`** (Camly Coin - diem thuong off-chain) va goi nham la "FUN Money Mint Statistics". Day la SAI hoan toan vi:
 
-## Cac Thay Doi Quan Trong Giua v1.0 (cu) va v1.2.1 (moi)
+- **Camly Coin**: Diem thuong off-chain, duoc tang truc tiep cho user khi thuc hien hanh dong (chat, nhat ky, dang nhap...). Luu trong bang `camly_coin_transactions`. Tong: ~63 trieu.
+- **FUN Money**: Token on-chain BEP-20, phai duoc danh gia qua giao thuc PPLP (Light Score >= 60), roi mint tren blockchain. Luu trong bang `pplp_actions`, `pplp_scores`, `pplp_mint_requests`. Tong: ~147,706 FUN (chua co giao dich nao thuc su mint on-chain).
 
-| Thanh phan | Phien ban cu (trong repo) | v1.2.1 FINAL |
-|---|---|---|
-| Contract class | `FUNMoney` (OpenZeppelin) | `FUNMoneyProductionV1_2_1` (standalone) |
-| Flow mint | `mintWithSignature()` (1 buoc) | `lockWithPPLP()` -> `activate()` -> `claim()` (3 buoc) |
-| EIP-712 Domain name | `"FUNMoney-PPLP"` | `"FUN Money"` |
-| EIP-712 Version | `"1"` | `"1.2.1"` |
-| Typehash | `MintRequest(address to, ...)` | `PureLoveProof(address user, bytes32 actionHash, ...)` |
-| Quyen | AccessControl (ADMIN/SIGNER/GOVERNOR/PAUSER) | guardianGov + Attester system |
-| Constructor | `(name, symbol, epochMintCap, userEpochCap, admin)` | `(gov, community, attesters[], threshold)` |
+## Du Lieu Thuc Te FUN Money (Tu PPLP)
 
-## Chi Tiet Cac File Can Thay Doi
+| Hang muc (action_type) | Tong hanh dong | Pass | Fail | Tong FUN Reward | Users |
+|------------------------|---------------|------|------|-----------------|-------|
+| QUESTION_ASK           | 3,171         | 933  | 2,224| 137,642         | 175   |
+| POST_CREATE            | 126           | 49   | 71   | 9,360           | 66    |
+| GRATITUDE_PRACTICE     | 664           | 11   | 653  | 414             | 127   |
+| CONTENT_CREATE         | 2             | 2    | 0    | 248             | 1     |
+| JOURNAL_WRITE          | 3             | 1    | 2    | 42              | 2     |
+| LEARN_COMPLETE         | 1             | 0    | 1    | 0               | 1     |
 
-### 1. `contracts/FUNMoney.sol` - Thay toan bo bang v1.2.1 FINAL
-- Xoa toan bo code cu (OpenZeppelin-based)
-- Thay bang code Solidity v1.2.1 FINAL ma nguoi dung cung cap
-- Bao gom: Context, ERC20 standalone, EIP712 standalone, FUNMoneyProductionV1_2_1
+Mint Requests: 9 tao, 6 da ky (signed), 0 da mint (minted).
 
-### 2. `contracts/scripts/deploy.js` - Cap nhat deploy script
-- Constructor moi: `(gov, community, attesters[], threshold)` thay vi `(name, symbol, epochMintCap, userEpochCap, admin)`
-- Cap nhat contract factory name: `FUNMoneyProductionV1_2_1`
-- Them buoc govRegisterAction cho cac action types
+## Giai Phap
 
-### 3. `contracts/README.md` - Cap nhat tai lieu
-- Mo ta flow moi: Lock -> Activate -> Claim
-- Constructor params moi
-- EIP-712 domain moi: `("FUN Money", "1.2.1")`
-- Typehash moi: `PureLoveProof`
-- Roles moi: guardianGov, Attester system
+Tao trang admin moi `/admin/mint-stats` lay du lieu tu **dung nguon**:
 
-### 4. `src/lib/funMoneyABI.ts` - Cap nhat EIP-712 Domain (CRITICAL)
-- EIP-712 Domain: `name: "FUN Money"`, `version: "1.2.1"` (thay vi `"FUNMoney-PPLP"` / `"1"`)
-- PPLP_LOCK_TYPES: Doi type name `PPLPLock` -> `PureLoveProof`, field `action` -> `actionHash`
-- ABI da dung san, khong can doi
+- **`pplp_actions`** - Cac hanh dong da ghi nhan
+- **`pplp_scores`** - Diem Light Score va ket qua pass/fail
+- **`pplp_mint_requests`** - Yeu cau mint on-chain
 
-### 5. `supabase/functions/pplp-authorize-mint/index.ts` - Cap nhat backend signing (CRITICAL)
-- PPLP_DOMAIN: `name: "FUN Money"`, `version: "1.2.1"`
-- PPLP_LOCK_TYPES: `PureLoveProof` voi field `actionHash` thay vi `PPLPLock` voi field `action`
-- Cap nhat message object khi signing: `actionHash` thay vi `action`
+### Thong Tin Hien Thi Cho Moi User
 
-### 6. `supabase/functions/_shared/pplp-eip712.ts` - Cap nhat shared types
-- PPLP_DOMAIN: `name: "FUN Money"`, `version: "1.2.1"`
-- Giu lai cac legacy types de backward compatibility
+| Cot | Nguon du lieu | Mo ta |
+|-----|---------------|-------|
+| User | `profiles` | Ten va avatar |
+| QUESTION_ASK | `pplp_actions` + `pplp_scores` | FUN tu hoi dap |
+| POST_CREATE | `pplp_actions` + `pplp_scores` | FUN tu dang bai |
+| GRATITUDE_PRACTICE | `pplp_actions` + `pplp_scores` | FUN tu biet on |
+| CONTENT_CREATE | `pplp_actions` + `pplp_scores` | FUN tu tao noi dung |
+| JOURNAL_WRITE | `pplp_actions` + `pplp_scores` | FUN tu nhat ky |
+| LEARN_COMPLETE | `pplp_actions` + `pplp_scores` | FUN tu hoc tap |
+| Tong FUN | Tong cong | Tong FUN da earn |
+| Pass/Fail | `pplp_scores` | Ty le pass/fail |
+| Avg Light Score | `pplp_scores` | Diem trung binh |
+| Mint Status | `pplp_mint_requests` | Da mint / Chua mint |
 
-### 7. `src/data/pplpKnowledgeTemplates.ts` - Cap nhat tai lieu knowledge
-- Cap nhat EIP-712 Domain references: `"FUN Money"` / `"1.2.1"`
-- Cap nhat TYPES tu `MintRequest` sang `PureLoveProof`
-- Cap nhat code examples
+### Stats Cards Tong Quan
 
-### 8. `src/pages/docs/pplpEngineSpec.ts` - Cap nhat Engine Spec docs
-- EIP-712 domain: `"FUN Money"` / `"1.2.1"`
-- Types: `PureLoveProof`
+1. **Tong FUN da cham diem (Pass)**: 147,706 FUN - tu `pplp_scores` WHERE `decision = 'pass'`
+2. **Tong hanh dong PPLP**: 3,967 - tu `pplp_actions`
+3. **Ty le Pass**: 25.1% (996/3,967)
+4. **Users du dieu kien**: 125 users - tu `pplp_actions` JOIN `pplp_scores` WHERE pass
+5. **Mint Requests**: 9 (6 signed, 0 minted)
+6. **Avg Light Score (Pass)**: ~84 diem
+
+### Realtime Update
+
+Su dung Supabase realtime subscription tren `pplp_actions` de tu dong cap nhat khi co hanh dong moi duoc ghi nhan.
+
+## Cac File Can Tao/Sua
+
+| File | Thao Tac | Noi Dung |
+|------|----------|----------|
+| `src/pages/AdminMintStats.tsx` | Tao moi | Trang thong ke FUN Money tu PPLP data |
+| `src/App.tsx` | Cap nhat | Them route `/admin/mint-stats` |
+| `src/pages/AdminDashboard.tsx` | Cap nhat | Them link "FUN Money Stats" vao header |
 
 ## Chi Tiet Ky Thuat
 
-### EIP-712 Domain Moi (Ap Dung Toan He Thong)
+### Query Chinh (Lay Tu PPLP Tables)
+
+Truy van chinh de lay FUN Money stats theo user:
 
 ```text
-{
-  name: "FUN Money",
-  version: "1.2.1",
-  chainId: 97,
-  verifyingContract: "0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2"
-}
+SELECT 
+  a.actor_id,
+  a.action_type,
+  COUNT(*) as total_actions,
+  COUNT(CASE WHEN s.decision = 'pass' THEN 1 END) as passed,
+  COUNT(CASE WHEN s.decision = 'fail' THEN 1 END) as failed,
+  COALESCE(SUM(CASE WHEN s.decision = 'pass' THEN s.final_reward ELSE 0 END), 0) as total_fun,
+  COALESCE(AVG(CASE WHEN s.decision = 'pass' THEN s.light_score END), 0) as avg_light_score
+FROM pplp_actions a
+LEFT JOIN pplp_scores s ON s.action_id = a.id
+GROUP BY a.actor_id, a.action_type
 ```
 
-### PPLP Typehash Moi
-
+Ket hop profiles:
 ```text
-PureLoveProof(
-  address user,
-  bytes32 actionHash,
-  uint256 amount,
-  bytes32 evidenceHash,
-  uint256 nonce
-)
+SELECT user_id, display_name, avatar_url FROM profiles
 ```
 
-### EIP-712 Types Object Moi (JavaScript/TypeScript)
-
+Va mint requests:
 ```text
-const PPLP_TYPES = {
-  PureLoveProof: [
-    { name: "user", type: "address" },
-    { name: "actionHash", type: "bytes32" },
-    { name: "amount", type: "uint256" },
-    { name: "evidenceHash", type: "bytes32" },
-    { name: "nonce", type: "uint256" },
-  ]
-};
+SELECT actor_id, status, amount, signature, tx_hash, created_at 
+FROM pplp_mint_requests
 ```
 
-### Message Object Khi Signing
+### Giao Dien
 
-```text
-const message = {
-  user: walletAddress,
-  actionHash: keccak256(toUtf8Bytes(actionName)),
-  amount: amountWei,
-  evidenceHash: evidenceHash,
-  nonce: onChainNonce,
-};
-```
+- Giong phong cach cac trang admin hien co (AdminStatistics, AdminDashboard)
+- Header voi link ve Admin Dashboard, nut Lam moi, bo loc thoi gian
+- Stats cards tong quan (6 the)
+- Bang chinh: tung user voi cac cot FUN theo action_type, ty le pass/fail, avg light score, mint status
+- Tim kiem user, sap xep cot, xuat Excel
+- Realtime subscription tren `pplp_actions`
 
-## Tong Hop File Thay Doi
+### Luu Y Quan Trong
 
-| File | Muc Do | Noi Dung |
-|------|--------|----------|
-| `contracts/FUNMoney.sol` | Thay toan bo | Code Solidity v1.2.1 FINAL |
-| `contracts/scripts/deploy.js` | Thay toan bo | Constructor moi, setup attesters |
-| `contracts/README.md` | Thay toan bo | Tai lieu v1.2.1 |
-| `src/lib/funMoneyABI.ts` | Cap nhat domain + types | EIP-712 domain va PPLP types |
-| `supabase/functions/pplp-authorize-mint/index.ts` | Cap nhat domain + types + signing | EIP-712 domain, types, message |
-| `supabase/functions/_shared/pplp-eip712.ts` | Cap nhat domain | EIP-712 domain |
-| `src/data/pplpKnowledgeTemplates.ts` | Cap nhat references | Domain + types trong docs |
-| `src/pages/docs/pplpEngineSpec.ts` | Cap nhat references | Domain + types trong docs |
-
-## Luu Y Quan Trong
-
-- Contract address **KHONG DOI**: `0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2`
-- Frontend hooks (`useFUNMoneyContract.ts`) va UI components **KHONG CAN DOI** vi chung da tuong thich voi flow Lock/Activate/Claim
-- ABI trong `funMoneyABI.ts` da dung, chi can cap nhat EIP-712 domain va types
-- Edge function `pplp-authorize-mint` se duoc deploy lai tu dong sau khi cap nhat
+- **KHONG truy van `camly_coin_transactions`** - do la Camly Coin off-chain
+- Chi truy van `pplp_actions`, `pplp_scores`, `pplp_mint_requests` - do la FUN Money on-chain
+- Don vi FUN Money la wei (18 decimals) trong mint_requests, nhung final_reward trong pplp_scores la so nguyen don gian
+- Hien thi ro trang thai: Scored (pass/fail) -> Mint Request (pending/signed/minted)
