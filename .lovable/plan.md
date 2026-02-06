@@ -1,114 +1,91 @@
 
-# Sua Loi Thong Ke: Tach Biet FUN Money (On-Chain) va Camly Coin (Off-Chain)
+# Sua Loi So Lieu FUN Money Stats - Vuot Gioi Han 1,000 Dong Supabase
 
-## Van De Hien Tai
+## Nguyen Nhan Goc
 
-Bang thong ke truoc do dang **lay du lieu tu bang `camly_coin_transactions`** (Camly Coin - diem thuong off-chain) va goi nham la "FUN Money Mint Statistics". Day la SAI hoan toan vi:
+Code hien tai goi `supabase.from("pplp_actions").select(...)` **KHONG co `.range()` hoac pagination**, nen Supabase chi tra ve **toi da 1,000 dong** (gioi han mac dinh). Voi **3,967 actions** trong database, dashboard chi hien thi ~25% du lieu.
 
-- **Camly Coin**: Diem thuong off-chain, duoc tang truc tiep cho user khi thuc hien hanh dong (chat, nhat ky, dang nhap...). Luu trong bang `camly_coin_transactions`. Tong: ~63 trieu.
-- **FUN Money**: Token on-chain BEP-20, phai duoc danh gia qua giao thuc PPLP (Light Score >= 60), roi mint tren blockchain. Luu trong bang `pplp_actions`, `pplp_scores`, `pplp_mint_requests`. Tong: ~147,706 FUN (chua co giao dich nao thuc su mint on-chain).
+## So Lieu Thuc Te Tu Database
 
-## Du Lieu Thuc Te FUN Money (Tu PPLP)
-
-| Hang muc (action_type) | Tong hanh dong | Pass | Fail | Tong FUN Reward | Users |
-|------------------------|---------------|------|------|-----------------|-------|
-| QUESTION_ASK           | 3,171         | 933  | 2,224| 137,642         | 175   |
-| POST_CREATE            | 126           | 49   | 71   | 9,360           | 66    |
-| GRATITUDE_PRACTICE     | 664           | 11   | 653  | 414             | 127   |
-| CONTENT_CREATE         | 2             | 2    | 0    | 248             | 1     |
-| JOURNAL_WRITE          | 3             | 1    | 2    | 42              | 2     |
-| LEARN_COMPLETE         | 1             | 0    | 1    | 0               | 1     |
-
-Mint Requests: 9 tao, 6 da ky (signed), 0 da mint (minted).
+| Chi so | Gia tri thuc | Dashboard hien thi (SAI) |
+|--------|-------------|-------------------------|
+| Tong actions | 3,967 | ~1,000 (bi cat) |
+| Tong scores | 3,947 | ~1,000 |
+| Pass | 996 | thieu |
+| Fail | 2,951 | thieu |
+| Tong FUN (Pass) | 147,706 | thieu |
+| Users | 178 | thieu |
+| Users co pass | 125 | thieu |
+| Mint Requests | 9 (6 signed, 2 expired, 1 pending) | thieu |
+| Avg LS (Pass) | 84.00 | sai |
 
 ## Giai Phap
 
-Tao trang admin moi `/admin/mint-stats` lay du lieu tu **dung nguon**:
+Thay doi cach fetch du lieu trong `src/pages/AdminMintStats.tsx`:
 
-- **`pplp_actions`** - Cac hanh dong da ghi nhan
-- **`pplp_scores`** - Diem Light Score va ket qua pass/fail
-- **`pplp_mint_requests`** - Yeu cau mint on-chain
+### 1. Them ham fetchAllRows - Pagination tu dong
 
-### Thong Tin Hien Thi Cho Moi User
-
-| Cot | Nguon du lieu | Mo ta |
-|-----|---------------|-------|
-| User | `profiles` | Ten va avatar |
-| QUESTION_ASK | `pplp_actions` + `pplp_scores` | FUN tu hoi dap |
-| POST_CREATE | `pplp_actions` + `pplp_scores` | FUN tu dang bai |
-| GRATITUDE_PRACTICE | `pplp_actions` + `pplp_scores` | FUN tu biet on |
-| CONTENT_CREATE | `pplp_actions` + `pplp_scores` | FUN tu tao noi dung |
-| JOURNAL_WRITE | `pplp_actions` + `pplp_scores` | FUN tu nhat ky |
-| LEARN_COMPLETE | `pplp_actions` + `pplp_scores` | FUN tu hoc tap |
-| Tong FUN | Tong cong | Tong FUN da earn |
-| Pass/Fail | `pplp_scores` | Ty le pass/fail |
-| Avg Light Score | `pplp_scores` | Diem trung binh |
-| Mint Status | `pplp_mint_requests` | Da mint / Chua mint |
-
-### Stats Cards Tong Quan
-
-1. **Tong FUN da cham diem (Pass)**: 147,706 FUN - tu `pplp_scores` WHERE `decision = 'pass'`
-2. **Tong hanh dong PPLP**: 3,967 - tu `pplp_actions`
-3. **Ty le Pass**: 25.1% (996/3,967)
-4. **Users du dieu kien**: 125 users - tu `pplp_actions` JOIN `pplp_scores` WHERE pass
-5. **Mint Requests**: 9 (6 signed, 0 minted)
-6. **Avg Light Score (Pass)**: ~84 diem
-
-### Realtime Update
-
-Su dung Supabase realtime subscription tren `pplp_actions` de tu dong cap nhat khi co hanh dong moi duoc ghi nhan.
-
-## Cac File Can Tao/Sua
-
-| File | Thao Tac | Noi Dung |
-|------|----------|----------|
-| `src/pages/AdminMintStats.tsx` | Tao moi | Trang thong ke FUN Money tu PPLP data |
-| `src/App.tsx` | Cap nhat | Them route `/admin/mint-stats` |
-| `src/pages/AdminDashboard.tsx` | Cap nhat | Them link "FUN Money Stats" vao header |
-
-## Chi Tiet Ky Thuat
-
-### Query Chinh (Lay Tu PPLP Tables)
-
-Truy van chinh de lay FUN Money stats theo user:
+Tao ham helper de tu dong phan trang qua tat ca du lieu, moi lan lay 1,000 dong cho den het:
 
 ```text
-SELECT 
-  a.actor_id,
-  a.action_type,
-  COUNT(*) as total_actions,
-  COUNT(CASE WHEN s.decision = 'pass' THEN 1 END) as passed,
-  COUNT(CASE WHEN s.decision = 'fail' THEN 1 END) as failed,
-  COALESCE(SUM(CASE WHEN s.decision = 'pass' THEN s.final_reward ELSE 0 END), 0) as total_fun,
-  COALESCE(AVG(CASE WHEN s.decision = 'pass' THEN s.light_score END), 0) as avg_light_score
-FROM pplp_actions a
-LEFT JOIN pplp_scores s ON s.action_id = a.id
-GROUP BY a.actor_id, a.action_type
+async function fetchAllRows(table, select, filters?) {
+  let allData = [];
+  let from = 0;
+  const PAGE_SIZE = 1000;
+  
+  while (true) {
+    let query = supabase.from(table).select(select).range(from, from + PAGE_SIZE - 1);
+    // Apply filters...
+    const { data } = await query;
+    allData = allData.concat(data);
+    if (data.length < PAGE_SIZE) break; // Het du lieu
+    from += PAGE_SIZE;
+  }
+  return allData;
+}
 ```
 
-Ket hop profiles:
-```text
-SELECT user_id, display_name, avatar_url FROM profiles
-```
+### 2. Ap dung cho tat ca cac truy van
 
-Va mint requests:
-```text
-SELECT actor_id, status, amount, signature, tx_hash, created_at 
-FROM pplp_mint_requests
-```
+- **pplp_actions**: 3,967 dong -> can 4 trang (0-999, 1000-1999, 2000-2999, 3000-3966)
+- **pplp_scores**: 3,947 dong -> cung can pagination (hien tai fetch theo batch 500 nhung dua tren action IDs da bi cat)
+- **profiles**: fetch theo batch actorIds (da dung, khong bi loi)
+- **pplp_mint_requests**: 9 dong -> khong bi loi
 
-### Giao Dien
+### 3. Cap nhat overview stats
 
-- Giong phong cach cac trang admin hien co (AdminStatistics, AdminDashboard)
-- Header voi link ve Admin Dashboard, nut Lam moi, bo loc thoi gian
-- Stats cards tong quan (6 the)
-- Bang chinh: tung user voi cac cot FUN theo action_type, ty le pass/fail, avg light score, mint status
-- Tim kiem user, sap xep cot, xuat Excel
-- Realtime subscription tren `pplp_actions`
+Sau khi fetch du day du:
+- Tong FUN (Pass): 147,706
+- Tong actions: 3,967
+- Pass rate: 25.2% (996/3,947)
+- Users du DK: 125
+- Mint Requests: 9 (6 signed, 2 expired, 1 pending)
+- Avg LS: 84
 
-### Luu Y Quan Trong
+## File Thay Doi
 
-- **KHONG truy van `camly_coin_transactions`** - do la Camly Coin off-chain
-- Chi truy van `pplp_actions`, `pplp_scores`, `pplp_mint_requests` - do la FUN Money on-chain
-- Don vi FUN Money la wei (18 decimals) trong mint_requests, nhung final_reward trong pplp_scores la so nguyen don gian
-- Hien thi ro trang thai: Scored (pass/fail) -> Mint Request (pending/signed/minted)
+| File | Noi Dung |
+|------|----------|
+| `src/pages/AdminMintStats.tsx` | Them pagination cho fetchData, dam bao lay het tat ca dong |
+
+## Chi Tiet Thay Doi Trong Code
+
+### fetchData function (dong 129-293)
+
+1. **Thay truy van pplp_actions** (dong 136-140): Tu fetch 1 lan (bi gioi han 1000) thanh vong lap pagination voi `.range(from, to)` cho den khi het du lieu.
+
+2. **Thay truy van pplp_scores** (dong 152-160): Tuong tu, fetch scores cung can pagination vi tong co 3,947 scores. Hien tai code batch theo actionIds (500/batch) nhung actionIds da bi cat tu buoc 1. Sau khi fix buoc 1, actionIds se day du nen batch scores cung se day du.
+
+3. **Them truy van pplp_mint_requests** (dong 209-211): Khong can thay doi vi chi co 9 dong.
+
+4. **Overview stats**: Se tu dong chinh xac khi du lieu day du.
+
+### Ket qua mong doi
+
+Sau khi fix, dashboard se hien thi chinh xac:
+- 178 users trong bang
+- 147,706 FUN tong
+- 996 pass / 2,951 fail
+- 25.2% pass rate
+- 125 users du dieu kien
+- Avg Light Score: 84
