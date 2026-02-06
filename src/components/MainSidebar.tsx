@@ -55,7 +55,7 @@ export function MainSidebar() {
               </div>
             </div>
           ) : (
-            <img src={angelGoldenTextLogo} alt="Angel AI" className="h-8 w-auto object-contain drop-shadow-[0_2px_4px_rgba(139,105,20,0.4)]" />
+            <img src={angelGoldenTextLogo} alt="Angel AI" className="h-8 w-auto object-contain mix-blend-multiply drop-shadow-[0_2px_4px_rgba(139,105,20,0.4)]" />
           )}
         </div>
       </SidebarHeader>
