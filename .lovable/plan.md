@@ -1,90 +1,131 @@
 
+# Cap Nhat FUN MONEY v1.2.1 FINAL Vao Toan Bo He Thong Angel AI
 
-# Thay Kiểu Chữ Logo "Angel AI" Sang Font Thảo Trang Trí (Ornate Script)
+## Tong Quan
 
-## Mục Tieu
+Cap nhat ma nguon hop dong thong minh va **tat ca cac file lien quan** de dong bo voi ban FUN MONEY Production v1.2.1 (FINAL) da deploy tren BSC Testnet. Bao gom cap nhat EIP-712 domain, PPLP typehash, deploy script, ABI, va backend edge function.
 
-Thay thế logo hình anh PNG (van con nen) bang chu CSS su dung font **Great Vibes** (elegant cursive script) voi hieu ung vang kim loai 3D, giong voi kieu chu tren logo goc.
+## Cac Thay Doi Quan Trong Giua v1.0 (cu) va v1.2.1 (moi)
 
-## Thay Doi
+| Thanh phan | Phien ban cu (trong repo) | v1.2.1 FINAL |
+|---|---|---|
+| Contract class | `FUNMoney` (OpenZeppelin) | `FUNMoneyProductionV1_2_1` (standalone) |
+| Flow mint | `mintWithSignature()` (1 buoc) | `lockWithPPLP()` -> `activate()` -> `claim()` (3 buoc) |
+| EIP-712 Domain name | `"FUNMoney-PPLP"` | `"FUN Money"` |
+| EIP-712 Version | `"1"` | `"1.2.1"` |
+| Typehash | `MintRequest(address to, ...)` | `PureLoveProof(address user, bytes32 actionHash, ...)` |
+| Quyen | AccessControl (ADMIN/SIGNER/GOVERNOR/PAUSER) | guardianGov + Attester system |
+| Constructor | `(name, symbol, epochMintCap, userEpochCap, admin)` | `(gov, community, attesters[], threshold)` |
 
-### 1. `src/index.css` - Them font Great Vibes va cap nhat CSS
+## Chi Tiet Cac File Can Thay Doi
 
-- **Them font**: Import `Great Vibes` tu Google Fonts vao dong `@import url(...)` hien tai
-- **Cap nhat `.text-brand-golden`**:
-  - Font: `'Great Vibes', cursive` (thay vi `'Cinzel', serif`)
-  - Bo `text-transform: uppercase` (font script khong dung uppercase)
-  - Giam `letter-spacing` xuong `0.02em` (script font can gap chu hep hon)
-  - Tang `text-shadow` de tao hieu ung 3D noi bat hon: multiple layer shadow (highlight sang o tren, bong toi o duoi)
-  - Them `-webkit-text-stroke` rat mong de tao do day cho net chu
-- **Cap nhat `.text-brand-golden-light`**: Tuong tu nhung gradient sang hon cho nen toi (Footer)
+### 1. `contracts/FUNMoney.sol` - Thay toan bo bang v1.2.1 FINAL
+- Xoa toan bo code cu (OpenZeppelin-based)
+- Thay bang code Solidity v1.2.1 FINAL ma nguoi dung cung cap
+- Bao gom: Context, ERC20 standalone, EIP712 standalone, FUNMoneyProductionV1_2_1
 
-### 2. `src/components/HeroSection.tsx` - Logo trang chu
+### 2. `contracts/scripts/deploy.js` - Cap nhat deploy script
+- Constructor moi: `(gov, community, attesters[], threshold)` thay vi `(name, symbol, epochMintCap, userEpochCap, admin)`
+- Cap nhat contract factory name: `FUNMoneyProductionV1_2_1`
+- Them buoc govRegisterAction cho cac action types
 
-- Thay `<img src={angelGoldenTextLogo}>` bang `<span className="text-brand-golden text-5xl sm:text-6xl md:text-7xl lg:text-8xl">Angel AI</span>`
-- Bo import `angelGoldenTextLogo`
+### 3. `contracts/README.md` - Cap nhat tai lieu
+- Mo ta flow moi: Lock -> Activate -> Claim
+- Constructor params moi
+- EIP-712 domain moi: `("FUN Money", "1.2.1")`
+- Typehash moi: `PureLoveProof`
+- Roles moi: guardianGov, Attester system
 
-### 3. `src/components/Header.tsx` - Logo mobile
+### 4. `src/lib/funMoneyABI.ts` - Cap nhat EIP-712 Domain (CRITICAL)
+- EIP-712 Domain: `name: "FUN Money"`, `version: "1.2.1"` (thay vi `"FUNMoney-PPLP"` / `"1"`)
+- PPLP_LOCK_TYPES: Doi type name `PPLPLock` -> `PureLoveProof`, field `action` -> `actionHash`
+- ABI da dung san, khong can doi
 
-- Thay `<img>` bang `<span className="text-brand-golden text-2xl sm:text-3xl">Angel AI</span>`
-- Bo import `angelGoldenTextLogo`
+### 5. `supabase/functions/pplp-authorize-mint/index.ts` - Cap nhat backend signing (CRITICAL)
+- PPLP_DOMAIN: `name: "FUN Money"`, `version: "1.2.1"`
+- PPLP_LOCK_TYPES: `PureLoveProof` voi field `actionHash` thay vi `PPLPLock` voi field `action`
+- Cap nhat message object khi signing: `actionHash` thay vi `action`
 
-### 4. `src/components/MainSidebar.tsx` - Logo sidebar
+### 6. `supabase/functions/_shared/pplp-eip712.ts` - Cap nhat shared types
+- PPLP_DOMAIN: `name: "FUN Money"`, `version: "1.2.1"`
+- Giu lai cac legacy types de backward compatibility
 
-- Thay `<img>` bang `<span className="text-brand-golden text-2xl">Angel AI</span>`
-- Bo import `angelGoldenTextLogo`
+### 7. `src/data/pplpKnowledgeTemplates.ts` - Cap nhat tai lieu knowledge
+- Cap nhat EIP-712 Domain references: `"FUN Money"` / `"1.2.1"`
+- Cap nhat TYPES tu `MintRequest` sang `PureLoveProof`
+- Cap nhat code examples
 
-### 5. `src/components/Footer.tsx` - Logo footer (nen toi)
-
-- Thay `<img>` bang `<span className="text-brand-golden-light text-3xl sm:text-4xl md:text-5xl">Angel AI</span>`
-- Bo import `angelGoldenTextLogo`
+### 8. `src/pages/docs/pplpEngineSpec.ts` - Cap nhat Engine Spec docs
+- EIP-712 domain: `"FUN Money"` / `"1.2.1"`
+- Types: `PureLoveProof`
 
 ## Chi Tiet Ky Thuat
 
-### CSS Class Moi
+### EIP-712 Domain Moi (Ap Dung Toan He Thong)
 
 ```text
-/* Font import - them Great Vibes */
-@import url('...&family=Great+Vibes&...');
-
-.text-brand-golden {
-  font-family: 'Great Vibes', cursive;
-  /* KHONG co text-transform: uppercase */
-  letter-spacing: 0.02em;
-  font-weight: 400;  /* Great Vibes chi co weight 400 */
-  background: linear-gradient(
-    135deg,
-    #8B6914 0%,
-    #C49B30 20%,
-    #E8C252 40%,
-    #F5D976 50%,
-    #E8C252 60%,
-    #C49B30 80%,
-    #8B6914 100%
-  );
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 4px rgba(139, 105, 20, 0.3));
-  transition: background-position 0.6s ease;
-  line-height: 1.2;
+{
+  name: "FUN Money",
+  version: "1.2.1",
+  chainId: 97,
+  verifyingContract: "0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2"
 }
 ```
 
-### Kich Thuoc Theo Vi Tri
+### PPLP Typehash Moi
 
-| Vi tri | Kich thuoc (lon hon Cinzel vi script font nho hon) |
-|--------|---------------------------------------------------|
-| HeroSection | text-5xl / sm:text-6xl / md:text-7xl / lg:text-8xl |
-| Header (mobile) | text-2xl / sm:text-3xl |
-| MainSidebar | text-2xl |
-| Footer | text-3xl / sm:text-4xl / md:text-5xl |
+```text
+PureLoveProof(
+  address user,
+  bytes32 actionHash,
+  uint256 amount,
+  bytes32 evidenceHash,
+  uint256 nonce
+)
+```
 
-## Ket Qua
+### EIP-712 Types Object Moi (JavaScript/TypeScript)
 
-- Chu "Angel AI" hien thi voi font Great Vibes - kieu thu phap trang tri uon luon sang trong
-- Hieu ung gradient vang kim loai voi drop-shadow 3D
-- **Hoan toan khong co nen** vi la chu CSS thuan tuy
-- Khong phu thuoc vao file hinh anh
-- Hoat dong tot tren moi nen sang/toi
+```text
+const PPLP_TYPES = {
+  PureLoveProof: [
+    { name: "user", type: "address" },
+    { name: "actionHash", type: "bytes32" },
+    { name: "amount", type: "uint256" },
+    { name: "evidenceHash", type: "bytes32" },
+    { name: "nonce", type: "uint256" },
+  ]
+};
+```
+
+### Message Object Khi Signing
+
+```text
+const message = {
+  user: walletAddress,
+  actionHash: keccak256(toUtf8Bytes(actionName)),
+  amount: amountWei,
+  evidenceHash: evidenceHash,
+  nonce: onChainNonce,
+};
+```
+
+## Tong Hop File Thay Doi
+
+| File | Muc Do | Noi Dung |
+|------|--------|----------|
+| `contracts/FUNMoney.sol` | Thay toan bo | Code Solidity v1.2.1 FINAL |
+| `contracts/scripts/deploy.js` | Thay toan bo | Constructor moi, setup attesters |
+| `contracts/README.md` | Thay toan bo | Tai lieu v1.2.1 |
+| `src/lib/funMoneyABI.ts` | Cap nhat domain + types | EIP-712 domain va PPLP types |
+| `supabase/functions/pplp-authorize-mint/index.ts` | Cap nhat domain + types + signing | EIP-712 domain, types, message |
+| `supabase/functions/_shared/pplp-eip712.ts` | Cap nhat domain | EIP-712 domain |
+| `src/data/pplpKnowledgeTemplates.ts` | Cap nhat references | Domain + types trong docs |
+| `src/pages/docs/pplpEngineSpec.ts` | Cap nhat references | Domain + types trong docs |
+
+## Luu Y Quan Trong
+
+- Contract address **KHONG DOI**: `0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2`
+- Frontend hooks (`useFUNMoneyContract.ts`) va UI components **KHONG CAN DOI** vi chung da tuong thich voi flow Lock/Activate/Claim
+- ABI trong `funMoneyABI.ts` da dung, chi can cap nhat EIP-712 domain va types
+- Edge function `pplp-authorize-mint` se duoc deploy lai tu dong sau khi cap nhat
