@@ -11,7 +11,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SearchResult {
   id: string;
-  type: "knowledge" | "community" | "question";
+  type: "knowledge" | "community" | "question" | "user";
   title: string;
   description: string;
   url: string;
@@ -24,6 +24,13 @@ interface SearchResults {
   community: SearchResult[];
   questions: SearchResult[];
   aiSummary: { content: string; source: string } | null;
+}
+
+interface UserResult {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
 }
 
 interface GlobalSearchProps {
@@ -43,6 +50,7 @@ export function GlobalSearch({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<SearchResults | null>(null);
+  const [userResults, setUserResults] = useState<UserResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,6 +88,7 @@ export function GlobalSearch({
   const performSearch = useCallback(async (searchQuery: string) => {
     if (searchQuery.trim().length < 2) {
       setResults(null);
+      setUserResults([]);
       setError(null);
       return;
     }
@@ -88,16 +97,31 @@ export function GlobalSearch({
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("global-search", {
-        body: { query: searchQuery, searchType: "all" },
-      });
+      // Community variant: search users only
+      if (variant === "community") {
+        const { data, error: dbError } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url, bio")
+          .ilike("display_name", `%${searchQuery.trim()}%`)
+          .limit(15);
 
-      if (fnError) throw fnError;
-
-      if (data.success) {
-        setResults(data.results);
+        if (dbError) throw dbError;
+        setUserResults(data || []);
+        setResults(null);
       } else {
-        setError(data.error || t("common.error"));
+        // Default: global search via edge function
+        const { data, error: fnError } = await supabase.functions.invoke("global-search", {
+          body: { query: searchQuery, searchType: "all" },
+        });
+
+        if (fnError) throw fnError;
+
+        if (data.success) {
+          setResults(data.results);
+        } else {
+          setError(data.error || t("common.error"));
+        }
+        setUserResults([]);
       }
     } catch (err) {
       console.error("Search error:", err);
@@ -105,7 +129,7 @@ export function GlobalSearch({
     } finally {
       setIsLoading(false);
     }
-  }, [t]);
+  }, [t, variant]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -153,6 +177,7 @@ export function GlobalSearch({
   const clearSearch = () => {
     setQuery("");
     setResults(null);
+    setUserResults([]);
     setError(null);
     inputRef.current?.focus();
   };
@@ -244,8 +269,57 @@ export function GlobalSearch({
               </div>
             )}
 
-            {/* Results */}
-            {!isLoading && !error && results && (
+            {/* Community Variant: User Results */}
+            {!isLoading && !error && variant === "community" && userResults.length > 0 && (
+              <div className="max-h-[400px] overflow-y-auto">
+                <div className="px-4 py-2 bg-muted/30 border-b">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    {t("search.users") || "Users"} ({userResults.length})
+                  </span>
+                </div>
+                {userResults.map((user) => (
+                  <button
+                    key={user.user_id}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setQuery("");
+                      navigate(`/user/${user.user_id}`);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-b border-border/30 last:border-b-0"
+                  >
+                    <Avatar className="w-9 h-9">
+                      <AvatarImage src={user.avatar_url || ""} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {user.display_name?.charAt(0)?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {user.display_name || t("common.anonymous")}
+                      </p>
+                      {user.bio && (
+                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                          {user.bio}
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Community Variant: No Results */}
+            {!isLoading && !error && variant === "community" && userResults.length === 0 && query.length >= 2 && (
+              <div className="p-6 text-center">
+                <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  {t("search.noResults")} "{query}"
+                </p>
+              </div>
+            )}
+
+            {/* Default Variant: Global Results */}
+            {!isLoading && !error && variant !== "community" && results && (
               <div className="max-h-[400px] overflow-y-auto">
                 {/* AI Summary */}
                 {results.aiSummary && (

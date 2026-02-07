@@ -338,6 +338,7 @@ const translations: Record<string, string> = {
   "search.knowledge": "Kiến thức",
   "search.community": "Cộng đồng",
   "search.questions": "Câu hỏi",
+  "search.users": "Thành viên",
   "search.angelAnswer": "Angel AI trả lời",
 
   // Chart
