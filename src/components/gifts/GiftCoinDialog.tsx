@@ -122,11 +122,14 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
     const debounce = setTimeout(async () => {
       setIsCryptoSearching(true);
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
           .select("user_id, display_name, avatar_url")
           .ilike("display_name", `%${cryptoSearchQuery}%`)
-          .limit(5);
+          .limit(10);
+        if (error) {
+          console.error("Crypto profile search error:", error);
+        }
         if (data) setCryptoSearchResults(data);
       } catch (err) {
         console.error("Crypto search error:", err);
@@ -530,7 +533,8 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
                             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" />
                           )}
                         </div>
-                        {cryptoSearchResults.length > 0 && (
+                        <p className="text-xs text-muted-foreground">{t("crypto.profileNeedWallet")}</p>
+                        {cryptoSearchResults.length > 0 ? (
                           <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
                             {cryptoSearchResults.map((searchUser) => (
                               <button
@@ -551,6 +555,12 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
                               </button>
                             ))}
                           </div>
+                        ) : (
+                          cryptoSearchQuery.length >= 2 && !isCryptoSearching && (
+                            <p className="text-xs text-center text-muted-foreground py-3">
+                              Không tìm thấy người dùng "{cryptoSearchQuery}"
+                            </p>
+                          )
                         )}
                       </>
                     ) : (
