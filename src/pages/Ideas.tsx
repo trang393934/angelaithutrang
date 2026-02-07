@@ -24,7 +24,7 @@ import {
   Gift,
 } from "lucide-react";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
-import { LightGate } from "@/components/LightGate";
+
 
 interface Idea {
   id: string;
@@ -50,17 +50,27 @@ export default function Ideas() {
   const [category, setCategory] = useState("");
 
   const fetchIdeas = async () => {
-    if (!user) return;
-
     try {
-      const { data, error } = await supabase
-        .from("build_ideas")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      if (!user) {
+        // Guests can see approved/implemented ideas
+        const { data, error } = await supabase
+          .from("build_ideas")
+          .select("*")
+          .in("status", ["approved", "implemented"])
+          .order("created_at", { ascending: false });
+        
+        if (error) throw error;
+        setIdeas(data || []);
+      } else {
+        // Logged-in users see all their ideas + approved ones
+        const { data, error } = await supabase
+          .from("build_ideas")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setIdeas(data || []);
+        if (error) throw error;
+        setIdeas(data || []);
+      }
     } catch (error) {
       console.error("Error fetching ideas:", error);
     } finally {
@@ -69,11 +79,7 @@ export default function Ideas() {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchIdeas();
-    } else {
-      setIsLoading(false);
-    }
+    fetchIdeas();
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -182,7 +188,7 @@ export default function Ideas() {
   }
 
   return (
-    <LightGate>
+    <>
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
 
@@ -373,6 +379,6 @@ export default function Ideas() {
         </main>
         <Footer />
       </div>
-    </LightGate>
+    </>
   );
 }

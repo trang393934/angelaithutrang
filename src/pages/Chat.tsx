@@ -743,6 +743,15 @@ const Chat = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.error(t("loginRequired") || "Vui lòng đăng nhập để trò chuyện", {
+        action: {
+          label: t("login") || "Đăng nhập",
+          onClick: () => navigate("/auth"),
+        },
+      });
+      return;
+    }
     if (!input.trim() || isLoading || isGenerating || isAnalyzing) return;
 
     const userMessage = input.trim();
@@ -750,8 +759,8 @@ const Chat = () => {
     await sendMessage(userMessage);
   };
 
-  // Access restricted
-  if (!authLoading && (!user || hasAgreed === false)) {
+  // Access restricted - only if logged in but hasn't agreed to Light Law
+  if (!authLoading && user && hasAgreed === false) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col items-center justify-center p-4">
         <div className="max-w-md text-center space-y-6">

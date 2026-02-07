@@ -106,20 +106,20 @@ const App = () => (
             <BackToTopButton />
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/chat" element={<ProfileCompletionGate><Chat /></ProfileCompletionGate>} />
+              <Route path="/chat" element={<Chat />} />
               <Route path="/about" element={<About />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/earn" element={<ProfileCompletionGate><Earn /></ProfileCompletionGate>} />
-              <Route path="/vision" element={<ProfileCompletionGate><Vision /></ProfileCompletionGate>} />
-              <Route path="/ideas" element={<ProfileCompletionGate><Ideas /></ProfileCompletionGate>} />
-              <Route path="/bounty" element={<ProfileCompletionGate><Bounty /></ProfileCompletionGate>} />
-              <Route path="/content-writer" element={<ProfileCompletionGate><ContentWriter /></ProfileCompletionGate>} />
+              <Route path="/earn" element={<Earn />} />
+              <Route path="/vision" element={<Vision />} />
+              <Route path="/ideas" element={<Ideas />} />
+              <Route path="/bounty" element={<Bounty />} />
+              <Route path="/content-writer" element={<ContentWriter />} />
               <Route path="/swap" element={<Swap />} />
               <Route path="/knowledge" element={<Knowledge />} />
               <Route path="/activity-history" element={<ProfileCompletionGate><ActivityHistory /></ProfileCompletionGate>} />
-              <Route path="/mint" element={<ProfileCompletionGate><Mint /></ProfileCompletionGate>} />
+              <Route path="/mint" element={<Mint />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/knowledge" element={<AdminKnowledge />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -133,8 +133,8 @@ const App = () => (
               <Route path="/admin/bounty" element={<AdminBounty />} />
               <Route path="/admin/project-fund" element={<AdminProjectFund />} />
               <Route path="/admin/mint-stats" element={<AdminMintStats />} />
-              <Route path="/community-questions" element={<ProfileCompletionGate><CommunityQuestions /></ProfileCompletionGate>} />
-              <Route path="/community" element={<ProfileCompletionGate><Community /></ProfileCompletionGate>} />
+              <Route path="/community-questions" element={<CommunityQuestions />} />
+              <Route path="/community" element={<Community />} />
               <Route path="/user/:userId" element={<UserProfile />} />
               <Route path="/messages" element={<ProfileCompletionGate><Messages /></ProfileCompletionGate>} />
               <Route path="/messages/:userId" element={<ProfileCompletionGate><Messages /></ProfileCompletionGate>} />
