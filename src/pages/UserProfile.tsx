@@ -791,22 +791,22 @@ const UserProfile = () => {
                         <div className="grid grid-cols-3 gap-1.5">
                           <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
                             <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
-                              <Coins className="h-2.5 w-2.5" />
-                              Đã mint
+                              <CheckCircle className="h-2.5 w-2.5" />
+                              {t("earn.funMoney.scored")}
                             </div>
-                            <p className="text-xs font-semibold text-emerald-600">{funMoneyStats.totalMinted.toLocaleString()}</p>
+                            <p className="text-xs font-semibold text-emerald-600">{funMoneyStats.totalScored.toLocaleString()}</p>
                           </div>
                           <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
                             <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
-                              <CheckCircle className="h-2.5 w-2.5" />
-                              Đã ký
+                              <Coins className="h-2.5 w-2.5" />
+                              {t("earn.funMoney.minted")}
                             </div>
-                            <p className="text-xs font-semibold text-blue-600">{funMoneyStats.totalSigned.toLocaleString()}</p>
+                            <p className="text-xs font-semibold text-blue-600">{funMoneyStats.totalMinted.toLocaleString()}</p>
                           </div>
                           <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
                             <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
                               <Lock className="h-2.5 w-2.5" />
-                              Đang chờ
+                              {t("earn.funMoney.pending")}
                             </div>
                             <p className="text-xs font-semibold text-amber-600">{funMoneyStats.totalPending.toLocaleString()}</p>
                           </div>

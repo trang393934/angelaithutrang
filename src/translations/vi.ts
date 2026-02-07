@@ -257,8 +257,8 @@ const translations: Record<string, string> = {
   // FUN Money Stats
   "earn.funMoney.title": "FUN Money (On-chain)",
   "earn.funMoney.total": "Tổng FUN Money",
+  "earn.funMoney.scored": "Sẵn sàng claim",
   "earn.funMoney.minted": "Đã mint",
-  "earn.funMoney.signed": "Đã ký",
   "earn.funMoney.pending": "Đang chờ",
   "earn.funMoney.viewDetails": "Xem chi tiết & Mint",
   "earn.funMoney.emptyMessage": "Bạn chưa có FUN Money nào. Bắt đầu đóng góp để mint!",
