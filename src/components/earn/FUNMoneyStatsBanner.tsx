@@ -13,21 +13,21 @@ interface FUNMoneyStatsBannerProps {
 
 export function FUNMoneyStatsBanner({ userId }: FUNMoneyStatsBannerProps) {
   const { t } = useLanguage();
-  const { totalMinted, totalSigned, totalPending, totalAmount, isLoading } =
+  const { totalScored, totalMinted, totalPending, totalAmount, isLoading } =
     useFUNMoneyStats(userId);
 
   const statItems = [
     {
-      label: t("earn.funMoney.minted"),
-      value: totalMinted,
-      icon: Coins,
+      label: t("earn.funMoney.scored"),
+      value: totalScored,
+      icon: CheckCircle,
       color: "text-emerald-400",
       bgColor: "bg-emerald-500/20",
     },
     {
-      label: t("earn.funMoney.signed"),
-      value: totalSigned,
-      icon: CheckCircle,
+      label: t("earn.funMoney.minted"),
+      value: totalMinted,
+      icon: Coins,
       color: "text-blue-400",
       bgColor: "bg-blue-500/20",
     },
