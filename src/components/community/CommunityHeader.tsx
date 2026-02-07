@@ -200,7 +200,7 @@ export function CommunityHeader() {
                       
                       {/* Profile Link */}
                       <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/profile" className="flex items-center gap-2">
+                        <Link to={`/user/${user.id}`} className="flex items-center gap-2">
                           <User className="w-4 h-4" />
                           <span>{t("header.viewProfile") || "Trang cá nhân"}</span>
                         </Link>
