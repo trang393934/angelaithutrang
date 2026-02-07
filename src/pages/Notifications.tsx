@@ -1,12 +1,10 @@
 import { useState, useMemo, useCallback } from "react";
-import { Bell, ArrowLeft, CheckCheck, Users } from "lucide-react";
+import { Bell, ArrowLeft, CheckCheck, Users, Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useNotifications, type Notification } from "@/hooks/useNotifications";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useFriendRequestActions } from "@/hooks/useFriendRequestActions";
 import { cn } from "@/lib/utils";
 import {
   type FilterTab,
@@ -19,10 +17,9 @@ import {
 export default function NotificationsPage() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const { t } = useLanguage();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
-  const [isProcessingFriendRequest, setIsProcessingFriendRequest] = useState(false);
+  const { handleAccept, handleReject, isProcessing } = useFriendRequestActions(markAsRead);
 
   const handleNotificationClick = useCallback(
     async (notif: Notification) => {
@@ -31,68 +28,6 @@ export default function NotificationsPage() {
       if (link) navigate(link);
     },
     [markAsRead, navigate]
-  );
-
-  const handleAcceptFriendRequest = useCallback(
-    async (notif: Notification) => {
-      if (!user || isProcessingFriendRequest) return;
-      setIsProcessingFriendRequest(true);
-      try {
-        const { data: friendship } = await supabase
-          .from("friendships")
-          .select("id")
-          .eq("requester_id", notif.actor_id!)
-          .eq("addressee_id", user.id)
-          .eq("status", "pending")
-          .maybeSingle();
-
-        if (friendship) {
-          await supabase
-            .from("friendships")
-            .update({ status: "accepted", updated_at: new Date().toISOString() })
-            .eq("id", friendship.id);
-          await markAsRead(notif.id);
-          toast.success(t("notifications.acceptedRequest"));
-        } else {
-          toast.error(t("notifications.requestNotFound"));
-        }
-      } catch {
-        toast.error(t("notifications.errorOccurred"));
-      } finally {
-        setIsProcessingFriendRequest(false);
-      }
-    },
-    [user, isProcessingFriendRequest, markAsRead, t]
-  );
-
-  const handleRejectFriendRequest = useCallback(
-    async (notif: Notification) => {
-      if (!user || isProcessingFriendRequest) return;
-      setIsProcessingFriendRequest(true);
-      try {
-        const { data: friendship } = await supabase
-          .from("friendships")
-          .select("id")
-          .eq("requester_id", notif.actor_id!)
-          .eq("addressee_id", user.id)
-          .eq("status", "pending")
-          .maybeSingle();
-
-        if (friendship) {
-          await supabase
-            .from("friendships")
-            .update({ status: "declined", updated_at: new Date().toISOString() })
-            .eq("id", friendship.id);
-          await markAsRead(notif.id);
-          toast.success(t("notifications.rejectedRequest"));
-        }
-      } catch {
-        toast.error(t("notifications.errorOccurred"));
-      } finally {
-        setIsProcessingFriendRequest(false);
-      }
-    },
-    [user, isProcessingFriendRequest, markAsRead, t]
   );
 
   const { friendRequests, otherNotifications } = useMemo(() => {
@@ -108,6 +43,14 @@ export default function NotificationsPage() {
     () => groupNotificationsByTime(otherNotifications),
     [otherNotifications]
   );
+
+  const hasVisibleNotifications =
+    friendRequests.length > 0 ||
+    groupedNotifications.new.length > 0 ||
+    groupedNotifications.today.length > 0 ||
+    groupedNotifications.yesterday.length > 0 ||
+    groupedNotifications.thisWeek.length > 0 ||
+    groupedNotifications.earlier.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -171,14 +114,19 @@ export default function NotificationsPage() {
 
       {/* Content */}
       <div className="container mx-auto px-4 pb-20">
-        {notifications.length === 0 ? (
+        {!hasVisibleNotifications ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Bell className="w-14 h-14 mb-4 opacity-20" />
-            <p className="text-base">
-              {activeTab === "unread"
-                ? t("notifications.noUnread")
-                : t("notifications.empty")}
-            </p>
+            {activeTab === "unread" ? (
+              <>
+                <Check className="w-14 h-14 mb-4 opacity-20" />
+                <p className="text-base">{t("notifications.noUnread")}</p>
+              </>
+            ) : (
+              <>
+                <Bell className="w-14 h-14 mb-4 opacity-20" />
+                <p className="text-base">{t("notifications.empty")}</p>
+              </>
+            )}
           </div>
         ) : (
           <div>
@@ -193,9 +141,9 @@ export default function NotificationsPage() {
                   <FriendRequestItem
                     key={n.id}
                     notification={n}
-                    onAccept={handleAcceptFriendRequest}
-                    onReject={handleRejectFriendRequest}
-                    isLoading={isProcessingFriendRequest}
+                    onAccept={handleAccept}
+                    onReject={handleReject}
+                    isLoading={isProcessing}
                   />
                 ))}
               </div>

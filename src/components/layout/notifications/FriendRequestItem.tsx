@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Notification } from "@/hooks/useNotifications";
+import { getRelativeTime } from "./utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import angelAvatar from "@/assets/angel-avatar.png";
 
@@ -10,19 +11,6 @@ interface FriendRequestItemProps {
   onAccept: (notification: Notification) => void;
   onReject: (notification: Notification) => void;
   isLoading?: boolean;
-}
-
-function getRelativeTime(dateStr: string, t: (key: string) => string): string {
-  const diffMs = Date.now() - new Date(dateStr).getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
-
-  if (diffMin < 1) return t("notifications.justNow");
-  if (diffMin < 60) return `${diffMin} ${t("notifications.minutesAgo")}`;
-  if (diffHr < 24) return `${diffHr} ${t("notifications.hoursAgo")}`;
-  if (diffDay < 7) return `${diffDay} ${t("notifications.daysAgo")}`;
-  return new Date(dateStr).toLocaleDateString();
 }
 
 export function FriendRequestItem({
