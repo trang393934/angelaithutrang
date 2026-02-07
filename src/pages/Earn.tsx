@@ -5,6 +5,7 @@ import { EarnProgress } from "@/components/earn/EarnProgress";
 import { StreakCalendar } from "@/components/earn/StreakCalendar";
 import { EarlyAdopterProgress } from "@/components/earn/EarlyAdopterProgress";
 import { EarnBreakdown } from "@/components/earn/EarnBreakdown";
+import { FUNMoneyStatsBanner } from "@/components/earn/FUNMoneyStatsBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -201,6 +202,9 @@ export default function Earn() {
 
           {/* Early Adopter Progress */}
           <EarlyAdopterProgress />
+
+          {/* FUN Money Stats Banner */}
+          <FUNMoneyStatsBanner userId={user?.id} />
 
           {/* Main content grid */}
           <div className="grid gap-6 lg:grid-cols-3 pt-4">
