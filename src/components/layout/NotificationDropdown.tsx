@@ -13,9 +13,7 @@ import {
 import { useNotifications, type Notification } from "@/hooks/useNotifications";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import { useFriendRequestActions } from "@/hooks/useFriendRequestActions";
 import { cn } from "@/lib/utils";
 import {
   type FilterTab,
@@ -32,12 +30,11 @@ interface NotificationDropdownProps {
 export function NotificationDropdown({ variant = "header" }: NotificationDropdownProps) {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const { t } = useLanguage();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
-  const [isProcessingFriendRequest, setIsProcessingFriendRequest] = useState(false);
+  const { handleAccept, handleReject, isProcessing } = useFriendRequestActions(markAsRead);
 
   const handleNotificationClick = useCallback(
     async (notif: Notification) => {
@@ -49,68 +46,6 @@ export function NotificationDropdown({ variant = "header" }: NotificationDropdow
       }
     },
     [markAsRead, navigate]
-  );
-
-  const handleAcceptFriendRequest = useCallback(
-    async (notif: Notification) => {
-      if (!user || isProcessingFriendRequest) return;
-      setIsProcessingFriendRequest(true);
-      try {
-        const { data: friendship } = await supabase
-          .from("friendships")
-          .select("id")
-          .eq("requester_id", notif.actor_id!)
-          .eq("addressee_id", user.id)
-          .eq("status", "pending")
-          .maybeSingle();
-
-        if (friendship) {
-          await supabase
-            .from("friendships")
-            .update({ status: "accepted", updated_at: new Date().toISOString() })
-            .eq("id", friendship.id);
-          await markAsRead(notif.id);
-          toast.success(t("notifications.acceptedRequest"));
-        } else {
-          toast.error(t("notifications.requestNotFound"));
-        }
-      } catch {
-        toast.error(t("notifications.errorOccurred"));
-      } finally {
-        setIsProcessingFriendRequest(false);
-      }
-    },
-    [user, isProcessingFriendRequest, markAsRead, t]
-  );
-
-  const handleRejectFriendRequest = useCallback(
-    async (notif: Notification) => {
-      if (!user || isProcessingFriendRequest) return;
-      setIsProcessingFriendRequest(true);
-      try {
-        const { data: friendship } = await supabase
-          .from("friendships")
-          .select("id")
-          .eq("requester_id", notif.actor_id!)
-          .eq("addressee_id", user.id)
-          .eq("status", "pending")
-          .maybeSingle();
-
-        if (friendship) {
-          await supabase
-            .from("friendships")
-            .update({ status: "declined", updated_at: new Date().toISOString() })
-            .eq("id", friendship.id);
-          await markAsRead(notif.id);
-          toast.success(t("notifications.rejectedRequest"));
-        }
-      } catch {
-        toast.error(t("notifications.errorOccurred"));
-      } finally {
-        setIsProcessingFriendRequest(false);
-      }
-    },
-    [user, isProcessingFriendRequest, markAsRead, t]
   );
 
   // Filter + group
@@ -127,6 +62,14 @@ export function NotificationDropdown({ variant = "header" }: NotificationDropdow
     () => groupNotificationsByTime(otherNotifications),
     [otherNotifications]
   );
+
+  const hasVisibleNotifications =
+    friendRequests.length > 0 ||
+    groupedNotifications.new.length > 0 ||
+    groupedNotifications.today.length > 0 ||
+    groupedNotifications.yesterday.length > 0 ||
+    groupedNotifications.thisWeek.length > 0 ||
+    groupedNotifications.earlier.length > 0;
 
   const isCommunity = variant === "community";
 
@@ -256,7 +199,7 @@ export function NotificationDropdown({ variant = "header" }: NotificationDropdow
 
         {/* Notifications List */}
         <ScrollArea className="max-h-[420px]">
-          {notifications.length === 0 ? (
+          {!hasVisibleNotifications ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Bell className="w-10 h-10 mb-3 opacity-30" />
               <p className="text-sm">
@@ -280,9 +223,9 @@ export function NotificationDropdown({ variant = "header" }: NotificationDropdow
                     <FriendRequestItem
                       key={n.id}
                       notification={n}
-                      onAccept={handleAcceptFriendRequest}
-                      onReject={handleRejectFriendRequest}
-                      isLoading={isProcessingFriendRequest}
+                      onAccept={handleAccept}
+                      onReject={handleReject}
+                      isLoading={isProcessing}
                     />
                   ))}
                 </div>
