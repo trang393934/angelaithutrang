@@ -5,11 +5,13 @@ import {
   Users, Award, FileText, ShieldAlert, Ban, AlertTriangle, Camera, 
   Pencil, MapPin, Calendar, MoreHorizontal, ThumbsUp, Share2, 
   ImageIcon, Smile, Globe, Briefcase, GraduationCap, Heart, Maximize2, Gift,
-  Star, History, Settings
+  Star, History, Settings, Lock, CheckCircle, Coins
 } from "lucide-react";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { usePoPLScore } from "@/hooks/usePoPLScore";
+import { useFUNMoneyStats } from "@/hooks/useFUNMoneyStats";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+import funMoneyLogo from "@/assets/fun-money-logo.png";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { Button } from "@/components/ui/button";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
@@ -54,6 +56,7 @@ const UserProfile = () => {
   const { t } = useLanguage();
   const { balance, lifetimeEarned } = useCamlyCoin();
   const { score: poplScore, badgeLevel, positiveActions } = usePoPLScore(userId);
+  const funMoneyStats = useFUNMoneyStats(userId);
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [userPosts, setUserPosts] = useState<CommunityPost[]>([]);
@@ -772,6 +775,44 @@ const UserProfile = () => {
                         <p className="text-xs text-gray-500 mt-0.5">{positiveActions} hành động tốt</p>
                       </div>
                     </div>
+
+                    {/* FUN Money Stats */}
+                    {!funMoneyStats.isLoading && funMoneyStats.totalAmount > 0 && (
+                      <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40">
+                        <div className="flex items-center gap-2.5 mb-2">
+                          <img src={funMoneyLogo} alt="FUN Money" className="w-7 h-7" />
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">FUN Money (On-chain)</p>
+                            <p className="text-base font-bold text-emerald-700 dark:text-emerald-400">
+                              {funMoneyStats.totalAmount.toLocaleString()} <span className="text-xs font-medium">FUN</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
+                            <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                              <Coins className="h-2.5 w-2.5" />
+                              Đã mint
+                            </div>
+                            <p className="text-xs font-semibold text-emerald-600">{funMoneyStats.totalMinted.toLocaleString()}</p>
+                          </div>
+                          <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
+                            <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                              <CheckCircle className="h-2.5 w-2.5" />
+                              Đã ký
+                            </div>
+                            <p className="text-xs font-semibold text-blue-600">{funMoneyStats.totalSigned.toLocaleString()}</p>
+                          </div>
+                          <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
+                            <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                              <Lock className="h-2.5 w-2.5" />
+                              Đang chờ
+                            </div>
+                            <p className="text-xs font-semibold text-amber-600">{funMoneyStats.totalPending.toLocaleString()}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
