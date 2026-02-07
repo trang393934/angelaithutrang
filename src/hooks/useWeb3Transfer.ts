@@ -2,9 +2,13 @@ import { useState, useCallback } from "react";
 import { ethers } from "ethers";
 import { useWeb3Wallet } from "./useWeb3Wallet";
 
-// CAMLY Token contract on BSC
+// CAMLY Token contract on BSC Mainnet
 const CAMLY_TOKEN_ADDRESS = "0x0910320181889fefde0bb1ca63962b0a8882e413";
 const CAMLY_DECIMALS = 3; // CAMLY uses 3 decimals
+
+// BSC Mainnet RPC for reading CAMLY balance (separate from wallet's testnet connection)
+const BSC_MAINNET_RPC = "https://bsc-dataseed.binance.org/";
+const BSC_MAINNET_CHAIN_ID = 56;
 
 // Project Treasury wallet address
 export const TREASURY_WALLET_ADDRESS = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D";
@@ -26,11 +30,46 @@ export interface TransferResult {
 }
 
 export function useWeb3Transfer() {
-  const { isConnected, address, isCorrectChain, connect, switchToBSC, hasWallet } = useWeb3Wallet();
+  const { isConnected, address, connect, hasWallet } = useWeb3Wallet();
   const [isTransferring, setIsTransferring] = useState(false);
   const [camlyCoinBalance, setCamlyCoinBalance] = useState<string>("0");
 
-  // Fetch CAMLY token balance
+  // Switch wallet to BSC Mainnet for CAMLY transfers
+  const switchToMainnet = useCallback(async (): Promise<boolean> => {
+    try {
+      const ethereum = (window as any).ethereum;
+      if (!ethereum) return false;
+
+      await ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: "0x38" }], // 0x38 = 56 (BSC Mainnet)
+      });
+      return true;
+    } catch (switchError: any) {
+      // Chain not added yet — add it
+      if (switchError.code === 4902) {
+        try {
+          await (window as any).ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: "0x38",
+              chainName: "BNB Smart Chain",
+              nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+              rpcUrls: [BSC_MAINNET_RPC],
+              blockExplorerUrls: ["https://bscscan.com"],
+            }],
+          });
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      console.error("Error switching to BSC Mainnet:", switchError);
+      return false;
+    }
+  }, []);
+
+  // Fetch CAMLY token balance using dedicated BSC Mainnet provider (not the wallet's testnet provider)
   const fetchCamlyBalance = useCallback(async () => {
     if (!isConnected || !address || !hasWallet) {
       setCamlyCoinBalance("0");
@@ -38,9 +77,9 @@ export function useWeb3Transfer() {
     }
 
     try {
-      const ethereum = (window as any).ethereum;
-      const provider = new ethers.BrowserProvider(ethereum);
-      const contract = new ethers.Contract(CAMLY_TOKEN_ADDRESS, ERC20_TRANSFER_ABI, provider);
+      // Use a read-only mainnet provider — independent of the wallet's current chain
+      const mainnetProvider = new ethers.JsonRpcProvider(BSC_MAINNET_RPC);
+      const contract = new ethers.Contract(CAMLY_TOKEN_ADDRESS, ERC20_TRANSFER_ABI, mainnetProvider);
       
       const balance = await contract.balanceOf(address);
       const formattedBalance = ethers.formatUnits(balance, CAMLY_DECIMALS);
@@ -53,7 +92,7 @@ export function useWeb3Transfer() {
     }
   }, [isConnected, address, hasWallet]);
 
-  // Transfer CAMLY token to another address
+  // Transfer CAMLY token to another address (requires BSC Mainnet)
   const transferCamly = useCallback(async (
     toAddress: string,
     amount: number
@@ -67,10 +106,13 @@ export function useWeb3Transfer() {
       return { success: false, message: "Vui lòng kết nối ví trước" };
     }
 
-    if (!isCorrectChain) {
-      const switched = await switchToBSC();
+    // Switch to BSC Mainnet for CAMLY transfers
+    const ethereum = (window as any).ethereum;
+    const currentChainId = await ethereum.request({ method: "eth_chainId" });
+    if (parseInt(currentChainId, 16) !== BSC_MAINNET_CHAIN_ID) {
+      const switched = await switchToMainnet();
       if (!switched) {
-        return { success: false, message: "Vui lòng chuyển sang mạng BSC" };
+        return { success: false, message: "Vui lòng chuyển sang mạng BSC Mainnet để chuyển CAMLY" };
       }
     }
 
@@ -136,7 +178,7 @@ export function useWeb3Transfer() {
         message: error.reason || error.message || "Lỗi khi chuyển token" 
       };
     }
-  }, [hasWallet, isConnected, isCorrectChain, address, connect, switchToBSC]);
+  }, [hasWallet, isConnected, address, connect, switchToMainnet]);
 
   // Donate CAMLY to project treasury
   const donateCamlyToProject = useCallback(async (
