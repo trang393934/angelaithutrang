@@ -1,56 +1,50 @@
 
+## Nâng cấp tất cả nút thành phong cách Vàng Golden 3D sang trọng
 
-## Make All Data Publicly Visible to Guests
+Thay đổi toàn bộ hệ thống nút bấm trên Angel AI sang phong cách vàng metallic 3D, gradient nổi bật, hiệu ứng ánh sáng lướt qua, và màu chữ tương phản rõ ràng -- áp dụng trên tất cả các trang.
 
-The screenshot shows the issue clearly: the leaderboard displays "An danh" (Anonymous) for all users and the member count shows 0. This happened because our recent security changes restricted the `profiles` table to only logged-in users, which blocks guests from seeing any profile information.
+### Thay đổi gì
 
-### Root Cause
+**1. Cập nhật Button component (`src/components/ui/button.tsx`)**
+- Variant `default`: Gradient vàng metallic 3D (từ vàng đậm sang vàng sáng), chữ trắng, hiệu ứng nổi 3D với box-shadow
+- Variant `destructive`: Giữ màu đỏ nhưng thêm hiệu ứng 3D và gradient
+- Variant `outline`: Viền vàng gradient, chữ vàng đậm, hover chuyển sang nền vàng gradient
+- Variant `secondary`: Gradient vàng nhạt sang trọng, chữ vàng đậm
+- Variant `ghost`: Hover hiển thị nền vàng nhạt
+- Variant `link`: Chữ vàng đậm
 
-Two database access policies were recently tightened to require login:
-- **profiles table**: Display names, avatars, and bios are now hidden from guests
-- **user_online_status table**: Online status is hidden from guests
+**2. Thêm CSS hiệu ứng 3D vào `src/index.css`**
+- Thêm class `.btn-golden-3d` với hiệu ứng:
+  - Gradient metallic nhiều lớp (vàng đậm -> vàng sáng -> vàng đậm)
+  - Box-shadow 3D (bóng đổ nhiều tầng tạo cảm giác nổi)
+  - Hiệu ứng ánh sáng lướt qua (shimmer) khi hover
+  - Inset highlight tạo cảm giác kim loại bóng
+  - Transition mượt mà khi hover (nâng lên, phóng to nhẹ)
+- Thêm class `.btn-golden-outline` cho variant outline
+- Thêm class `.btn-golden-secondary` cho variant secondary
 
-### What Will Change
+### Hiệu ứng chi tiết
 
-**1. Profiles table -- restore public read access**
-- Drop the current "Authenticated users can view profiles" policy (restricted to logged-in users)
-- Create a new "Anyone can view profiles" policy that allows all visitors (including guests) to see profile data
-- This restores the leaderboard, community posts, user profiles, and member counts for everyone
+- **Gradient**: `linear-gradient(135deg, #8B6914, #C49B30, #E8C252, #F5D976, #E8C252, #C49B30, #8B6914)`
+- **3D Shadow**: Nhiều tầng bóng đổ tạo chiều sâu
+- **Shimmer**: Ánh sáng trắng mờ lướt qua nút khi hover
+- **Hover**: Nút nâng lên 2px, phóng to 2%, bóng đổ mạnh hơn
+- **Chữ**: Trắng tinh (#FFFFFF) trên nền vàng, đen trên nền nhạt -- tương phản tối đa
 
-**2. Online status table -- restore public read access**
-- Drop the current "Authenticated users can view online status" policy
-- Create a new "Anyone can view online status" policy so guests can see who is online
+### Phạm vi áp dụng
 
-**3. Update security scan findings**
-- Mark the previously deleted security findings as intentionally public, since the user explicitly wants this behavior
+Vì thay đổi ở component `Button` gốc và CSS toàn cục, tất cả các trang sẽ tự động được cập nhật:
+- Trang chủ, Chat, Cộng đồng, Earn, Swap, Profile
+- Sidebar, Header, Footer
+- Dialog, Form, Card buttons
+- Tất cả admin pages
 
-### Pages Affected
-All pages that display user profiles will benefit:
-- Home page (leaderboard, top ranking, member count)
-- Community page (post authors, honor boards)
-- User profile pages
-- Messages (online status indicators)
-- Any sidebar or component showing user avatars and names
+### Chi tiết kỹ thuật
 
-### Technical Details
+**File thay đổi:**
+- `src/components/ui/button.tsx` -- Cập nhật các variant classes
+- `src/index.css` -- Thêm CSS cho hiệu ứng 3D golden
 
-A single SQL migration will be executed:
-
-```sql
--- 1. Profiles: allow public read
-DROP POLICY IF EXISTS "Authenticated users can view profiles" ON public.profiles;
-CREATE POLICY "Anyone can view profiles"
-  ON public.profiles FOR SELECT
-  TO public
-  USING (true);
-
--- 2. Online status: allow public read
-DROP POLICY IF EXISTS "Authenticated users can view online status" ON public.user_online_status;
-CREATE POLICY "Anyone can view online status"
-  ON public.user_online_status FOR SELECT
-  TO public
-  USING (true);
-```
-
-No frontend code changes are needed -- the existing components already handle the data correctly. The only issue was that the database was blocking guests from reading the data.
-
+**Không cần thay đổi:**
+- Không cần sửa từng trang riêng lẻ
+- Không cần thay đổi database hay backend
