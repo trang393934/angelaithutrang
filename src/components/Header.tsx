@@ -144,12 +144,13 @@ export const Header = () => {
             {/* Language Selector - Compact on lg */}
             <LanguageSelector compact />
             
+            {/* Web3 Wallet Button - Always visible */}
+            <Web3WalletButton compact />
+            
             {!isLoading && (
               <>
                 {user ? (
                   <div className="flex items-center gap-0.5 lg:gap-1 xl:gap-1.5">
-                    {/* Web3 Wallet Button - Compact on lg */}
-                    <Web3WalletButton compact />
                     
                     {/* Messages Button */}
                     <Link 
