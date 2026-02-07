@@ -1,63 +1,71 @@
 
-## Fix: Wallet Connection in Preview/Iframe Environment
 
-### Root Cause Analysis
+## Fix: Chat Demo Widget showing {} instead of AI response
 
-The error originates from MetaMask's own `inpage.js` extension script -- NOT from our application code. The global error handler in `main.tsx` successfully catches it (confirmed by console logs showing `[Angel AI] Wallet extension rejection caught`), but two issues persist:
+### Root Cause
 
-1. **Auto-reconnect fires in iframe**: When `wallet_connected` is saved in localStorage, the auto-reconnect logic runs on every page load. Inside the Lovable preview iframe, MetaMask cannot complete the connection, causing repeated "Failed to connect" errors.
-2. **Manual connect also fails in iframe**: When the user clicks "Connect Wallet" inside the preview iframe, MetaMask's provider exists (injected by `inpage.js`) but cannot open the popup window, leading to the same error.
+The `angel-chat` edge function returns a **Server-Sent Events (SSE) stream** for demo mode (`stream: true`). But the `ChatDemoWidget` calls the function using `supabase.functions.invoke()`, which does NOT handle SSE streams -- it tries to read the entire response body as JSON or text.
 
-### Solution (3 files)
+The result: `response.data` becomes a `ReadableStream` object, which when passed to `JSON.stringify()` in the fallback branch produces `{}`. This is why the chat shows empty curly braces.
 
-**1. `src/hooks/useWeb3Wallet.ts` -- Add iframe detection + smarter auto-reconnect**
+### Solution (2 files)
 
-- Add a utility function `isInIframe()` that checks `window.self !== window.top`
-- In the auto-reconnect `useEffect`:
-  - If running in an iframe, skip auto-reconnect entirely and clear `wallet_connected` from localStorage
-  - This prevents the repeated "Failed to connect" errors on every page load
-- In the `connect()` function:
-  - If running in an iframe, set a user-friendly error message ("Please open the site in a new tab to connect your wallet") and return early instead of attempting a connection that will fail
-  - This gives the user clear guidance instead of a cryptic error
+**1. Edge Function: `supabase/functions/angel-chat/index.ts`**
 
-**2. `src/components/Web3WalletButton.tsx` -- Show helpful toast in iframe**
+Change the demo mode to NOT use streaming. Instead of `stream: true`, use `stream: false` so the AI gateway returns a regular JSON response. Then return that JSON to the client with `Content-Type: application/json`.
 
-- Update `handleConnect` to check for iframe environment before calling `connect()`
-- If in an iframe, show a toast notification suggesting the user open the app in a new tab/window
-- Optionally provide a button to open the published URL in a new tab
+Changes at lines 940-964:
+- Set `stream: false` in the AI gateway request body
+- Return `response.json()` as a regular JSON response (not a forwarded stream)
+- Change response Content-Type from `text/event-stream` to `application/json`
+- Also fix the greeting path in demo mode (lines 909-922) to return JSON instead of SSE
 
-**3. `src/main.tsx` -- Harden global handler (minor)**
+**2. Frontend: `src/components/ChatDemoWidget.tsx`**
 
-- Clear `wallet_connected` from localStorage when catching MetaMask wallet errors to prevent the auto-reconnect from firing on the next page load
-- This is a safety net to ensure stale connection state doesn't accumulate
+Simplify the response parsing logic since the edge function will now return a standard JSON response:
+- Remove the SSE stream parsing code (lines 90-105) since it's no longer needed
+- Keep the `response.data.choices` path as the primary parser
+- Keep the fallback welcome message for safety
 
 ### Technical Details
 
-```text
-File Changes:
-+-------------------------------------+-------------------------------------------+
-| File                                | Change                                    |
-+-------------------------------------+-------------------------------------------+
-| src/hooks/useWeb3Wallet.ts          | Add isInIframe() guard for auto-reconnect |
-|                                     | and connect(). Skip silently in iframe.   |
-+-------------------------------------+-------------------------------------------+
-| src/components/Web3WalletButton.tsx | Show toast with guidance when user tries   |
-|                                     | to connect inside iframe preview.         |
-+-------------------------------------+-------------------------------------------+
-| src/main.tsx                        | Clear wallet_connected localStorage when  |
-|                                     | catching MetaMask rejection errors.       |
-+-------------------------------------+-------------------------------------------+
+**Edge function demo mode (before):**
+```
+// Streams SSE -- supabase.functions.invoke cannot parse this
+stream: true
+return new Response(response.body, { "Content-Type": "text/event-stream" })
 ```
 
-### Expected Result
+**Edge function demo mode (after):**
+```
+// Returns normal JSON -- supabase.functions.invoke parses correctly
+stream: false
+const data = await response.json();
+return new Response(JSON.stringify(data), { "Content-Type": "application/json" })
+```
 
-| Scenario | Before | After |
-|----------|--------|-------|
-| Page load in preview iframe | Auto-reconnect fires, MetaMask throws, error logged | Auto-reconnect skipped, no error |
-| Click "Connect" in iframe | MetaMask throws, blank screen risk | Toast: "Please open in new tab" |
-| Page load on published URL | Works normally | Works normally (no change) |
-| Click "Connect" on published URL | Works normally | Works normally (no change) |
+**Widget parsing (before):**
+```
+if (typeof response.data === "string") { /* SSE parse */ }
+else if (response.data.choices) { /* JSON parse */ }
+else { aiResponse = JSON.stringify(response.data); } // <-- produces "{}"
+```
 
-### No Database Changes Required
+**Widget parsing (after):**
+```
+if (response.data?.choices?.[0]?.message?.content) {
+  aiResponse = response.data.choices[0].message.content;
+}
+```
 
-This fix is purely frontend logic -- no migrations, no edge function changes needed.
+### Files to modify
+
+| File | Change |
+|------|--------|
+| `supabase/functions/angel-chat/index.ts` | Demo mode: disable streaming, return JSON response. Fix both greeting and AI response paths. |
+| `src/components/ChatDemoWidget.tsx` | Simplify response parsing to handle standard JSON only. |
+
+### No database changes needed
+
+This is a response format fix only -- no migrations or schema changes required.
+
