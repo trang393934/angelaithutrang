@@ -175,8 +175,10 @@ export function useCoinGifts() {
   const sendGift = async (
     receiverId: string,
     amount: number,
-    message?: string
-  ): Promise<{ success: boolean; message: string }> => {
+    message?: string,
+    contextType?: string,
+    contextId?: string
+  ): Promise<{ success: boolean; message: string; data?: any }> => {
     if (!user) {
       return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
@@ -189,7 +191,7 @@ export function useCoinGifts() {
       }
 
       const response = await supabase.functions.invoke("process-coin-gift", {
-        body: { receiver_id: receiverId, amount, message },
+        body: { receiver_id: receiverId, amount, message, context_type: contextType || "global", context_id: contextId || null },
       });
 
       if (response.error) {
@@ -203,7 +205,7 @@ export function useCoinGifts() {
       await refreshBalance();
       await fetchLeaderboards();
 
-      return { success: true, message: response.data.message };
+      return { success: true, message: response.data.message, data: response.data.gift };
     } catch (error: any) {
       console.error("Gift error:", error);
       return { success: false, message: error.message || "Lỗi không xác định" };

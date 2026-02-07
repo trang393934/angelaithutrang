@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download } from "lucide-react";
+import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download, Gift } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -37,6 +37,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 
 interface PostCardProps {
   post: CommunityPost;
@@ -87,6 +88,9 @@ export function PostCard({
   
   // Share dialog state
   const [showShareDialog, setShowShareDialog] = useState(false);
+  
+  // Tip dialog state
+  const [showTipDialog, setShowTipDialog] = useState(false);
 
   // TTS Hook for audio playback and download
   const { isLoading: ttsLoading, isPlaying: ttsPlaying, isDownloading: ttsDownloading, currentMessageId: ttsMessageId, playText, stopAudio, downloadAudio } = useTextToSpeech();
@@ -585,6 +589,26 @@ export function PostCard({
               <span className="hidden sm:inline">{post.is_shared_by_me ? 'Đã chia sẻ' : 'Chia sẻ'}</span>
             </Button>
 
+            {/* Tip/Reward Button */}
+            {currentUserId && currentUserId !== post.user_id && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowTipDialog(true)}
+                    className="hover:bg-amber-100/70 text-amber-600 hover:text-amber-700"
+                  >
+                    <Gift className="w-5 h-5 mr-1" />
+                    <span className="hidden sm:inline">Thưởng</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-primary-deep text-white border-0">
+                  Tặng thưởng cho tác giả
+                </TooltipContent>
+              </Tooltip>
+            )}
+
             {/* Audio Button - Listen to post */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -771,6 +795,19 @@ export function PostCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Tip Dialog */}
+      <GiftCoinDialog
+        open={showTipDialog}
+        onOpenChange={setShowTipDialog}
+        preselectedUser={{
+          id: post.user_id,
+          display_name: post.user_display_name,
+          avatar_url: post.user_avatar_url || null,
+        }}
+        contextType="post"
+        contextId={post.id}
+      />
 
       {/* Share Dialog */}
       <ShareDialog

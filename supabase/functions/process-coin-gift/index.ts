@@ -24,12 +24,10 @@ Deno.serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Client for auth verification
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Service client for database operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const token = authHeader.replace("Bearer ", "");
@@ -44,9 +42,9 @@ Deno.serve(async (req) => {
     }
 
     const senderId = userData.user.id;
-    const { receiver_id, amount, message } = await req.json();
+    const { receiver_id, amount, message, context_type, context_id } = await req.json();
 
-    console.log(`Processing gift: sender=${senderId}, receiver=${receiver_id}, amount=${amount}`);
+    console.log(`Processing gift: sender=${senderId}, receiver=${receiver_id}, amount=${amount}, context=${context_type}`);
 
     // Validations
     if (!receiver_id || !amount) {
@@ -71,10 +69,26 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Rate limit: max 10 tips per day
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const { count: todayCount } = await supabaseAdmin
+      .from("coin_gifts")
+      .select("id", { count: "exact", head: true })
+      .eq("sender_id", senderId)
+      .gte("created_at", todayStart.toISOString());
+
+    if ((todayCount || 0) >= 10) {
+      return new Response(
+        JSON.stringify({ error: "Đã đạt giới hạn 10 giao dịch tặng/ngày. Hãy quay lại ngày mai nhé!" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Check sender balance
     const { data: senderBalance, error: balanceError } = await supabaseAdmin
       .from("camly_coin_balances")
-      .select("balance")
+      .select("balance, lifetime_spent")
       .eq("user_id", senderId)
       .maybeSingle();
 
@@ -108,23 +122,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get sender profile for notification
+    // Get sender profile
     const { data: senderProfile } = await supabaseAdmin
       .from("profiles")
-      .select("display_name")
+      .select("display_name, avatar_url")
       .eq("user_id", senderId)
       .maybeSingle();
 
     const senderName = senderProfile?.display_name || "Một người bạn";
     const receiverName = receiverProfile.display_name || "Bạn";
 
-    // ===== ATOMIC TRANSACTION =====
+    // Generate receipt_public_id
+    const receiptPublicId = crypto.randomUUID();
+
+    // ===== TRANSACTION =====
     // 1. Deduct from sender
     const { error: deductError } = await supabaseAdmin
       .from("camly_coin_balances")
       .update({
         balance: currentBalance - giftAmount,
-        lifetime_spent: (senderBalance as any)?.lifetime_spent + giftAmount || giftAmount,
+        lifetime_spent: (senderBalance?.lifetime_spent || 0) + giftAmount,
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", senderId);
@@ -168,24 +185,31 @@ Deno.serve(async (req) => {
         amount: -giftAmount,
         transaction_type: "gift_sent",
         description: `Tặng ${giftAmount.toLocaleString()} Camly Coin cho ${receiverName}`,
-        metadata: { receiver_id, message },
+        metadata: { receiver_id, message, context_type: context_type || "global", context_id: context_id || null },
       },
       {
         user_id: receiver_id,
         amount: giftAmount,
         transaction_type: "gift_received",
         description: `Nhận ${giftAmount.toLocaleString()} Camly Coin từ ${senderName}`,
-        metadata: { sender_id: senderId, message },
+        metadata: { sender_id: senderId, message, context_type: context_type || "global", context_id: context_id || null },
       },
     ]);
 
-    // 4. Insert gift record
-    await supabaseAdmin.from("coin_gifts").insert({
+    // 4. Insert gift record with receipt_public_id and context
+    const { data: giftRecord, error: giftError } = await supabaseAdmin.from("coin_gifts").insert({
       sender_id: senderId,
       receiver_id: receiver_id,
       amount: giftAmount,
       message: message || null,
-    });
+      receipt_public_id: receiptPublicId,
+      context_type: context_type || "global",
+      context_id: context_id || null,
+    }).select("id").single();
+
+    if (giftError) {
+      console.error("Gift record error:", giftError);
+    }
 
     // 5. Send notification to receiver
     await supabaseAdmin.from("healing_messages").insert({
@@ -196,16 +220,33 @@ Deno.serve(async (req) => {
       triggered_by: senderId,
     });
 
-    console.log(`Gift successful: ${senderId} -> ${receiver_id}, amount=${giftAmount}`);
+    // 6. Auto-create tip message in DM between sender and receiver
+    const tipContent = `🎁 ${senderName} đã tặng ${receiverName} ${giftAmount.toLocaleString()} Camly Coin${message ? `\n💬 "${message}"` : ""}`;
+    await supabaseAdmin.from("direct_messages").insert({
+      sender_id: senderId,
+      receiver_id: receiver_id,
+      content: tipContent,
+      message_type: "tip",
+      tip_gift_id: giftRecord?.id || null,
+    });
+
+    console.log(`Gift successful: ${senderId} -> ${receiver_id}, amount=${giftAmount}, receipt=${receiptPublicId}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         message: `Đã tặng ${giftAmount.toLocaleString()} Camly Coin cho ${receiverName}!`,
         gift: {
+          id: giftRecord?.id,
           sender_id: senderId,
           receiver_id,
           amount: giftAmount,
+          receipt_public_id: receiptPublicId,
+          context_type: context_type || "global",
+          context_id: context_id || null,
+          sender_name: senderName,
+          sender_avatar: senderProfile?.avatar_url,
+          receiver_name: receiverName,
         },
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

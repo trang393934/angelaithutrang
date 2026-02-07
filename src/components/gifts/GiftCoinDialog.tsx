@@ -20,6 +20,21 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart } from "lucide-react";
+import { TipCelebrationReceipt } from "./TipCelebrationReceipt";
+
+interface TipReceiptData {
+  receipt_public_id: string;
+  sender_id: string;
+  sender_name: string;
+  sender_avatar?: string | null;
+  receiver_id: string;
+  receiver_name: string;
+  receiver_avatar?: string | null;
+  amount: number;
+  message?: string | null;
+  tx_hash?: string | null;
+  created_at?: string;
+}
 
 interface GiftCoinDialogProps {
   open: boolean;
@@ -29,6 +44,8 @@ interface GiftCoinDialogProps {
     display_name: string | null;
     avatar_url: string | null;
   };
+  contextType?: string;
+  contextId?: string;
 }
 
 interface UserSearchResult {
@@ -37,7 +54,7 @@ interface UserSearchResult {
   avatar_url: string | null;
 }
 
-export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoinDialogProps) {
+export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextType, contextId }: GiftCoinDialogProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { sendGift, isLoading } = useCoinGifts();
@@ -63,6 +80,8 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationData, setCelebrationData] = useState<TipReceiptData | null>(null);
   
   // Crypto tab states
   const [cryptoRecipient, setCryptoRecipient] = useState<"address" | "profile">("address");
@@ -220,15 +239,23 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
     }
 
     try {
-      const result = await sendGift(selectedUser.user_id, numAmount, message);
+      const result = await sendGift(selectedUser.user_id, numAmount, message, contextType, contextId);
       
       if (result.success) {
-        setShowConfetti(true);
-        toast.success(result.message);
-        setTimeout(() => {
-          setShowConfetti(false);
-          onOpenChange(false);
-        }, 2000);
+        // Show celebration receipt instead of just confetti
+        setCelebrationData({
+          receipt_public_id: result.data?.receipt_public_id || "",
+          sender_id: user?.id || "",
+          sender_name: result.data?.sender_name || "Bạn",
+          sender_avatar: result.data?.sender_avatar,
+          receiver_id: selectedUser.user_id,
+          receiver_name: selectedUser.display_name || "Người nhận",
+          receiver_avatar: selectedUser.avatar_url,
+          amount: numAmount,
+          message: message || null,
+        });
+        onOpenChange(false);
+        setShowCelebration(true);
       } else {
         toast.error(result.message);
       }
@@ -309,6 +336,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -760,5 +788,14 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
         </AnimatePresence>
       </DialogContent>
     </Dialog>
+    
+    {/* Celebration Receipt Overlay */}
+    <TipCelebrationReceipt
+      open={showCelebration}
+      onOpenChange={setShowCelebration}
+      data={celebrationData}
+    />
+    </>
   );
 }
+

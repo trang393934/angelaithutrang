@@ -576,30 +576,39 @@ export type Database = {
       coin_gifts: {
         Row: {
           amount: number
+          context_id: string | null
+          context_type: string
           created_at: string
           gift_type: string
           id: string
           message: string | null
+          receipt_public_id: string | null
           receiver_id: string
           sender_id: string
           tx_hash: string | null
         }
         Insert: {
           amount: number
+          context_id?: string | null
+          context_type?: string
           created_at?: string
           gift_type?: string
           id?: string
           message?: string | null
+          receipt_public_id?: string | null
           receiver_id: string
           sender_id: string
           tx_hash?: string | null
         }
         Update: {
           amount?: number
+          context_id?: string | null
+          context_type?: string
           created_at?: string
           gift_type?: string
           id?: string
           message?: string | null
+          receipt_public_id?: string | null
           receiver_id?: string
           sender_id?: string
           tx_hash?: string | null
@@ -1132,6 +1141,7 @@ export type Database = {
           receiver_id: string
           reply_to_id: string | null
           sender_id: string
+          tip_gift_id: string | null
         }
         Insert: {
           content: string
@@ -1147,6 +1157,7 @@ export type Database = {
           receiver_id: string
           reply_to_id?: string | null
           sender_id: string
+          tip_gift_id?: string | null
         }
         Update: {
           content?: string
@@ -1162,6 +1173,7 @@ export type Database = {
           receiver_id?: string
           reply_to_id?: string | null
           sender_id?: string
+          tip_gift_id?: string | null
         }
         Relationships: [
           {
@@ -1169,6 +1181,13 @@ export type Database = {
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_tip_gift_id_fkey"
+            columns: ["tip_gift_id"]
+            isOneToOne: false
+            referencedRelation: "coin_gifts"
             referencedColumns: ["id"]
           },
         ]
