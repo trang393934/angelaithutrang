@@ -19,30 +19,40 @@
  import { formatDistanceToNow } from "date-fns";
  import { vi } from "date-fns/locale";
  
- interface PPLPAction {
-   id: string;
-   action_type: string;
-   platform_id: string;
-   status: string;
-   created_at: string;
-   minted_at?: string;
-   mint_request_hash?: string | null;
-   pplp_scores?: Array<{
-     light_score: number;
-     final_reward: number;
-     pillar_s: number;
-     pillar_t: number;
-     pillar_h: number;
-     pillar_c: number;
-     pillar_u: number;
-     decision: string;
-   }>;
-   pplp_mint_requests?: Array<{
-     tx_hash: string | null;
-     status: string;
-     minted_at: string | null;
-   }>;
- }
+interface ScoreData {
+  light_score: number;
+  final_reward: number;
+  pillar_s: number;
+  pillar_t: number;
+  pillar_h: number;
+  pillar_c: number;
+  pillar_u: number;
+  decision: string;
+}
+
+interface MintRequestData {
+  tx_hash: string | null;
+  status: string;
+  minted_at: string | null;
+}
+
+interface PPLPAction {
+  id: string;
+  action_type: string;
+  platform_id: string;
+  status: string;
+  created_at: string;
+  minted_at?: string;
+  mint_request_hash?: string | null;
+  pplp_scores?: ScoreData | ScoreData[];
+  pplp_mint_requests?: MintRequestData | MintRequestData[];
+}
+
+// Helper to extract single object from one-to-one joined data (can be object or array)
+function resolveOne<T>(data: T | T[] | undefined | null): T | undefined {
+  if (!data) return undefined;
+  return Array.isArray(data) ? data[0] : data;
+}
  
  interface Props {
    action: PPLPAction;
@@ -96,8 +106,8 @@ const ACTION_LABELS: Record<string, string> = {
    const [txHash, setTxHash] = useState<string | null>(null);
    const [isResettingNetwork, setIsResettingNetwork] = useState(false);
  
-   const score = action.pplp_scores?.[0];
-   const mintRequest = action.pplp_mint_requests?.[0];
+  const score = resolveOne(action.pplp_scores);
+  const mintRequest = resolveOne(action.pplp_mint_requests);
    const statusConfig = STATUS_CONFIG[action.status] || STATUS_CONFIG.pending;
    const StatusIcon = statusConfig.icon;
  
