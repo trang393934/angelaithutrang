@@ -17,7 +17,7 @@ import {
   ArrowUpDown, Zap, Star
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 // ─── Types ───────────────────────────────────────────────────
 const ACTION_TYPES = [
@@ -376,7 +376,7 @@ const AdminMintStats = () => {
   }, [rows, searchQuery, sortKey, sortAsc]);
 
   // ─── Export Excel ──────────────────────────────────────────
-  const exportExcel = () => {
+  const exportExcel = async () => {
     const data = filteredRows.map((r, i) => {
       const row: Record<string, unknown> = {
         "#": i + 1,
@@ -393,10 +393,20 @@ const AdminMintStats = () => {
       return row;
     });
 
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "FUN Money Stats");
-    XLSX.writeFile(wb, `fun-money-stats-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("FUN Money Stats");
+    if (data.length > 0) {
+      ws.columns = Object.keys(data[0]).map(key => ({ header: key, key }));
+      data.forEach(row => ws.addRow(row));
+    }
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `fun-money-stats-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
     toast.success("Đã xuất Excel thành công!");
   };
 

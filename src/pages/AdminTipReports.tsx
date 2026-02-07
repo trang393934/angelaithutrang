@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Download, FileSpreadsheet, Gift, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 interface GiftTransaction {
   id: string;
@@ -93,7 +93,7 @@ export default function AdminTipReports() {
     }
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     const exportData = transactions.map((t) => ({
       "Thời gian": new Date(t.created_at).toLocaleString("vi-VN"),
       "ID": t.id,
@@ -107,10 +107,20 @@ export default function AdminTipReports() {
       "Receipt ID": t.receipt_public_id || "",
     }));
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Giao dịch tặng thưởng");
-    XLSX.writeFile(wb, `tip-reports-${new Date().toISOString().split("T")[0]}.xlsx`);
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Giao dịch tặng thưởng");
+    if (exportData.length > 0) {
+      ws.columns = Object.keys(exportData[0]).map(key => ({ header: key, key }));
+      exportData.forEach(row => ws.addRow(row));
+    }
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `tip-reports-${new Date().toISOString().split("T")[0]}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
     toast.success("Đã xuất file Excel!");
   };
 
@@ -128,8 +138,15 @@ export default function AdminTipReports() {
       receipt_public_id: t.receipt_public_id || "",
     }));
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const csv = XLSX.utils.sheet_to_csv(ws);
+    const headers = Object.keys(exportData[0] || {});
+    const csvRows = [headers.join(",")];
+    exportData.forEach(row => {
+      csvRows.push(headers.map(h => {
+        const val = String((row as Record<string, unknown>)[h] ?? "");
+        return val.includes(",") || val.includes('"') ? `"${val.replace(/"/g, '""')}"` : val;
+      }).join(","));
+    });
+    const csv = csvRows.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
