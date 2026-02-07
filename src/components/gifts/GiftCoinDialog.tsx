@@ -256,6 +256,22 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
       setLastTxHash(result.txHash || null);
       toast.success(result.message);
       fetchCamlyBalance();
+
+      // Save Web3 gift to database for transaction history
+      try {
+        const receiverUserId = cryptoSelectedUser?.user_id || null;
+        await supabase.from("coin_gifts").insert({
+          sender_id: user!.id,
+          receiver_id: receiverUserId || user!.id, // fallback if no profile selected
+          amount: numAmount,
+          message: `[Web3] CAMLY transfer to ${targetAddress.slice(0, 6)}...${targetAddress.slice(-4)}`,
+          tx_hash: result.txHash || null,
+          gift_type: "web3",
+        });
+      } catch (dbErr) {
+        console.error("Failed to record Web3 gift in DB:", dbErr);
+      }
+
       setTimeout(() => {
         setShowConfetti(false);
         onOpenChange(false);

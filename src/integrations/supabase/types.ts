@@ -577,26 +577,32 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          gift_type: string
           id: string
           message: string | null
           receiver_id: string
           sender_id: string
+          tx_hash: string | null
         }
         Insert: {
           amount: number
           created_at?: string
+          gift_type?: string
           id?: string
           message?: string | null
           receiver_id: string
           sender_id: string
+          tx_hash?: string | null
         }
         Update: {
           amount?: number
           created_at?: string
+          gift_type?: string
           id?: string
           message?: string | null
           receiver_id?: string
           sender_id?: string
+          tx_hash?: string | null
         }
         Relationships: []
       }

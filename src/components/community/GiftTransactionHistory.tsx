@@ -84,6 +84,12 @@ function TransactionRow({ tx, compact = false }: { tx: GiftTransaction; compact?
               >
                 {tx.receiver_name || "Ẩn danh"}
               </Link>
+              {tx.donation_type === "web3" && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded-full">
+                  <Wallet className="w-2.5 h-2.5" />
+                  Web3
+                </span>
+              )}
             </>
           ) : (
             <>
@@ -145,7 +151,7 @@ export function GiftTransactionHistory() {
       // Fetch gifts with sender and receiver profiles
       const { data: gifts } = await supabase
         .from("coin_gifts")
-        .select("id, sender_id, receiver_id, amount, message, created_at")
+        .select("id, sender_id, receiver_id, amount, message, created_at, tx_hash, gift_type")
         .order("created_at", { ascending: false })
         .limit(100);
 
@@ -191,6 +197,8 @@ export function GiftTransactionHistory() {
           amount: g.amount,
           message: g.message,
           created_at: g.created_at,
+          tx_hash: (g as any).tx_hash || null,
+          donation_type: (g as any).gift_type === "web3" ? "web3" : null,
         });
       });
 
