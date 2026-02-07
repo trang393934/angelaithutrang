@@ -20,7 +20,16 @@ export interface PPLPAction {
   minted_at: string | null;
   created_at: string;
   mint_request_hash: string | null;
-  pplp_scores?: Array<{
+  pplp_scores?: {
+    light_score: number;
+    final_reward: number;
+    pillar_s: number;
+    pillar_t: number;
+    pillar_h: number;
+    pillar_c: number;
+    pillar_u: number;
+    decision: string;
+  } | Array<{
     light_score: number;
     final_reward: number;
     pillar_s: number;
@@ -30,7 +39,11 @@ export interface PPLPAction {
     pillar_u: number;
     decision: string;
   }>;
-  pplp_mint_requests?: Array<{
+  pplp_mint_requests?: {
+    tx_hash: string | null;
+    status: string;
+    minted_at: string | null;
+  } | Array<{
     tx_hash: string | null;
     status: string;
     minted_at: string | null;
