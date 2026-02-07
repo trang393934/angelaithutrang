@@ -338,6 +338,7 @@ const translations: Record<string, string> = {
   "search.knowledge": "Knowledge",
   "search.community": "Community",
   "search.questions": "Questions",
+  "search.users": "Members",
   "search.angelAnswer": "Angel AI answers",
 
   // Chart
