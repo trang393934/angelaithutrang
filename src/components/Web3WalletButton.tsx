@@ -77,7 +77,11 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
       }, 1000);
       return;
     }
-    connect();
+    try {
+      await connect();
+    } catch (err) {
+      console.error("Wallet connect error caught in button:", err);
+    }
   };
 
   if (!isConnected) {
