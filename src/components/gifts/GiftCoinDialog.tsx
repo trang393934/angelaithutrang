@@ -69,6 +69,13 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
   const [walletAddress, setWalletAddress] = useState("");
   const [cryptoAmount, setCryptoAmount] = useState("");
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+  
+  // Profile-based crypto recipient
+  const [cryptoSelectedUser, setCryptoSelectedUser] = useState<UserSearchResult | null>(null);
+  const [cryptoSearchQuery, setCryptoSearchQuery] = useState("");
+  const [cryptoSearchResults, setCryptoSearchResults] = useState<UserSearchResult[]>([]);
+  const [isCryptoSearching, setIsCryptoSearching] = useState(false);
+  const [walletLookupError, setWalletLookupError] = useState<string | null>(null);
 
   useEffect(() => {
     if (preselectedUser) {
@@ -92,6 +99,10 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
       setCryptoAmount("");
       setWalletAddress("");
       setLastTxHash(null);
+      setCryptoSelectedUser(null);
+      setCryptoSearchQuery("");
+      setCryptoSearchResults([]);
+      setWalletLookupError(null);
     }
   }, [open, preselectedUser]);
 
@@ -101,6 +112,58 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
       fetchCamlyBalance();
     }
   }, [isConnected, activeTab, fetchCamlyBalance]);
+
+  // Crypto user search with debounce
+  useEffect(() => {
+    if (cryptoSearchQuery.length < 2) {
+      setCryptoSearchResults([]);
+      return;
+    }
+    const debounce = setTimeout(async () => {
+      setIsCryptoSearching(true);
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url")
+          .ilike("display_name", `%${cryptoSearchQuery}%`)
+          .limit(5);
+        if (data) setCryptoSearchResults(data);
+      } catch (err) {
+        console.error("Crypto search error:", err);
+      } finally {
+        setIsCryptoSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(debounce);
+  }, [cryptoSearchQuery]);
+
+  // Lookup wallet address when a crypto profile user is selected
+  const handleSelectCryptoUser = async (selectedProfile: UserSearchResult) => {
+    setCryptoSelectedUser(selectedProfile);
+    setCryptoSearchQuery("");
+    setCryptoSearchResults([]);
+    setWalletLookupError(null);
+    setWalletAddress("");
+
+    try {
+      const { data, error } = await supabase
+        .from("user_wallet_addresses")
+        .select("wallet_address")
+        .eq("user_id", selectedProfile.user_id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data?.wallet_address) {
+        setWalletAddress(data.wallet_address);
+      } else {
+        setWalletLookupError("Người này chưa đăng ký ví Web3");
+      }
+    } catch (err) {
+      console.error("Wallet lookup error:", err);
+      setWalletLookupError("Không thể tìm địa chỉ ví");
+    }
+  };
 
   const searchUsers = async (query: string) => {
     if (query.length < 2) {
@@ -452,19 +515,83 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">{t("gift.searchUser")}</label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder={t("gift.searchPlaceholder")}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {t("crypto.profileNeedWallet")}
-                    </p>
+                    {!cryptoSelectedUser ? (
+                      <>
+                        <label className="text-sm font-medium">{t("gift.searchUser")}</label>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            placeholder={t("gift.searchPlaceholder")}
+                            value={cryptoSearchQuery}
+                            onChange={(e) => setCryptoSearchQuery(e.target.value)}
+                            className="pl-10"
+                          />
+                          {isCryptoSearching && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" />
+                          )}
+                        </div>
+                        {cryptoSearchResults.length > 0 && (
+                          <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
+                            {cryptoSearchResults.map((searchUser) => (
+                              <button
+                                key={searchUser.user_id}
+                                className="w-full p-2 flex items-center gap-3 hover:bg-accent text-left"
+                                onClick={() => handleSelectCryptoUser(searchUser)}
+                              >
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={searchUser.avatar_url || ""} />
+                                  <AvatarFallback>
+                                    <User className="w-4 h-4" />
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium">{searchUser.display_name || "Người dùng"}</span>
+                                {searchUser.user_id === user?.id && (
+                                  <span className="text-xs text-muted-foreground ml-auto">(Bạn)</span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <label className="text-sm font-medium">{t("crypto.recipientType")}</label>
+                        <div className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg">
+                          <Avatar className="h-10 w-10 ring-2 ring-orange-300">
+                            <AvatarImage src={cryptoSelectedUser.avatar_url || ""} />
+                            <AvatarFallback>
+                              <User className="w-5 h-5" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium">{cryptoSelectedUser.display_name || "Người dùng"}</div>
+                            {walletAddress ? (
+                              <div className="text-xs text-muted-foreground truncate">
+                                {walletAddress.slice(0, 10)}...{walletAddress.slice(-6)}
+                              </div>
+                            ) : walletLookupError ? (
+                              <div className="text-xs text-destructive">{walletLookupError}</div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Đang tìm ví...
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setCryptoSelectedUser(null);
+                              setWalletAddress("");
+                              setWalletLookupError(null);
+                            }}
+                          >
+                            {t("common.change")}
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -486,7 +613,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
                 {/* Transfer Button */}
                 <Button
                   onClick={handleCryptoTransfer}
-                  disabled={isTransferring || !cryptoAmount || (cryptoRecipient === "address" && !walletAddress)}
+                  disabled={isTransferring || !cryptoAmount || !walletAddress}
                   className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
                 >
                   {isTransferring ? (
