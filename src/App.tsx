@@ -1,5 +1,4 @@
 // App entry point
-import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,55 +51,16 @@ import Mint from "./pages/Mint";
 import Receipt from "./pages/Receipt";
 import AdminTipReports from "./pages/AdminTipReports";
 import Notifications from "./pages/Notifications";
-import { toast } from "sonner";
+
+// Note: Global error handling is in main.tsx (registered before React renders)
 
 const queryClient = new QueryClient();
-
-// Global unhandled rejection handler component
-const GlobalErrorHandler = () => {
-  useEffect(() => {
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      const errorMessage = event.reason?.message || String(event.reason);
-      console.error("Unhandled promise rejection:", event.reason);
-      
-      // Handle MetaMask specific errors gracefully
-      if (errorMessage.includes("MetaMask") || errorMessage.includes("ethereum")) {
-        toast.error("Không thể kết nối ví. Vui lòng thử lại.", {
-          description: "Hãy đảm bảo MetaMask đã được mở khóa và cho phép kết nối."
-        });
-        event.preventDefault();
-        return;
-      }
-      
-      // Handle other wallet connection errors
-      if (errorMessage.includes("wallet") || errorMessage.includes("connect")) {
-        toast.error("Lỗi kết nối ví", {
-          description: "Vui lòng kiểm tra ví của bạn và thử lại."
-        });
-        event.preventDefault();
-        return;
-      }
-      
-      // Prevent app crash for other unhandled rejections
-      event.preventDefault();
-    };
-
-    window.addEventListener("unhandledrejection", handleUnhandledRejection);
-    
-    return () => {
-      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
-    };
-  }, []);
-
-  return null;
-};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <AuthProvider>
         <TooltipProvider>
-          <GlobalErrorHandler />
           <Toaster />
           <Sonner />
           <WithdrawalCelebration />

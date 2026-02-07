@@ -501,64 +501,89 @@
      };
    }, [hasWallet, state.isConnected, state.address, disconnect, fetchBalances, refreshBalances]);
  
-   // Auto-reconnect on page load
-   useEffect(() => {
-     const wasConnected = localStorage.getItem("wallet_connected") === "true";
-     if (wasConnected && hasWallet && !state.isConnecting && !state.isConnected) {
-       // Use a silent reconnect that checks existing accounts without prompting
-       const silentReconnect = async () => {
-         try {
-           const ethereum = (window as any).ethereum;
- 
-           // Check if ethereum provider is ready
-           if (!ethereum || typeof ethereum.request !== "function") {
-             console.log("Ethereum provider not ready");
-             localStorage.removeItem("wallet_connected");
-             return;
-           }
- 
-           // Use Promise.race with timeout to prevent hanging
-           const timeoutPromise = new Promise<string[]>((_, reject) =>
-             setTimeout(() => reject(new Error("Timeout")), 5000)
-           );
- 
-           const accounts = await Promise.race([ethereum.request({ method: "eth_accounts" }), timeoutPromise]).catch(
-             () => [] as string[]
-           );
- 
-           if (accounts.length > 0) {
-             const address = accounts[0];
-             const chainIdHex = await ethereum.request({ method: "eth_chainId" }).catch(() => "0x0");
-             const chainId = parseInt(chainIdHex, 16);
-             const isCorrectChain = chainId === BSC_CHAIN_ID;
- 
-             if (isCorrectChain) {
-               const balances = await fetchBalances(address);
-               setState({
-                 isConnected: true,
-                 isConnecting: false,
-                 address,
-                 shortAddress: getShortAddress(address),
-                 chainId: BSC_CHAIN_ID,
-                 isCorrectChain: true,
-                 balances,
-                 totalUsdValue: 0,
-                 error: null,
-                 networkDiagnostics: null,
-               });
-             }
-           }
-         } catch (error) {
-           console.log("Silent reconnect failed:", error);
-           localStorage.removeItem("wallet_connected");
-         }
-       };
- 
-       // Delay reconnect to ensure MetaMask is fully initialized
-       const timer = setTimeout(silentReconnect, 500);
-       return () => clearTimeout(timer);
-     }
-   }, [hasWallet]);
+    // Auto-reconnect on page load
+    useEffect(() => {
+      const wasConnected = localStorage.getItem("wallet_connected") === "true";
+      if (wasConnected && hasWallet && !state.isConnecting && !state.isConnected) {
+        const silentReconnect = async () => {
+          try {
+            const ethereum = (window as any).ethereum;
+
+            // Check if ethereum provider is ready
+            if (!ethereum || typeof ethereum.request !== "function") {
+              console.log("Ethereum provider not ready");
+              localStorage.removeItem("wallet_connected");
+              return;
+            }
+
+            // Use eth_accounts only (never eth_requestAccounts for silent reconnect)
+            let accounts: string[] = [];
+            try {
+              const timeoutPromise = new Promise<string[]>((_, reject) =>
+                setTimeout(() => reject(new Error("Timeout")), 5000)
+              );
+              accounts = await Promise.race([
+                ethereum.request({ method: "eth_accounts" }),
+                timeoutPromise,
+              ]);
+            } catch {
+              // Any error (timeout, MetaMask internal) → give up silently
+              console.log("Silent reconnect: eth_accounts failed");
+              localStorage.removeItem("wallet_connected");
+              return;
+            }
+
+            if (!accounts || accounts.length === 0) {
+              localStorage.removeItem("wallet_connected");
+              return;
+            }
+
+            const address = accounts[0];
+
+            let chainIdHex = "0x0";
+            try {
+              chainIdHex = await ethereum.request({ method: "eth_chainId" });
+            } catch {
+              localStorage.removeItem("wallet_connected");
+              return;
+            }
+
+            const chainId = parseInt(chainIdHex, 16);
+            const isCorrectChain = chainId === BSC_CHAIN_ID;
+
+            if (isCorrectChain) {
+              let balances: TokenBalance[] = [];
+              try {
+                balances = await fetchBalances(address);
+              } catch {
+                // Balance fetch failed, still show connected
+              }
+
+              setState({
+                isConnected: true,
+                isConnecting: false,
+                address,
+                shortAddress: getShortAddress(address),
+                chainId: BSC_CHAIN_ID,
+                isCorrectChain: true,
+                balances,
+                totalUsdValue: 0,
+                error: null,
+                networkDiagnostics: null,
+              });
+            }
+          } catch (error) {
+            // Catch-all: never let auto-reconnect crash the app
+            console.log("Silent reconnect failed:", error);
+            localStorage.removeItem("wallet_connected");
+          }
+        };
+
+        // Delay to ensure MetaMask is fully initialized
+        const timer = setTimeout(silentReconnect, 1000);
+        return () => clearTimeout(timer);
+      }
+    }, [hasWallet]);
  
    return {
      ...state,
