@@ -19,6 +19,7 @@ import { CommunityGuidelinesCard } from "@/components/community/CommunityGuideli
 import { GiftHonorBoard } from "@/components/community/GiftHonorBoard";
 import { DonationHonorBoard } from "@/components/community/DonationHonorBoard";
 import { GiftTransactionHistory } from "@/components/community/GiftTransactionHistory";
+import { Web3TransactionHistory } from "@/components/community/Web3TransactionHistory";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { DonateProjectDialog } from "@/components/gifts/DonateProjectDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -210,6 +211,7 @@ const Community = () => {
                       <GiftHonorBoard />
                       <DonationHonorBoard />
                       <GiftTransactionHistory />
+                      <Web3TransactionHistory />
                       <Leaderboard />
                       <SuggestedFriendsCard />
                       <RewardRulesCard dailyLimits={dailyLimits} />
@@ -298,6 +300,11 @@ const Community = () => {
             {/* Lịch Sử Giao Dịch Quà */}
             <div className="flex-shrink-0 mb-4">
               <GiftTransactionHistory />
+            </div>
+
+            {/* Giao Dịch Web3 On-Chain */}
+            <div className="flex-shrink-0 mb-4">
+              <Web3TransactionHistory />
             </div>
 
             <div className="flex-shrink-0 mb-4">
