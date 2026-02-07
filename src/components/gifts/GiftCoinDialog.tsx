@@ -249,52 +249,57 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
       return;
     }
 
-    const result = await transferCamly(targetAddress, numAmount);
-    
-    if (result.success) {
-      setShowConfetti(true);
-      setLastTxHash(result.txHash || null);
-      toast.success(result.message);
-      fetchCamlyBalance();
+    try {
+      const result = await transferCamly(targetAddress, numAmount);
+      
+      if (result.success) {
+        setShowConfetti(true);
+        setLastTxHash(result.txHash || null);
+        toast.success(result.message);
+        fetchCamlyBalance();
 
-      // Save Web3 gift to database for transaction history
-      const receiverUserId = cryptoSelectedUser?.user_id || null;
-      const giftRecord = {
-        sender_id: user!.id,
-        receiver_id: receiverUserId || user!.id,
-        amount: numAmount,
-        message: `[Web3] CAMLY transfer to ${targetAddress.slice(0, 6)}...${targetAddress.slice(-4)}`,
-        tx_hash: result.txHash || null,
-        gift_type: "web3",
-      };
+        // Save Web3 gift to database for transaction history
+        const receiverUserId = cryptoSelectedUser?.user_id || null;
+        const giftRecord = {
+          sender_id: user!.id,
+          receiver_id: receiverUserId || user!.id,
+          amount: numAmount,
+          message: `[Web3] CAMLY transfer to ${targetAddress.slice(0, 6)}...${targetAddress.slice(-4)}`,
+          tx_hash: result.txHash || null,
+          gift_type: "web3",
+        };
 
-      console.log("[Web3 Gift] Attempting DB insert:", JSON.stringify(giftRecord));
+        console.log("[Web3 Gift] Attempting DB insert:", JSON.stringify(giftRecord));
 
-      const { error: dbError } = await supabase.from("coin_gifts").insert(giftRecord);
+        const { error: dbError } = await supabase.from("coin_gifts").insert(giftRecord);
 
-      if (dbError) {
-        console.error("[Web3 Gift] DB insert failed:", dbError.message, dbError.details, dbError.hint);
-        // Retry once after 2 seconds — the on-chain TX already succeeded
-        setTimeout(async () => {
-          console.log("[Web3 Gift] Retrying DB insert...");
-          const { error: retryError } = await supabase.from("coin_gifts").insert(giftRecord);
-          if (retryError) {
-            console.error("[Web3 Gift] Retry also failed:", retryError.message);
-            toast.warning("Giao dịch on-chain thành công nhưng chưa lưu được vào lịch sử. TX: " + (result.txHash || "N/A"));
-          } else {
-            console.log("[Web3 Gift] Retry succeeded!");
-          }
-        }, 2000);
+        if (dbError) {
+          console.error("[Web3 Gift] DB insert failed:", dbError.message, dbError.details, dbError.hint);
+          // Retry once after 2 seconds — the on-chain TX already succeeded
+          setTimeout(async () => {
+            console.log("[Web3 Gift] Retrying DB insert...");
+            const { error: retryError } = await supabase.from("coin_gifts").insert(giftRecord);
+            if (retryError) {
+              console.error("[Web3 Gift] Retry also failed:", retryError.message);
+              toast.warning("Giao dịch on-chain thành công nhưng chưa lưu được vào lịch sử. TX: " + (result.txHash || "N/A"));
+            } else {
+              console.log("[Web3 Gift] Retry succeeded!");
+            }
+          }, 2000);
+        } else {
+          console.log("[Web3 Gift] DB insert succeeded for TX:", result.txHash);
+        }
+
+        setTimeout(() => {
+          setShowConfetti(false);
+          onOpenChange(false);
+        }, 4000);
       } else {
-        console.log("[Web3 Gift] DB insert succeeded for TX:", result.txHash);
+        toast.error(result.message);
       }
-
-      setTimeout(() => {
-        setShowConfetti(false);
-        onOpenChange(false);
-      }, 4000);
-    } else {
-      toast.error(result.message);
+    } catch (error: any) {
+      console.error("[Web3 Gift] Unhandled transfer error:", error);
+      toast.error("Lỗi kết nối ví. Vui lòng mở MetaMask và thử lại.");
     }
   };
 
@@ -487,7 +492,14 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
                 <Wallet className="w-12 h-12 mx-auto text-amber-500" />
                 <p className="text-muted-foreground">{t("crypto.connectToTransfer")}</p>
                 <Button 
-                  onClick={connect} 
+                  onClick={async () => {
+                    try {
+                      await connect();
+                    } catch (err: any) {
+                      console.warn("[GiftCoinDialog] Connect error:", err?.message);
+                      toast.error("Không thể kết nối ví. Vui lòng mở MetaMask và thử lại.");
+                    }
+                  }} 
                   className="bg-gradient-to-r from-amber-500 to-orange-500"
                 >
                   <Wallet className="w-4 h-4 mr-2" />
