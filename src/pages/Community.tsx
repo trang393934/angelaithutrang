@@ -18,6 +18,7 @@ import { HonorBoard } from "@/components/community/HonorBoard";
 import { CommunityGuidelinesCard } from "@/components/community/CommunityGuidelinesCard";
 import { GiftHonorBoard } from "@/components/community/GiftHonorBoard";
 import { DonationHonorBoard } from "@/components/community/DonationHonorBoard";
+import { GiftTransactionHistory } from "@/components/community/GiftTransactionHistory";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { DonateProjectDialog } from "@/components/gifts/DonateProjectDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -208,6 +209,7 @@ const Community = () => {
                       <HonorBoard />
                       <GiftHonorBoard />
                       <DonationHonorBoard />
+                      <GiftTransactionHistory />
                       <Leaderboard />
                       <SuggestedFriendsCard />
                       <RewardRulesCard dailyLimits={dailyLimits} />
@@ -292,6 +294,12 @@ const Community = () => {
             <div className="flex-shrink-0 mb-4">
               <DonationHonorBoard />
             </div>
+
+            {/* Lịch Sử Giao Dịch Quà */}
+            <div className="flex-shrink-0 mb-4">
+              <GiftTransactionHistory />
+            </div>
+
             <div className="flex-shrink-0 mb-4">
               <CirclesSidebar maxVisible={3} />
             </div>
