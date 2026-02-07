@@ -38,6 +38,7 @@ import {
   BarChart3,
   Image
 } from "lucide-react";
+import AdminNavToolbar from "@/components/admin/AdminNavToolbar";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 interface UserWithStatus {
@@ -309,9 +310,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
-      {/* Header */}
+      {/* Header - Row 1: Branding + Logout */}
       <header className="sticky top-0 z-50 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to="/" className="p-2 rounded-full hover:bg-primary-pale transition-colors">
@@ -325,95 +326,19 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Link
-                to="/admin/statistics"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <TrendingUp className="w-4 h-4" />
-                Thống kê
-              </Link>
-              <Link
-                to="/admin/early-adopters"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <TrendingUp className="w-4 h-4" />
-                Early Adopters
-              </Link>
-              <Link
-                to="/admin/withdrawals"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <Wallet className="w-4 h-4" />
-                Rút coin
-              </Link>
-              <Link
-                to="/admin/knowledge"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Kiến thức
-              </Link>
-              <Link
-                to="/admin/activity-history"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <History className="w-4 h-4" />
-                Lịch sử chat
-              </Link>
-              <Link
-                to="/admin/ai-usage"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <BarChart3 className="w-4 h-4" />
-                AI Usage
-              </Link>
-              <Link
-                to="/admin/image-history"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <Image className="w-4 h-4" />
-                Lịch sử ảnh
-              </Link>
-              <Link
-                to="/admin/ideas"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <Zap className="w-4 h-4" />
-                Ý tưởng
-              </Link>
-              <Link
-                to="/admin/bounty"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <TrendingUp className="w-4 h-4" />
-                Bounty
-              </Link>
-              <Link
-                to="/admin/project-fund"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-rose-500 hover:bg-rose-50 transition-colors"
-              >
-                <Heart className="w-4 h-4" />
-                Quỹ
-              </Link>
-              <Link
-                to="/admin/mint-stats"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-divine-gold hover:bg-amber-50 transition-colors"
-              >
-                <Sparkles className="w-4 h-4" />
-                FUN Money
-              </Link>
-              <button
-                onClick={() => signOut().then(() => navigate("/"))}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Đăng xuất</span>
-              </button>
-            </div>
+            <button
+              onClick={() => signOut().then(() => navigate("/"))}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Đăng xuất</span>
+            </button>
           </div>
         </div>
       </header>
+
+      {/* Header - Row 2: Navigation Toolbar */}
+      <AdminNavToolbar />
 
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Stats Cards */}
