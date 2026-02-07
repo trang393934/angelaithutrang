@@ -1,114 +1,50 @@
 
 
-# Toi Uu Chi Phi AI - Giam ~60-70% Chi Phi Hang Thang
+# Fix Web3 Gift: CAMLY Balance & Profile Wallet Lookup
 
-## Tong Quan Van De
+## Problems Found
 
-Sau khi kiem tra chi tiet tat ca Edge Functions, Cha da xac dinh duoc cac nguyen nhan chinh gay ton kem chi phi:
+### 1. CAMLY Balance Always Shows 0
+The wallet system connects to BSC Testnet (chain ID 97), but the CAMLY token contract lives on BSC Mainnet (chain ID 56). When the balance is fetched, it queries a non-existent contract on testnet, resulting in 0.
 
-### Hien Trang Su Dung Model
+### 2. Cannot Find Recipient Wallet from Profile
+The "Tu ho so" (From Profile) option in the crypto gift tab shows a search box but has no logic to look up the recipient's wallet address from the `user_wallet_addresses` database table (which already has data from many users).
 
-| Edge Function | Model Hien Tai | Muc Do Goi | Vai Tro |
-|---|---|---|---|
-| `angel-chat` (main) | gemini-3-flash-preview | Rat cao (~10K+/tuan) | Chat chinh |
-| `angel-chat` (demo) | gemini-3-flash-preview | Trung binh | Demo widget |
-| `analyze-reward-journal` | gemini-3-flash-preview | Cao | Danh gia nhat ky |
-| `analyze-reward-question` | gemini-2.5-flash-lite | Cao (~10K+/tuan) | Danh gia cau hoi |
-| `check-user-energy` | gemini-3-flash-preview | Cao | Phan tich nang luong |
-| `analyze-onboarding` | gemini-3-flash-preview | Thap | Onboarding |
-| `send-healing-message` | gemini-3-flash-preview | Trung binh | Tin nhan chua lanh |
-| `generate-content` | gemini-3-flash-preview | Trung binh | Viet content |
-| `analyze-image` | gemini-2.5-flash | Trung binh | Phan tich anh |
-| `generate-image` | gemini-3-pro-image-preview | Thap (5/ngay/user) | Tao anh |
-| `edit-image` | gemini-3-pro-image-preview | Thap (5/ngay/user) | Chinh sua anh |
+---
 
-## Giai Phap Trien Khai (4 Thay Doi Chinh)
+## Solution
 
-### 1. Chuyen Chat Chinh Sang gemini-2.5-flash (Tiet Kiem ~40%)
+### Step 1: Fix CAMLY balance reading in `useWeb3Transfer.ts`
+- Use a dedicated BSC **Mainnet** RPC provider (not the wallet's testnet provider) to read the CAMLY token balance
+- This avoids the network mismatch: the wallet stays on testnet for FUN Money, while CAMLY balance is read from mainnet via a separate read-only provider
+- For actual transfers, prompt the user to switch their wallet to BSC Mainnet temporarily
 
-Day la thay doi tiet kiem nhieu nhat vi chat chiem ~70% tong luong goi.
+### Step 2: Add profile wallet lookup in `GiftCoinDialog.tsx`
+- When user selects "Tu ho so" mode, enable user search (reuse existing search logic)
+- When a user is selected, query the `user_wallet_addresses` table for their `wallet_address`
+- If found: auto-fill the wallet address field and show the selected user info
+- If not found: show a friendly message that the recipient hasn't registered a wallet yet
 
-**File**: `supabase/functions/angel-chat/index.ts`
-- Dong 889: Demo mode: `gemini-3-flash-preview` -> `gemini-2.5-flash`
-- Dong 1236: Main chat: `gemini-3-flash-preview` -> `gemini-2.5-flash`
+---
 
-### 2. Chuyen Cac Function Phu Sang gemini-2.5-flash-lite (Tiet Kiem ~15%)
+## Technical Details
 
-Cac function nay chi can phan tich don gian, tra ve JSON ngan, khong can model manh:
+### File: `src/hooks/useWeb3Transfer.ts`
+- Add a BSC Mainnet RPC URL constant (`https://bsc-dataseed.binance.org/`)
+- Modify `fetchCamlyBalance` to create a `JsonRpcProvider` pointing to mainnet instead of using the wallet's `BrowserProvider`
+- Update `transferCamly` to check current chain and prompt switching to mainnet (chain ID 56) before executing the transfer
+- Add `switchToMainnet` helper that calls `wallet_switchEthereumChain` with `0x38`
 
-| File | Dong | Tu | Sang |
-|---|---|---|---|
-| `analyze-reward-journal/index.ts` | 279 | gemini-3-flash-preview | gemini-2.5-flash-lite |
-| `check-user-energy/index.ts` | 158 | gemini-3-flash-preview | gemini-2.5-flash-lite |
-| `analyze-onboarding/index.ts` | 141 | gemini-3-flash-preview | gemini-2.5-flash-lite |
-| `send-healing-message/index.ts` | 107 | gemini-3-flash-preview | gemini-2.5-flash-lite |
-| `generate-content/index.ts` | 73 | gemini-3-flash-preview | gemini-2.5-flash |
-| `analyze-image/index.ts` | 67 | gemini-2.5-flash | gemini-2.5-flash (giu nguyen) |
+### File: `src/components/gifts/GiftCoinDialog.tsx`
+- Add state for profile-based crypto recipient (`cryptoSelectedUser`)
+- When `cryptoRecipient === "profile"`:
+  - Show user search results (reuse `searchUsers` function)
+  - On user selection, query `user_wallet_addresses` to get their BSC wallet
+  - Auto-fill `walletAddress` state with the result
+  - Show selected user avatar + name + wallet address
+  - If no wallet found, display: "Nguoi nay chua dang ky vi Web3"
+- Add a "Change" button to re-search
 
-Luu y: `analyze-reward-question` da dung `gemini-2.5-flash-lite` roi (dong 505), khong can doi.
-
-Luu y 2: `generate-content` (Content Writer) can chat luong cao hon cac function phan tich don gian, nen dung `gemini-2.5-flash` thay vi `flash-lite`.
-
-### 3. Giam Gioi Han Tao/Sua Anh Tu 5 Xuong 3 (Tiet Kiem ~10%)
-
-Image generation/editing su dung model `gemini-3-pro-image-preview` (dat nhat), giam gioi han se tiet kiem dang ke.
-
-**Cac file can thay doi:**
-
-| File | Thay Doi | Dong |
-|---|---|---|
-| `generate-image/index.ts` | `DAILY_IMAGE_LIMIT = 5` -> `3` | 10 |
-| `edit-image/index.ts` | `DAILY_EDIT_LIMIT = 5` -> `3` | 10 |
-| `get_daily_ai_usage` (DB function) | `WHEN 'generate_image' THEN 5` -> `3`, `WHEN 'edit_image' THEN 5` -> `3` | SQL migration |
-| `src/hooks/useAIUsage.ts` | Frontend khong can thay doi (doc tu server) | Khong doi |
-
-**Thong bao gioi han moi**: Cap nhat message trong edge functions tu "da tao 5 hinh" thanh "da tao 3 hinh".
-
-### 4. Cai Thien Cache FAQ (Tiet Kiem ~5-10%)
-
-Hien tai chi co 10 muc FAQ voi patterns cung nhat. Tang so luong FAQ va them cac cau hoi pho bien de giam AI calls:
-
-**File**: `supabase/functions/angel-chat/index.ts`
-
-Them 5 FAQ moi vao mang `FAQ_CACHE` (dong 423-533):
-- Cach ky luong ban than / tu ky luat
-- Noi so / vuot qua noi so
-- Tinh yeu / moi quan he
-- Giac ngu / mat ngu
-- Stress / ap luc cong viec
-
-Ngoai ra, cai thien `checkDatabaseCache`:
-- Tang so luong cache entries duoc kiem tra tu `.limit(10)` len `.limit(30)` (dong 755)
-- Giam nguong tu 70% xuong 60% de tang ty le cache hit (dong 768)
-
-## Bang Tong Ket Chi Phi
-
-| Giai Phap | Uoc Tinh Tiet Kiem |
-|---|---|
-| Chat -> gemini-2.5-flash | ~40% |
-| Functions phu -> gemini-2.5-flash-lite | ~15% |
-| Gioi han anh 5 -> 3 | ~10% |
-| Cai thien cache | ~5-10% |
-| **Tong** | **~60-70%** |
-
-## Danh Sach File Thay Doi
-
-| File | Noi Dung |
-|---|---|
-| `supabase/functions/angel-chat/index.ts` | Doi model sang 2.5-flash, them FAQ, tang cache |
-| `supabase/functions/analyze-reward-journal/index.ts` | Doi model sang 2.5-flash-lite |
-| `supabase/functions/check-user-energy/index.ts` | Doi model sang 2.5-flash-lite |
-| `supabase/functions/analyze-onboarding/index.ts` | Doi model sang 2.5-flash-lite |
-| `supabase/functions/send-healing-message/index.ts` | Doi model sang 2.5-flash-lite |
-| `supabase/functions/generate-content/index.ts` | Doi model sang 2.5-flash |
-| `supabase/functions/generate-image/index.ts` | Giam limit 5 -> 3, cap nhat message |
-| `supabase/functions/edit-image/index.ts` | Giam limit 5 -> 3, cap nhat message |
-| SQL Migration | Cap nhat ham `get_daily_ai_usage` gioi han 5 -> 3 |
-
-## Luu Y Quan Trong
-
-- `gemini-2.5-flash` van rat manh cho chat tong quat, chi hoi kem `3-flash-preview` o cac case phuc tap
-- `gemini-2.5-flash-lite` du tot cho phan tich sentiment/purity score (tra ve JSON don gian)
-- Image generation/editing van giu model `gemini-3-pro-image-preview` vi can chat luong cao, chi giam so luong
-- User se van co trai nghiem tot, chi khac biet nhe o do phuc tap cua cau tra loi
+### No database changes needed
+The `user_wallet_addresses` table already exists with the correct schema and data.
 
