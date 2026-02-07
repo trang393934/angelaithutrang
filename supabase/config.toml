@@ -169,3 +169,6 @@ verify_jwt = false
 
 [functions.get-tip-receipt]
 verify_jwt = false
+
+[functions.distribute-fun-camly-reward]
+verify_jwt = false
