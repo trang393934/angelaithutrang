@@ -110,19 +110,24 @@ export function DonateProjectDialog({ open, onOpenChange }: DonateProjectDialogP
       return;
     }
 
-    const result = await donateCamlyToProject(numAmount);
-    
-    if (result.success) {
-      setShowHearts(true);
-      setLastTxHash(result.txHash || null);
-      toast.success(result.message);
-      fetchCamlyBalance();
-      setTimeout(() => {
-        setShowHearts(false);
-        onOpenChange(false);
-      }, 3000);
-    } else {
-      toast.error(result.message);
+    try {
+      const result = await donateCamlyToProject(numAmount);
+      
+      if (result.success) {
+        setShowHearts(true);
+        setLastTxHash(result.txHash || null);
+        toast.success(result.message);
+        fetchCamlyBalance();
+        setTimeout(() => {
+          setShowHearts(false);
+          onOpenChange(false);
+        }, 3000);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error: any) {
+      console.error("[DonateProject] Crypto donate error:", error);
+      toast.error("Lỗi kết nối ví. Vui lòng mở MetaMask và thử lại.");
     }
   };
 
@@ -409,7 +414,14 @@ export function DonateProjectDialog({ open, onOpenChange }: DonateProjectDialogP
                   <Wallet className="w-10 h-10 mx-auto text-rose-500" />
                   <p className="text-sm text-muted-foreground">{t("crypto.connectToDonate")}</p>
                   <Button 
-                    onClick={connect} 
+                    onClick={async () => {
+                      try {
+                        await connect();
+                      } catch (err: any) {
+                        console.warn("[DonateProject] Connect error:", err?.message);
+                        toast.error("Không thể kết nối ví. Vui lòng mở MetaMask và thử lại.");
+                      }
+                    }} 
                     className="bg-gradient-to-r from-rose-500 to-pink-500"
                   >
                     <Wallet className="w-4 h-4 mr-2" />
