@@ -285,7 +285,6 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
       const result = await transferCamly(targetAddress, numAmount);
       
       if (result.success) {
-        setShowConfetti(true);
         setLastTxHash(result.txHash || null);
         toast.success(result.message);
         fetchCamlyBalance();
@@ -307,7 +306,6 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
 
         if (dbError) {
           console.error("[Web3 Gift] DB insert failed:", dbError.message, dbError.details, dbError.hint);
-          // Retry once after 2 seconds — the on-chain TX already succeeded
           setTimeout(async () => {
             console.log("[Web3 Gift] Retrying DB insert...");
             const { error: retryError } = await supabase.from("coin_gifts").insert(giftRecord);
@@ -322,10 +320,38 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
           console.log("[Web3 Gift] DB insert succeeded for TX:", result.txHash);
         }
 
-        setTimeout(() => {
-          setShowConfetti(false);
-          onOpenChange(false);
-        }, 4000);
+        // Fetch sender profile for celebration receipt
+        let senderName = "Bạn";
+        let senderAvatar: string | null = null;
+        try {
+          const { data: senderProfile } = await supabase
+            .from("profiles")
+            .select("display_name, avatar_url")
+            .eq("user_id", user!.id)
+            .maybeSingle();
+          if (senderProfile) {
+            senderName = senderProfile.display_name || "Bạn";
+            senderAvatar = senderProfile.avatar_url;
+          }
+        } catch (e) {
+          console.warn("[Web3 Gift] Could not fetch sender profile:", e);
+        }
+
+        // Show celebration receipt with sender/receiver info
+        setCelebrationData({
+          receipt_public_id: "",
+          sender_id: user!.id,
+          sender_name: senderName,
+          sender_avatar: senderAvatar,
+          receiver_id: receiverUserId || "",
+          receiver_name: cryptoSelectedUser?.display_name || `${targetAddress.slice(0, 6)}...${targetAddress.slice(-4)}`,
+          receiver_avatar: cryptoSelectedUser?.avatar_url || null,
+          amount: numAmount,
+          message: `[Web3] CAMLY transfer`,
+          tx_hash: result.txHash || null,
+        });
+        onOpenChange(false);
+        setShowCelebration(true);
       } else {
         toast.error(result.message);
       }
