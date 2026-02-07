@@ -28,28 +28,71 @@ interface TipCelebrationReceiptProps {
   data: TipReceiptData | null;
 }
 
-const ConfettiPiece = ({ delay, left, color }: { delay: number; left: number; color: string }) => (
+const ConfettiPiece = ({ delay, left, color, size }: { delay: number; left: number; color: string; size: number }) => (
   <motion.div
-    className="absolute w-2 h-3 rounded-sm"
-    style={{ left: `${left}%`, backgroundColor: color }}
-    initial={{ y: -20, opacity: 0, rotate: 0, scale: 0 }}
+    className="absolute rounded-sm"
+    style={{ left: `${left}%`, backgroundColor: color, width: size, height: size * 1.5 }}
+    initial={{ y: -30, opacity: 0, rotate: 0, scale: 0 }}
     animate={{
-      y: ["0%", "100vh"],
-      opacity: [0, 1, 1, 0],
-      rotate: [0, 360, 720, 1080],
-      scale: [0, 1, 1, 0.5],
+      y: ["0%", "120vh"],
+      opacity: [0, 1, 1, 1, 0],
+      rotate: [0, 360, 720, 1080, 1440],
+      scale: [0, 1.2, 1, 0.8, 0.3],
+      x: [0, Math.random() > 0.5 ? 30 : -30, Math.random() > 0.5 ? -20 : 20],
     }}
     transition={{
-      duration: 3,
+      duration: 4 + Math.random() * 2,
       delay,
       ease: "easeOut",
     }}
   />
 );
 
+const FallingCoin = ({ delay, left, size }: { delay: number; left: number; size: number }) => (
+  <motion.div
+    className="absolute z-10"
+    style={{ left: `${left}%`, width: size, height: size }}
+    initial={{ y: -60, opacity: 0, rotate: 0 }}
+    animate={{
+      y: ["0%", "130vh"],
+      opacity: [0, 1, 1, 1, 0],
+      rotate: [0, 360, 720, 1080],
+      x: [0, Math.random() > 0.5 ? 15 : -15],
+    }}
+    transition={{
+      duration: 3.5 + Math.random() * 2,
+      delay,
+      ease: "easeIn",
+    }}
+  >
+    <img src={camlyCoinLogo} alt="" className="w-full h-full drop-shadow-md" />
+  </motion.div>
+);
+
+const FloatingSparkle = ({ delay, x, y }: { delay: number; x: number; y: number }) => (
+  <motion.div
+    className="absolute"
+    style={{ left: `${x}%`, top: `${y}%` }}
+    initial={{ scale: 0, opacity: 0 }}
+    animate={{
+      scale: [0, 1.8, 0],
+      opacity: [0, 1, 0],
+    }}
+    transition={{
+      duration: 1.5,
+      delay,
+      repeat: Infinity,
+      repeatDelay: 0.8,
+    }}
+  >
+    <Sparkles className="w-4 h-4 text-yellow-300 drop-shadow-lg" />
+  </motion.div>
+);
+
 const CONFETTI_COLORS = [
   "#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4",
   "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE",
+  "#FF9A9E", "#A18CD1", "#FBC2EB", "#84FAB0", "#F6D365",
 ];
 
 export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrationReceiptProps) {
@@ -58,7 +101,8 @@ export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrati
   useEffect(() => {
     if (open && data) {
       setShowConfetti(true);
-      const timer = setTimeout(() => setShowConfetti(false), 3500);
+      // Keep effects running for 8 seconds
+      const timer = setTimeout(() => setShowConfetti(false), 8000);
       return () => clearTimeout(timer);
     }
   }, [open, data]);
@@ -74,11 +118,29 @@ export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrati
 
   const formatAmount = (amount: number) => new Intl.NumberFormat("vi-VN").format(amount);
 
-  const confettiPieces = Array.from({ length: 40 }, (_, i) => ({
+  // 80 confetti pieces for richer effect
+  const confettiPieces = Array.from({ length: 80 }, (_, i) => ({
     id: i,
-    delay: Math.random() * 1.5,
+    delay: Math.random() * 3,
     left: Math.random() * 100,
     color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    size: 6 + Math.random() * 6,
+  }));
+
+  // 30 falling Camly coins
+  const fallingCoins = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    delay: Math.random() * 3.5,
+    left: Math.random() * 100,
+    size: 16 + Math.random() * 16,
+  }));
+
+  // 15 sparkles
+  const sparkles = Array.from({ length: 15 }, (_, i) => ({
+    id: i,
+    delay: Math.random() * 2,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
   }));
 
   return (
@@ -91,14 +153,29 @@ export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrati
           transition={{ type: "spring", duration: 0.5 }}
           className="relative bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 rounded-2xl p-6 shadow-2xl overflow-hidden"
         >
-          {/* Confetti */}
+          {/* Confetti + Falling Coins + Sparkles */}
           <AnimatePresence>
             {showConfetti && (
-              <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
-                {confettiPieces.map((piece) => (
-                  <ConfettiPiece key={piece.id} delay={piece.delay} left={piece.left} color={piece.color} />
-                ))}
-              </div>
+              <>
+                {/* Confetti pieces */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
+                  {confettiPieces.map((piece) => (
+                    <ConfettiPiece key={`c-${piece.id}`} delay={piece.delay} left={piece.left} color={piece.color} size={piece.size} />
+                  ))}
+                </div>
+                {/* Falling Camly coins */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
+                  {fallingCoins.map((coin) => (
+                    <FallingCoin key={`coin-${coin.id}`} delay={coin.delay} left={coin.left} size={coin.size} />
+                  ))}
+                </div>
+                {/* Sparkles */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
+                  {sparkles.map((s) => (
+                    <FloatingSparkle key={`s-${s.id}`} delay={s.delay} x={s.x} y={s.y} />
+                  ))}
+                </div>
+              </>
             )}
           </AnimatePresence>
 
