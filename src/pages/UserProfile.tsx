@@ -737,14 +737,14 @@ const UserProfile = () => {
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">Số dư hiện tại</p>
                           <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
-                            {Math.floor(balance).toLocaleString()}
+                            {Math.floor(balance).toLocaleString()} <span className="text-xs font-medium">CAMLY</span>
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-gray-500 dark:text-gray-400">Tổng tích lũy</p>
                         <p className="text-sm font-semibold text-amber-600 dark:text-amber-500">
-                          {Math.floor(lifetimeEarned).toLocaleString()}
+                          {Math.floor(lifetimeEarned).toLocaleString()} <span className="text-xs font-normal">CAMLY</span>
                         </p>
                       </div>
                     </div>
