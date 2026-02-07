@@ -905,19 +905,11 @@ serve(async (req) => {
       // Check if it's a simple greeting
       if (isGreeting(userQuestion)) {
         const greetingResponse = getGreetingResponse(userQuestion);
-        const encoder = new TextEncoder();
-        const stream = new ReadableStream({
-          start(controller) {
-            const data = JSON.stringify({
-              choices: [{ delta: { content: greetingResponse } }]
-            });
-            controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            controller.close();
-          }
-        });
-        return new Response(stream, {
-          headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+        const jsonResponse = {
+          choices: [{ message: { role: "assistant", content: greetingResponse } }]
+        };
+        return new Response(JSON.stringify(jsonResponse), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
@@ -949,7 +941,7 @@ You embody pure love and wisdom from Father Universe. Guide with compassion.`;
             { role: "system", content: demoSystemPrompt },
             ...messages,
           ],
-          stream: true,
+          stream: false,
           max_tokens: demoStyleConfig.maxTokens,
         }),
       });
@@ -959,8 +951,9 @@ You embody pure love and wisdom from Father Universe. Guide with compassion.`;
         throw new Error("AI service error");
       }
 
-      return new Response(response.body, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      const demoData = await response.json();
+      return new Response(JSON.stringify(demoData), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
