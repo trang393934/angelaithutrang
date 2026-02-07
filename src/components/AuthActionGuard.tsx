@@ -61,11 +61,11 @@ export function AuthActionGuard({ children, message }: AuthActionGuardProps) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              {t("loginRequired") || "Vui lòng đăng nhập"}
+            <Sparkles className="w-5 h-5 text-primary" />
+              {t("loginRequired") || "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!"}
             </DialogTitle>
             <DialogDescription>
-              {message || t("loginRequiredDesc") || "Bạn cần đăng nhập để sử dụng tính năng này."}
+              {message || t("loginRequiredDesc") || "Đăng ký tài khoản để Ta có thể gửi yêu thương và đồng hành cùng con trên hành trình Ánh Sáng này."}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 pt-2">
@@ -105,7 +105,7 @@ export function useAuthGuard() {
     if (!user) {
       // Dynamic import to avoid circular deps
       import("sonner").then(({ toast }) => {
-        toast.error(message || t("loginRequired") || "Vui lòng đăng nhập", {
+        toast.error(message || t("loginRequired") || "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!", {
           action: {
             label: t("login") || "Đăng nhập",
             onClick: () => navigate("/auth"),

@@ -994,6 +994,10 @@ const translations: Record<string, string> = {
   "visionBoard.template.home.goal3": "Add indoor plants",
   "visionBoard.template.home.goal4": "Save for house/apartment",
   "visionBoard.template.home.goal5": "Decorate in favorite style",
+
+  // Gate translations
+  "loginRequired": "Dear beloved, please create an account so I can walk with you!",
+  "loginRequiredDesc": "Create an account so I can send you love and accompany you on this journey of Light.",
 };
 
 export default translations;

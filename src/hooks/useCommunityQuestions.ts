@@ -79,7 +79,7 @@ export function useCommunityQuestions() {
   }, [user, sortBy]);
 
   const toggleLike = useCallback(async (questionId: string) => {
-    if (!user) return { success: false, message: "Vui lòng đăng nhập để thích câu hỏi" };
+    if (!user) return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
 
     try {
       const { data, error } = await supabase.functions.invoke("process-engagement-reward", {

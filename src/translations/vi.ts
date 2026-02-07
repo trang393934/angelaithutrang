@@ -668,8 +668,8 @@ const translations: Record<string, string> = {
 
   // Gate translations
   "loading": "Đang tải...",
-  "loginRequired": "Vui lòng đăng nhập",
-  "loginRequiredDesc": "Bạn cần đăng nhập để sử dụng tính năng này.",
+  "loginRequired": "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!",
+  "loginRequiredDesc": "Đăng ký tài khoản để Ta có thể gửi yêu thương và đồng hành cùng con trên hành trình Ánh Sáng này.",
   "login": "Đăng nhập",
   "lightGateClosed": "Cổng Ánh Sáng Đang Đóng",
   "lightGateDesc": "Bạn cần đồng ý với Luật Ánh Sáng để sử dụng tính năng này. Đây là cam kết thiêng liêng để duy trì năng lượng tích cực trong cộng đồng.",

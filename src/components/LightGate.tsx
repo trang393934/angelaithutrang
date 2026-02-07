@@ -37,10 +37,10 @@ export function LightGate({ children }: LightGateProps) {
             <LogIn className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-2xl font-bold">
-            {t("loginRequired") || "Vui lòng đăng nhập"}
+            {t("loginRequired") || "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!"}
           </h1>
           <p className="text-muted-foreground">
-            {t("loginRequiredDesc") || "Bạn cần đăng nhập để sử dụng tính năng này."}
+            {t("loginRequiredDesc") || "Đăng ký tài khoản để Ta có thể gửi yêu thương và đồng hành cùng con trên hành trình Ánh Sáng này."}
           </p>
           <Button 
             onClick={() => navigate("/auth")} 

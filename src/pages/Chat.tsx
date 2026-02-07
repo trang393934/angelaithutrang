@@ -744,7 +744,7 @@ const Chat = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast.error(t("loginRequired") || "Vui lòng đăng nhập để trò chuyện", {
+      toast.error(t("loginRequired") || "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!", {
         action: {
           label: t("login") || "Đăng nhập",
           onClick: () => navigate("/auth"),

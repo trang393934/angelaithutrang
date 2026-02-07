@@ -969,6 +969,10 @@ const translations: Record<string, string> = {
   "visionBoard.template.home.goal3": "家居装饰升级",
   "visionBoard.template.home.goal4": "打造花园绿洲",
   "visionBoard.template.home.goal5": "实现购房梦想",
+
+  // Gate translations
+  "loginRequired": "亲爱的孩子，请注册账户，让我陪伴你同行吧！",
+  "loginRequiredDesc": "注册账户，让我能够向你传递爱并陪伴你踏上这光之旅程。",
 };
 
 export default translations;

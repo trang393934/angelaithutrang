@@ -161,7 +161,7 @@ export function useCommunityPosts() {
 
   const createPost = async (content: string, imageUrls?: string[]) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
@@ -191,7 +191,7 @@ export function useCommunityPosts() {
 
   const toggleLike = async (postId: string) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     // Find current post state for optimistic update
@@ -271,7 +271,7 @@ export function useCommunityPosts() {
 
   const sharePost = async (postId: string) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
@@ -308,7 +308,7 @@ export function useCommunityPosts() {
 
   const addComment = async (postId: string, content: string) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
@@ -367,7 +367,7 @@ export function useCommunityPosts() {
 
   const editPost = async (postId: string, content: string, imageUrls?: string[]) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
@@ -399,7 +399,7 @@ export function useCommunityPosts() {
 
   const deletePost = async (postId: string) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
