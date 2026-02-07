@@ -21,6 +21,8 @@ window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => 
 
   if (isWalletError) {
     console.warn("[Angel AI] Wallet extension rejection caught:", msg);
+    // Clear stale wallet connection state to prevent auto-reconnect loop
+    try { localStorage.removeItem("wallet_connected"); } catch {}
   }
 
   // Always prevent – no unhandled rejection should crash the app
