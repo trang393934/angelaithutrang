@@ -1,71 +1,163 @@
 
-## Sửa lỗi FUN Money Stats hiển thị 0
+## Hoan thien he thong Thong bao (Notification) giong Facebook
 
-### Nguyên nhân gốc
+### Tong quan
 
-Hook `useFUNMoneyStats` hiện tại truy vấn bảng **`pplp_mint_requests`** -- bảng này chỉ lưu 9 bản ghi (cho những user đã yêu cầu mint on-chain qua MetaMask). Hầu hết user **không** có bản ghi nào trong bảng này, nên thống kê luôn hiển thị **0 FUN**.
+Xay dung he thong thong bao (Notification Center) hoan chinh giong Facebook, bao gom:
+1. **Notification Center** (dropdown tren Header + CommunityHeader) voi cac tab "Tat ca" va "Chua doc"
+2. **Thong bao nhan qua** tu dong khi nhan Camly Coin / FUN Money / USDT
+3. **Tin nhan chuc mung** gui vao DM cua ca 2 user (nguoi tang va nguoi nhan) voi giao dien celebration card
 
-Dữ liệu FUN Money thực tế nằm ở bảng **`pplp_actions`** (trạng thái hành động) kết hợp với **`pplp_scores`** (số FUN reward cho mỗi hành động). Đây là nguồn dữ liệu đúng mà trang Mint (`/mint`) đang sử dụng.
+### Hien trang
+
+Hien tai he thong da co:
+- **healing_messages** table: Luu thong bao tu Angel AI va thong bao nhan qua (`message_type = 'gift_received'`). Tuy nhien chi hien thi trong `HealingMessagesPanel` o trang Earn, **khong co** dropdown notification tren Header
+- **direct_messages**: Da co auto-send tin nhan DM kieu `tip` khi tang qua, nhung chi gui 1 tin nhan cho conversation giua sender va receiver
+- **Bell icon** tren CommunityHeader: Da co nhung **chua co chuc nang** (chi hien icon, click khong lam gi)
+- Thieu thong bao cho: like bai viet, comment bai viet, follow, va cac su kien khac
+
+### Ke hoach thuc hien
+
+#### Phan 1: Tao bang `notifications` moi
+
+Tao bang `notifications` de luu tat ca loai thong bao (giong Facebook):
+
+| Column | Type | Mo ta |
+|---|---|---|
+| id | uuid | Primary key |
+| user_id | uuid | Nguoi nhan thong bao |
+| type | text | Loai: gift_received, post_liked, post_commented, post_shared, friend_request, system, etc. |
+| title | text | Tieu de ngan |
+| content | text | Noi dung chi tiet |
+| actor_id | uuid | Nguoi gay ra su kien (nullable) |
+| reference_id | text | ID cua doi tuong lien quan (post_id, gift_id, etc.) |
+| reference_type | text | Loai doi tuong: post, gift, comment, etc. |
+| is_read | boolean | Da doc chua |
+| read_at | timestamptz | Thoi gian doc |
+| metadata | jsonb | Du lieu bo sung (amount, receipt_id, avatar, etc.) |
+| created_at | timestamptz | Thoi gian tao |
+
+Tao RLS policies:
+- User chi doc duoc notifications cua minh
+- Chi server (service role) moi insert duoc
+
+Enable realtime cho bang nay.
+
+#### Phan 2: Tao component `NotificationCenter`
+
+Tao file `src/components/NotificationCenter.tsx`:
+- Dropdown popup (giong Facebook) voi `Popover` component
+- 2 tab: **Tat ca** va **Chua doc**
+- Moi notification item hien thi:
+  - Avatar cua actor (nguoi thuc hien hanh dong)
+  - Noi dung thong bao (vd: "**Trang393934** da tang ban 1,000 Camly Coin")
+  - Thoi gian tuong doi (vd: "3 gio truoc")
+  - Cham xanh cho thong bao chua doc
+  - Click de danh dau da doc va chuyen den trang lien quan
+- Nut "Xem tat ca" o cuoi
+- Nut "Danh dau tat ca da doc"
+- Badge so luong thong bao chua doc tren icon Bell
+
+#### Phan 3: Tao hook `useNotifications`
+
+Tao file `src/hooks/useNotifications.ts`:
+- Truy van bang `notifications` theo `user_id`
+- Tinh `unreadCount` cho badge
+- Cac ham: `markAsRead`, `markAllAsRead`
+- Realtime subscription de cap nhat thong bao moi ngay lap tuc
+- Hien thi toast khi co thong bao moi (voi avatar + noi dung)
+
+#### Phan 4: Tich hop NotificationCenter vao Header va CommunityHeader
+
+**`src/components/Header.tsx`**:
+- Them icon Bell voi badge giua Messages va Camly Coin (desktop)
+- Click mo NotificationCenter dropdown
+- Them vao mobile menu
+
+**`src/components/community/CommunityHeader.tsx`**:
+- Thay the Bell button hien tai (chua co chuc nang) bang NotificationCenter
+
+#### Phan 5: Cap nhat edge function `process-coin-gift` de tao notification
+
+Cap nhat `supabase/functions/process-coin-gift/index.ts`:
+- Them insert vao bang `notifications` voi type `gift_received`
+- Metadata chua: amount, sender_name, sender_avatar, receipt_public_id, coin_type (Camly Coin)
+- Van giu insert vao `healing_messages` de backward compatible
+
+#### Phan 6: Hoan thien tin nhan chuc mung trong DM
+
+Cap nhat `supabase/functions/process-coin-gift/index.ts`:
+- Gui **2 tin nhan DM** thay vi 1:
+  - Tin nhan cho **nguoi nhan**: "Chuc mung! Ban da nhan duoc 1,000 Camly Coin tu Trang393934. [Xem bien nhan]"
+  - Tin nhan cho **nguoi gui** (conversation voi chinh minh hoac voi receiver): "Ban da tang thanh cong 1,000 Camly Coin cho Angel Lam. [Xem bien nhan]"
+- Tin nhan co `message_type = 'tip'` va `tip_gift_id` de render TipMessageCard
+
+#### Phan 7: Nang cap TipMessageCard
+
+Cap nhat `src/components/messages/TipMessageCard.tsx`:
+- Hien thi giao dien tuong tu TipCelebrationReceipt nhung compact hon
+- Hien thi avatar cua sender va receiver
+- Hien thi so luong Camly Coin voi logo
+- Hien thi loi nhan (neu co)
+- Nut "Xem bien nhan" link den `/receipt/:id`
+- Fetch `receipt_public_id` tu `coin_gifts` table thong qua `tip_gift_id`
+
+#### Phan 8: Cap nhat translations
+
+Them cac translation key moi cho `vi.ts` va `en.ts`:
+- `notifications.title`: "Thong bao" / "Notifications"
+- `notifications.all`: "Tat ca" / "All"
+- `notifications.unread`: "Chua doc" / "Unread"
+- `notifications.viewAll`: "Xem tat ca" / "View all"
+- `notifications.markAllRead`: "Danh dau tat ca da doc" / "Mark all as read"
+- `notifications.empty`: "Khong co thong bao moi" / "No new notifications"
+- `notifications.giftReceived`: "da tang ban {amount} Camly Coin" / "sent you {amount} Camly Coin"
+- `notifications.giftSent`: "Ban da tang thanh cong {amount} Camly Coin cho {name}" / "You sent {amount} Camly Coin to {name}"
+
+### Cau truc file
 
 ```text
-Dữ liệu hiện tại:
-  pplp_mint_requests: 9 bản ghi (chỉ on-chain)
-  pplp_actions + pplp_scores: hàng trăm bản ghi cho tất cả user
+Tao moi:
+  src/components/NotificationCenter.tsx    -- Dropdown thong bao
+  src/hooks/useNotifications.ts            -- Hook quan ly thong bao
 
-Ví dụ user 62694458...:
-  pplp_mint_requests: 0 bản ghi --> Banner hiện 0 FUN
-  pplp_actions: 13 actions, ~1,073 FUN --> Dữ liệu thực
+Chinh sua:
+  src/components/Header.tsx                -- Them Bell icon + NotificationCenter
+  src/components/community/CommunityHeader.tsx -- Thay Bell button
+  src/components/messages/TipMessageCard.tsx -- Nang cap giao dien
+  supabase/functions/process-coin-gift/index.ts -- Them notification + DM cho sender
+  src/translations/vi.ts                   -- Them translation keys
+  src/translations/en.ts                   -- Them translation keys
+
+Migration SQL:
+  Tao bang notifications
+  Enable RLS
+  Enable realtime
 ```
-
-### Giải pháp
-
-Sửa hook `useFUNMoneyStats` để truy vấn đúng nguồn dữ liệu: bảng `pplp_actions` kết hợp `pplp_scores`, thay vì `pplp_mint_requests`.
-
-### Thay đổi trạng thái hiển thị
-
-Thay vì 3 trạng thái cũ (minted/signed/pending dựa trên mint_requests), cập nhật thành 3 trạng thái mới phản ánh đúng luồng dữ liệu:
-
-| Trạng thái cũ (sai) | Trạng thái mới (đúng) | Ý nghĩa |
-|---|---|---|
-| Minted (mint_requests.status) | Da nhan (scored + pass) | FUN Money da duoc cham diem va san sang claim |
-| Signed (mint_requests.status) | Da mint (minted) | FUN Money da duoc mint on-chain |
-| Pending (fallback) | Dang cho (pending/scored + fail) | Dang xu ly hoac khong du dieu kien |
 
 ### Chi tiet ky thuat
 
-**1. Sua `src/hooks/useFUNMoneyStats.ts`**
+**Notification Types** (mo rong trong tuong lai):
+- `gift_received` -- Nhan qua Camly Coin
+- `gift_sent` -- Da gui qua thanh cong (cho sender)
+- `post_liked` -- Bai viet duoc like (tuong lai)
+- `post_commented` -- Bai viet duoc comment (tuong lai)
+- `system` -- Thong bao he thong
 
-Thay doi logic truy van tu `pplp_mint_requests` sang `pplp_actions` ket hop `pplp_scores`:
+**Realtime flow**:
+1. User A tang Camly Coin cho User B
+2. Edge function `process-coin-gift` insert vao `notifications` cho User B
+3. User B nhan realtime event --> hien badge + toast
+4. User B click thong bao --> danh dau da doc, chuyen den receipt hoac conversation
 
-- Truy van `pplp_actions` voi `select("*, pplp_scores(*)")` loc theo `actor_id`
-- Voi moi action co `pplp_scores`, lay `final_reward`:
-  - Neu `action.status === 'minted'` --> cong vao `totalMinted`
-  - Neu `action.status === 'scored'` va `score.decision === 'pass'` --> cong vao `totalScored` (san sang claim)
-  - Con lai --> cong vao `totalPending`
-- Cap nhat interface `FUNMoneyStats` de phan anh dung ten moi:
-  - `totalMinted` --> so FUN da mint on-chain
-  - `totalScored` --> so FUN san sang claim (chua mint)
-  - `totalPending` --> so FUN dang cho xu ly
+**DM flow moi**:
+1. User A tang qua --> Edge function gui 2 DM:
+   - Sender -> Receiver: "Chuc mung {receiver}! Ban da nhan {amount} Camly Coin tu {sender}"
+   - Sender -> Receiver (hoac self): "Ban da tang {amount} Camly Coin cho {receiver}"
+2. Ca 2 tin nhan deu co `message_type = 'tip'` va `tip_gift_id`
 
-**2. Cap nhat `src/components/earn/FUNMoneyStatsBanner.tsx`**
-
-- Doi ten va icon cho 3 stat items:
-  - "San sang claim" (icon CheckCircle, mau xanh la) -- totalScored
-  - "Da mint" (icon Coins, mau xanh duong) -- totalMinted
-  - "Dang cho" (icon Lock, mau vang) -- totalPending
-
-**3. Cap nhat `src/pages/UserProfile.tsx`**
-
-- Cap nhat phan hien thi FUN Money Stats trong sidebar de dung ten moi tuong ung
-
-**4. Cap nhat translations `vi.ts` va `en.ts`**
-
-- Thay `earn.funMoney.minted` tu "Da mint" thanh "San sang claim"
-- Thay `earn.funMoney.signed` tu "Da ky" thanh "Da mint"
-- Giu nguyen `earn.funMoney.pending`
-
-### Ket qua mong doi
-
-- Tat ca user co Light Actions se thay so FUN Money thuc te tren banner
-- Thong ke phan anh dung luong du lieu: scored (san sang claim), minted (da mint on-chain), pending (dang cho)
-- Hien thi nhat quan tren ca 3 trang: Earn, UserProfile, va Mint
+### Luu y
+- Giu backward compatible voi `healing_messages` (van insert)
+- Notification Center chi fetch 20 thong bao gan nhat de toi uu performance
+- Su dung lazy loading neu user scroll xuong de xem them
+- Thong bao realtime hien toast chi 1 lan, khong spam
