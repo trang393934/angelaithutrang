@@ -672,7 +672,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
                     <div className="flex items-center gap-2 text-green-700 font-medium text-sm">
                       <Sparkles className="w-4 h-4" />
-                      Giao dịch thành công trên blockchain!
+                      Chúc mừng bạn đã chuyển thành công!
                     </div>
                     <div className="flex items-center gap-2">
                       <code className="text-xs bg-white px-2 py-1 rounded border flex-1 truncate">
@@ -684,7 +684,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
                         className="h-7 px-2 shrink-0"
                         onClick={() => {
                           navigator.clipboard.writeText(lastTxHash);
-                          toast.success("Đã sao chép TX Hash!");
+                          toast.success("Đã sao chép mã giao dịch!");
                         }}
                       >
                         📋

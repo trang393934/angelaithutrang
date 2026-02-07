@@ -281,7 +281,7 @@ export function GiftTransactionHistory() {
               <Gift className="w-4 h-4 text-white" />
             </div>
             <h3 className="font-bold text-white text-sm drop-shadow-sm">
-              📜 Lịch Sử Giao Dịch Quà
+              📜 Lịch Sử Thưởng & Tặng
             </h3>
           </div>
           <div className="flex items-center gap-2">
@@ -304,14 +304,14 @@ export function GiftTransactionHistory() {
               {/* Stats summary */}
               <div className="px-4 pt-3 pb-1 flex gap-2">
                 <div className="flex-1 bg-amber-100/60 rounded-lg px-2.5 py-1.5 text-center">
-                  <p className="text-[10px] text-amber-600 font-medium">Tặng quà</p>
+                  <p className="text-[10px] text-amber-600 font-medium">Thưởng</p>
                   <div className="flex items-center justify-center gap-1">
                     <img src={camlyCoinLogo} alt="coin" className="w-3 h-3" />
                     <span className="text-xs font-bold text-amber-700">{totalGiftAmount.toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="flex-1 bg-rose-100/60 rounded-lg px-2.5 py-1.5 text-center">
-                  <p className="text-[10px] text-rose-600 font-medium">Donate dự án</p>
+                  <p className="text-[10px] text-rose-600 font-medium">Tặng dự án</p>
                   <div className="flex items-center justify-center gap-1">
                     <img src={camlyCoinLogo} alt="coin" className="w-3 h-3" />
                     <span className="text-xs font-bold text-rose-600">{totalDonationAmount.toLocaleString()}</span>
@@ -324,7 +324,7 @@ export function GiftTransactionHistory() {
                 {previewTransactions.length === 0 ? (
                   <div className="text-center py-4">
                     <Gift className="w-8 h-8 text-amber-300 mx-auto mb-1" />
-                    <p className="text-xs text-amber-600">Chưa có giao dịch quà nào</p>
+                    <p className="text-xs text-amber-600">Chưa có giao dịch thưởng/tặng nào</p>
                   </div>
                 ) : (
                   previewTransactions.map(tx => (
@@ -358,13 +358,13 @@ export function GiftTransactionHistory() {
           <DialogHeader className="px-4 pt-4 pb-2 bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500">
             <DialogTitle className="text-white flex items-center gap-2">
               <Gift className="w-5 h-5" />
-              📜 Lịch Sử Giao Dịch Quà Tặng
+              📜 Lịch Sử Thưởng & Tặng
             </DialogTitle>
             <div className="flex gap-3 mt-1">
               <div className="flex items-center gap-1">
                 <img src={camlyCoinLogo} alt="coin" className="w-3.5 h-3.5" />
                 <span className="text-xs text-white/90 font-medium">
-                  Tặng: {totalGiftAmount.toLocaleString()}
+                  Thưởng: {totalGiftAmount.toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center gap-1">
@@ -385,7 +385,7 @@ export function GiftTransactionHistory() {
                 </TabsTrigger>
                 <TabsTrigger value="gifts" className="text-xs gap-1">
                   <Gift className="w-3.5 h-3.5" />
-                  Tặng ({giftOnly.length})
+                  Thưởng ({giftOnly.length})
                 </TabsTrigger>
                 <TabsTrigger value="donations" className="text-xs gap-1">
                   <Heart className="w-3.5 h-3.5" />

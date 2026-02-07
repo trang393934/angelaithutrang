@@ -94,7 +94,7 @@ function Web3TxRow({ tx }: { tx: Web3Transaction }) {
         )}
 
         <span className="inline-flex items-center gap-0.5 text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-medium ml-auto">
-          {tx.source === "gift" ? "Tặng Quà" : "Donate"}
+          {tx.source === "gift" ? "Thưởng" : "Tặng dự án"}
         </span>
       </div>
 
@@ -333,7 +333,7 @@ export function Web3TransactionHistory() {
                     <Wallet className="w-10 h-10 text-blue-200 mx-auto mb-2" />
                     <p className="text-xs text-blue-500 font-medium">Chưa có giao dịch Web3 nào</p>
                     <p className="text-[10px] text-muted-foreground mt-1">
-                      Tặng quà qua ví Web3 (CAMLY Token) để thấy giao dịch on-chain tại đây
+                      Thưởng/Tặng qua ví Web3 (CAMLY Token) để thấy giao dịch on-chain tại đây
                     </p>
                   </div>
                 ) : (
@@ -407,7 +407,7 @@ export function Web3TransactionHistory() {
                     <Wallet className="w-12 h-12 text-blue-200 mx-auto mb-3" />
                     <p className="text-sm text-muted-foreground font-medium">Chưa có giao dịch Web3</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Sử dụng tính năng "Chuyển Crypto" trong Tặng Quà để gửi CAMLY Token on-chain
+                      Sử dụng tính năng "Chuyển Crypto" để thưởng/tặng CAMLY Token on-chain
                     </p>
                   </div>
                 ) : (
