@@ -398,26 +398,37 @@
  
        // Save connection state
        localStorage.setItem("wallet_connected", "true");
-     } catch (error: any) {
-       console.error("Connection error:", error);
- 
-       // Don't show error for user rejection
-       if (error.code === 4001) {
-         setState((prev) => ({
-           ...prev,
-           isConnecting: false,
-           error: null,
-         }));
-         connectingRef.current = false;
-         return;
-       }
- 
-       setState((prev) => ({
-         ...prev,
-         isConnecting: false,
-         error: error.message || "Không thể kết nối ví",
-       }));
-     } finally {
+    } catch (error: any) {
+        console.error("Connection error:", error);
+
+        // Don't show error for user rejection or MetaMask internal failures
+        if (error.code === 4001 || error.message?.includes("User rejected") || error.message?.includes("user rejected")) {
+          setState((prev) => ({
+            ...prev,
+            isConnecting: false,
+            error: null,
+          }));
+          connectingRef.current = false;
+          return;
+        }
+
+        // Handle MetaMask "Failed to connect" gracefully
+        if (error.message?.includes("Failed to connect")) {
+          setState((prev) => ({
+            ...prev,
+            isConnecting: false,
+            error: "Không thể kết nối MetaMask. Vui lòng thử lại hoặc khởi động lại trình duyệt.",
+          }));
+          connectingRef.current = false;
+          return;
+        }
+
+        setState((prev) => ({
+          ...prev,
+          isConnecting: false,
+          error: error.message || "Không thể kết nối ví",
+        }));
+      } finally {
        connectingRef.current = false;
      }
    }, [hasWallet, fetchBalances, state.isConnecting, switchToBSC, verifyBSCTestnet]);
