@@ -9,6 +9,25 @@ const isInIframe = (): boolean => {
     return true; // If access is blocked, assume iframe
   }
 };
+
+// Detect mobile device
+const isMobileDevice = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+};
+
+// Check if we're inside MetaMask's in-app browser
+const isMetaMaskBrowser = (): boolean => {
+  return typeof (window as any).ethereum !== "undefined" && 
+    (window as any).ethereum.isMetaMask === true;
+};
+
+// Build MetaMask deep link to open current site in MetaMask's browser
+const getMetaMaskDeepLink = (): string => {
+  const currentUrl = window.location.href.replace(/^https?:\/\//, "");
+  return `https://metamask.app.link/dapp/${currentUrl}`;
+};
  
  // BSC Testnet RPC endpoints (fallback list)
  const BSC_TESTNET_RPC_LIST = [
@@ -306,11 +325,18 @@ const isInIframe = (): boolean => {
         return;
       }
 
-      if (!hasWallet) {
-        setState((prev) => ({ ...prev, error: "Vui lòng cài đặt MetaMask hoặc ví Web3 tương thích" }));
-        window.open("https://metamask.io/download/", "_blank");
-        return;
-      }
+       if (!hasWallet) {
+         // On mobile, open MetaMask deep link instead of download page
+         if (isMobileDevice()) {
+           window.location.href = getMetaMaskDeepLink();
+           setState((prev) => ({ ...prev, isConnecting: false }));
+           connectingRef.current = false;
+           return;
+         }
+         setState((prev) => ({ ...prev, error: "Vui lòng cài đặt MetaMask hoặc ví Web3 tương thích" }));
+         window.open("https://metamask.io/download/", "_blank");
+         return;
+       }
  
      // Prevent multiple connection attempts
      if (state.isConnecting || connectingRef.current) {

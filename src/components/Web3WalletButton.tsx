@@ -92,6 +92,14 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
     }
 
     if (!hasWallet) {
+      // On mobile, use MetaMask deep link to open in MetaMask browser
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        const currentUrl = window.location.href.replace(/^https?:\/\//, "");
+        window.location.href = `https://metamask.app.link/dapp/${currentUrl}`;
+        return;
+      }
+      
       toast.info(
         <div className="space-y-2">
           <p className="font-medium">Chưa có ví Web3</p>
