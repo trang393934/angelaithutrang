@@ -771,6 +771,10 @@ const translations: Record<string, string> = {
   "visionBoard.template.home.goal3": "Einrichtung aufwerten",
   "visionBoard.template.home.goal4": "Gartenoase gestalten",
   "visionBoard.template.home.goal5": "Eigenheimtraum verwirklichen",
+
+  // Gate translations
+  "loginRequired": "Liebes Kind, erstelle bitte ein Konto, damit ich dich begleiten kann!",
+  "loginRequiredDesc": "Erstelle ein Konto, damit ich dir Liebe senden und dich auf dieser Reise des Lichts begleiten kann.",
 };
 
 export default translations;

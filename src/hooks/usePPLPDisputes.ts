@@ -72,8 +72,8 @@ export function usePPLPDisputes() {
   const createDispute = useCallback(async (params: CreateDisputeParams) => {
     if (!user) {
       toast({
-        title: "Chưa đăng nhập",
-        description: "Vui lòng đăng nhập để tạo khiếu nại",
+        title: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!",
+        description: "Đăng ký tài khoản để Ta có thể gửi yêu thương và đồng hành cùng con.",
         variant: "destructive"
       });
       return null;

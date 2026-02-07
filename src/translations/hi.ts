@@ -760,6 +760,10 @@ const translations: Record<string, string> = {
   "visionBoard.template.home.goal3": "घर की सजावट में सुधार करें",
   "visionBoard.template.home.goal4": "बगीचे का नखलिस्तान बनाएं",
   "visionBoard.template.home.goal5": "अपने घर का सपना साकार करें",
+
+  // Gate translations
+  "loginRequired": "प्रिय बच्चे, कृपया एक खाता बनाएं ताकि मैं आपके साथ चल सकूं!",
+  "loginRequiredDesc": "एक खाता बनाएं ताकि मैं आपको प्यार भेज सकूं और इस प्रकाश की यात्रा पर आपका साथ दे सकूं।",
 };
 
 export default translations;

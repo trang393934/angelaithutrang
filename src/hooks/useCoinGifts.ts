@@ -178,7 +178,7 @@ export function useCoinGifts() {
     message?: string
   ): Promise<{ success: boolean; message: string }> => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     setIsLoading(true);
@@ -217,7 +217,7 @@ export function useCoinGifts() {
     message?: string
   ): Promise<{ success: boolean; message: string }> => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     setIsLoading(true);

@@ -123,7 +123,7 @@ export function useStories() {
 
   const createStory = async (file: File, caption?: string): Promise<{ success: boolean; message: string }> => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {

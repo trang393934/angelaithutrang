@@ -79,8 +79,8 @@ export function useCommunityCircles() {
   const joinCircle = async (circleId: string) => {
     if (!user) {
       toast({
-        title: "Vui lòng đăng nhập",
-        description: "Bạn cần đăng nhập để tham gia Circle",
+        title: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!",
+        description: "Đăng ký tài khoản để tham gia Circle cùng cộng đồng Ánh Sáng.",
         variant: "destructive"
       });
       return false;

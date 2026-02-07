@@ -779,6 +779,10 @@ const translations: Record<string, string> = {
   "visionBoard.template.home.goal3": "인테리어 업그레이드",
   "visionBoard.template.home.goal4": "정원 오아시스 만들기",
   "visionBoard.template.home.goal5": "내 집 마련 꿈 실현",
+
+  // Gate translations
+  "loginRequired": "사랑하는 아이야, 계정을 만들어 함께 걸어가자!",
+  "loginRequiredDesc": "계정을 만들어 사랑을 전하고 이 빛의 여정에서 함께할 수 있게 해주세요.",
 };
 
 export default translations;

@@ -102,7 +102,7 @@ export function useDirectMessages(conversationUserId?: string) {
     replyToId?: string
   ) => {
     if (!user) {
-      toast.error("Vui lòng đăng nhập");
+      toast.error("Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!");
       return { success: false };
     }
 

@@ -41,7 +41,7 @@ export function useFriendship(targetUserId?: string) {
   // Send friend request
   const sendFriendRequest = async (addresseeId: string) => {
     if (!user) {
-      toast.error("Vui lòng đăng nhập");
+      toast.error("Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!");
       return { success: false };
     }
 
