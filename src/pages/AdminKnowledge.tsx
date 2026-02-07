@@ -615,35 +615,43 @@ const AdminKnowledge = () => {
   // Helper function to extract Excel content (dynamic import to avoid React conflict)
   const extractExcelContent = async (buffer: ArrayBuffer): Promise<string> => {
     try {
-      const XLSX = await import('xlsx');
-      const workbook = XLSX.read(buffer, { type: 'array' });
+      const ExcelJS = await import('exceljs');
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
       let content = '';
 
-      workbook.SheetNames.forEach((sheetName: string, sheetIndex: number) => {
-        const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
-        
-        if (data.length === 0) return;
+      workbook.worksheets.forEach((worksheet, sheetIndex) => {
+        const sheetName = worksheet.name;
+        const rowCount = worksheet.rowCount;
+        if (rowCount === 0) return;
 
         content += `\n📋 SHEET ${sheetIndex + 1}: ${sheetName}\n`;
         content += `${'═'.repeat(50)}\n`;
 
-        const headers = data[0] || [];
-        const rows = data.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== ''));
+        const headerRow = worksheet.getRow(1);
+        const headers: string[] = [];
+        headerRow.eachCell((cell, colNumber) => {
+          headers[colNumber - 1] = String(cell.value ?? `Cột ${colNumber}`);
+        });
 
         content += `Các cột: ${headers.join(' | ')}\n`;
         content += `${'─'.repeat(50)}\n\n`;
 
-        rows.forEach((row, index) => {
-          content += `--- Dòng ${index + 1} ---\n`;
+        for (let rowNum = 2; rowNum <= rowCount; rowNum++) {
+          const row = worksheet.getRow(rowNum);
+          const hasData = row.values && (row.values as unknown[]).some(v => v !== undefined && v !== null && v !== '');
+          if (!hasData) continue;
+
+          content += `--- Dòng ${rowNum - 1} ---\n`;
           headers.forEach((header, i) => {
-            const value = row[i];
-            if (value !== undefined && value !== '') {
-              content += `${header || `Cột ${i + 1}`}: ${value}\n`;
+            const cell = row.getCell(i + 1);
+            const value = cell.value;
+            if (value !== undefined && value !== null && value !== '') {
+              content += `${header}: ${value}\n`;
             }
           });
           content += '\n';
-        });
+        }
       });
 
       return content || 'Không thể trích xuất nội dung từ file Excel';
