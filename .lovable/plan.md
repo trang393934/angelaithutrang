@@ -1,88 +1,69 @@
 
-# Thay Doi Logic Link Avatar va Trang Ca Nhan Kieu Facebook
 
-## Muc Tieu
-Khi user bam avatar cua minh o goc phai thanh cong cu (ca Header chinh va CommunityHeader), se link toi trang ca nhan kieu Facebook (`/user/:userId`) thay vi trang "Ho So Ca Nhan" hien tai (`/profile`). Dong thoi, cac thong tin quan trong (Camly Coin, Light Points, lich su hoat dong, v.v.) se duoc hien thi ngay tren trang ca nhan phia duoi avatar, giong nhu Facebook.
+## Thêm Banner FUN Money Stats trên trang Earn
 
----
+### Mục tiêu
+Thêm một card/banner tóm tắt thống kê FUN Money (on-chain) trên trang Earn (`/earn`) để user có thể xem nhanh tổng quan số FUN Money đã mint theo từng trạng thái mà không cần chuyển sang trang `/mint`.
 
-## Cac Thay Doi Chinh
+### Thiết kế giao diện
 
-### 1. Cap nhat link Avatar trong Header va CommunityHeader
+Card sẽ được đặt ngay **sau phần Early Adopter Progress** và **trước phần Main Content Grid** (Earn Progress + Streak Calendar). Card có gradient vàng-cam phù hợp với branding FUN Money, bao gồm:
 
-**File: `src/components/Header.tsx`**
-- Dong 211: Thay `<Link to="/profile">` thanh `<Link to={`/user/${user.id}`}>` trong dropdown menu "Trang ca nhan"
-- Dong 354: Thay `<Link to="/profile">` thanh `<Link to={`/user/${user.id}`}>` trong mobile profile card
+- Logo FUN Money + tiêu đề "FUN Money (On-chain)"
+- Tổng số FUN Money (tổng 3 trạng thái)
+- 3 chỉ số trạng thái hiển thị dạng grid:
+  - **Da mint** (Minted) - icon Coins, màu xanh lá
+  - **Da ky** (Signed) - icon CheckCircle, màu xanh dương  
+  - **Dang cho** (Pending) - icon Lock, màu vàng
+- Nút "Xem chi tiết" dẫn đến trang `/mint`
+- Nếu user chưa có FUN Money nào (totalAmount = 0), card vẫn hiển thị với thông điệp khuyến khích và nút đến trang Mint
 
-**File: `src/components/community/CommunityHeader.tsx`**
-- Dong 203: Thay `<Link to="/profile">` thanh `<Link to={`/user/${user.id}`}>` trong dropdown menu "Trang ca nhan"
+### Chi tiết kỹ thuật
 
-### 2. Nang cap trang UserProfile voi thong tin ca nhan
+**File cần chỉnh sửa:**
 
-**File: `src/pages/UserProfile.tsx`**
+1. **`src/pages/Earn.tsx`**
+   - Import hook `useFUNMoneyStats` và logo `fun-money-logo.png`
+   - Import thêm icons: `Lock`, `CheckCircle` từ lucide-react
+   - Gọi `useFUNMoneyStats(user?.id)` trong component
+   - Thêm card FUN Money Stats vào JSX giữa `<EarlyAdopterProgress />` và phần "Main content grid"
 
-Them cac thong tin sau vao sidebar trai (phan "Gioi thieu"), giong Facebook:
+2. **`src/translations/vi.ts`** - Thêm translation keys mới:
+   - `earn.funMoney.title`: "FUN Money (On-chain)"
+   - `earn.funMoney.total`: "Tong FUN Money"
+   - `earn.funMoney.minted`: "Da mint"
+   - `earn.funMoney.signed`: "Da ky"
+   - `earn.funMoney.pending`: "Dang cho"
+   - `earn.funMoney.viewDetails`: "Xem chi tiet & Mint"
+   - `earn.funMoney.emptyMessage`: "Ban chua co FUN Money nao. Bat dau dong gop de mint!"
 
-**Khi xem trang cua chinh minh (`isOwnProfile = true`):**
-- Hien thi Camly Coin balance (so du hien tai + tong tich luy)
-- Hien thi Light Points / PoPL Score (Level + diem)
-- Hien thi nut "Chinh sua thong tin" link den `/profile` (trang settings)
-- Hien thi link "Lich Su Hoat Dong" link den `/activity-history`
+3. **`src/translations/en.ts`** (va cac file ngon ngu khac) - Them translation keys tuong ung:
+   - `earn.funMoney.title`: "FUN Money (On-chain)"
+   - `earn.funMoney.total`: "Total FUN Money"
+   - `earn.funMoney.minted`: "Minted"
+   - `earn.funMoney.signed`: "Signed"
+   - `earn.funMoney.pending`: "Pending"
+   - `earn.funMoney.viewDetails`: "View Details & Mint"
+   - `earn.funMoney.emptyMessage`: "You don't have any FUN Money yet. Start contributing to mint!"
 
-**Khi xem trang nguoi khac:**
-- Chi hien thi thong tin cong khai (bio, so bai viet, Camly Coin tich luy, ngay tham gia)
-- Khong hien thi so du Camly Coin hien tai cua nguoi khac
-
-### 3. Giu nguyen trang `/profile` lam trang cai dat
-
-Trang `/profile` van ton tai va hoat dong nhu "Cai dat ho so" (edit avatar, bio, doi mat khau, wallet, v.v.) - chi la khong con la trang mac dinh khi bam avatar nua.
-
----
-
-## Chi Tiet Ky Thuat
-
-### Files cap nhat:
-
-**`src/components/Header.tsx`** (2 cho):
-- Dong 211: Thay `to="/profile"` thanh `to={`/user/${user.id}`}` (desktop dropdown)
-- Dong 354-355: Thay `to="/profile"` thanh `to={`/user/${user.id}`}` (mobile profile card)
-
-**`src/components/community/CommunityHeader.tsx`** (1 cho):
-- Dong 203: Thay `to="/profile"` thanh `to={`/user/${user.id}`}` (dropdown menu)
-
-**`src/pages/UserProfile.tsx`** (nang cap sidebar):
-- Import them `useCamlyCoin` va `usePoPLScore` hooks
-- Import them `camlyCoinLogo` va `LightPointsDisplay` component
-- Them section "Thong tin ca nhan" vao Intro Card khi `isOwnProfile`:
-  - Camly Coin balance card (logo + so du + tong tich luy)
-  - PoPL Score / Light Points (level + diem)
-  - Link "Lich su hoat dong" den `/activity-history`
-  - Nut "Chinh sua ho so" link den `/profile` (settings)
-- Giu nguyen tat ca chuc nang hien co cua trang UserProfile
-
-### Logic hien thi thong tin tren UserProfile:
+### Cấu trúc card
 
 ```text
-+---------------------------+
-|    Gioi thieu             |
-|   (Bio cua user)          |
-+---------------------------+
-|  Camly Coin: 7,092        |  <-- chi hien khi isOwnProfile
-|  Light Points: Level 2    |  <-- chi hien khi isOwnProfile
-+---------------------------+
-|  Bai viet: 15             |
-|  Luot thich: 230          |
-|  Tham gia: Thang 1 2025   |
-|  Angel AI Community       |
-+---------------------------+
-|  Lich Su Hoat Dong  ->    |  <-- chi hien khi isOwnProfile
-+---------------------------+
-|  [ Chinh sua chi tiet ]   |  <-- chi hien khi isOwnProfile
-+---------------------------+
++-----------------------------------------------------------+
+|  [FUN Logo] FUN Money (On-chain)        [Xem chi tiết ->] |
+|                                                           |
+|  Tổng: 12,500 FUN                                        |
+|                                                           |
+|  +----------------+ +----------------+ +----------------+ |
+|  | Coins  Đã mint | | Check  Đã ký  | | Lock  Đang chờ | |
+|  | 8,000 FUN      | | 3,000 FUN      | | 1,500 FUN      | |
+|  +----------------+ +----------------+ +----------------+ |
++-----------------------------------------------------------+
 ```
 
-### Luu y:
-- Trang `/profile` van giu nguyen, chi la khong con la dich den mac dinh khi bam avatar
-- Tat ca link "Chinh sua" tren UserProfile van tro ve `/profile` (trang settings)
-- Thong tin nhay cam (so du vi, mat khau) chi hien tren `/profile`, khong hien tren UserProfile
-- Khong can thay doi database hay backend
+### Lưu ý
+- Sử dụng hook `useFUNMoneyStats` đã có sẵn, không cần tạo thêm hook mới
+- Tuân thủ quy tắc i18n: tất cả text đều dùng translation keys, không hardcode
+- Khi đang loading, hiển thị skeleton/spinner thay vì số 0
+- Style nhất quán với các card Camly Coin phía trên (gradient, border, shadow)
+
