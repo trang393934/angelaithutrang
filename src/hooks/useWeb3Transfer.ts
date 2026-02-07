@@ -136,25 +136,47 @@ export function useWeb3Transfer() {
       return { success: false, message: "Vui lòng cài đặt MetaMask hoặc ví Web3 tương thích" };
     }
 
-    // Pre-flight: verify MetaMask is responsive
+    // Pre-flight: verify MetaMask is responsive and get live account
+    let liveAddress: string | null = null;
     try {
       const ethereum = (window as any).ethereum;
       if (!ethereum || typeof ethereum.request !== "function") {
         return { success: false, message: "MetaMask không sẵn sàng. Vui lòng mở lại extension." };
       }
-      await ethereum.request({ method: "eth_accounts" });
+      const accounts: string[] = await ethereum.request({ method: "eth_accounts" }).catch(() => []);
+      if (accounts.length > 0) {
+        liveAddress = accounts[0];
+      }
     } catch (healthErr: any) {
       console.warn("[Web3Transfer] MetaMask health check failed:", healthErr?.message);
       return { success: false, message: "MetaMask không phản hồi. Vui lòng khởi động lại trình duyệt hoặc mở lại MetaMask." };
     }
 
-    if (!isConnected) {
-      const connected = await safeConnect();
-      if (!connected) {
-        return { success: false, message: "Không thể kết nối ví. Vui lòng mở MetaMask và thử lại." };
+    // If no live account found, try connecting
+    if (!liveAddress) {
+      if (!isConnected) {
+        const connected = await safeConnect();
+        if (!connected) {
+          return { success: false, message: "Không thể kết nối ví. Vui lòng mở MetaMask và thử lại." };
+        }
+        // Re-check accounts after connect
+        try {
+          const ethereum = (window as any).ethereum;
+          const accounts: string[] = await ethereum.request({ method: "eth_accounts" }).catch(() => []);
+          if (accounts.length > 0) {
+            liveAddress = accounts[0];
+          }
+        } catch {
+          // fall through
+        }
       }
-      return { success: false, message: "Đã kết nối ví. Vui lòng bấm lại nút chuyển." };
+      if (!liveAddress) {
+        return { success: false, message: "Vui lòng kết nối ví trước khi chuyển token." };
+      }
     }
+
+    // Use live address (from MetaMask directly) instead of potentially stale React state
+    const activeAddress = liveAddress;
 
     // Switch to BSC Mainnet for CAMLY transfers
     try {
@@ -196,7 +218,7 @@ export function useWeb3Transfer() {
       const amountInWei = ethers.parseUnits(amount.toString(), CAMLY_DECIMALS);
       
       // Check balance
-      const balance = await contract.balanceOf(address);
+      const balance = await contract.balanceOf(activeAddress);
       if (balance < amountInWei) {
         setIsTransferring(false);
         return { 
