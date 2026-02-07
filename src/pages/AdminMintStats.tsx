@@ -7,17 +7,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
+} from "@/components/ui/dialog";
+import {
   ArrowLeft, Sparkles, LogOut, RefreshCw, Search, Download,
   Coins, Users, TrendingUp, Calendar, CheckCircle, XCircle,
-  ArrowUpDown, Zap, Star
+  ArrowUpDown, Zap, Star, Gift
 } from "lucide-react";
 import angelAvatar from "@/assets/angel-avatar.png";
 import ExcelJS from "exceljs";
+import { LiXiCelebrationDialog } from "@/components/admin/LiXiCelebrationDialog";
 
 // ─── Types ───────────────────────────────────────────────────
 const ACTION_TYPES = [
@@ -81,6 +87,8 @@ interface OverviewStats {
 
 type SortKey = "display_name" | ActionType | "total_fun" | "total_passed" | "avg_light_score";
 
+const CAMLY_MULTIPLIER = 1000;
+
 // ─── Component ───────────────────────────────────────────────
 const AdminMintStats = () => {
   const { user, isAdmin, isLoading: authLoading, isAdminChecked, signOut } = useAuth();
@@ -102,6 +110,18 @@ const AdminMintStats = () => {
     mintRequests: { total: 0, signed: 0, minted: 0, pending: 0 },
     avgLightScore: 0,
   });
+
+  // ─── Lì xì state ──────────────────────────────────────────
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [isDistributing, setIsDistributing] = useState(false);
+  const [distributionProgress, setDistributionProgress] = useState(0);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [lastDistributionResult, setLastDistributionResult] = useState<{
+    totalCamly: number;
+    totalFun: number;
+    successCount: number;
+  } | null>(null);
 
   // ─── Auth guard ────────────────────────────────────────────
   useEffect(() => {
@@ -133,7 +153,7 @@ const AdminMintStats = () => {
       const dateFilter = getDateFilter();
       const PAGE_SIZE = 1000;
 
-      // 1) Fetch ALL pplp_actions với pagination tự động (vượt giới hạn 1000 dòng)
+      // 1) Fetch ALL pplp_actions với pagination tự động
       type ActionRow = { id: string; actor_id: string; action_type: string; created_at: string };
       let actionsRaw: ActionRow[] = [];
       let from = 0;
@@ -153,7 +173,7 @@ const AdminMintStats = () => {
 
       const actionIds = actionsRaw.map((a) => a.id);
 
-      // 2) Fetch ALL pplp_scores với pagination (batch 500 IDs, mỗi batch paginate qua giới hạn 1000)
+      // 2) Fetch ALL pplp_scores với pagination
       type ScoreRow = { action_id: string; decision: string; final_reward: number; light_score: number };
       let allScores: ScoreRow[] = [];
       for (let i = 0; i < actionIds.length; i += 500) {
@@ -230,7 +250,6 @@ const AdminMintStats = () => {
         if (mr.status === "signed") mintOverview.signed++;
         else if (mr.status === "minted") mintOverview.minted++;
         else if (mr.status === "pending") mintOverview.pending++;
-        // Keep best status per user
         const current = mintByUser.get(mr.actor_id);
         if (!current || mr.status === "minted" || (mr.status === "signed" && current !== "minted")) {
           mintByUser.set(mr.actor_id, mr.status);
@@ -375,6 +394,119 @@ const AdminMintStats = () => {
     return result;
   }, [rows, searchQuery, sortKey, sortAsc]);
 
+  // ─── Checkbox logic ───────────────────────────────────────
+  const eligibleRows = useMemo(() => filteredRows.filter(r => r.total_fun > 0), [filteredRows]);
+
+  const toggleSelectUser = (actorId: string) => {
+    setSelectedUsers(prev => {
+      const next = new Set(prev);
+      if (next.has(actorId)) next.delete(actorId);
+      else next.add(actorId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedUsers.size === eligibleRows.length) {
+      setSelectedUsers(new Set());
+    } else {
+      setSelectedUsers(new Set(eligibleRows.map(r => r.actor_id)));
+    }
+  };
+
+  const selectedSummary = useMemo(() => {
+    let totalFun = 0;
+    let totalCamly = 0;
+    const selected: Array<{ actor_id: string; display_name: string | null; fun: number; camly: number }> = [];
+    for (const row of filteredRows) {
+      if (selectedUsers.has(row.actor_id) && row.total_fun > 0) {
+        totalFun += row.total_fun;
+        const camly = row.total_fun * CAMLY_MULTIPLIER;
+        totalCamly += camly;
+        selected.push({
+          actor_id: row.actor_id,
+          display_name: row.display_name,
+          fun: row.total_fun,
+          camly,
+        });
+      }
+    }
+    return { totalFun, totalCamly, selected, count: selected.length };
+  }, [selectedUsers, filteredRows]);
+
+  // ─── Distribute reward ────────────────────────────────────
+  const handleDistribute = async () => {
+    if (selectedSummary.count === 0) return;
+    setShowConfirmDialog(false);
+    setIsDistributing(true);
+    setDistributionProgress(0);
+
+    try {
+      const recipients = selectedSummary.selected.map(s => ({
+        user_id: s.actor_id,
+        fun_amount: s.fun,
+      }));
+
+      // Xử lý theo batch 20 user mỗi lần để tránh timeout
+      const BATCH_SIZE = 20;
+      let totalSuccess = 0;
+      let totalSkipped = 0;
+      let totalFailed = 0;
+      let totalCamlyDistributed = 0;
+
+      for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+        const batch = recipients.slice(i, i + BATCH_SIZE);
+
+        const { data, error } = await supabase.functions.invoke("distribute-fun-camly-reward", {
+          body: { recipients: batch },
+        });
+
+        if (error) {
+          console.error("Lỗi chuyển thưởng batch:", error);
+          totalFailed += batch.length;
+        } else if (data?.summary) {
+          totalSuccess += data.summary.success_count || 0;
+          totalSkipped += data.summary.skipped_count || 0;
+          totalFailed += data.summary.failed_count || 0;
+          totalCamlyDistributed += data.summary.total_camly_distributed || 0;
+        }
+
+        const progress = Math.min(100, Math.round(((i + batch.length) / recipients.length) * 100));
+        setDistributionProgress(progress);
+      }
+
+      setDistributionProgress(100);
+
+      if (totalSuccess > 0) {
+        setLastDistributionResult({
+          totalCamly: totalCamlyDistributed,
+          totalFun: selectedSummary.totalFun,
+          successCount: totalSuccess,
+        });
+        setShowCelebration(true);
+        setSelectedUsers(new Set());
+        toast.success(`Đã chuyển thưởng Lì xì thành công cho ${totalSuccess} người dùng!`);
+      }
+
+      if (totalSkipped > 0) {
+        toast.info(`${totalSkipped} người dùng đã được thưởng trước đó (bỏ qua)`);
+      }
+
+      if (totalFailed > 0) {
+        toast.error(`${totalFailed} người dùng thất bại`);
+      }
+
+      // Làm mới dữ liệu
+      fetchData();
+    } catch (error) {
+      console.error("Lỗi chuyển thưởng:", error);
+      toast.error("Đã xảy ra lỗi khi chuyển thưởng Lì xì");
+    } finally {
+      setIsDistributing(false);
+      setDistributionProgress(0);
+    }
+  };
+
   // ─── Export Excel ──────────────────────────────────────────
   const exportExcel = async () => {
     const data = filteredRows.map((r, i) => {
@@ -386,6 +518,7 @@ const AdminMintStats = () => {
         row[ACTION_LABELS[at]] = r.by_type[at]?.fun || 0;
       }
       row["Tổng FUN"] = r.total_fun;
+      row["Thưởng Camly"] = r.total_fun * CAMLY_MULTIPLIER;
       row["Pass"] = r.total_passed;
       row["Fail"] = r.total_failed;
       row["Avg Light Score"] = r.avg_light_score;
@@ -422,18 +555,6 @@ const AdminMintStats = () => {
       default: return <Badge variant="outline" className="text-xs">—</Badge>;
     }
   };
-
-  const SortHeader = ({ label, sortKeyName, className = "" }: { label: string; sortKeyName: SortKey; className?: string }) => (
-    <TableHead
-      className={`cursor-pointer hover:text-primary transition-colors select-none whitespace-nowrap px-2 py-2 text-xs ${className}`}
-      onClick={() => toggleSort(sortKeyName)}
-    >
-      <span className="flex items-center gap-0.5">
-        {label}
-        <ArrowUpDown className={`w-2.5 h-2.5 flex-shrink-0 ${sortKey === sortKeyName ? "text-primary" : "text-muted-foreground/40"}`} />
-      </span>
-    </TableHead>
-  );
 
   // ─── Loading ───────────────────────────────────────────────
   if (authLoading || isLoading) {
@@ -620,6 +741,52 @@ const AdminMintStats = () => {
           </Card>
         </div>
 
+        {/* Action Bar — hiện khi có user được chọn */}
+        {selectedSummary.count > 0 && (
+          <Card className="mb-4 border-amber-400/40 bg-amber-50/50 dark:bg-amber-950/20">
+            <CardContent className="py-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Gift className="w-5 h-5 text-amber-600" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                      🧧 Lì xì Tết — Đã chọn {selectedSummary.count} người dùng
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      Tổng: {formatNum(selectedSummary.totalFun)} FUN × 1.000 = <strong>{formatNum(selectedSummary.totalCamly)} Camly Coin</strong>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedUsers(new Set())}
+                  >
+                    Bỏ chọn
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowConfirmDialog(true)}
+                    disabled={isDistributing}
+                  >
+                    <Gift className="w-4 h-4 mr-2" />
+                    Chuyển thưởng Lì xì
+                  </Button>
+                </div>
+              </div>
+              {isDistributing && (
+                <div className="mt-3">
+                  <Progress value={distributionProgress} className="h-2" />
+                  <p className="text-xs text-amber-600 mt-1 text-center">
+                    Đang xử lý... {distributionProgress}%
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Main Table */}
         <Card className="border-primary/20">
           <CardHeader className="pb-3">
@@ -633,6 +800,14 @@ const AdminMintStats = () => {
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="bg-muted/30 border-b">
+                    {/* Checkbox chọn tất cả */}
+                    <th className="px-2 py-2 text-center w-8">
+                      <Checkbox
+                        checked={eligibleRows.length > 0 && selectedUsers.size === eligibleRows.length}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Chọn tất cả"
+                      />
+                    </th>
                     <th className="px-2 py-2 text-center text-muted-foreground font-medium w-8">#</th>
                     <th
                       className="px-2 py-2 text-left font-medium cursor-pointer hover:text-primary transition-colors min-w-[130px]"
@@ -667,6 +842,13 @@ const AdminMintStats = () => {
                         <ArrowUpDown className={`w-2 h-2 flex-shrink-0 ${sortKey === "total_fun" ? "text-primary" : "text-muted-foreground/30"}`} />
                       </span>
                     </th>
+                    {/* Cột Thưởng Camly */}
+                    <th className="px-2 py-2 text-center font-semibold">
+                      <span className="flex flex-col items-center gap-0.5 leading-tight">
+                        <span className="text-base">🧧</span>
+                        <span className="text-[10px] leading-none">Camly</span>
+                      </span>
+                    </th>
                     <th
                       className="px-2 py-2 text-center font-medium cursor-pointer hover:text-primary transition-colors"
                       onClick={() => toggleSort("total_passed")}
@@ -698,13 +880,25 @@ const AdminMintStats = () => {
                 <tbody>
                   {filteredRows.length === 0 ? (
                     <tr>
-                      <td colSpan={ACTION_TYPES.length + 5} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={ACTION_TYPES.length + 7} className="text-center py-12 text-muted-foreground">
                         {searchQuery ? "Không tìm thấy user nào" : "Chưa có dữ liệu PPLP"}
                       </td>
                     </tr>
                   ) : (
                     filteredRows.map((row, idx) => (
-                      <tr key={row.actor_id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <tr key={row.actor_id} className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${selectedUsers.has(row.actor_id) ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}`}>
+                        {/* Checkbox */}
+                        <td className="px-2 py-2.5 text-center">
+                          {row.total_fun > 0 ? (
+                            <Checkbox
+                              checked={selectedUsers.has(row.actor_id)}
+                              onCheckedChange={() => toggleSelectUser(row.actor_id)}
+                              aria-label={`Chọn ${row.display_name || row.actor_id}`}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground/30">—</span>
+                          )}
+                        </td>
                         <td className="px-2 py-2.5 text-center text-muted-foreground">{idx + 1}</td>
                         <td className="px-2 py-2.5">
                           <div className="flex items-center gap-1.5">
@@ -741,6 +935,16 @@ const AdminMintStats = () => {
                         <td className="px-2 py-2.5 text-center font-bold tabular-nums text-primary">
                           {formatNum(row.total_fun)}
                         </td>
+                        {/* Cột Thưởng Camly */}
+                        <td className="px-2 py-2.5 text-center tabular-nums">
+                          {row.total_fun > 0 ? (
+                            <span className="font-semibold text-amber-600 dark:text-amber-400">
+                              {formatNum(row.total_fun * CAMLY_MULTIPLIER)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/30">—</span>
+                          )}
+                        </td>
                         <td className="px-2 py-2.5 text-center">
                           <span className="text-green-600 font-medium">{row.total_passed}</span>
                           <span className="text-muted-foreground/30">/</span>
@@ -767,6 +971,82 @@ const AdminMintStats = () => {
           </CardContent>
         </Card>
       </main>
+
+      {/* Dialog xác nhận chuyển thưởng */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gift className="w-5 h-5 text-amber-600" />
+              🧧 Xác nhận chuyển thưởng Lì xì Tết
+            </DialogTitle>
+            <DialogDescription>
+              Công thức: 1 FUN Money = 1.000 Camly Coin. Áp dụng đến ngày 08/02/2026.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Tóm tắt */}
+            <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-amber-600 text-xs">Số người nhận</p>
+                  <p className="font-bold text-amber-800 dark:text-amber-200">{selectedSummary.count}</p>
+                </div>
+                <div>
+                  <p className="text-amber-600 text-xs">Tổng FUN Money</p>
+                  <p className="font-bold text-amber-800 dark:text-amber-200">{formatNum(selectedSummary.totalFun)}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-amber-600 text-xs">Tổng Camly Coin sẽ chuyển</p>
+                  <p className="font-bold text-xl text-amber-800 dark:text-amber-200">{formatNum(selectedSummary.totalCamly)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Danh sách user */}
+            <div className="max-h-60 overflow-y-auto border rounded-lg">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-muted/80">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Người dùng</th>
+                    <th className="px-3 py-2 text-right">FUN</th>
+                    <th className="px-3 py-2 text-right">Camly</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedSummary.selected.map((s) => (
+                    <tr key={s.actor_id} className="border-t">
+                      <td className="px-3 py-2">{s.display_name || s.actor_id.slice(0, 8) + "..."}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatNum(s.fun)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-600">{formatNum(s.camly)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowConfirmDialog(false)}>
+              Huỷ
+            </Button>
+            <Button onClick={handleDistribute}>
+              <Gift className="w-4 h-4 mr-2" />
+              Xác nhận chuyển thưởng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Popup chúc mừng Lì xì */}
+      <LiXiCelebrationDialog
+        open={showCelebration}
+        onOpenChange={setShowCelebration}
+        totalCamly={lastDistributionResult?.totalCamly || 0}
+        totalFun={lastDistributionResult?.totalFun || 0}
+        successCount={lastDistributionResult?.successCount || 0}
+      />
     </div>
   );
 };
