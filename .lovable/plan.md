@@ -1,69 +1,71 @@
 
+## Sửa lỗi FUN Money Stats hiển thị 0
 
-## Thêm Banner FUN Money Stats trên trang Earn
+### Nguyên nhân gốc
 
-### Mục tiêu
-Thêm một card/banner tóm tắt thống kê FUN Money (on-chain) trên trang Earn (`/earn`) để user có thể xem nhanh tổng quan số FUN Money đã mint theo từng trạng thái mà không cần chuyển sang trang `/mint`.
+Hook `useFUNMoneyStats` hiện tại truy vấn bảng **`pplp_mint_requests`** -- bảng này chỉ lưu 9 bản ghi (cho những user đã yêu cầu mint on-chain qua MetaMask). Hầu hết user **không** có bản ghi nào trong bảng này, nên thống kê luôn hiển thị **0 FUN**.
 
-### Thiết kế giao diện
-
-Card sẽ được đặt ngay **sau phần Early Adopter Progress** và **trước phần Main Content Grid** (Earn Progress + Streak Calendar). Card có gradient vàng-cam phù hợp với branding FUN Money, bao gồm:
-
-- Logo FUN Money + tiêu đề "FUN Money (On-chain)"
-- Tổng số FUN Money (tổng 3 trạng thái)
-- 3 chỉ số trạng thái hiển thị dạng grid:
-  - **Da mint** (Minted) - icon Coins, màu xanh lá
-  - **Da ky** (Signed) - icon CheckCircle, màu xanh dương  
-  - **Dang cho** (Pending) - icon Lock, màu vàng
-- Nút "Xem chi tiết" dẫn đến trang `/mint`
-- Nếu user chưa có FUN Money nào (totalAmount = 0), card vẫn hiển thị với thông điệp khuyến khích và nút đến trang Mint
-
-### Chi tiết kỹ thuật
-
-**File cần chỉnh sửa:**
-
-1. **`src/pages/Earn.tsx`**
-   - Import hook `useFUNMoneyStats` và logo `fun-money-logo.png`
-   - Import thêm icons: `Lock`, `CheckCircle` từ lucide-react
-   - Gọi `useFUNMoneyStats(user?.id)` trong component
-   - Thêm card FUN Money Stats vào JSX giữa `<EarlyAdopterProgress />` và phần "Main content grid"
-
-2. **`src/translations/vi.ts`** - Thêm translation keys mới:
-   - `earn.funMoney.title`: "FUN Money (On-chain)"
-   - `earn.funMoney.total`: "Tong FUN Money"
-   - `earn.funMoney.minted`: "Da mint"
-   - `earn.funMoney.signed`: "Da ky"
-   - `earn.funMoney.pending`: "Dang cho"
-   - `earn.funMoney.viewDetails`: "Xem chi tiet & Mint"
-   - `earn.funMoney.emptyMessage`: "Ban chua co FUN Money nao. Bat dau dong gop de mint!"
-
-3. **`src/translations/en.ts`** (va cac file ngon ngu khac) - Them translation keys tuong ung:
-   - `earn.funMoney.title`: "FUN Money (On-chain)"
-   - `earn.funMoney.total`: "Total FUN Money"
-   - `earn.funMoney.minted`: "Minted"
-   - `earn.funMoney.signed`: "Signed"
-   - `earn.funMoney.pending`: "Pending"
-   - `earn.funMoney.viewDetails`: "View Details & Mint"
-   - `earn.funMoney.emptyMessage`: "You don't have any FUN Money yet. Start contributing to mint!"
-
-### Cấu trúc card
+Dữ liệu FUN Money thực tế nằm ở bảng **`pplp_actions`** (trạng thái hành động) kết hợp với **`pplp_scores`** (số FUN reward cho mỗi hành động). Đây là nguồn dữ liệu đúng mà trang Mint (`/mint`) đang sử dụng.
 
 ```text
-+-----------------------------------------------------------+
-|  [FUN Logo] FUN Money (On-chain)        [Xem chi tiết ->] |
-|                                                           |
-|  Tổng: 12,500 FUN                                        |
-|                                                           |
-|  +----------------+ +----------------+ +----------------+ |
-|  | Coins  Đã mint | | Check  Đã ký  | | Lock  Đang chờ | |
-|  | 8,000 FUN      | | 3,000 FUN      | | 1,500 FUN      | |
-|  +----------------+ +----------------+ +----------------+ |
-+-----------------------------------------------------------+
+Dữ liệu hiện tại:
+  pplp_mint_requests: 9 bản ghi (chỉ on-chain)
+  pplp_actions + pplp_scores: hàng trăm bản ghi cho tất cả user
+
+Ví dụ user 62694458...:
+  pplp_mint_requests: 0 bản ghi --> Banner hiện 0 FUN
+  pplp_actions: 13 actions, ~1,073 FUN --> Dữ liệu thực
 ```
 
-### Lưu ý
-- Sử dụng hook `useFUNMoneyStats` đã có sẵn, không cần tạo thêm hook mới
-- Tuân thủ quy tắc i18n: tất cả text đều dùng translation keys, không hardcode
-- Khi đang loading, hiển thị skeleton/spinner thay vì số 0
-- Style nhất quán với các card Camly Coin phía trên (gradient, border, shadow)
+### Giải pháp
 
+Sửa hook `useFUNMoneyStats` để truy vấn đúng nguồn dữ liệu: bảng `pplp_actions` kết hợp `pplp_scores`, thay vì `pplp_mint_requests`.
+
+### Thay đổi trạng thái hiển thị
+
+Thay vì 3 trạng thái cũ (minted/signed/pending dựa trên mint_requests), cập nhật thành 3 trạng thái mới phản ánh đúng luồng dữ liệu:
+
+| Trạng thái cũ (sai) | Trạng thái mới (đúng) | Ý nghĩa |
+|---|---|---|
+| Minted (mint_requests.status) | Da nhan (scored + pass) | FUN Money da duoc cham diem va san sang claim |
+| Signed (mint_requests.status) | Da mint (minted) | FUN Money da duoc mint on-chain |
+| Pending (fallback) | Dang cho (pending/scored + fail) | Dang xu ly hoac khong du dieu kien |
+
+### Chi tiet ky thuat
+
+**1. Sua `src/hooks/useFUNMoneyStats.ts`**
+
+Thay doi logic truy van tu `pplp_mint_requests` sang `pplp_actions` ket hop `pplp_scores`:
+
+- Truy van `pplp_actions` voi `select("*, pplp_scores(*)")` loc theo `actor_id`
+- Voi moi action co `pplp_scores`, lay `final_reward`:
+  - Neu `action.status === 'minted'` --> cong vao `totalMinted`
+  - Neu `action.status === 'scored'` va `score.decision === 'pass'` --> cong vao `totalScored` (san sang claim)
+  - Con lai --> cong vao `totalPending`
+- Cap nhat interface `FUNMoneyStats` de phan anh dung ten moi:
+  - `totalMinted` --> so FUN da mint on-chain
+  - `totalScored` --> so FUN san sang claim (chua mint)
+  - `totalPending` --> so FUN dang cho xu ly
+
+**2. Cap nhat `src/components/earn/FUNMoneyStatsBanner.tsx`**
+
+- Doi ten va icon cho 3 stat items:
+  - "San sang claim" (icon CheckCircle, mau xanh la) -- totalScored
+  - "Da mint" (icon Coins, mau xanh duong) -- totalMinted
+  - "Dang cho" (icon Lock, mau vang) -- totalPending
+
+**3. Cap nhat `src/pages/UserProfile.tsx`**
+
+- Cap nhat phan hien thi FUN Money Stats trong sidebar de dung ten moi tuong ung
+
+**4. Cap nhat translations `vi.ts` va `en.ts`**
+
+- Thay `earn.funMoney.minted` tu "Da mint" thanh "San sang claim"
+- Thay `earn.funMoney.signed` tu "Da ky" thanh "Da mint"
+- Giu nguyen `earn.funMoney.pending`
+
+### Ket qua mong doi
+
+- Tat ca user co Light Actions se thay so FUN Money thuc te tren banner
+- Thong ke phan anh dung luong du lieu: scored (san sang claim), minted (da mint on-chain), pending (dang cho)
+- Hien thi nhat quan tren ca 3 trang: Earn, UserProfile, va Mint
