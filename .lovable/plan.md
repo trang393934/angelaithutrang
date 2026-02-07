@@ -1,51 +1,96 @@
 
-# Fix: Web3 Gift Transactions Not Saved to Database
+# Cập nhật thuật ngữ và hiển thị số trong hệ thống Tặng Thưởng
 
-## Root Cause
+## Tổng quan
 
-The database insert in `GiftCoinDialog.tsx` (line 263) fails **silently**. The Supabase JavaScript client does NOT throw errors -- it returns them in the response object `{ data, error }`. The current code wraps the call in `try/catch`, which only catches thrown exceptions. This means any database error (RLS, constraint violation, etc.) is completely invisible.
+Chỉnh sửa toàn bộ giao diện để thống nhất thuật ngữ theo yêu cầu: thay "Tip/Mẹo" bằng "Thưởng/Tặng", đổi "Lời khuyên" thành "Tin nhắn", cập nhật popup chúc mừng, và đảm bảo số lớn hiển thị rõ ràng với dấu phân cách hàng nghìn.
 
-```text
-Current (broken):
-  try {
-    await supabase.from("coin_gifts").insert({...});
-    // error is NEVER checked!
-  } catch (dbErr) {
-    // This NEVER fires because Supabase doesn't throw
-  }
+---
 
-Fixed:
-  const { error } = await supabase.from("coin_gifts").insert({...});
-  if (error) {
-    console.error("DB error:", error);
-    toast.error("...");
-  }
-```
+## 1. Thay đổi thuật ngữ
 
-## Changes
+### Tiếng Việt
+- "Tip" / "Mẹo" --> "Thưởng" hoặc "Tặng" (tùy ngữ cảnh)
+- "Lời khuyên đi kèm" --> "Tin nhắn"
+- "Popup Ăn Mừng" --> "Chúc mừng bạn đã chuyển thành công!"
 
-### File: `src/components/gifts/GiftCoinDialog.tsx`
+### Tiếng Anh
+- "Tip" --> "Reward" hoặc "Donate" (tùy ngữ cảnh)
+- "Accompanying advice" --> "Message"
 
-1. **Fix the silent error** -- Destructure `{ error }` from the Supabase insert and handle it properly:
-   - Log the full error for debugging
-   - Show a toast warning to the user ("Transaction succeeded on-chain but failed to record in history")
-   - Still show the TX hash in the success UI so the user can verify on BSCScan
+---
 
-2. **Add a retry mechanism** -- If the first insert fails, wait 2 seconds and retry once. The blockchain transaction already succeeded, so we should try harder to record it.
+## 2. Popup chúc mừng - WithdrawalCelebration.tsx
 
-3. **Add TX hash display after success** -- After a successful Web3 transfer, show the TX hash with a BSCScan link directly in the dialog (before it auto-closes) so users have immediate confirmation even if the DB write fails.
+Thay đổi tiêu đề và nội dung:
+- Heading: "Chuc mung!" --> "Chuc mung ban da chuyen thanh cong!"
+- Duy trì confetti + hiệu ứng coin rơi hiện tại
+- Giữ popup cho đến khi user bấm đóng (hiện đang auto-close sau 8 giây --> bỏ auto-close)
 
-### File: `src/hooks/useWeb3Transfer.ts`
+---
 
-4. **Verify `receipt.hash` format** -- Add a console log to confirm the transaction hash is being returned correctly from ethers v6. The `receipt.hash` should be a `0x...` prefixed hex string.
+## 3. Hiển thị số lớn rõ ràng
 
-### File: `src/components/community/Web3TransactionHistory.tsx`
+Đảm bảo tất cả các con số sử dụng `toLocaleString()` hoặc `Intl.NumberFormat` để hiển thị dấu phân cách hàng nghìn:
+- VD: 1000000 --> 1.000.000 (tiếng Việt) hoặc 1,000,000 (tiếng Anh)
 
-5. **No changes needed** -- The component's query logic is correct (filters by `tx_hash IS NOT NULL`). Once the DB insert is fixed, transactions will appear automatically via the existing Realtime subscription.
+Các vị trí cần kiểm tra và cập nhật:
+- `GiftCoinDialog.tsx`: balance, amount hiển thị
+- `Web3TransactionHistory.tsx`: totalAmount, tx amount
+- `GiftTransactionHistory.tsx`: totalGiftAmount, totalDonationAmount
+- `WithdrawalCelebration.tsx`: (đã dùng `Intl.NumberFormat('vi-VN')` -- OK)
 
-## Technical Details
+---
 
-- The `coin_gifts` table schema already supports `tx_hash` (text, nullable) and `gift_type` (text, default 'internal')
-- RLS policy allows INSERT where `auth.uid() = sender_id` -- this should match since we set `sender_id: user!.id`
-- The fix is primarily about proper error handling, not schema or policy changes
-- No database migration needed
+## Chi tiết kỹ thuật
+
+### Files cần sửa:
+
+**1. `src/components/WithdrawalCelebration.tsx`**
+- Dong 202-207: Đổi heading "Chuc mung!" thanh "Chuc mung ban da chuyen thanh cong!"
+- Dong 77-90: Bỏ auto-close timer 8 giây, để popup giữ nguyên cho đến khi user bấm đóng
+
+**2. `src/components/gifts/GiftCoinDialog.tsx`**
+- Dong 673-675: Đổi "Giao dich thanh cong tren blockchain!" thành "Chuc mung ban da chuyen thanh cong!"
+- Dong 687: Đổi "Da sao chep TX Hash!" cho phù hợp
+
+**3. `src/components/community/GiftTransactionHistory.tsx`**
+- Dong 284: Đổi "Lich Su Giao Dich Qua" --> "Lich Su Thuong va Tang"
+- Dong 307: Đổi "Tang qua" --> "Thuong"
+- Dong 314: Giữ "Donate du an" hoặc đổi thành "Tang du an"
+- Dong 327: "Chua co giao dich qua nao" --> "Chua co giao dich thuong/tang nao"
+- Dong 361: "Lich Su Giao Dich Qua Tang" --> "Lich Su Thuong & Tang"
+- Dong 388: Tab "Tang" --> "Thuong"
+
+**4. `src/components/community/Web3TransactionHistory.tsx`**
+- Dong 97: "Tang Qua" --> "Thuong" cho gift type
+- Dong 291: "Giao Dich Web3 On-Chain" --> giữ nguyên (đã đúng)
+- Dong 334-336: "Chua co giao dich Web3 nao" + description cập nhật thuật ngữ
+
+**5. `src/translations/vi.ts`**
+- "gift.title": "Tang Camly Coin" --> "Thuong Camly Coin"
+- "gift.message": "Loi nhan (tuy chon)" --> "Tin nhan (tuy chon)" 
+- "gift.messagePlaceholder": cập nhật
+- "gift.confirm": "Xac nhan tang" --> "Xac nhan thuong"
+- "gift.honorTitle": "Bang Vinh Danh Tang Qua" --> "Bang Vinh Danh Thuong & Tang"
+- "gift.topGivers": "Top Nguoi Tang" --> "Top Nguoi Thuong"
+- Các key khác liên quan
+
+**6. `src/translations/en.ts`**
+- "gift.title": "Gift Camly Coin" --> "Reward Camly Coin"
+- "gift.confirm": "Confirm Gift" --> "Confirm Reward"
+- "gift.message": "Message (optional)" --> giữ nguyên (đã đúng)
+- "gift.honorTitle": "Gift Honor Board" --> "Reward & Donate Honor Board"
+- "gift.topGivers": "Top Givers" --> "Top Rewards"
+- Các key donate giữ nguyên "Donate" (đã đúng)
+
+**7. `src/components/EarlyAdopterRewardPopup.tsx`**
+- Không cần thay đổi (đã dùng "Reward" đúng cách)
+
+### Thứ tự thực hiện:
+1. Cập nhật translation files (vi.ts, en.ts) -- thay đổi thuật ngữ
+2. Cập nhật WithdrawalCelebration -- heading + bỏ auto-close
+3. Cập nhật GiftCoinDialog -- thông báo thành công
+4. Cập nhật GiftTransactionHistory -- header, tabs, labels
+5. Cập nhật Web3TransactionHistory -- labels
+6. Kiểm tra tất cả số lớn đều có dấu phân cách
