@@ -258,24 +258,41 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
       fetchCamlyBalance();
 
       // Save Web3 gift to database for transaction history
-      try {
-        const receiverUserId = cryptoSelectedUser?.user_id || null;
-        await supabase.from("coin_gifts").insert({
-          sender_id: user!.id,
-          receiver_id: receiverUserId || user!.id, // fallback if no profile selected
-          amount: numAmount,
-          message: `[Web3] CAMLY transfer to ${targetAddress.slice(0, 6)}...${targetAddress.slice(-4)}`,
-          tx_hash: result.txHash || null,
-          gift_type: "web3",
-        });
-      } catch (dbErr) {
-        console.error("Failed to record Web3 gift in DB:", dbErr);
+      const receiverUserId = cryptoSelectedUser?.user_id || null;
+      const giftRecord = {
+        sender_id: user!.id,
+        receiver_id: receiverUserId || user!.id,
+        amount: numAmount,
+        message: `[Web3] CAMLY transfer to ${targetAddress.slice(0, 6)}...${targetAddress.slice(-4)}`,
+        tx_hash: result.txHash || null,
+        gift_type: "web3",
+      };
+
+      console.log("[Web3 Gift] Attempting DB insert:", JSON.stringify(giftRecord));
+
+      const { error: dbError } = await supabase.from("coin_gifts").insert(giftRecord);
+
+      if (dbError) {
+        console.error("[Web3 Gift] DB insert failed:", dbError.message, dbError.details, dbError.hint);
+        // Retry once after 2 seconds — the on-chain TX already succeeded
+        setTimeout(async () => {
+          console.log("[Web3 Gift] Retrying DB insert...");
+          const { error: retryError } = await supabase.from("coin_gifts").insert(giftRecord);
+          if (retryError) {
+            console.error("[Web3 Gift] Retry also failed:", retryError.message);
+            toast.warning("Giao dịch on-chain thành công nhưng chưa lưu được vào lịch sử. TX: " + (result.txHash || "N/A"));
+          } else {
+            console.log("[Web3 Gift] Retry succeeded!");
+          }
+        }, 2000);
+      } else {
+        console.log("[Web3 Gift] DB insert succeeded for TX:", result.txHash);
       }
 
       setTimeout(() => {
         setShowConfetti(false);
         onOpenChange(false);
-      }, 3000);
+      }, 4000);
     } else {
       toast.error(result.message);
     }
@@ -652,15 +669,37 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
 
                 {/* Transaction Link */}
                 {lastTxHash && (
-                  <a
-                    href={`https://bscscan.com/tx/${lastTxHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 text-sm text-orange-600 hover:underline"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    {t("crypto.viewOnBscScan")}
-                  </a>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-green-700 font-medium text-sm">
+                      <Sparkles className="w-4 h-4" />
+                      Giao dịch thành công trên blockchain!
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs bg-white px-2 py-1 rounded border flex-1 truncate">
+                        {lastTxHash}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 shrink-0"
+                        onClick={() => {
+                          navigator.clipboard.writeText(lastTxHash);
+                          toast.success("Đã sao chép TX Hash!");
+                        }}
+                      >
+                        📋
+                      </Button>
+                    </div>
+                    <a
+                      href={`https://bscscan.com/tx/${lastTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 text-sm text-orange-600 hover:underline"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      {t("crypto.viewOnBscScan")}
+                    </a>
+                  </div>
                 )}
               </>
             )}
