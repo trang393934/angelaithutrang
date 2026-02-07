@@ -2,6 +2,15 @@ import { useState, useCallback } from "react";
 import { ethers } from "ethers";
 import { useWeb3Wallet } from "./useWeb3Wallet";
 
+// Detect if running inside an iframe (e.g. Lovable preview)
+const isInIframe = (): boolean => {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+};
+
 // CAMLY Token contract on BSC Mainnet
 const CAMLY_TOKEN_ADDRESS = "0x0910320181889fefde0bb1ca63962b0a8882e413";
 const CAMLY_DECIMALS = 3; // CAMLY uses 3 decimals
@@ -94,9 +103,19 @@ export function useWeb3Transfer() {
 
   // Safe wrapper for wallet connect that catches MetaMask internal errors
   const safeConnect = useCallback(async (): Promise<boolean> => {
+    // Never attempt wallet connection inside iframes
+    if (isInIframe()) {
+      console.warn("[Web3Transfer] Blocked connect inside iframe");
+      return false;
+    }
+
     try {
       await connect();
-      return true;
+      // Verify connection actually succeeded by checking ethereum accounts
+      const ethereum = (window as any).ethereum;
+      if (!ethereum) return false;
+      const accounts = await ethereum.request({ method: "eth_accounts" }).catch(() => []);
+      return accounts.length > 0;
     } catch (error: any) {
       console.warn("[Web3Transfer] Connect failed:", error?.message || error);
       return false;
@@ -108,8 +127,25 @@ export function useWeb3Transfer() {
     toAddress: string,
     amount: number
   ): Promise<TransferResult> => {
+    // Block transfers inside iframes — MetaMask can't open popups
+    if (isInIframe()) {
+      return { success: false, message: "Không thể chuyển token trong môi trường preview. Vui lòng mở ứng dụng trong tab mới." };
+    }
+
     if (!hasWallet) {
       return { success: false, message: "Vui lòng cài đặt MetaMask hoặc ví Web3 tương thích" };
+    }
+
+    // Pre-flight: verify MetaMask is responsive
+    try {
+      const ethereum = (window as any).ethereum;
+      if (!ethereum || typeof ethereum.request !== "function") {
+        return { success: false, message: "MetaMask không sẵn sàng. Vui lòng mở lại extension." };
+      }
+      await ethereum.request({ method: "eth_accounts" });
+    } catch (healthErr: any) {
+      console.warn("[Web3Transfer] MetaMask health check failed:", healthErr?.message);
+      return { success: false, message: "MetaMask không phản hồi. Vui lòng khởi động lại trình duyệt hoặc mở lại MetaMask." };
     }
 
     if (!isConnected) {
@@ -117,7 +153,7 @@ export function useWeb3Transfer() {
       if (!connected) {
         return { success: false, message: "Không thể kết nối ví. Vui lòng mở MetaMask và thử lại." };
       }
-      return { success: false, message: "Vui lòng kết nối ví trước" };
+      return { success: false, message: "Đã kết nối ví. Vui lòng bấm lại nút chuyển." };
     }
 
     // Switch to BSC Mainnet for CAMLY transfers
