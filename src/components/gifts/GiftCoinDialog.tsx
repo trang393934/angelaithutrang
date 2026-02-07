@@ -219,17 +219,22 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
       return;
     }
 
-    const result = await sendGift(selectedUser.user_id, numAmount, message);
-    
-    if (result.success) {
-      setShowConfetti(true);
-      toast.success(result.message);
-      setTimeout(() => {
-        setShowConfetti(false);
-        onOpenChange(false);
-      }, 2000);
-    } else {
-      toast.error(result.message);
+    try {
+      const result = await sendGift(selectedUser.user_id, numAmount, message);
+      
+      if (result.success) {
+        setShowConfetti(true);
+        toast.success(result.message);
+        setTimeout(() => {
+          setShowConfetti(false);
+          onOpenChange(false);
+        }, 2000);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error: any) {
+      console.error("[GiftCoin] Send gift error:", error);
+      toast.error("Lỗi gửi thưởng. Vui lòng thử lại.");
     }
   };
 
