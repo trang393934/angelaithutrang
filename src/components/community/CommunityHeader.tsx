@@ -17,7 +17,7 @@ import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { StoryViewer } from "./StoryViewer";
 import { CreateStoryModal } from "./CreateStoryModal";
 import { GlobalSearch } from "@/components/GlobalSearch";
-import { NotificationCenter } from "@/components/NotificationCenter";
+import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
@@ -170,7 +170,7 @@ export function CommunityHeader() {
 
               {/* Right: Notifications & Profile */}
               <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-end">
-                <NotificationCenter variant="community" />
+                <NotificationDropdown variant="community" />
                 
                 {user ? (
                   <DropdownMenu>

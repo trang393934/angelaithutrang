@@ -51,6 +51,7 @@ import ActivityHistory from "./pages/ActivityHistory";
 import Mint from "./pages/Mint";
 import Receipt from "./pages/Receipt";
 import AdminTipReports from "./pages/AdminTipReports";
+import Notifications from "./pages/Notifications";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
@@ -137,6 +138,7 @@ const App = () => (
               <Route path="/admin/mint-stats" element={<AdminMintStats />} />
               <Route path="/admin/tip-reports" element={<AdminTipReports />} />
               <Route path="/receipt/:receiptId" element={<Receipt />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/community-questions" element={<CommunityQuestions />} />
               <Route path="/community" element={<Community />} />
               <Route path="/user/:userId" element={<UserProfile />} />

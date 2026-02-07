@@ -775,6 +775,52 @@ const translations: Record<string, string> = {
   // Gate translations
   "loginRequired": "يا حبيبي، أنشئ حساباً حتى أتمكن من السير معك!",
   "loginRequiredDesc": "أنشئ حساباً حتى أتمكن من إرسال الحب إليك ومرافقتك في رحلة النور هذه.",
+
+  // Notifications
+  "notifications.title": "الإشعارات",
+  "notifications.all": "الكل",
+  "notifications.unread": "غير مقروءة",
+  "notifications.markAllRead": "تعليم الكل كمقروء",
+  "notifications.empty": "لا توجد إشعارات جديدة",
+  "notifications.allRead": "لقد قرأت جميع الإشعارات",
+  "notifications.noUnread": "لا توجد إشعارات غير مقروءة",
+  "notifications.justNow": "الآن",
+  "notifications.minutesAgo": "دقائق",
+  "notifications.hoursAgo": "ساعات",
+  "notifications.daysAgo": "أيام",
+  "notifications.giftReceived": "أرسل لك {amount} Camly Coin",
+  "notifications.giftSent": "أرسلت {amount} Camly Coin إلى {name}",
+  "notifications.new": "جديد",
+  "notifications.today": "اليوم",
+  "notifications.yesterday": "أمس",
+  "notifications.thisWeek": "هذا الأسبوع",
+  "notifications.earlier": "سابقاً",
+  "notifications.settings": "إعدادات الإشعارات",
+  "notifications.viewAllNotifications": "عرض جميع الإشعارات",
+  "notifications.friendRequests": "طلبات الصداقة",
+  "notifications.confirm": "تأكيد",
+  "notifications.reject": "حذف",
+  "notifications.acceptedRequest": "تم قبول طلب الصداقة!",
+  "notifications.rejectedRequest": "تم حذف طلب الصداقة",
+  "notifications.requestNotFound": "لم يتم العثور على طلب الصداقة",
+  "notifications.errorOccurred": "حدث خطأ",
+  "notifications.type.liked": "أعجب بمنشورك",
+  "notifications.type.loved": "أحب منشورك",
+  "notifications.type.cared": "اهتم بمنشورك",
+  "notifications.type.laughed": "ضحك على منشورك",
+  "notifications.type.wowed": "أُدهش بمنشورك",
+  "notifications.type.saddened": "حزن من منشورك",
+  "notifications.type.angered": "غضب من منشورك",
+  "notifications.type.prayed": "أرسل امتناناً لمنشورك",
+  "notifications.type.commented": "علّق على منشورك",
+  "notifications.type.commentLiked": "أعجب بتعليقك",
+  "notifications.type.commentReplied": "رد على تعليقك",
+  "notifications.type.shared": "شارك منشورك",
+  "notifications.type.friendRequest": "أرسل لك طلب صداقة",
+  "notifications.type.friendAccepted": "قبل طلب صداقتك",
+  "notifications.type.rewardApproved": "تمت الموافقة على مكافأتك 🎉",
+  "notifications.type.rewardRejected": "طلب المكافأة يحتاج مراجعة",
+  "notifications.type.interacted": "تفاعل معك",
 };
 
 export default translations;
