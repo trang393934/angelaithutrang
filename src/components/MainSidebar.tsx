@@ -92,25 +92,25 @@ export function MainSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+
+              {/* Gift Button - right below the last nav item (Tích Lũy Ánh Sáng) */}
+              <SidebarMenuItem>
+                <AuthActionGuard>
+                  <button
+                    onClick={() => setShowGiftDialog(true)}
+                    className={`flex items-center gap-2 w-full rounded-lg py-2.5 px-3 transition-all duration-200
+                      bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-white font-medium shadow-md hover:shadow-lg
+                      ${isCollapsed ? 'justify-center px-2' : ''}`}
+                  >
+                    <Gift className="w-5 h-5 shrink-0" />
+                    {!isCollapsed && <span>🎁 Tặng thưởng</span>}
+                  </button>
+                </AuthActionGuard>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      {/* Gift Button */}
-      <div className={`px-3 py-2 ${isCollapsed ? 'flex justify-center' : ''}`}>
-        <AuthActionGuard>
-          <button
-            onClick={() => setShowGiftDialog(true)}
-            className={`flex items-center gap-2 w-full rounded-lg py-2.5 px-3 transition-all duration-200
-              bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-white font-medium shadow-md hover:shadow-lg
-              ${isCollapsed ? 'justify-center px-2' : ''}`}
-          >
-            <Gift className="w-5 h-5 shrink-0" />
-            {!isCollapsed && <span>🎁 Tặng thưởng</span>}
-          </button>
-        </AuthActionGuard>
-      </div>
 
       {/* Toggle Button at bottom */}
       <div className={`p-3 border-t border-amber-200/30 ${isCollapsed ? 'flex justify-center' : ''}`}>
