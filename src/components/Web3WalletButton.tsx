@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Wallet, ChevronDown, RefreshCw, ExternalLink, Copy, LogOut } from "lucide-react";
 import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +18,7 @@ interface Web3WalletButtonProps {
 }
 
 export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => {
+  const { user } = useAuth();
   const {
     isConnected,
     isConnecting,
@@ -32,6 +35,42 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
   } = useWeb3Wallet();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Auto-save wallet address to database when connected
+  useEffect(() => {
+    if (!isConnected || !address || !user?.id) return;
+
+    const saveWalletAddress = async () => {
+      try {
+        const { data: existing } = await supabase
+          .from("user_wallet_addresses")
+          .select("id, wallet_address")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (existing) {
+          // Only update if address changed
+          if (existing.wallet_address !== address) {
+            await supabase
+              .from("user_wallet_addresses")
+              .update({ wallet_address: address })
+              .eq("user_id", user.id);
+            console.log("[Web3] Auto-saved updated wallet address to DB");
+          }
+        } else {
+          // Insert new record
+          await supabase
+            .from("user_wallet_addresses")
+            .insert({ user_id: user.id, wallet_address: address });
+          console.log("[Web3] Auto-saved new wallet address to DB");
+        }
+      } catch (err) {
+        console.warn("[Web3] Failed to auto-save wallet address:", err);
+      }
+    };
+
+    saveWalletAddress();
+  }, [isConnected, address, user?.id]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
