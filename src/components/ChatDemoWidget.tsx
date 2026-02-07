@@ -82,33 +82,11 @@ export const ChatDemoWidget = () => {
         throw new Error(response.error.message);
       }
 
-      // Handle streaming response or direct response
+      // Handle standard JSON response
       let aiResponse = "";
       
-      if (response.data) {
-        // If it's a stream, collect the content
-        if (typeof response.data === "string") {
-          // Parse SSE stream
-          const lines = response.data.split("\n");
-          for (const line of lines) {
-            if (line.startsWith("data: ") && line !== "data: [DONE]") {
-              try {
-                const parsed = JSON.parse(line.slice(6));
-                const content = parsed.choices?.[0]?.delta?.content || parsed.choices?.[0]?.message?.content;
-                if (content) {
-                  aiResponse += content;
-                }
-              } catch {
-                // Skip invalid JSON
-              }
-            }
-          }
-        } else if (response.data.choices) {
-          aiResponse = response.data.choices[0]?.message?.content || "";
-        } else {
-          // Fallback: try to extract any text
-          aiResponse = JSON.stringify(response.data);
-        }
+      if (response.data?.choices?.[0]?.message?.content) {
+        aiResponse = response.data.choices[0].message.content;
       }
 
       // Fallback response if AI fails
