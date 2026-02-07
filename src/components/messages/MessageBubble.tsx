@@ -8,6 +8,7 @@ import { ReactionPicker } from "./EmojiPicker";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import angelAvatar from "@/assets/angel-avatar.png";
+import { TipMessageCard } from "./TipMessageCard";
 
 interface MessageBubbleProps {
   message: {
@@ -22,6 +23,8 @@ interface MessageBubbleProps {
     is_deleted?: boolean;
     sender_display_name?: string;
     sender_avatar_url?: string | null;
+    message_type?: string | null;
+    tip_gift_id?: string | null;
   };
   isOwn: boolean;
   onReaction?: (messageId: string, emoji: string) => void;
@@ -183,16 +186,24 @@ export function MessageBubble({
 
             {/* Text content */}
             {message.content && (
-              <div
-                className={cn(
-                  "px-5 py-4 rounded-2xl transition-all",
-                  isOwn
-                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-br-sm"
-                    : "bg-muted rounded-bl-sm"
-                )}
-              >
-                <p className="text-[17px] sm:text-xl whitespace-pre-wrap break-words leading-relaxed message-content">{message.content}</p>
-              </div>
+              message.message_type === "tip" ? (
+                <TipMessageCard
+                  content={message.content}
+                  tipGiftId={message.tip_gift_id}
+                  receiptPublicId={null}
+                />
+              ) : (
+                <div
+                  className={cn(
+                    "px-5 py-4 rounded-2xl transition-all",
+                    isOwn
+                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-br-sm"
+                      : "bg-muted rounded-bl-sm"
+                  )}
+                >
+                  <p className="text-[17px] sm:text-xl whitespace-pre-wrap break-words leading-relaxed message-content">{message.content}</p>
+                </div>
+              )
             )}
 
             {/* Reactions display */}

@@ -49,6 +49,8 @@ import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
 import ActivityHistory from "./pages/ActivityHistory";
 import Mint from "./pages/Mint";
+import Receipt from "./pages/Receipt";
+import AdminTipReports from "./pages/AdminTipReports";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
@@ -133,6 +135,8 @@ const App = () => (
               <Route path="/admin/bounty" element={<AdminBounty />} />
               <Route path="/admin/project-fund" element={<AdminProjectFund />} />
               <Route path="/admin/mint-stats" element={<AdminMintStats />} />
+              <Route path="/admin/tip-reports" element={<AdminTipReports />} />
+              <Route path="/receipt/:receiptId" element={<Receipt />} />
               <Route path="/community-questions" element={<CommunityQuestions />} />
               <Route path="/community" element={<Community />} />
               <Route path="/user/:userId" element={<UserProfile />} />

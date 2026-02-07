@@ -1,7 +1,8 @@
 import { useLocation } from "react-router-dom";
+import { useState } from "react";
 import { 
   Home, Info, BookOpen, MessageCircle, Users, 
-  PenLine, ArrowRightLeft, Star, PanelLeft
+  PenLine, ArrowRightLeft, Star, PanelLeft, Gift
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { NavLink } from "@/components/NavLink";
@@ -18,14 +19,17 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import angelAvatar from "@/assets/angel-avatar.png";
-
-
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthActionGuard } from "@/components/AuthActionGuard";
 
 export function MainSidebar() {
   const { t } = useLanguage();
   const location = useLocation();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const { user } = useAuth();
+  const [showGiftDialog, setShowGiftDialog] = useState(false);
 
   const navItems = [
     { label: t("nav.home"), href: "/", icon: Home },
@@ -93,10 +97,32 @@ export function MainSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
+      {/* Gift Button */}
+      <div className={`px-3 py-2 ${isCollapsed ? 'flex justify-center' : ''}`}>
+        <AuthActionGuard>
+          <button
+            onClick={() => setShowGiftDialog(true)}
+            className={`flex items-center gap-2 w-full rounded-lg py-2.5 px-3 transition-all duration-200
+              bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-white font-medium shadow-md hover:shadow-lg
+              ${isCollapsed ? 'justify-center px-2' : ''}`}
+          >
+            <Gift className="w-5 h-5 shrink-0" />
+            {!isCollapsed && <span>🎁 Tặng thưởng</span>}
+          </button>
+        </AuthActionGuard>
+      </div>
+
       {/* Toggle Button at bottom */}
       <div className={`p-3 border-t border-amber-200/30 ${isCollapsed ? 'flex justify-center' : ''}`}>
         <SidebarTrigger className="w-full justify-center hover:bg-amber-100/70" />
       </div>
+
+      {/* Gift Dialog */}
+      <GiftCoinDialog
+        open={showGiftDialog}
+        onOpenChange={setShowGiftDialog}
+        contextType="global"
+      />
     </Sidebar>
   );
 }
