@@ -310,7 +310,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser }: GiftCoin
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-amber-600">
             <Gift className="w-5 h-5" />
