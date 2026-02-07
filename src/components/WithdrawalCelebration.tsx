@@ -50,7 +50,7 @@ export const WithdrawalCelebration = () => {
   const { pendingCelebration, audioUrl, markAsCelebrated } = useWithdrawalNotify();
   const [isOpen, setIsOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const autoCloseRef = useRef<NodeJS.Timeout | null>(null);
+  
 
   // Open dialog when there's a pending celebration
   useEffect(() => {
@@ -74,26 +74,10 @@ export const WithdrawalCelebration = () => {
     }
   }, [isOpen, audioUrl]);
 
-  // Auto-close after 8 seconds
-  useEffect(() => {
-    if (isOpen) {
-      autoCloseRef.current = setTimeout(() => {
-        handleClose();
-      }, 8000);
-
-      return () => {
-        if (autoCloseRef.current) {
-          clearTimeout(autoCloseRef.current);
-        }
-      };
-    }
-  }, [isOpen]);
+  // No auto-close — popup stays until user manually closes
 
   const handleClose = () => {
     setIsOpen(false);
-    if (autoCloseRef.current) {
-      clearTimeout(autoCloseRef.current);
-    }
     markAsCelebrated();
   };
 
@@ -200,7 +184,7 @@ export const WithdrawalCelebration = () => {
                   transition={{ delay: 0.2 }}
                 >
                   <h2 className="text-2xl font-bold text-white flex items-center gap-2 justify-center">
-                    🎉 Chúc mừng! 🎉
+                    🎉 Chúc mừng bạn đã chuyển thành công! 🎉
                   </h2>
                   <p className="text-white/90 mt-1">
                     Camly Coin đã về ví của bạn!
