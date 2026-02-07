@@ -152,6 +152,12 @@ export function useWeb3Transfer() {
       // Wait for confirmation
       const receipt = await tx.wait();
 
+      console.log("[Web3Transfer] TX receipt:", JSON.stringify({
+        hash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        status: receipt.status,
+      }));
+
       setIsTransferring(false);
 
       return {
