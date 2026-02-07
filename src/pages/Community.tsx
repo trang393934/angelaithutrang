@@ -157,18 +157,22 @@ const Community = () => {
 
               {/* Gift & Donate Action Buttons */}
               {user && (
-                <div className="flex gap-2 sm:gap-3">
+                <div className="flex gap-2 sm:gap-3 items-center">
                   <motion.div 
-                    className="flex-1 min-w-0"
+                    className="flex-[2] min-w-0"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Button
                       onClick={() => setShowGiftDialog(true)}
-                      className="w-full bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-white font-semibold shadow-lg px-2 sm:px-4 text-xs sm:text-sm"
+                      className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 text-white font-semibold px-2 sm:px-4 text-xs sm:text-sm relative overflow-hidden"
+                      style={{
+                        boxShadow: '0 0 12px 2px hsla(43, 96%, 56%, 0.4), 0 4px 15px -3px hsla(43, 96%, 56%, 0.3), inset 0 1px 0 hsla(0, 0%, 100%, 0.3)',
+                      }}
                     >
-                      <Gift className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
-                      <span className="truncate">{t("gift.title")}</span>
+                      <span className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-white/25 pointer-events-none rounded-md" />
+                      <Gift className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0 relative z-10" />
+                      <span className="truncate relative z-10">{t("gift.title")}</span>
                     </Button>
                   </motion.div>
                   <motion.div 
@@ -178,7 +182,7 @@ const Community = () => {
                   >
                     <Button
                       onClick={() => setShowDonateDialog(true)}
-                      className="w-full bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500 text-white font-semibold shadow-lg px-2 sm:px-4 text-xs sm:text-sm"
+                      className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 text-white font-semibold shadow-lg px-2 sm:px-4 text-xs sm:text-sm"
                     >
                       <Heart className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
                       <span className="truncate">{t("donate.title")}</span>
