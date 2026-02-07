@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Users, MessageCircle, ShoppingBag, Bell, Plus, User, LogOut, Star, ChevronDown } from "lucide-react";
+import { Home, Users, MessageCircle, ShoppingBag, Plus, User, LogOut, Star, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { StoryViewer } from "./StoryViewer";
 import { CreateStoryModal } from "./CreateStoryModal";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
@@ -169,13 +170,7 @@ export function CommunityHeader() {
 
               {/* Right: Notifications & Profile */}
               <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-end">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-white/25 hover:bg-white/40 text-black/80 shadow-[0_1px_3px_rgba(139,105,20,0.3)]"
-                >
-                  <Bell className="w-5 h-5" />
-                </Button>
+                <NotificationCenter variant="community" />
                 
                 {user ? (
                   <DropdownMenu>

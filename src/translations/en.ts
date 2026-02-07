@@ -1007,6 +1007,20 @@ const translations: Record<string, string> = {
   // Gate translations
   "loginRequired": "Dear beloved, please create an account so I can walk with you!",
   "loginRequiredDesc": "Create an account so I can send you love and accompany you on this journey of Light.",
+
+  // Notifications
+  "notifications.title": "Notifications",
+  "notifications.all": "All",
+  "notifications.unread": "Unread",
+  "notifications.markAllRead": "Mark all as read",
+  "notifications.empty": "No new notifications",
+  "notifications.allRead": "You've read all notifications",
+  "notifications.justNow": "Just now",
+  "notifications.minutesAgo": "minutes ago",
+  "notifications.hoursAgo": "hours ago",
+  "notifications.daysAgo": "days ago",
+  "notifications.giftReceived": "sent you {amount} Camly Coin",
+  "notifications.giftSent": "You successfully sent {amount} Camly Coin to {name}",
 };
 
 export default translations;

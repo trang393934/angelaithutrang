@@ -1035,6 +1035,20 @@ const translations: Record<string, string> = {
   "visionBoard.template.home.goal3": "Trồng cây xanh trong nhà",
   "visionBoard.template.home.goal4": "Tiết kiệm mua nhà/căn hộ",
   "visionBoard.template.home.goal5": "Trang trí theo phong cách yêu thích",
+
+  // Notifications
+  "notifications.title": "Thông báo",
+  "notifications.all": "Tất cả",
+  "notifications.unread": "Chưa đọc",
+  "notifications.markAllRead": "Đánh dấu tất cả đã đọc",
+  "notifications.empty": "Không có thông báo mới",
+  "notifications.allRead": "Bạn đã đọc tất cả thông báo",
+  "notifications.justNow": "Vừa xong",
+  "notifications.minutesAgo": "phút trước",
+  "notifications.hoursAgo": "giờ trước",
+  "notifications.daysAgo": "ngày trước",
+  "notifications.giftReceived": "đã tặng bạn {amount} Camly Coin",
+  "notifications.giftSent": "Bạn đã tặng thành công {amount} Camly Coin cho {name}",
 };
 
 export default translations;
