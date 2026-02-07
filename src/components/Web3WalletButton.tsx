@@ -61,7 +61,36 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
     return token.logo;
   };
 
+  // Detect iframe environment
+  const isInIframe = (() => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  })();
+
   const handleConnect = async () => {
+    // Show guidance when running inside iframe (e.g. Lovable preview)
+    if (isInIframe) {
+      toast.info(
+        <div className="space-y-2">
+          <p className="font-medium">Không thể kết nối ví trong preview</p>
+          <p className="text-sm text-muted-foreground">
+            Vui lòng mở ứng dụng trong tab mới để kết nối MetaMask.
+          </p>
+          <button
+            onClick={() => window.open("https://angelaithutrang.lovable.app", "_blank")}
+            className="text-xs underline text-primary hover:text-primary/80"
+          >
+            Mở trong tab mới →
+          </button>
+        </div>,
+        { duration: 8000 }
+      );
+      return;
+    }
+
     if (!hasWallet) {
       toast.info(
         <div className="space-y-2">

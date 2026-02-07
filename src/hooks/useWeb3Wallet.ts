@@ -1,5 +1,14 @@
- import { useState, useEffect, useCallback, useRef } from "react";
- import { ethers } from "ethers";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { ethers } from "ethers";
+
+// Detect if running inside an iframe (e.g. Lovable preview)
+const isInIframe = (): boolean => {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true; // If access is blocked, assume iframe
+  }
+};
  
  // BSC Testnet RPC endpoints (fallback list)
  const BSC_TESTNET_RPC_LIST = [
@@ -286,13 +295,22 @@
      [hasWallet]
    );
  
-   // Connect wallet
-   const connect = useCallback(async () => {
-     if (!hasWallet) {
-       setState((prev) => ({ ...prev, error: "Vui lòng cài đặt MetaMask hoặc ví Web3 tương thích" }));
-       window.open("https://metamask.io/download/", "_blank");
-       return;
-     }
+    // Connect wallet
+    const connect = useCallback(async () => {
+      // Block wallet connection inside iframes (preview environments)
+      if (isInIframe()) {
+        setState((prev) => ({
+          ...prev,
+          error: "Vui lòng mở trang web trong tab mới để kết nối ví.",
+        }));
+        return;
+      }
+
+      if (!hasWallet) {
+        setState((prev) => ({ ...prev, error: "Vui lòng cài đặt MetaMask hoặc ví Web3 tương thích" }));
+        window.open("https://metamask.io/download/", "_blank");
+        return;
+      }
  
      // Prevent multiple connection attempts
      if (state.isConnecting || connectingRef.current) {
@@ -501,11 +519,17 @@
      };
    }, [hasWallet, state.isConnected, state.address, disconnect, fetchBalances, refreshBalances]);
  
-    // Auto-reconnect on page load
-    useEffect(() => {
-      const wasConnected = localStorage.getItem("wallet_connected") === "true";
-      if (wasConnected && hasWallet && !state.isConnecting && !state.isConnected) {
-        const silentReconnect = async () => {
+     // Auto-reconnect on page load
+     useEffect(() => {
+       // Skip auto-reconnect entirely when inside an iframe
+       if (isInIframe()) {
+         localStorage.removeItem("wallet_connected");
+         return;
+       }
+
+       const wasConnected = localStorage.getItem("wallet_connected") === "true";
+       if (wasConnected && hasWallet && !state.isConnecting && !state.isConnected) {
+         const silentReconnect = async () => {
           try {
             const ethereum = (window as any).ethereum;
 
