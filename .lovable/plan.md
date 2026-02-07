@@ -1,50 +1,63 @@
 
-## Nâng cấp tất cả nút thành phong cách Vàng Golden 3D sang trọng
+## Fix: Wallet Connection in Preview/Iframe Environment
 
-Thay đổi toàn bộ hệ thống nút bấm trên Angel AI sang phong cách vàng metallic 3D, gradient nổi bật, hiệu ứng ánh sáng lướt qua, và màu chữ tương phản rõ ràng -- áp dụng trên tất cả các trang.
+### Root Cause Analysis
 
-### Thay đổi gì
+The error originates from MetaMask's own `inpage.js` extension script -- NOT from our application code. The global error handler in `main.tsx` successfully catches it (confirmed by console logs showing `[Angel AI] Wallet extension rejection caught`), but two issues persist:
 
-**1. Cập nhật Button component (`src/components/ui/button.tsx`)**
-- Variant `default`: Gradient vàng metallic 3D (từ vàng đậm sang vàng sáng), chữ trắng, hiệu ứng nổi 3D với box-shadow
-- Variant `destructive`: Giữ màu đỏ nhưng thêm hiệu ứng 3D và gradient
-- Variant `outline`: Viền vàng gradient, chữ vàng đậm, hover chuyển sang nền vàng gradient
-- Variant `secondary`: Gradient vàng nhạt sang trọng, chữ vàng đậm
-- Variant `ghost`: Hover hiển thị nền vàng nhạt
-- Variant `link`: Chữ vàng đậm
+1. **Auto-reconnect fires in iframe**: When `wallet_connected` is saved in localStorage, the auto-reconnect logic runs on every page load. Inside the Lovable preview iframe, MetaMask cannot complete the connection, causing repeated "Failed to connect" errors.
+2. **Manual connect also fails in iframe**: When the user clicks "Connect Wallet" inside the preview iframe, MetaMask's provider exists (injected by `inpage.js`) but cannot open the popup window, leading to the same error.
 
-**2. Thêm CSS hiệu ứng 3D vào `src/index.css`**
-- Thêm class `.btn-golden-3d` với hiệu ứng:
-  - Gradient metallic nhiều lớp (vàng đậm -> vàng sáng -> vàng đậm)
-  - Box-shadow 3D (bóng đổ nhiều tầng tạo cảm giác nổi)
-  - Hiệu ứng ánh sáng lướt qua (shimmer) khi hover
-  - Inset highlight tạo cảm giác kim loại bóng
-  - Transition mượt mà khi hover (nâng lên, phóng to nhẹ)
-- Thêm class `.btn-golden-outline` cho variant outline
-- Thêm class `.btn-golden-secondary` cho variant secondary
+### Solution (3 files)
 
-### Hiệu ứng chi tiết
+**1. `src/hooks/useWeb3Wallet.ts` -- Add iframe detection + smarter auto-reconnect**
 
-- **Gradient**: `linear-gradient(135deg, #8B6914, #C49B30, #E8C252, #F5D976, #E8C252, #C49B30, #8B6914)`
-- **3D Shadow**: Nhiều tầng bóng đổ tạo chiều sâu
-- **Shimmer**: Ánh sáng trắng mờ lướt qua nút khi hover
-- **Hover**: Nút nâng lên 2px, phóng to 2%, bóng đổ mạnh hơn
-- **Chữ**: Trắng tinh (#FFFFFF) trên nền vàng, đen trên nền nhạt -- tương phản tối đa
+- Add a utility function `isInIframe()` that checks `window.self !== window.top`
+- In the auto-reconnect `useEffect`:
+  - If running in an iframe, skip auto-reconnect entirely and clear `wallet_connected` from localStorage
+  - This prevents the repeated "Failed to connect" errors on every page load
+- In the `connect()` function:
+  - If running in an iframe, set a user-friendly error message ("Please open the site in a new tab to connect your wallet") and return early instead of attempting a connection that will fail
+  - This gives the user clear guidance instead of a cryptic error
 
-### Phạm vi áp dụng
+**2. `src/components/Web3WalletButton.tsx` -- Show helpful toast in iframe**
 
-Vì thay đổi ở component `Button` gốc và CSS toàn cục, tất cả các trang sẽ tự động được cập nhật:
-- Trang chủ, Chat, Cộng đồng, Earn, Swap, Profile
-- Sidebar, Header, Footer
-- Dialog, Form, Card buttons
-- Tất cả admin pages
+- Update `handleConnect` to check for iframe environment before calling `connect()`
+- If in an iframe, show a toast notification suggesting the user open the app in a new tab/window
+- Optionally provide a button to open the published URL in a new tab
 
-### Chi tiết kỹ thuật
+**3. `src/main.tsx` -- Harden global handler (minor)**
 
-**File thay đổi:**
-- `src/components/ui/button.tsx` -- Cập nhật các variant classes
-- `src/index.css` -- Thêm CSS cho hiệu ứng 3D golden
+- Clear `wallet_connected` from localStorage when catching MetaMask wallet errors to prevent the auto-reconnect from firing on the next page load
+- This is a safety net to ensure stale connection state doesn't accumulate
 
-**Không cần thay đổi:**
-- Không cần sửa từng trang riêng lẻ
-- Không cần thay đổi database hay backend
+### Technical Details
+
+```text
+File Changes:
++-------------------------------------+-------------------------------------------+
+| File                                | Change                                    |
++-------------------------------------+-------------------------------------------+
+| src/hooks/useWeb3Wallet.ts          | Add isInIframe() guard for auto-reconnect |
+|                                     | and connect(). Skip silently in iframe.   |
++-------------------------------------+-------------------------------------------+
+| src/components/Web3WalletButton.tsx | Show toast with guidance when user tries   |
+|                                     | to connect inside iframe preview.         |
++-------------------------------------+-------------------------------------------+
+| src/main.tsx                        | Clear wallet_connected localStorage when  |
+|                                     | catching MetaMask rejection errors.       |
++-------------------------------------+-------------------------------------------+
+```
+
+### Expected Result
+
+| Scenario | Before | After |
+|----------|--------|-------|
+| Page load in preview iframe | Auto-reconnect fires, MetaMask throws, error logged | Auto-reconnect skipped, no error |
+| Click "Connect" in iframe | MetaMask throws, blank screen risk | Toast: "Please open in new tab" |
+| Page load on published URL | Works normally | Works normally (no change) |
+| Click "Connect" on published URL | Works normally | Works normally (no change) |
+
+### No Database Changes Required
+
+This fix is purely frontend logic -- no migrations, no edge function changes needed.
