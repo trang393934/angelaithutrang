@@ -552,6 +552,26 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                 <p className="text-muted-foreground">{t("crypto.connectToTransfer")}</p>
                 <Button 
                   onClick={async () => {
+                    // Detect iframe and show guidance
+                    const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+                    if (inIframe) {
+                      toast.info(
+                        <div className="space-y-2">
+                          <p className="font-medium">Không thể kết nối ví trong preview</p>
+                          <p className="text-sm text-muted-foreground">
+                            Vui lòng mở ứng dụng trong tab mới để kết nối MetaMask.
+                          </p>
+                          <button
+                            onClick={() => window.open("https://angelaithutrang.lovable.app", "_blank")}
+                            className="text-xs underline text-primary hover:text-primary/80"
+                          >
+                            Mở trong tab mới →
+                          </button>
+                        </div>,
+                        { duration: 8000 }
+                      );
+                      return;
+                    }
                     try {
                       await connect();
                     } catch (err: any) {
