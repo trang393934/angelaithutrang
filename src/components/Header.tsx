@@ -25,6 +25,7 @@ import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
@@ -165,6 +166,9 @@ export const Header = () => {
                         </span>
                       )}
                     </Link>
+
+                    {/* Notification Bell */}
+                    <NotificationCenter variant="header" />
                     
                     {/* Camly Coin Balance */}
                     <Link 

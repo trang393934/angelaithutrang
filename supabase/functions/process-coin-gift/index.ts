@@ -134,6 +134,7 @@ Deno.serve(async (req) => {
 
     // Generate receipt_public_id
     const receiptPublicId = crypto.randomUUID();
+    const formattedAmount = giftAmount.toLocaleString();
 
     // ===== TRANSACTION =====
     // 1. Deduct from sender
@@ -184,14 +185,14 @@ Deno.serve(async (req) => {
         user_id: senderId,
         amount: -giftAmount,
         transaction_type: "gift_sent",
-        description: `Tặng ${giftAmount.toLocaleString()} Camly Coin cho ${receiverName}`,
+        description: `Tặng ${formattedAmount} Camly Coin cho ${receiverName}`,
         metadata: { receiver_id, message, context_type: context_type || "global", context_id: context_id || null },
       },
       {
         user_id: receiver_id,
         amount: giftAmount,
         transaction_type: "gift_received",
-        description: `Nhận ${giftAmount.toLocaleString()} Camly Coin từ ${senderName}`,
+        description: `Nhận ${formattedAmount} Camly Coin từ ${senderName}`,
         metadata: { sender_id: senderId, message, context_type: context_type || "global", context_id: context_id || null },
       },
     ]);
@@ -211,31 +212,79 @@ Deno.serve(async (req) => {
       console.error("Gift record error:", giftError);
     }
 
-    // 5. Send notification to receiver
+    // 5. Send notification to receiver (healing_messages - backward compatible)
     await supabaseAdmin.from("healing_messages").insert({
       user_id: receiver_id,
       title: "🎁 Bạn nhận được quà!",
-      content: `${senderName} đã tặng bạn ${giftAmount.toLocaleString()} Camly Coin${message ? ` với lời nhắn: "${message}"` : ""}. Cảm ơn bạn là một phần của cộng đồng! 💛`,
+      content: `${senderName} đã tặng bạn ${formattedAmount} Camly Coin${message ? ` với lời nhắn: "${message}"` : ""}. Cảm ơn bạn là một phần của cộng đồng! 💛`,
       message_type: "gift_received",
       triggered_by: senderId,
     });
 
-    // 6. Auto-create tip message in DM between sender and receiver
-    const tipContent = `🎁 ${senderName} đã tặng ${receiverName} ${giftAmount.toLocaleString()} Camly Coin${message ? `\n💬 "${message}"` : ""}`;
-    await supabaseAdmin.from("direct_messages").insert({
-      sender_id: senderId,
-      receiver_id: receiver_id,
-      content: tipContent,
-      message_type: "tip",
-      tip_gift_id: giftRecord?.id || null,
-    });
+    // 6. Insert into notifications table (new notification system)
+    await supabaseAdmin.from("notifications").insert([
+      {
+        user_id: receiver_id,
+        type: "gift_received",
+        title: "🎁 Bạn nhận được quà!",
+        content: `đã tặng bạn ${formattedAmount} Camly Coin`,
+        actor_id: senderId,
+        reference_id: giftRecord?.id || null,
+        reference_type: "gift",
+        metadata: {
+          amount: giftAmount,
+          sender_name: senderName,
+          sender_avatar: senderProfile?.avatar_url || null,
+          receipt_public_id: receiptPublicId,
+          coin_type: "Camly Coin",
+          message: message || null,
+        },
+      },
+      {
+        user_id: senderId,
+        type: "gift_sent",
+        title: "✅ Tặng quà thành công!",
+        content: `Bạn đã tặng ${formattedAmount} Camly Coin cho ${receiverName}`,
+        actor_id: receiver_id,
+        reference_id: giftRecord?.id || null,
+        reference_type: "gift",
+        metadata: {
+          amount: giftAmount,
+          receiver_name: receiverName,
+          receipt_public_id: receiptPublicId,
+          coin_type: "Camly Coin",
+          message: message || null,
+        },
+      },
+    ]);
+
+    // 7. Auto-create tip messages in DM for BOTH sender and receiver
+    const receiverTipContent = `🎁 Chúc mừng ${receiverName}! Bạn đã nhận được ${formattedAmount} Camly Coin từ ${senderName}${message ? `\n💬 "${message}"` : ""}`;
+    const senderTipContent = `✅ Bạn đã tặng thành công ${formattedAmount} Camly Coin cho ${receiverName}${message ? `\n💬 "${message}"` : ""}`;
+
+    await supabaseAdmin.from("direct_messages").insert([
+      {
+        sender_id: senderId,
+        receiver_id: receiver_id,
+        content: receiverTipContent,
+        message_type: "tip",
+        tip_gift_id: giftRecord?.id || null,
+      },
+      {
+        sender_id: receiver_id,
+        receiver_id: senderId,
+        content: senderTipContent,
+        message_type: "tip",
+        tip_gift_id: giftRecord?.id || null,
+      },
+    ]);
 
     console.log(`Gift successful: ${senderId} -> ${receiver_id}, amount=${giftAmount}, receipt=${receiptPublicId}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Đã tặng ${giftAmount.toLocaleString()} Camly Coin cho ${receiverName}!`,
+        message: `Đã tặng ${formattedAmount} Camly Coin cho ${receiverName}!`,
         gift: {
           id: giftRecord?.id,
           sender_id: senderId,
