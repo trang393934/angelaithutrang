@@ -253,7 +253,16 @@ const translations: Record<string, string> = {
   "earn.action.coinPerTask": "500-10000 Camly Coin/task",
   "earn.action.writeContent": "Write Content",
   "earn.action.contentDesc": "Create professional content",
-  
+
+  // FUN Money Stats
+  "earn.funMoney.title": "FUN Money (On-chain)",
+  "earn.funMoney.total": "Total FUN Money",
+  "earn.funMoney.minted": "Minted",
+  "earn.funMoney.signed": "Signed",
+  "earn.funMoney.pending": "Pending",
+  "earn.funMoney.viewDetails": "View Details & Mint",
+  "earn.funMoney.emptyMessage": "You don't have any FUN Money yet. Start contributing to mint!",
+
   // Daily Login Reward
   "earn.login.title": "Daily Login Reward",
   "earn.login.congrats": "Congratulations! You've logged in 7 consecutive days!",

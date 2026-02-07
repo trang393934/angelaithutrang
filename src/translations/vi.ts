@@ -253,7 +253,16 @@ const translations: Record<string, string> = {
   "earn.action.coinPerTask": "500-10000 Camly Coin/task",
   "earn.action.writeContent": "Viết Content",
   "earn.action.contentDesc": "Sáng tạo nội dung chuyên nghiệp",
-  
+
+  // FUN Money Stats
+  "earn.funMoney.title": "FUN Money (On-chain)",
+  "earn.funMoney.total": "Tổng FUN Money",
+  "earn.funMoney.minted": "Đã mint",
+  "earn.funMoney.signed": "Đã ký",
+  "earn.funMoney.pending": "Đang chờ",
+  "earn.funMoney.viewDetails": "Xem chi tiết & Mint",
+  "earn.funMoney.emptyMessage": "Bạn chưa có FUN Money nào. Bắt đầu đóng góp để mint!",
+
   // Daily Login Reward
   "earn.login.title": "Phần thưởng đăng nhập hàng ngày",
   "earn.login.congrats": "Chúc mừng! Bạn đã đăng nhập 7 ngày liên tiếp!",
