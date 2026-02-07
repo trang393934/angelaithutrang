@@ -221,63 +221,35 @@ Deno.serve(async (req) => {
       triggered_by: senderId,
     });
 
-    // 6. Insert into notifications table (new notification system)
-    await supabaseAdmin.from("notifications").insert([
-      {
-        user_id: receiver_id,
-        type: "gift_received",
-        title: "🎁 Bạn nhận được quà!",
-        content: `đã tặng bạn ${formattedAmount} Camly Coin`,
-        actor_id: senderId,
-        reference_id: giftRecord?.id || null,
-        reference_type: "gift",
-        metadata: {
-          amount: giftAmount,
-          sender_name: senderName,
-          sender_avatar: senderProfile?.avatar_url || null,
-          receipt_public_id: receiptPublicId,
-          coin_type: "Camly Coin",
-          message: message || null,
-        },
+    // 6. Insert notification ONLY for receiver (one-way notification)
+    await supabaseAdmin.from("notifications").insert({
+      user_id: receiver_id,
+      type: "gift_received",
+      title: "🎁 Bạn nhận được quà!",
+      content: `đã tặng bạn ${formattedAmount} Camly Coin`,
+      actor_id: senderId,
+      reference_id: giftRecord?.id || null,
+      reference_type: "gift",
+      metadata: {
+        amount: giftAmount,
+        sender_name: senderName,
+        sender_avatar: senderProfile?.avatar_url || null,
+        receipt_public_id: receiptPublicId,
+        coin_type: "Camly Coin",
+        message: message || null,
       },
-      {
-        user_id: senderId,
-        type: "gift_sent",
-        title: "✅ Tặng quà thành công!",
-        content: `Bạn đã tặng ${formattedAmount} Camly Coin cho ${receiverName}`,
-        actor_id: receiver_id,
-        reference_id: giftRecord?.id || null,
-        reference_type: "gift",
-        metadata: {
-          amount: giftAmount,
-          receiver_name: receiverName,
-          receipt_public_id: receiptPublicId,
-          coin_type: "Camly Coin",
-          message: message || null,
-        },
-      },
-    ]);
+    });
 
-    // 7. Auto-create tip messages in DM for BOTH sender and receiver
+    // 7. Auto-create tip message in DM ONLY for receiver (one-way)
     const receiverTipContent = `🎁 Chúc mừng ${receiverName}! Bạn đã nhận được ${formattedAmount} Camly Coin từ ${senderName}${message ? `\n💬 "${message}"` : ""}`;
-    const senderTipContent = `✅ Bạn đã tặng thành công ${formattedAmount} Camly Coin cho ${receiverName}${message ? `\n💬 "${message}"` : ""}`;
 
-    await supabaseAdmin.from("direct_messages").insert([
-      {
-        sender_id: senderId,
-        receiver_id: receiver_id,
-        content: receiverTipContent,
-        message_type: "tip",
-        tip_gift_id: giftRecord?.id || null,
-      },
-      {
-        sender_id: receiver_id,
-        receiver_id: senderId,
-        content: senderTipContent,
-        message_type: "tip",
-        tip_gift_id: giftRecord?.id || null,
-      },
-    ]);
+    await supabaseAdmin.from("direct_messages").insert({
+      sender_id: senderId,
+      receiver_id: receiver_id,
+      content: receiverTipContent,
+      message_type: "tip",
+      tip_gift_id: giftRecord?.id || null,
+    });
 
     console.log(`Gift successful: ${senderId} -> ${receiver_id}, amount=${giftAmount}, receipt=${receiptPublicId}`);
 
