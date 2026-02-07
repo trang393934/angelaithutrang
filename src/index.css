@@ -260,7 +260,201 @@
     transform: translateY(-2px);
   }
 
-  /* Button Sacred Variants - Metallic Gold Shine */
+  /* ===== Golden 3D Button System ===== */
+
+  /* Default: Metallic Gold 3D */
+  .btn-golden-3d {
+    background: linear-gradient(135deg, #8B6914 0%, #C49B30 20%, #E8C252 45%, #F5D976 55%, #E8C252 70%, #C49B30 85%, #8B6914 100%);
+    background-size: 200% 100%;
+    box-shadow:
+      0 4px 6px -1px rgba(139, 105, 20, 0.4),
+      0 2px 4px -2px rgba(139, 105, 20, 0.3),
+      0 8px 16px -4px rgba(139, 105, 20, 0.2),
+      inset 0 1px 1px rgba(255, 245, 200, 0.5),
+      inset 0 -1px 1px rgba(100, 75, 10, 0.25);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+    border: none;
+  }
+
+  .btn-golden-3d::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 250, 220, 0.5), transparent);
+    transition: left 0.5s ease;
+    pointer-events: none;
+  }
+
+  .btn-golden-3d:hover::before {
+    left: 150%;
+  }
+
+  .btn-golden-3d:hover {
+    background-position: 100% 0;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow:
+      0 6px 12px -2px rgba(139, 105, 20, 0.5),
+      0 4px 8px -2px rgba(139, 105, 20, 0.35),
+      0 12px 24px -4px rgba(139, 105, 20, 0.25),
+      0 0 20px -4px rgba(232, 194, 82, 0.35),
+      inset 0 1px 2px rgba(255, 245, 200, 0.6),
+      inset 0 -1px 1px rgba(100, 75, 10, 0.3);
+  }
+
+  .btn-golden-3d:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow:
+      0 2px 4px -1px rgba(139, 105, 20, 0.4),
+      inset 0 2px 4px rgba(100, 75, 10, 0.3),
+      inset 0 -1px 1px rgba(255, 245, 200, 0.2);
+  }
+
+  /* Destructive: Red with 3D effect */
+  .btn-golden-destructive {
+    background: linear-gradient(135deg, #991B1B 0%, #DC2626 30%, #EF4444 55%, #DC2626 75%, #991B1B 100%);
+    background-size: 200% 100%;
+    box-shadow:
+      0 4px 6px -1px rgba(153, 27, 27, 0.4),
+      0 2px 4px -2px rgba(153, 27, 27, 0.3),
+      0 8px 16px -4px rgba(153, 27, 27, 0.2),
+      inset 0 1px 1px rgba(255, 180, 180, 0.35),
+      inset 0 -1px 1px rgba(80, 10, 10, 0.25);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+    border: none;
+  }
+
+  .btn-golden-destructive::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 200, 200, 0.4), transparent);
+    transition: left 0.5s ease;
+    pointer-events: none;
+  }
+
+  .btn-golden-destructive:hover::before {
+    left: 150%;
+  }
+
+  .btn-golden-destructive:hover {
+    background-position: 100% 0;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow:
+      0 6px 12px -2px rgba(153, 27, 27, 0.5),
+      0 12px 24px -4px rgba(153, 27, 27, 0.25),
+      0 0 20px -4px rgba(239, 68, 68, 0.35),
+      inset 0 1px 2px rgba(255, 180, 180, 0.4),
+      inset 0 -1px 1px rgba(80, 10, 10, 0.3);
+  }
+
+  .btn-golden-destructive:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow:
+      0 2px 4px -1px rgba(153, 27, 27, 0.4),
+      inset 0 2px 4px rgba(80, 10, 10, 0.3);
+  }
+
+  /* Outline: Gold border, transparent bg */
+  .btn-golden-outline {
+    background: transparent;
+    border: 2px solid #C49B30;
+    color: #8B6914;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 2px 4px -1px rgba(139, 105, 20, 0.15),
+      inset 0 0 0 0 rgba(232, 194, 82, 0);
+  }
+
+  .btn-golden-outline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(245, 217, 118, 0.2), transparent);
+    transition: left 0.5s ease;
+    pointer-events: none;
+  }
+
+  .btn-golden-outline:hover::before {
+    left: 150%;
+  }
+
+  .btn-golden-outline:hover {
+    background: linear-gradient(135deg, #8B6914 0%, #C49B30 25%, #E8C252 50%, #C49B30 75%, #8B6914 100%);
+    color: #FFFFFF;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    border-color: transparent;
+    transform: translateY(-1px);
+    box-shadow:
+      0 4px 8px -2px rgba(139, 105, 20, 0.4),
+      0 0 16px -4px rgba(232, 194, 82, 0.3),
+      inset 0 1px 1px rgba(255, 245, 200, 0.4);
+  }
+
+  .btn-golden-outline:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* Secondary: Soft golden champagne */
+  .btn-golden-secondary {
+    background: linear-gradient(135deg, hsl(45, 60%, 92%) 0%, hsl(43, 65%, 88%) 50%, hsl(45, 60%, 92%) 100%);
+    background-size: 200% 100%;
+    color: #7A5C10;
+    font-weight: 600;
+    border: 1px solid hsl(43, 50%, 82%);
+    box-shadow:
+      0 2px 4px -1px rgba(139, 105, 20, 0.15),
+      0 4px 8px -4px rgba(139, 105, 20, 0.1),
+      inset 0 1px 1px rgba(255, 250, 230, 0.6);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-golden-secondary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 250, 220, 0.5), transparent);
+    transition: left 0.5s ease;
+    pointer-events: none;
+  }
+
+  .btn-golden-secondary:hover::before {
+    left: 150%;
+  }
+
+  .btn-golden-secondary:hover {
+    background-position: 100% 0;
+    transform: translateY(-1px);
+    box-shadow:
+      0 4px 8px -2px rgba(139, 105, 20, 0.25),
+      0 0 12px -4px rgba(232, 194, 82, 0.2),
+      inset 0 1px 1px rgba(255, 250, 230, 0.7);
+    border-color: hsl(43, 55%, 75%);
+  }
+
+  .btn-golden-secondary:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* Button Sacred Variants - Metallic Gold Shine (legacy) */
   .btn-sacred {
     @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-medium text-primary-foreground transition-all duration-500;
     background: linear-gradient(135deg, hsl(35, 75%, 28%) 0%, hsl(40, 70%, 42%) 25%, hsl(43, 80%, 55%) 50%, hsl(40, 70%, 42%) 75%, hsl(35, 75%, 28%) 100%);
