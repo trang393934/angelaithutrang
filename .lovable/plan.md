@@ -1,71 +1,44 @@
 
 
-## Fix: Chat Demo Widget showing {} instead of AI response
+## Redesign thanh toolbar Admin Dashboard
 
-### Root Cause
+### Vấn đề hiện tại
 
-The `angel-chat` edge function returns a **Server-Sent Events (SSE) stream** for demo mode (`stream: true`). But the `ChatDemoWidget` calls the function using `supabase.functions.invoke()`, which does NOT handle SSE streams -- it tries to read the entire response body as JSON or text.
+Thanh công cụ hiện tại chứa **12 liên kết admin** xếp ngang hàng với style giống nhau, khiến rất khó phân biệt chức năng. Tất cả đều dùng cùng kiểu `rounded-full text-sm text-foreground-muted` và bị ẩn trên mobile (`hidden sm:flex`).
 
-The result: `response.data` becomes a `ReadableStream` object, which when passed to `JSON.stringify()` in the fallback branch produces `{}`. This is why the chat shows empty curly braces.
+### Thiết kế mới
 
-### Solution (2 files)
+Tách thanh toolbar thành **2 phần rõ ràng**:
 
-**1. Edge Function: `supabase/functions/angel-chat/index.ts`**
+1. **Header chính** (dòng 1): Logo + tiêu đề "Admin Dashboard" + nút Đăng xuất
+2. **Thanh điều hướng** (dòng 2): Các liên kết admin được **nhóm theo chức năng** với viền phân cách, và có scroll ngang trên mobile
 
-Change the demo mode to NOT use streaming. Instead of `stream: true`, use `stream: false` so the AI gateway returns a regular JSON response. Then return that JSON to the client with `Content-Type: application/json`.
+**Nhóm chức năng:**
 
-Changes at lines 940-964:
-- Set `stream: false` in the AI gateway request body
-- Return `response.json()` as a regular JSON response (not a forwarded stream)
-- Change response Content-Type from `text/event-stream` to `application/json`
-- Also fix the greeting path in demo mode (lines 909-922) to return JSON instead of SSE
+| Nhom | Cac muc | Mau sac |
+|------|---------|---------|
+| Nguoi dung | Thong ke, Early Adopters | Xam/Tim |
+| Tai chinh | Rut coin, Quy, FUN Money, Tip Reports | Vang/Amber |
+| Noi dung | Kien thuc, Y tuong, Bounty | Xanh duong |
+| Lich su | Lich su chat, AI Usage, Lich su anh | Xanh la |
 
-**2. Frontend: `src/components/ChatDemoWidget.tsx`**
+### Chi tiet ky thuat
 
-Simplify the response parsing logic since the edge function will now return a standard JSON response:
-- Remove the SSE stream parsing code (lines 90-105) since it's no longer needed
-- Keep the `response.data.choices` path as the primary parser
-- Keep the fallback welcome message for safety
+**File can sua:** `src/pages/AdminDashboard.tsx`
 
-### Technical Details
+**Thay doi cu the:**
 
-**Edge function demo mode (before):**
-```
-// Streams SSE -- supabase.functions.invoke cannot parse this
-stream: true
-return new Response(response.body, { "Content-Type": "text/event-stream" })
-```
+- Tach header thanh 2 phan: phan tren giu logo + tieu de + logout, phan duoi chua toolbar dieu huong
+- Thanh dieu huong moi se:
+  - Dung `overflow-x-auto` de scroll ngang tren mobile (thay vi `hidden sm:flex`)
+  - Nhom cac link thanh cac cum, ngan cach bang duong ke doc (`border-r`)
+  - Moi nhom co icon va label ro rang
+  - Trang hien tai duoc highlight (active state)
+  - Hien thi tren moi kich thuoc man hinh
+- Them `Tip Reports` link (hien dang thieu trong toolbar)
+- Background cua toolbar su dung `bg-primary-pale/50` de tach biet voi header
 
-**Edge function demo mode (after):**
-```
-// Returns normal JSON -- supabase.functions.invoke parses correctly
-stream: false
-const data = await response.json();
-return new Response(JSON.stringify(data), { "Content-Type": "application/json" })
-```
+### Khong co thay doi database
 
-**Widget parsing (before):**
-```
-if (typeof response.data === "string") { /* SSE parse */ }
-else if (response.data.choices) { /* JSON parse */ }
-else { aiResponse = JSON.stringify(response.data); } // <-- produces "{}"
-```
-
-**Widget parsing (after):**
-```
-if (response.data?.choices?.[0]?.message?.content) {
-  aiResponse = response.data.choices[0].message.content;
-}
-```
-
-### Files to modify
-
-| File | Change |
-|------|--------|
-| `supabase/functions/angel-chat/index.ts` | Demo mode: disable streaming, return JSON response. Fix both greeting and AI response paths. |
-| `src/components/ChatDemoWidget.tsx` | Simplify response parsing to handle standard JSON only. |
-
-### No database changes needed
-
-This is a response format fix only -- no migrations or schema changes required.
+Chi sua giao dien, khong can migration hay thay doi schema.
 
