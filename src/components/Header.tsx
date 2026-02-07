@@ -54,27 +54,29 @@ export const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch user profile for avatar and display name
+  // Fetch user profile for avatar and display name - use user.id to prevent unnecessary re-fetches
   useEffect(() => {
+    if (!user?.id) {
+      setUserProfile(null);
+      return;
+    }
+
+    let cancelled = false;
     const fetchProfile = async () => {
-      if (!user) {
-        setUserProfile(null);
-        return;
-      }
-      
       const { data } = await supabase
         .from("profiles")
         .select("display_name, avatar_url")
         .eq("user_id", user.id)
         .maybeSingle();
       
-      if (data) {
+      if (!cancelled && data) {
         setUserProfile(data);
       }
     };
 
     fetchProfile();
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // Get display name to show (priority: display_name > email username)
   const getDisplayName = () => {
@@ -361,7 +363,7 @@ export const Header = () => {
                           className="flex items-center gap-4 p-4 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-colors"
                         >
                           <div className="relative">
-                            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 opacity-75 blur-sm animate-pulse" />
+                            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 opacity-50 blur-sm" />
                             {userProfile?.avatar_url ? (
                               <img 
                                 src={userProfile.avatar_url} 
