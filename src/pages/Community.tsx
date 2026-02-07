@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+
 import { Users, TrendingUp, Clock, Sparkles, Loader2, Trophy, Gift, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +24,7 @@ import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { DonateProjectDialog } from "@/components/gifts/DonateProjectDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { LightGate } from "@/components/LightGate";
+import { AuthActionGuard } from "@/components/AuthActionGuard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -123,7 +123,6 @@ const Community = () => {
   };
 
   return (
-    <LightGate>
       <div className="h-screen flex flex-col bg-gradient-to-b from-primary-pale via-background to-background">
         {/* Header - fixed height */}
         <CommunityHeader />
@@ -139,24 +138,24 @@ const Community = () => {
             {/* Main Content - SCROLLABLE */}
             <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden space-y-3 sm:space-y-4 lg:space-y-6 pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
               {/* Create Post */}
-              {user ? (
-                <CollapsibleCreatePost
-                  userAvatar={userProfile?.avatar_url}
-                  userName={userProfile?.display_name || "Bạn"}
-                  onSubmit={handleCreatePost}
-                />
-              ) : (
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 text-center border border-primary/10">
-                  <Sparkles className="w-10 h-10 text-primary/40 mx-auto mb-3" />
-                  <p className="text-foreground-muted mb-3">{t("community.loginToJoin")}</p>
-                  <Link to="/auth">
+              <AuthActionGuard message={t("community.loginToJoin")}>
+                {user ? (
+                  <CollapsibleCreatePost
+                    userAvatar={userProfile?.avatar_url}
+                    userName={userProfile?.display_name || "Bạn"}
+                    onSubmit={handleCreatePost}
+                  />
+                ) : (
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 text-center border border-primary/10">
+                    <Sparkles className="w-10 h-10 text-primary/40 mx-auto mb-3" />
+                    <p className="text-foreground-muted mb-3">{t("community.loginToJoin")}</p>
                     <Button className="bg-sapphire-gradient">{t("auth.login")}</Button>
-                  </Link>
-                </div>
-              )}
+                  </div>
+                )}
+              </AuthActionGuard>
 
               {/* Gift & Donate Action Buttons */}
-              {user && (
+              <AuthActionGuard message="Bạn cần đăng nhập để tặng quà">
                 <div className="flex gap-2 sm:gap-3 items-center">
                   <motion.div 
                     className="flex-[2] min-w-0"
@@ -164,7 +163,7 @@ const Community = () => {
                     whileTap={{ scale: 0.98 }}
                   >
                     <Button
-                      onClick={() => setShowGiftDialog(true)}
+                      onClick={() => user && setShowGiftDialog(true)}
                       className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 text-white font-semibold px-2 sm:px-4 text-xs sm:text-sm relative overflow-hidden"
                       style={{
                         boxShadow: '0 0 12px 2px hsla(43, 96%, 56%, 0.4), 0 4px 15px -3px hsla(43, 96%, 56%, 0.3), inset 0 1px 0 hsla(0, 0%, 100%, 0.3)',
@@ -181,7 +180,7 @@ const Community = () => {
                     whileTap={{ scale: 0.98 }}
                   >
                     <Button
-                      onClick={() => setShowDonateDialog(true)}
+                      onClick={() => user && setShowDonateDialog(true)}
                       className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 text-white font-semibold shadow-lg px-2 sm:px-4 text-xs sm:text-sm"
                     >
                       <Heart className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
@@ -189,7 +188,7 @@ const Community = () => {
                     </Button>
                   </motion.div>
                 </div>
-              )}
+              </AuthActionGuard>
 
               {/* Mobile Leaderboard Button */}
               {isMobile && (
@@ -343,7 +342,6 @@ const Community = () => {
           onOpenChange={setShowDonateDialog} 
         />
       </div>
-    </LightGate>
   );
 };
 

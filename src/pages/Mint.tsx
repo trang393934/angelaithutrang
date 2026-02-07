@@ -8,7 +8,7 @@
  import { Link } from "react-router-dom";
  import { ArrowRight, Coins, Sparkles, Shield, Zap, ExternalLink, Info } from "lucide-react";
  import funMoneyLogo from "@/assets/fun-money-logo.png";
- import { LightGate } from "@/components/LightGate";
+ 
  import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
  
  export default function Mint() {
@@ -42,7 +42,7 @@
    }
  
    return (
-     <LightGate>
+     <>
        <div className="min-h-screen flex flex-col bg-background">
          <Header />
  
@@ -156,6 +156,6 @@
  
          <Footer />
        </div>
-     </LightGate>
+     </>
    );
  }

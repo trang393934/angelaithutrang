@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { LightGate } from "@/components/LightGate";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,9 +72,7 @@ export default function Bounty() {
   const [submissionUrl, setSubmissionUrl] = useState("");
 
   useEffect(() => {
-    if (user) {
-      fetchData();
-    }
+    fetchData();
   }, [user]);
 
   const fetchData = async () => {
@@ -210,7 +208,7 @@ export default function Bounty() {
   }
 
   return (
-    <LightGate>
+    <>
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8 pt-28">
@@ -458,6 +456,6 @@ export default function Bounty() {
           </DialogContent>
         </Dialog>
       </div>
-    </LightGate>
+    </>
   );
 }
