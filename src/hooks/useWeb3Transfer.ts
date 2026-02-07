@@ -92,6 +92,17 @@ export function useWeb3Transfer() {
     }
   }, [isConnected, address, hasWallet]);
 
+  // Safe wrapper for wallet connect that catches MetaMask internal errors
+  const safeConnect = useCallback(async (): Promise<boolean> => {
+    try {
+      await connect();
+      return true;
+    } catch (error: any) {
+      console.warn("[Web3Transfer] Connect failed:", error?.message || error);
+      return false;
+    }
+  }, [connect]);
+
   // Transfer CAMLY token to another address (requires BSC Mainnet)
   const transferCamly = useCallback(async (
     toAddress: string,
@@ -102,18 +113,30 @@ export function useWeb3Transfer() {
     }
 
     if (!isConnected) {
-      await connect();
+      const connected = await safeConnect();
+      if (!connected) {
+        return { success: false, message: "Không thể kết nối ví. Vui lòng mở MetaMask và thử lại." };
+      }
       return { success: false, message: "Vui lòng kết nối ví trước" };
     }
 
     // Switch to BSC Mainnet for CAMLY transfers
-    const ethereum = (window as any).ethereum;
-    const currentChainId = await ethereum.request({ method: "eth_chainId" });
-    if (parseInt(currentChainId, 16) !== BSC_MAINNET_CHAIN_ID) {
-      const switched = await switchToMainnet();
-      if (!switched) {
-        return { success: false, message: "Vui lòng chuyển sang mạng BSC Mainnet để chuyển CAMLY" };
+    try {
+      const ethereum = (window as any).ethereum;
+      if (!ethereum || typeof ethereum.request !== "function") {
+        return { success: false, message: "MetaMask không sẵn sàng. Vui lòng mở lại extension." };
       }
+      
+      const currentChainId = await ethereum.request({ method: "eth_chainId" }).catch(() => "0x0");
+      if (parseInt(currentChainId, 16) !== BSC_MAINNET_CHAIN_ID) {
+        const switched = await switchToMainnet();
+        if (!switched) {
+          return { success: false, message: "Vui lòng chuyển sang mạng BSC Mainnet để chuyển CAMLY" };
+        }
+      }
+    } catch (chainError: any) {
+      console.warn("[Web3Transfer] Chain check error:", chainError?.message);
+      return { success: false, message: "Lỗi kiểm tra mạng. Vui lòng mở MetaMask và thử lại." };
     }
 
     if (!ethers.isAddress(toAddress)) {
@@ -179,12 +202,17 @@ export function useWeb3Transfer() {
         return { success: false, message: "Không đủ BNB để thanh toán phí gas" };
       }
 
+      // Handle MetaMask internal errors gracefully
+      if (error.message?.includes("MetaMask") || error.message?.includes("inpage")) {
+        return { success: false, message: "MetaMask gặp lỗi. Vui lòng mở lại MetaMask và thử lại." };
+      }
+
       return { 
         success: false, 
         message: error.reason || error.message || "Lỗi khi chuyển token" 
       };
     }
-  }, [hasWallet, isConnected, address, connect, switchToMainnet]);
+  }, [hasWallet, isConnected, address, safeConnect, switchToMainnet]);
 
   // Donate CAMLY to project treasury
   const donateCamlyToProject = useCallback(async (
