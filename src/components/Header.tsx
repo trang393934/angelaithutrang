@@ -208,7 +208,7 @@ export const Header = () => {
                         
                         {/* Profile Link */}
                         <DropdownMenuItem asChild className="cursor-pointer">
-                          <Link to="/profile" className="flex items-center gap-2">
+                          <Link to={`/user/${user.id}`} className="flex items-center gap-2">
                             <User className="w-4 h-4" />
                             <span>{t("header.viewProfile") || "Trang cá nhân"}</span>
                           </Link>
@@ -352,7 +352,7 @@ export const Header = () => {
                         
                         {/* Profile row */}
                         <Link 
-                          to="/profile" 
+                          to={`/user/${user.id}`} 
                           onClick={() => setIsMobileMenuOpen(false)}
                           className="flex items-center gap-4 p-4 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-colors"
                         >

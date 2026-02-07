@@ -4,8 +4,12 @@ import {
   ArrowLeft, UserPlus, UserCheck, UserX, MessageCircle, Loader2, Clock, 
   Users, Award, FileText, ShieldAlert, Ban, AlertTriangle, Camera, 
   Pencil, MapPin, Calendar, MoreHorizontal, ThumbsUp, Share2, 
-  ImageIcon, Smile, Globe, Briefcase, GraduationCap, Heart, Maximize2, Gift
+  ImageIcon, Smile, Globe, Briefcase, GraduationCap, Heart, Maximize2, Gift,
+  Star, History, Settings
 } from "lucide-react";
+import { useCamlyCoin } from "@/hooks/useCamlyCoin";
+import { usePoPLScore } from "@/hooks/usePoPLScore";
+import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { Button } from "@/components/ui/button";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
@@ -48,6 +52,8 @@ const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { balance, lifetimeEarned } = useCamlyCoin();
+  const { score: poplScore, badgeLevel, positiveActions } = usePoPLScore(userId);
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [userPosts, setUserPosts] = useState<CommunityPost[]>([]);
@@ -721,10 +727,58 @@ const UserProfile = () => {
                   </Link>
                 )}
 
+                {/* Personal Info Section - Only for own profile */}
+                {isOwnProfile && (
+                  <div className="space-y-2 pt-1">
+                    {/* Camly Coin Balance */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40">
+                      <div className="flex items-center gap-2.5">
+                        <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8" />
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Số dư hiện tại</p>
+                          <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
+                            {Math.floor(balance).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Tổng tích lũy</p>
+                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-500">
+                          {Math.floor(lifetimeEarned).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* PoPL Score / Light Points */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary-pale/30 border border-primary/10">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Star className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">PoPL Score</p>
+                          <p className="text-lg font-bold text-primary">{poplScore}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize
+                          bg-primary/10 text-primary">
+                          {badgeLevel === "angel" ? "👼 Angel" :
+                           badgeLevel === "lightworker" ? "✨ Lightworker" :
+                           badgeLevel === "guardian" ? "🛡️ Guardian" :
+                           badgeLevel === "contributor" ? "🌟 Contributor" :
+                           "🌱 Newcomer"}
+                        </span>
+                        <p className="text-xs text-gray-500 mt-0.5">{positiveActions} hành động tốt</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-3 text-[15px] text-gray-700">
                     <Award className="w-5 h-5 text-gray-500" />
-                    <span><strong>{Math.floor(stats.coins).toLocaleString()}</strong> Camly Coin</span>
+                    <span><strong>{Math.floor(stats.coins).toLocaleString()}</strong> Camly Coin tích lũy</span>
                   </div>
                   <div className="flex items-center gap-3 text-[15px] text-gray-700">
                     <FileText className="w-5 h-5 text-gray-500" />
@@ -744,12 +798,25 @@ const UserProfile = () => {
                   </div>
                 </div>
 
+                {/* Activity History & Edit Profile - Own profile only */}
                 {isOwnProfile && (
-                  <Link to="/profile" className="block">
-                    <Button variant="secondary" className="w-full mt-4">
-                      Chỉnh sửa chi tiết
-                    </Button>
-                  </Link>
+                  <div className="space-y-2 pt-2">
+                    <Link to="/activity-history" className="block">
+                      <Button variant="outline" className="w-full justify-between text-gray-700 hover:bg-gray-50">
+                        <span className="flex items-center gap-2">
+                          <History className="w-4 h-4" />
+                          Lịch sử hoạt động
+                        </span>
+                        <span className="text-gray-400">→</span>
+                      </Button>
+                    </Link>
+                    <Link to="/profile" className="block">
+                      <Button variant="secondary" className="w-full">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Chỉnh sửa chi tiết
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </CardContent>
             </Card>
