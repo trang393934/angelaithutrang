@@ -15,6 +15,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarProvider,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -23,7 +24,7 @@ import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthActionGuard } from "@/components/AuthActionGuard";
 
-export function MainSidebar() {
+function MainSidebarContent() {
   const { t } = useLanguage();
   const location = useLocation();
   const { state } = useSidebar();
@@ -93,7 +94,7 @@ export function MainSidebar() {
                 );
               })}
 
-              {/* Gift Button - right below the last nav item (Tích Lũy Ánh Sáng) */}
+              {/* Gift Button */}
               <SidebarMenuItem>
                 <AuthActionGuard>
                   <button
@@ -124,6 +125,14 @@ export function MainSidebar() {
         contextType="global"
       />
     </Sidebar>
+  );
+}
+
+export function MainSidebar() {
+  return (
+    <SidebarProvider defaultOpen={true}>
+      <MainSidebarContent />
+    </SidebarProvider>
   );
 }
 
