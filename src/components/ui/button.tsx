@@ -9,7 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "btn-golden-3d text-white",
+        default: "btn-golden-3d",
         destructive: "btn-golden-destructive text-white",
         outline: "btn-golden-outline",
         secondary: "btn-golden-secondary",

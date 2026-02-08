@@ -260,166 +260,168 @@
     transform: translateY(-2px);
   }
 
-  /* ===== Golden 3D Button System ===== */
+  /* ===== Golden 3D Button System - Metallic Brushed Gold ===== */
 
-  /* Default: Metallic Gold 3D */
+  /* Default: Metallic Gold 3D - Brushed Metal */
   .btn-golden-3d {
-    background: linear-gradient(135deg, #8B6914 0%, #C49B30 20%, #E8C252 45%, #F5D976 55%, #E8C252 70%, #C49B30 85%, #8B6914 100%);
-    background-size: 200% 100%;
+    background:
+      linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.45) 35%, rgba(255,255,255,0.1) 45%, transparent 55%, rgba(255,255,255,0.2) 70%, transparent 80%),
+      linear-gradient(180deg, #C49B30 0%, #E8C252 15%, #F5D976 35%, #FFF4C8 50%, #F5D976 65%, #E8C252 85%, #C49B30 100%);
+    border: 1.5px solid #B8860B;
     box-shadow:
-      0 4px 6px -1px rgba(139, 105, 20, 0.4),
-      0 2px 4px -2px rgba(139, 105, 20, 0.3),
-      0 8px 16px -4px rgba(139, 105, 20, 0.2),
-      inset 0 1px 1px rgba(255, 245, 200, 0.5),
-      inset 0 -1px 1px rgba(100, 75, 10, 0.25);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      0 1px 0 0 rgba(255, 248, 200, 0.7) inset,
+      0 -1px 0 0 rgba(139, 105, 20, 0.4) inset,
+      0 4px 8px -2px rgba(139, 105, 20, 0.45),
+      0 8px 20px -4px rgba(139, 105, 20, 0.25),
+      0 1px 3px rgba(0, 0, 0, 0.15);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+    color: #3D2800;
+    font-weight: 600;
     position: relative;
     overflow: hidden;
-    border: none;
   }
 
   .btn-golden-3d::before {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
-    width: 60%;
+    left: -120%;
+    width: 70%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 250, 220, 0.5), transparent);
-    transition: left 0.5s ease;
+    background: linear-gradient(90deg, transparent, rgba(255, 252, 235, 0.6), transparent);
+    transition: left 0.6s ease;
     pointer-events: none;
   }
 
   .btn-golden-3d:hover::before {
-    left: 150%;
+    left: 160%;
   }
 
   .btn-golden-3d:hover {
-    background-position: 100% 0;
     transform: translateY(-2px) scale(1.02);
+    border-color: #DAA520;
     box-shadow:
-      0 6px 12px -2px rgba(139, 105, 20, 0.5),
-      0 4px 8px -2px rgba(139, 105, 20, 0.35),
-      0 12px 24px -4px rgba(139, 105, 20, 0.25),
-      0 0 20px -4px rgba(232, 194, 82, 0.35),
-      inset 0 1px 2px rgba(255, 245, 200, 0.6),
-      inset 0 -1px 1px rgba(100, 75, 10, 0.3);
+      0 1px 0 0 rgba(255, 248, 200, 0.8) inset,
+      0 -1px 0 0 rgba(139, 105, 20, 0.4) inset,
+      0 6px 14px -2px rgba(139, 105, 20, 0.5),
+      0 12px 28px -4px rgba(218, 165, 32, 0.3),
+      0 0 24px -4px rgba(245, 217, 118, 0.4);
   }
 
   .btn-golden-3d:active {
-    transform: translateY(0) scale(0.98);
+    transform: translateY(1px) scale(0.98);
     box-shadow:
-      0 2px 4px -1px rgba(139, 105, 20, 0.4),
-      inset 0 2px 4px rgba(100, 75, 10, 0.3),
-      inset 0 -1px 1px rgba(255, 245, 200, 0.2);
+      0 1px 2px rgba(139, 105, 20, 0.3),
+      inset 0 2px 4px rgba(100, 75, 10, 0.25),
+      inset 0 -1px 1px rgba(255, 248, 200, 0.3);
   }
 
-  /* Destructive: Red with 3D effect */
+  /* Destructive: Red with 3D metallic effect */
   .btn-golden-destructive {
-    background: linear-gradient(135deg, #991B1B 0%, #DC2626 30%, #EF4444 55%, #DC2626 75%, #991B1B 100%);
-    background-size: 200% 100%;
+    background:
+      linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.35) 35%, transparent 50%, rgba(255,255,255,0.15) 70%, transparent 80%),
+      linear-gradient(180deg, #B91C1C 0%, #DC2626 20%, #EF4444 45%, #FCA5A5 55%, #EF4444 70%, #DC2626 85%, #B91C1C 100%);
+    border: 1.5px solid #991B1B;
     box-shadow:
-      0 4px 6px -1px rgba(153, 27, 27, 0.4),
-      0 2px 4px -2px rgba(153, 27, 27, 0.3),
-      0 8px 16px -4px rgba(153, 27, 27, 0.2),
-      inset 0 1px 1px rgba(255, 180, 180, 0.35),
-      inset 0 -1px 1px rgba(80, 10, 10, 0.25);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      0 1px 0 0 rgba(255, 180, 180, 0.5) inset,
+      0 -1px 0 0 rgba(100, 10, 10, 0.35) inset,
+      0 4px 8px -2px rgba(153, 27, 27, 0.45),
+      0 8px 20px -4px rgba(153, 27, 27, 0.25);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
     position: relative;
     overflow: hidden;
-    border: none;
   }
 
   .btn-golden-destructive::before {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
-    width: 60%;
+    left: -120%;
+    width: 70%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 200, 200, 0.4), transparent);
-    transition: left 0.5s ease;
+    background: linear-gradient(90deg, transparent, rgba(255, 210, 210, 0.5), transparent);
+    transition: left 0.6s ease;
     pointer-events: none;
   }
 
   .btn-golden-destructive:hover::before {
-    left: 150%;
+    left: 160%;
   }
 
   .btn-golden-destructive:hover {
-    background-position: 100% 0;
     transform: translateY(-2px) scale(1.02);
     box-shadow:
-      0 6px 12px -2px rgba(153, 27, 27, 0.5),
-      0 12px 24px -4px rgba(153, 27, 27, 0.25),
-      0 0 20px -4px rgba(239, 68, 68, 0.35),
-      inset 0 1px 2px rgba(255, 180, 180, 0.4),
-      inset 0 -1px 1px rgba(80, 10, 10, 0.3);
+      0 1px 0 0 rgba(255, 180, 180, 0.6) inset,
+      0 -1px 0 0 rgba(100, 10, 10, 0.4) inset,
+      0 6px 14px -2px rgba(153, 27, 27, 0.5),
+      0 12px 28px -4px rgba(220, 38, 38, 0.3),
+      0 0 24px -4px rgba(239, 68, 68, 0.4);
   }
 
   .btn-golden-destructive:active {
-    transform: translateY(0) scale(0.98);
+    transform: translateY(1px) scale(0.98);
     box-shadow:
-      0 2px 4px -1px rgba(153, 27, 27, 0.4),
+      0 1px 2px rgba(153, 27, 27, 0.3),
       inset 0 2px 4px rgba(80, 10, 10, 0.3);
   }
 
   /* Outline: Gold border, transparent bg */
   .btn-golden-outline {
     background: transparent;
-    border: 2px solid #C49B30;
+    border: 2px solid #DAA520;
     color: #8B6914;
     font-weight: 600;
     position: relative;
     overflow: hidden;
-    box-shadow:
-      0 2px 4px -1px rgba(139, 105, 20, 0.15),
-      inset 0 0 0 0 rgba(232, 194, 82, 0);
+    box-shadow: 0 2px 4px -1px rgba(139, 105, 20, 0.15);
   }
 
   .btn-golden-outline::before {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
-    width: 60%;
+    left: -120%;
+    width: 70%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(245, 217, 118, 0.2), transparent);
-    transition: left 0.5s ease;
+    background: linear-gradient(90deg, transparent, rgba(245, 217, 118, 0.25), transparent);
+    transition: left 0.6s ease;
     pointer-events: none;
   }
 
   .btn-golden-outline:hover::before {
-    left: 150%;
+    left: 160%;
   }
 
   .btn-golden-outline:hover {
-    background: linear-gradient(135deg, #8B6914 0%, #C49B30 25%, #E8C252 50%, #C49B30 75%, #8B6914 100%);
-    color: #FFFFFF;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    border-color: transparent;
-    transform: translateY(-1px);
+    background:
+      linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.4) 35%, transparent 50%, rgba(255,255,255,0.15) 70%, transparent 80%),
+      linear-gradient(180deg, #C49B30 0%, #E8C252 20%, #F5D976 45%, #FFF4C8 55%, #F5D976 70%, #E8C252 85%, #C49B30 100%);
+    color: #3D2800;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    border-color: #B8860B;
+    transform: translateY(-2px) scale(1.02);
     box-shadow:
-      0 4px 8px -2px rgba(139, 105, 20, 0.4),
-      0 0 16px -4px rgba(232, 194, 82, 0.3),
-      inset 0 1px 1px rgba(255, 245, 200, 0.4);
+      0 4px 10px -2px rgba(139, 105, 20, 0.45),
+      0 0 20px -4px rgba(232, 194, 82, 0.3),
+      inset 0 1px 0 rgba(255, 248, 200, 0.6);
   }
 
   .btn-golden-outline:active {
-    transform: translateY(0) scale(0.98);
+    transform: translateY(1px) scale(0.98);
   }
 
   /* Secondary: Soft golden champagne */
   .btn-golden-secondary {
-    background: linear-gradient(135deg, hsl(45, 60%, 92%) 0%, hsl(43, 65%, 88%) 50%, hsl(45, 60%, 92%) 100%);
-    background-size: 200% 100%;
-    color: #7A5C10;
+    background:
+      linear-gradient(105deg, transparent 25%, rgba(255,255,255,0.3) 40%, transparent 55%),
+      linear-gradient(180deg, hsl(45, 55%, 90%) 0%, hsl(43, 60%, 86%) 40%, hsl(45, 65%, 92%) 60%, hsl(43, 55%, 88%) 100%);
+    color: #6B4F0A;
     font-weight: 600;
-    border: 1px solid hsl(43, 50%, 82%);
+    border: 1.5px solid hsl(43, 45%, 78%);
     box-shadow:
-      0 2px 4px -1px rgba(139, 105, 20, 0.15),
-      0 4px 8px -4px rgba(139, 105, 20, 0.1),
-      inset 0 1px 1px rgba(255, 250, 230, 0.6);
+      0 1px 0 0 rgba(255, 250, 230, 0.6) inset,
+      0 -1px 0 0 rgba(139, 105, 20, 0.15) inset,
+      0 2px 6px -2px rgba(139, 105, 20, 0.18);
     position: relative;
     overflow: hidden;
   }
@@ -428,30 +430,107 @@
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
-    width: 60%;
+    left: -120%;
+    width: 70%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 250, 220, 0.5), transparent);
-    transition: left 0.5s ease;
+    transition: left 0.6s ease;
     pointer-events: none;
   }
 
   .btn-golden-secondary:hover::before {
-    left: 150%;
+    left: 160%;
   }
 
   .btn-golden-secondary:hover {
-    background-position: 100% 0;
     transform: translateY(-1px);
+    border-color: hsl(43, 50%, 70%);
     box-shadow:
-      0 4px 8px -2px rgba(139, 105, 20, 0.25),
-      0 0 12px -4px rgba(232, 194, 82, 0.2),
-      inset 0 1px 1px rgba(255, 250, 230, 0.7);
-    border-color: hsl(43, 55%, 75%);
+      0 1px 0 0 rgba(255, 250, 230, 0.7) inset,
+      0 4px 10px -2px rgba(139, 105, 20, 0.25),
+      0 0 16px -4px rgba(232, 194, 82, 0.2);
   }
 
   .btn-golden-secondary:active {
-    transform: translateY(0) scale(0.98);
+    transform: translateY(1px) scale(0.98);
+  }
+
+  /* ===== Section Title Bar - Metallic Gold Badge ===== */
+  .section-title-gold {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #3D2800;
+    border: 1.5px solid #B8860B;
+    background:
+      linear-gradient(105deg, transparent 15%, rgba(255,255,255,0.5) 30%, rgba(255,255,255,0.1) 45%, transparent 55%, rgba(255,255,255,0.25) 72%, transparent 85%),
+      linear-gradient(180deg, #C49B30 0%, #E8C252 12%, #F5D976 30%, #FFF4C8 48%, #F5D976 65%, #E8C252 82%, #C49B30 100%);
+    box-shadow:
+      0 1px 0 0 rgba(255, 248, 200, 0.7) inset,
+      0 -1px 0 0 rgba(139, 105, 20, 0.35) inset,
+      0 3px 8px -2px rgba(139, 105, 20, 0.35),
+      0 6px 16px -4px rgba(139, 105, 20, 0.2);
+    text-shadow: 0 1px 1px rgba(255, 248, 200, 0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section-title-gold::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 70%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 252, 235, 0.55), transparent);
+    animation: shimmer-title 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes shimmer-title {
+    0% { left: -120%; }
+    50% { left: 160%; }
+    100% { left: 160%; }
+  }
+
+  /* White text variant for dark backgrounds */
+  .section-title-gold-light {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #FFFFFF;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    border: 1.5px solid #8B6914;
+    background:
+      linear-gradient(105deg, transparent 15%, rgba(255,255,255,0.3) 30%, transparent 50%, rgba(255,255,255,0.15) 72%, transparent 85%),
+      linear-gradient(180deg, #7A5C10 0%, #8B6914 15%, #B8860B 35%, #C49B30 50%, #B8860B 65%, #8B6914 85%, #7A5C10 100%);
+    box-shadow:
+      0 1px 0 0 rgba(196, 155, 48, 0.5) inset,
+      0 -1px 0 0 rgba(80, 55, 5, 0.4) inset,
+      0 3px 8px -2px rgba(100, 75, 10, 0.4),
+      0 6px 16px -4px rgba(100, 75, 10, 0.25);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section-title-gold-light::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 70%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 245, 200, 0.35), transparent);
+    animation: shimmer-title 4s ease-in-out infinite;
+    pointer-events: none;
   }
 
   /* Button Sacred Variants - Metallic Gold Shine (legacy) */
