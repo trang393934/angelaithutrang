@@ -824,7 +824,7 @@ const UserProfile = () => {
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-3 text-[15px] text-gray-700">
                     <Award className="w-5 h-5 text-gray-500" />
-                    <span><strong>{Math.floor(stats.coins).toLocaleString()}</strong> Camly Coin tích lũy</span>
+                    <span><strong>{Math.floor(lifetimeEarned).toLocaleString()}</strong> Camly Coin tích lũy</span>
                   </div>
                   <div className="flex items-center gap-3 text-[15px] text-gray-700">
                     <FileText className="w-5 h-5 text-gray-500" />
