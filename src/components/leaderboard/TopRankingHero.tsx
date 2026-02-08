@@ -7,6 +7,8 @@ import { ImageLightbox } from "@/components/community/ImageLightbox";
 import angelAvatar from "@/assets/angel-avatar.png";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import { Coins } from "lucide-react";
+import { RainbowTitle } from "./RainbowTitle";
+import { LeaderboardFloatingEffects } from "./LeaderboardEffects";
 
 // Firework Camly Coin component
 const FireworkCoin = ({ delay, startX, startY }: { delay: number; startX: number; startY: number }) => {
@@ -306,22 +308,17 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
           ))}
         </div>
 
-        {/* Title - Single line */}
+        {/* Floating coins & blossoms */}
+        <LeaderboardFloatingEffects />
+
+        {/* Title - Rainbow 3D */}
         <motion.h2 
-          className="text-center font-black text-lg md:text-xl mb-3 relative z-10 whitespace-nowrap"
+          className="text-center mb-3 relative z-10"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          style={{
-            background: "linear-gradient(180deg, #5D4037 0%, #3E2723 50%, #1B0F08 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            textShadow: "2px 2px 4px rgba(255, 235, 59, 0.5)",
-            fontFamily: "'Impact', 'Arial Black', sans-serif",
-            letterSpacing: "2px",
-          }}
         >
-          ⭐ TOP RANKING ⭐
+          <RainbowTitle text="⭐ TOP RANKING ⭐" />
         </motion.h2>
 
         {/* Compact Rankings Layout */}
