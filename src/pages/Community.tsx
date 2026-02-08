@@ -158,7 +158,8 @@ const Community = () => {
           playsInline
            className="fixed left-0 right-0 bottom-0 w-full object-cover object-top z-[1] pointer-events-none"
           style={{ 
-            opacity: 0.85, 
+            opacity: 1, 
+            filter: 'saturate(1.3) contrast(1.1)',
             top: 'var(--community-header-h, 0px)',
             height: 'calc(100vh - var(--community-header-h, 0px))'
           }}
