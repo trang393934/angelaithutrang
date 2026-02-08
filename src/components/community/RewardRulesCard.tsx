@@ -49,7 +49,7 @@ export function RewardRulesCard({ dailyLimits }: RewardRulesCardProps) {
   ];
 
   return (
-    <Card className="border-primary/10 bg-gradient-to-br from-amber-50/50 to-orange-50/30">
+    <Card className="border-white/40 bg-white/30 backdrop-blur-sm">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold flex items-center gap-2 text-primary-deep">
           <Award className="w-5 h-5 text-amber-500" />

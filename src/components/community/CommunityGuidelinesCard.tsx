@@ -14,7 +14,7 @@ export function CommunityGuidelinesCard() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-amber-50 via-white to-primary-pale/90 backdrop-blur-sm rounded-xl p-5 border-2 border-amber-400/70 shadow-xl ring-2 ring-amber-200/50"
+      className="bg-white/30 backdrop-blur-sm rounded-xl p-5 border border-white/40 shadow-lg"
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
@@ -46,13 +46,13 @@ export function CommunityGuidelinesCard() {
       </ul>
 
       {/* Footer */}
-      <div className="space-y-3 pt-4 border-t-2 border-amber-300/60">
+      <div className="space-y-3 pt-4 border-t border-white/40">
         <p className="text-sm text-center text-amber-600 font-bold">
           🌈 Free to Join. Free to Use. Earn Together.
         </p>
         
         {/* Mantra */}
-        <div className="bg-gradient-to-r from-amber-100 to-primary-pale rounded-lg p-4 border border-amber-200/80">
+        <div className="bg-white/30 rounded-lg p-4 border border-white/30">
           <p className="text-sm text-center text-foreground/70 mb-1 font-medium">
             ⭐ Mantra mỗi ngày:
           </p>

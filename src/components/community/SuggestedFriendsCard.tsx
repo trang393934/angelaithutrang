@@ -88,7 +88,7 @@ export function SuggestedFriendsCard() {
   if (!user) return null;
 
   return (
-    <Card className="border-primary/10 bg-white/90 backdrop-blur-sm">
+    <Card className="border-white/40 bg-white/30 backdrop-blur-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold flex items-center justify-between text-foreground">
           <div className="flex items-center gap-2">

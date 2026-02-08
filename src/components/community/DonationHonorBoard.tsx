@@ -100,7 +100,7 @@ export function DonationHonorBoard() {
 
   return (
     <>
-      <div className="bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 rounded-xl border-2 border-rose-300 overflow-hidden shadow-xl">
+      <div className="bg-white/30 backdrop-blur-sm rounded-xl border border-white/40 overflow-hidden shadow-lg">
         {/* Header */}
         <div className="bg-gradient-to-r from-rose-400 via-pink-400 to-rose-500 px-4 py-3 relative overflow-hidden">
           <motion.div

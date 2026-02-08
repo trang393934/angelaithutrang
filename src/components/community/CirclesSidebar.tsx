@@ -106,7 +106,7 @@ export const CirclesSidebar = ({ maxVisible = 4 }: CirclesSidebarProps) => {
 
   return (
     <>
-      <Card className="border-divine-gold/20 shadow-soft">
+      <Card className="border-white/40 bg-white/30 backdrop-blur-sm shadow-lg">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg">
