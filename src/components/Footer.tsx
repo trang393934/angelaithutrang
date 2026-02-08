@@ -13,8 +13,8 @@ export const Footer = () => {
 
   return (
     <footer className="py-10 sm:py-16 bg-primary-deep text-primary-foreground relative overflow-hidden">
-      {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none" />
+      {/* Subtle golden accent overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-900/10 to-black/30 pointer-events-none" />
       
       <div className="container mx-auto px-4 sm:px-6 relative z-10">
         <div className="max-w-4xl mx-auto text-center">

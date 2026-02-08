@@ -13,6 +13,9 @@
     --background: 45 15% 98%;
     --background-pure: 45 10% 99.5%;
     --background-ivory: 43 20% 98%;
+
+    /* Premium Dark Surface - Near-black with warm gold tint */
+    --surface-dark: 30 8% 11%;
     
     --foreground: 30 20% 8%;
     --foreground-muted: 35 15% 25%;
@@ -60,7 +63,7 @@
 
     /* Sacred Gradients - Golden */
     --gradient-cosmic: linear-gradient(180deg, hsl(45 10% 99.5%) 0%, hsl(45 60% 96%) 50%, hsl(45 70% 90%) 100%);
-    --gradient-sapphire: linear-gradient(135deg, hsl(35 75% 28%) 0%, hsl(40 65% 45%) 50%, hsl(38 70% 38%) 100%);
+    --gradient-sapphire: linear-gradient(135deg, hsl(30 8% 11%) 0%, hsl(40 65% 45%) 50%, hsl(30 8% 14%) 100%);
     --gradient-light: linear-gradient(180deg, hsl(45 10% 99.5%) 0%, hsl(47 50% 97%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(45 10% 99.5%) 0%, hsl(45 55% 97%) 30%, hsl(45 65% 93%) 100%);
     
@@ -84,6 +87,7 @@
   .dark {
     --background: 30 15% 7%;
     --background-pure: 30 18% 5%;
+    --surface-dark: 30 8% 8%;
     --foreground: 40 15% 95%;
     --foreground-muted: 38 18% 70%;
 
@@ -731,7 +735,7 @@
 
   /* Sacred Backgrounds */
   .bg-primary-deep {
-    background-color: hsl(var(--primary-deep));
+    background-color: hsl(var(--surface-dark));
   }
 
   .bg-primary-light {
