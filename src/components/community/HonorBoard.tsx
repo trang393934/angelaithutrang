@@ -32,16 +32,16 @@ const StatItem = ({
     transition={{ delay, duration: 0.4 }}
     className="relative group"
   >
-    {/* Outer dark border frame */}
-    <div className="absolute -inset-[3px] rounded-full"
-      style={{ background: 'linear-gradient(180deg, #b8860b 0%, #8B6914 50%, #6B4F00 100%)' }}
+    {/* Outer light gold border frame */}
+    <div className="absolute -inset-[3px] rounded-[22px]"
+      style={{ background: 'linear-gradient(180deg, #ffec8b 0%, #ffd700 30%, #daa520 60%, #ffd700 100%)' }}
     />
     
     {/* Main content - bright Gold 11 metallic surface */}
-    <div className="relative flex items-center justify-between px-5 py-3.5 rounded-full overflow-hidden"
+    <div className="relative flex items-center justify-between px-4 py-3 rounded-[20px] overflow-hidden min-h-[52px]"
       style={{ 
         background: 'linear-gradient(180deg, #ffec8b 0%, #ffd700 20%, #daa520 50%, #ffd700 80%, #ffec8b 100%)',
-        boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.8), inset 0 -2px 4px rgba(180,130,0,0.3), 0 4px 12px rgba(0,0,0,0.25)' 
+        boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.8), inset 0 -2px 4px rgba(180,130,0,0.3), 0 4px 12px rgba(0,0,0,0.15)' 
       }}
     >
       {/* Brushed metal texture lines */}
@@ -63,18 +63,18 @@ const StatItem = ({
       />
       
       {/* Left side - Icon and label */}
-      <div className="flex items-center gap-3 relative">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center border border-amber-700/30"
+      <div className="flex items-center gap-2 relative min-w-0 flex-shrink">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border border-amber-600/20"
           style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,215,0,0.2) 100%)' }}
         >
-          <Icon className="w-4 h-4 text-amber-900 drop-shadow-[0_0_1px_rgba(255,215,0,0.4)]" />
+          <Icon className="w-3.5 h-3.5 text-amber-900 drop-shadow-[0_0_1px_rgba(255,215,0,0.4)]" />
         </div>
-        <span className="font-bold text-sm tracking-wide uppercase text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)]">{label}</span>
+        <span className="font-bold text-xs sm:text-sm tracking-wide uppercase text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)] leading-tight">{label}</span>
       </div>
       
       {/* Right side - Value */}
-      <div className="flex items-center gap-1.5 relative">
-        <span className="font-extrabold text-lg tracking-wider text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)]">
+      <div className="flex items-center gap-1 relative flex-shrink-0 ml-2">
+        <span className="font-extrabold text-base sm:text-lg tracking-wider text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)]">
           {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
         </span>
         {isCoin && (
