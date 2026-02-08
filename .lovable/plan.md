@@ -1,73 +1,46 @@
 
 
-# Reset 2 lệnh chuyển Lì xì theo quy trình mới
+# Cai thien UX: Canh bao vi khong khop tren Token Lifecycle
 
-## Tình trạng hiện tại
+## Van de hien tai
+Khi user ket noi vi khac voi vi da nhan FUN Money locked (qua `lockWithPPLP`), giao dien hien thi Locked/Activated/Flowing = 0 ma khong giai thich. User khong biet phai chuyen lai vi cu de activate/claim.
 
-| User | Balance hiện tại | Lifetime Earned | Lì xì đã cộng | Claim |
-|------|-----------------|-----------------|----------------|-------|
-| Angel Ai Van | 1,121,997 | 1,233,997 | 1,073,000 | Co (pending) |
-| ANGEL ANH NGUYET | 628,400 | 640,500 | 621,000 | Chua |
-
-Vấn đề: Camly Coin từ Lì xì Tết đã được cộng thẳng vào `balance` và `lifetime_earned`, chưa đi theo quy trình claim mới (user nhấn CLAIM -> admin chuyển on-chain).
-
-## Các bước thực hiện
-
-### Bước 1: Trừ số Lì xì khỏi balance và lifetime_earned
-
-Trừ lại số Camly Coin Lì xì đã cộng nhầm vào `camly_coin_balances`:
-
-- **Angel Ai Van**: balance 1,121,997 -> 48,997 | lifetime_earned 1,233,997 -> 160,997
-- **ANGEL ANH NGUYET**: balance 628,400 -> 7,400 | lifetime_earned 640,500 -> 19,500
-
-Giao dịch `camly_coin_transactions` vẫn giữ nguyên làm lịch sử kiểm toán (dùng để hiển thị riêng trong mục "Nhận thưởng Lì xì Tết").
-
-### Bước 2: Reset notification Lì xì
-
-Đặt lại `is_read = false` cho 2 notification `tet_lixi_reward` để user thấy lại popup chúc mừng và có thể nhấn CLAIM theo quy trình mới.
-
-### Bước 3: Xóa lixi_claims cũ
-
-Xóa record claim hiện tại của Angel Ai Van (đã tạo theo quy trình mới nhưng dựa trên dữ liệu cũ) để user claim lại sạch sẽ.
-
-## Kết quả sau reset
-
-| User | Balance moi | Lifetime Earned moi | Li xi (rieng) | Notification | Claim |
-|------|------------|--------------------|--------------:|--------------|-------|
-| Angel Ai Van | 48,997 | 160,997 | 1,073,000 | Popup hien lai | Cho claim lai |
-| ANGEL ANH NGUYET | 7,400 | 19,500 | 621,000 | Popup hien lai | Cho claim lai |
-
-Profile se hien thi:
-- **So du hien tai**: chi gom Camly tu hoat dong tu nhien (chat, bai viet, nhat ky...)
-- **Tong tich luy**: chi tinh tu hoat dong dong gop (da tru Li xi)
-- **Nhan thuong Li xi Tet**: hien thi rieng biet so Camly Coin tu chuong trinh Li xi
-
-## Quy trinh moi sau reset
-
-```text
-User mo app -> Thay popup Li xi
-      |
-      v
-User nhan CLAIM -> Tao lixi_claims (pending)
-      |
-      v
-Admin thay claim tren /admin/tet-reward
-      |
-      v
-Admin chuyen CAMLY token on-chain tu vi Treasury
-      |
-      v
-Cap nhat lixi_claims -> status: completed + tx_hash
-```
+## Giai phap
+Bo sung canh bao thong minh tren TokenLifecyclePanel khi phat hien vi hien tai khong co allocation nhung database ghi nhan mint_request thanh cong cho vi khac.
 
 ## Chi tiet ky thuat
 
-4 lenh SQL can thuc hien (chi la data update, khong thay doi schema):
+### 1. Cap nhat TokenLifecyclePanel.tsx
+- Khi ket noi vi va tat ca allocation = 0, truy van bang `pplp_mint_requests` de kiem tra xem user hien tai co mint_request nao da thanh cong (`status = 'minted'` va co `tx_hash`) voi `recipient_address` khac voi vi dang ket noi hay khong.
+- Neu co, hien thi Alert voi noi dung:
+  - "Ban co 124 FUN dang locked tai vi 0x8004...6966. Vui long chuyen ve vi do de activate va claim."
+  - Nut "Sao chep dia chi vi" de user copy dia chi vi cu
+  - Link den BSCScan de kiem tra giao dich
 
-1. UPDATE `camly_coin_balances` SET balance = balance - 1073000, lifetime_earned = lifetime_earned - 1073000 WHERE user_id = Angel Ai Van
-2. UPDATE `camly_coin_balances` SET balance = balance - 621000, lifetime_earned = lifetime_earned - 621000 WHERE user_id = ANGEL ANH NGUYET
-3. UPDATE `notifications` SET is_read = false, read_at = NULL WHERE type = 'tet_lixi_reward'
-4. DELETE FROM `lixi_claims` WHERE user_id = Angel Ai Van
+### 2. Logic kiem tra
+```text
+1. User ket noi vi A (vi moi)
+2. Contract doc alloc(vi A) = {locked: 0, activated: 0}
+3. Query Supabase: SELECT recipient_address, amount, tx_hash 
+   FROM pplp_mint_requests 
+   WHERE status = 'minted' AND tx_hash IS NOT NULL 
+   AND action_id IN (SELECT id FROM pplp_actions WHERE actor_id = current_user_id)
+   AND recipient_address != vi A
+4. Neu co ket qua -> hien thi canh bao voi thong tin vi cu va so FUN
+```
 
-Khong can sua code, chi cap nhat du lieu.
+### 3. Giao dien canh bao
+- Dat trong TokenLifecyclePanel, ngay duoi phan 3-Stage Pipeline khi tat ca = 0
+- Mau vang/amber de canh bao (khong phai loi)
+- Noi dung: 
+  - Icon canh bao + "FUN Money cua ban dang o vi khac"
+  - Dia chi vi cu (truncated voi nut copy)
+  - So luong FUN locked
+  - Huong dan ngan: "Chuyen ve vi nay trong MetaMask de activate va claim"
+
+### 4. Files can sua
+- `src/components/mint/TokenLifecyclePanel.tsx` - Them logic kiem tra va UI canh bao
+
+### 5. Khong can migration database
+- Chi doc du lieu tu bang `pplp_mint_requests` va `pplp_actions` da co san
 
