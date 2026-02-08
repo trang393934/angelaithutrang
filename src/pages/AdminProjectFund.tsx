@@ -242,7 +242,7 @@ const AdminProjectFund = () => {
                 <div>
                   <p className="text-sm text-rose-600">Số dư hiện tại</p>
                   <div className="flex items-center gap-2">
-                    <img src={camlyCoinLogo} alt="CAMLY" className="w-6 h-6" />
+                    <img src={camlyCoinLogo} alt="CAMLY" className="w-6 h-6 rounded-full" />
                     <p className="text-2xl font-bold text-rose-700">
                       {fund?.balance.toLocaleString() || 0}
                     </p>

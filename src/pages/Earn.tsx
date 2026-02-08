@@ -69,7 +69,7 @@ export default function Earn() {
         <main className="flex-1 container mx-auto px-4 py-8 pt-28">
           <div className="max-w-2xl mx-auto text-center space-y-6">
             <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-              <img src={camlyCoinLogo} alt="Camly Coin" className="w-16 h-16" />
+              <img src={camlyCoinLogo} alt="Camly Coin" className="w-16 h-16 rounded-full" />
             </div>
             <h1 className="text-3xl font-bold">{t("earn.title")}</h1>
             <p className="text-muted-foreground">
@@ -123,7 +123,7 @@ export default function Earn() {
                     </div>
                     <CardContent>
                       <div className="flex items-center gap-3">
-                        <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12" />
+                        <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12 rounded-full" />
                         <span className="text-4xl font-bold flex items-center gap-2">
                           ✨ {isLoading ? "..." : balance.toLocaleString()}
                         </span>

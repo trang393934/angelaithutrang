@@ -252,7 +252,7 @@ export function UserLiXiCelebrationPopup() {
                   className="relative"
                 >
                   <div className="absolute inset-0 bg-yellow-300/40 blur-lg rounded-full" />
-                  <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12 relative z-10 drop-shadow-md" />
+                  <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12 relative z-10 drop-shadow-md rounded-full" />
                 </motion.div>
 
                 <motion.div

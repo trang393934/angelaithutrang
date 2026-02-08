@@ -104,7 +104,7 @@ export function DailyLoginReward({ onClose }: DailyLoginRewardProps) {
                   ? "bg-gradient-to-br from-amber-400 to-orange-500 animate-pulse" 
                   : "bg-gradient-to-br from-amber-300 to-amber-400"
               )}>
-                <img src={camlyCoinLogo} alt="Camly Coin" className="w-16 h-16" />
+                <img src={camlyCoinLogo} alt="Camly Coin" className="w-16 h-16 rounded-full" />
               </div>
               {isStreakBonus && (
                 <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-bounce">

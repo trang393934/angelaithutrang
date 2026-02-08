@@ -64,7 +64,7 @@ export default function Vision() {
               Tạo bảng tầm nhìn để định hình mục tiêu và theo dõi tiến độ của bạn
             </p>
             <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400">
-              <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
+              <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6 rounded-full" />
               <span className="font-medium">Nhận 1000 Camly Coin khi tạo Vision Board đầu tiên!</span>
             </div>
             <Button asChild size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
@@ -143,7 +143,7 @@ export default function Vision() {
               <CardContent className="p-6 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                    <img src={camlyCoinLogo} alt="Camly Coin" className="w-10 h-10" />
+                    <img src={camlyCoinLogo} alt="Camly Coin" className="w-10 h-10 rounded-full" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-amber-800 dark:text-amber-200">

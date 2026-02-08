@@ -293,7 +293,7 @@ export function CoinWithdrawal() {
               <CardDescription>{t("withdrawal.subtitle") || "Chuyển về ví Web3 của bạn"}</CardDescription>
             </div>
           </div>
-          <img src={camlyCoinLogo} alt="Camly Coin" className="w-10 h-10" />
+          <img src={camlyCoinLogo} alt="Camly Coin" className="w-10 h-10 rounded-full" />
         </div>
       </CardHeader>
 

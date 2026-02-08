@@ -22,7 +22,7 @@ const FallingCoin = ({ delay, left }: { delay: number; left: number }) => (
       ease: 'easeIn',
     }}
   >
-    <img src={camlyCoinLogo} alt="" className="w-full h-full" />
+    <img src={camlyCoinLogo} alt="" className="w-full h-full rounded-full" />
   </motion.div>
 );
 

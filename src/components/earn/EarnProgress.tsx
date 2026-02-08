@@ -227,7 +227,7 @@ export function EarnProgress() {
           <h2 className="text-lg font-semibold">{t("earn.progressTitle")}</h2>
         </div>
         <div className="flex items-center gap-2">
-          <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
+          <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6 rounded-full" />
           <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
             {status.totalCoinsToday.toLocaleString()}
           </span>

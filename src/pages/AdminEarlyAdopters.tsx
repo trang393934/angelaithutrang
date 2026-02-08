@@ -311,7 +311,7 @@ const AdminEarlyAdopters = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
-                <img src={camlyCoinLogo} alt="Camly" className="w-8 h-8" />
+                <img src={camlyCoinLogo} alt="Camly" className="w-8 h-8 rounded-full" />
                 <span className="text-3xl font-bold text-amber-600">
                   {stats.totalCoinsAwarded.toLocaleString()}
                 </span>
@@ -435,7 +435,7 @@ const AdminEarlyAdopters = () => {
                         <TableCell className="text-right">
                           {adopter.is_rewarded ? (
                             <div className="flex items-center justify-end gap-1">
-                              <img src={camlyCoinLogo} alt="Camly" className="w-4 h-4" />
+                              <img src={camlyCoinLogo} alt="Camly" className="w-4 h-4 rounded-full" />
                               <span className="font-semibold text-amber-600">
                                 {adopter.reward_amount.toLocaleString()}
                               </span>

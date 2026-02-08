@@ -78,7 +78,7 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
             <Gift className="w-4 h-4 text-white" />
           </div>
           <span className="text-sm font-bold text-amber-700">🎉 Chúc mừng!</span>
-          <img src={camlyCoinLogo} alt="coin" className="w-5 h-5" />
+          <img src={camlyCoinLogo} alt="coin" className="w-5 h-5 rounded-full" />
         </div>
 
         {/* Sender -> Receiver */}
@@ -115,7 +115,7 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
         {/* Amount */}
         <div className="bg-gradient-to-r from-amber-100 to-yellow-100 rounded-lg p-2 text-center border border-amber-200/60">
           <div className="flex items-center justify-center gap-1.5">
-            <img src={camlyCoinLogo} alt="coin" className="w-5 h-5" />
+            <img src={camlyCoinLogo} alt="coin" className="w-5 h-5 rounded-full" />
             <span className="text-xl font-bold text-amber-700">{formatAmount(giftDetails.amount)}</span>
             <span className="text-xs text-amber-600 font-medium">Camly Coin</span>
           </div>
@@ -154,7 +154,7 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
           <Gift className="w-4 h-4 text-white" />
         </div>
         <span className="text-sm font-bold text-amber-700">Tặng thưởng</span>
-        <img src={camlyCoinLogo} alt="coin" className="w-5 h-5 ml-auto" />
+        <img src={camlyCoinLogo} alt="coin" className="w-5 h-5 ml-auto rounded-full" />
       </div>
 
       <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content}</p>

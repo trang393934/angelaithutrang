@@ -274,7 +274,7 @@ export default function Bounty() {
                           </p>
                           
                           <div className="flex items-center gap-2 text-lg font-bold text-orange-600">
-                            <img src={camlyCoinLogo} alt="Camly" className="w-6 h-6" />
+                            <img src={camlyCoinLogo} alt="Camly" className="w-6 h-6 rounded-full" />
                             {task.reward_amount.toLocaleString()} Coin
                           </div>
 

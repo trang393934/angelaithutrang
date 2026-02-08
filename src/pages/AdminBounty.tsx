@@ -776,7 +776,7 @@ export default function AdminBounty() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                        <img src={camlyCoinLogo} alt="" className="w-4 h-4 mr-1" />
+                        <img src={camlyCoinLogo} alt="" className="w-4 h-4 mr-1 rounded-full" />
                         {sub.task_reward?.toLocaleString()}
                       </Badge>
                       {getStatusBadge(sub.status)}
@@ -804,7 +804,7 @@ export default function AdminBounty() {
                   {/* Reward info */}
                   {sub.status === "approved" && sub.reward_earned && (
                     <div className="flex items-center gap-2 p-2 rounded-lg bg-green-50 text-green-700">
-                      <img src={camlyCoinLogo} alt="" className="w-5 h-5" />
+                      <img src={camlyCoinLogo} alt="" className="w-5 h-5 rounded-full" />
                       <span className="text-sm font-medium">
                         Đã thưởng {sub.reward_earned.toLocaleString()} Camly Coin
                       </span>
@@ -871,7 +871,7 @@ export default function AdminBounty() {
                   </p>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1 text-sm font-medium text-orange-600">
-                      <img src={camlyCoinLogo} alt="" className="w-4 h-4" />
+                      <img src={camlyCoinLogo} alt="" className="w-4 h-4 rounded-full" />
                       {task.reward_amount.toLocaleString()} Coin
                     </span>
                     <span className="text-sm text-muted-foreground">
@@ -1084,7 +1084,7 @@ export default function AdminBounty() {
               <div className="space-y-2">
                 <Label htmlFor="reward">Số coin thưởng</Label>
                 <div className="flex items-center gap-2">
-                  <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
+                  <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6 rounded-full" />
                   <Input
                     id="reward"
                     type="number"

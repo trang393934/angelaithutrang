@@ -117,7 +117,7 @@ export function DonationHonorBoard() {
             <h3 className="font-bold text-white text-lg drop-shadow-sm">{t("donate.honorTitle")}</h3>
           </div>
           <div className="flex items-center gap-1.5 mt-1 relative">
-            <img src={camlyCoinLogo} alt="coin" className="w-4 h-4" />
+            <img src={camlyCoinLogo} alt="coin" className="w-4 h-4 rounded-full" />
             <p className="text-sm text-white font-semibold drop-shadow-sm">
               {totalDonated.toLocaleString()} Camly Coin {t("donate.totalDonated")}
             </p>

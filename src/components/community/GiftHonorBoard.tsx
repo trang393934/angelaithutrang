@@ -94,7 +94,7 @@ function CoinAmountBadge({ amount, type, size = "md" }: CoinAmountBadgeProps) {
         ? 'bg-gradient-to-r from-amber-100 to-yellow-200 text-amber-700 ring-1 ring-amber-300'
         : 'bg-gradient-to-r from-rose-100 to-pink-200 text-rose-600 ring-1 ring-rose-300'
       }`}>
-      <img src={camlyCoinLogo} alt="coin" className={isSm ? "w-3 h-3" : "w-4 h-4"} />
+      <img src={camlyCoinLogo} alt="coin" className={`${isSm ? "w-3 h-3" : "w-4 h-4"} rounded-full`} />
       <span>{formattedAmount}</span>
     </div>
   );
@@ -141,7 +141,7 @@ export function GiftHonorBoard() {
             <h3 className="font-bold text-white text-lg drop-shadow-sm">{t("gift.honorTitle")}</h3>
           </div>
           <div className="flex items-center gap-1.5 mt-1 relative">
-            <img src={camlyCoinLogo} alt="coin" className="w-4 h-4" />
+            <img src={camlyCoinLogo} alt="coin" className="w-4 h-4 rounded-full" />
             <p className="text-sm text-white font-semibold drop-shadow-sm">
               {totalGifted.toLocaleString()} Camly Coin {t("gift.totalGifted")}
             </p>

@@ -742,7 +742,7 @@ const UserProfile = () => {
                   {/* Camly Coin Balance */}
                   <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40">
                     <div className="flex items-center gap-2.5">
-                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8" />
+                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8 rounded-full" />
                       <div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Số dư hiện tại</p>
                         <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
@@ -1110,7 +1110,7 @@ const UserProfile = () => {
                     {/* Camly Coin */}
                     <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40">
                       <div className="flex items-center gap-2.5">
-                        <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8" />
+                        <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8 rounded-full" />
                         <div>
                           <p className="text-xs text-gray-500">Số dư hiện tại</p>
                           <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
