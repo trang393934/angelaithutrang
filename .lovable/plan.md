@@ -1,155 +1,134 @@
 
 
-# Kế hoạch sửa bug và bổ sung PPLP cho các hành động còn thiếu
+# Ke hoach sua loi Content Moderation - False Positive
 
-## Tổng quan tình trạng hiện tại
+## Van de chinh
 
-### Hành động ĐA TICH HOP PPLP (dang hoat dong)
-| Hành động | File | Action Type | FUN Base |
-|-----------|------|-------------|----------|
-| Dang bai moi | process-community-post | POST_CREATE | 70 FUN |
-| Binh luan (>= 50 ky tu) | process-community-post | COMMENT_CREATE | 40 FUN |
-| Chia se bai viet (trong community) | process-community-post | SHARE_CONTENT | 40 FUN |
-| Chia se noi dung (ra ngoai) | process-share-reward | SHARE_CONTENT | 40 FUN |
-| Bai viet dat 5+ like (thuong tac gia) | process-community-post | POST_ENGAGEMENT | 40 FUN |
+He thong kiem duyet noi dung (`src/lib/contentModeration.ts`) dang chan nhieu bai viet hop le vi 2 ly do:
 
-### BUG nghiem trong
-| Bug | File | Mo ta |
-|-----|------|-------|
-| Thieu import PPLP | process-engagement-reward/index.ts | Goi `submitAndScorePPLPAction` va `PPLP_ACTION_TYPES` nhung KHONG import, se crash khi cau hoi dat 10+ like |
+1. **Tu "gay" bi liet ke la tu co hai** (dong 30) - nhung day la am tiet tieng Viet binh thuong ("gay go", "gay gat", "gay can")
+2. **Kiem tra tu tieng Viet dung `includes()` (dong 83-84)** - tim chuoi con thay vi tim tu nguyen ven, gay ra false positive hang loat
 
-### Hanh dong CHUA tich hop PPLP (khong tao FUN Money)
-| Hanh dong | File | Trang thai |
-|-----------|------|------------|
-| Tang qua Camly Coin | process-coin-gift/index.ts | Chi xu ly Camly Coin, khong co PPLP |
-| Donate cho du an (Camly) | process-project-donation/index.ts | Chi xu ly Camly Coin, khong co PPLP |
-| Donate crypto thu cong | process-manual-donation/index.ts | Chi xu ly light_points, khong co PPLP |
+Trong khi do, kiem tra tu tieng Anh (dong 90-91) da dung dung cach `\b` word boundary.
 
----
+## Giai phap
 
-## Ke hoach thuc hien
+### Buoc 1: Xoa "gay" khoi danh sach tu co hai
 
-### Buoc 1: Sua bug import trong `process-engagement-reward`
+**File**: `src/lib/contentModeration.ts`, dong 30
 
-**File**: `supabase/functions/process-engagement-reward/index.ts`
+**Thay doi**: Xoa `'gay'` khoi mang `HARMFUL_WORDS_VI`. Day khong phai tu co hai trong tieng Viet, va viec liet ke no gay chan hang loat bai viet hop le.
 
-**Van de**: Dong 153-172 goi `submitAndScorePPLPAction` va `PPLP_ACTION_TYPES` nhung khong co dong `import` nao. Ham se crash voi loi `ReferenceError: submitAndScorePPLPAction is not defined` khi mot cau hoi dat 10+ luot thich.
-
-**Giai phap**: Them dong import tu `_shared/pplp-helper.ts`:
-```typescript
-import { submitAndScorePPLPAction, PPLP_ACTION_TYPES } from "../_shared/pplp-helper.ts";
+**Truoc:**
+```
+'do cho', 'con cho', 'thang ngu', 'con ngu', 'do ngu', 'mat lon', 'do diem',
+'gay', 'be de', 'pe de',
 ```
 
----
+**Sau:**
+```
+'do cho', 'con cho', 'thang ngu', 'con ngu', 'do ngu', 'mat lon', 'do diem',
+'be de', 'pe de',
+```
 
-### Buoc 2: Bo sung PPLP cho `process-coin-gift` (Tang qua)
+### Buoc 2: Chuyen kiem tra tu tieng Viet sang word-boundary regex
 
-**File**: `supabase/functions/process-coin-gift/index.ts`
+**File**: `src/lib/contentModeration.ts`, dong 82-87
 
-**Logic hien tai**: Nguoi gui mat Camly Coin, nguoi nhan duoc Camly Coin + thong bao. Khong co diem PPLP nao.
+**Van de**: `lowerText.includes(word)` tim chuoi con, nen tu "dam" trong "dam ra" cung bi bat.
 
-**Bo sung**:
-- Import `submitAndScorePPLPAction`, `PPLP_ACTION_TYPES`, `generateContentHash` tu `_shared/pplp-helper.ts`
-- Sau khi giao dich tang qua thanh cong (dong ~253), them PPLP submission cho **nguoi gui** (hanh dong tang qua la hanh dong Anh Sang):
-  - Action type: `DONATE_SUPPORT` (viec tang qua tuong duong voi hanh dong ho tro cong dong)
-  - actor_id: senderId (nguoi gui)
-  - target_id: giftRecord.id
-  - impact scope: `group` (anh huong den ca nguoi nhan va cong dong)
-  - quality_indicators: `['generosity', 'community_support']`
-  - reward_amount: gia tri qua tang (de scoring tinh toan)
-  - Ghi chu: Khong tang them Camly Coin (da co roi), chi tao diem PPLP de tao FUN Money
+**Thay doi**: Su dung `\b` regex giong nhu kiem tra tieng Anh. Tieng Viet tach am tiet bang dau cach, nen `\b` hoat dong tot.
 
----
+**Truoc:**
+```typescript
+// Check Vietnamese harmful words
+for (const word of HARMFUL_WORDS_VI) {
+  if (lowerText.includes(word.toLowerCase())) {
+    foundWords.push(word);
+  }
+}
+```
 
-### Buoc 3: Bo sung PPLP cho `process-project-donation` (Donate du an bang Camly)
+**Sau:**
+```typescript
+// Check Vietnamese harmful words (with word boundary to avoid false positives)
+for (const word of HARMFUL_WORDS_VI) {
+  const escapedWord = word.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(^|\\s|[.,!?;:"'()\\[\\]{}])${escapedWord}($|\\s|[.,!?;:"'()\\[\\]{}])`, 'i');
+  if (regex.test(lowerText)) {
+    foundWords.push(word);
+  }
+}
+```
 
-**File**: `supabase/functions/process-project-donation/index.ts`
+Dung boundary tuy chinh (dau cach + dau cau) thay vi `\b` de xu ly chinh xac hon voi cac ky tu Unicode/dau thanh tieng Viet.
 
-**Logic hien tai**: Tru Camly Coin cua nguoi donate, cong vao quy du an, cap nhat PoPL score. Khong co PPLP.
+### Buoc 3: Them whitelist cac cum tu tieng Viet vo hai
 
-**Bo sung**:
-- Import `submitAndScorePPLPAction`, `PPLP_ACTION_TYPES` tu `_shared/pplp-helper.ts`
-- Sau khi donate thanh cong (dong ~157), them PPLP submission cho **nguoi donate**:
-  - Action type: `DONATE_SUPPORT` (120 FUN base theo Policy v1.0.2)
-  - actor_id: donorId
-  - impact scope: `ecosystem` (dong gop cho toan he sinh thai)
-  - quality_indicators: `['project_support', 'ecosystem_builder']`
-  - reward_amount: donationAmount
+**File**: `src/lib/contentModeration.ts`
 
----
+**Them moi**: Mot danh sach whitelist cac cum tu tieng Viet pho bien chua am tiet trung voi tu co hai nhung hoan toan vo hai:
 
-### Buoc 4: Bo sung PPLP cho `process-manual-donation` (Donate crypto thu cong)
+```typescript
+const VIETNAMESE_SAFE_PHRASES = [
+  'dam ra',     // tro nen (khac voi "dam" bao luc)
+  'chem gio',   // noi chuyen phiem (khac voi "chem" bao luc)
+  'gay go',     // kho khan
+  'gay gat',    // khan truong
+  'gay can',    // hoi hop
+];
+```
 
-**File**: `supabase/functions/process-manual-donation/index.ts`
+Logic: Truoc khi kiem tra tu co hai, thay the cac cum tu vo hai bang placeholder de chung khong bi bat lam.
 
-**Logic hien tai**: Ghi nhan donate, cong light_points, gui thong bao. Khong co PPLP.
+### Buoc 4: Cai thien kiem tra ten file anh
 
-**Bo sung**:
-- Import `submitAndScorePPLPAction`, `PPLP_ACTION_TYPES` tu `_shared/pplp-helper.ts`
-- Them Supabase service role client (hien tai dang dung mot client duy nhat cho ca auth va DB -- can tach ra)
-- Sau khi donate thanh cong (dong ~117), them PPLP submission:
-  - Action type: `DONATE_SUPPORT`
-  - actor_id: user.id
-  - target_id: donation.id
-  - impact scope: `ecosystem`
-  - quality_indicators: `['crypto_donation', 'ecosystem_builder']`
-  - integrity: Kem txHash neu co de tang tinh xac thuc
-  - reward_amount: amount
+**File**: `src/lib/contentModeration.ts`, dong 180
 
----
+**Van de**: Ham `checkImageFilename` cung dung `includes()`, co the chan file anh co ten nhu "sunset_sexy_beach.jpg" khi nguoi dung chi muon chia se anh hoang hon.
 
-### Buoc 5: Bo sung action type moi trong `_shared/pplp-helper.ts`
-
-**File**: `supabase/functions/_shared/pplp-helper.ts`
-
-**Van de**: Cac hanh dong tang qua (gift) hien chua co mapping trong `mapRewardToPPLPAction`.
-
-**Bo sung**:
-- Them mapping `'gift_sent': PPLP_ACTION_TYPES.DONATE_SUPPORT` vao ham `mapRewardToPPLPAction`
-- Them mapping `'crypto_donation': PPLP_ACTION_TYPES.DONATE_SUPPORT` vao ham `mapRewardToPPLPAction`
+**Thay doi**: Ap dung word-boundary check tuong tu cho ten file.
 
 ---
 
 ## Tom tat tac dong
 
-| STT | Hanh dong | Thay doi | Ket qua |
-|-----|-----------|----------|---------|
-| 1 | Sua bug import | Them 1 dong import | Engagement reward (10+ like) khong bi crash nua |
-| 2 | Tang qua Camly | Them ~20 dong PPLP | Nguoi tang duoc tinh diem PPLP -> tao FUN Money |
-| 3 | Donate du an | Them ~20 dong PPLP | Nguoi donate duoc tinh diem PPLP -> tao FUN Money |
-| 4 | Donate crypto | Them ~25 dong PPLP | Nguoi donate crypto duoc tinh diem PPLP -> tao FUN Money |
-| 5 | Cap nhat helper | Them 2 mapping | Map day du cac loai giao dich |
+| STT | Thay doi | Ket qua |
+|-----|----------|---------|
+| 1 | Xoa "gay" khoi HARMFUL_WORDS_VI | Cac bai viet chua "gay go", "gay gat" khong bi chan nua |
+| 2 | Chuyen sang word-boundary regex | Cac tu nhu "dam ra" khong bi nham la "dam" bao luc |
+| 3 | Them whitelist cum tu vo hai | Bao ve them cac truong hop phuc tap |
+| 4 | Sua checkImageFilename | Giam false positive cho ten file anh |
 
-**Tong cong**: 5 file can chinh sua, khoang 90 dong code moi. Khong can thay doi database hay tao bang moi.
+**Tong cong**: 1 file can chinh sua (`src/lib/contentModeration.ts`), khong can thay doi database.
 
 ## Chi tiet ky thuat
 
-### Mau code PPLP tieu chuan (ap dung cho tat ca):
-```typescript
-import { submitAndScorePPLPAction, PPLP_ACTION_TYPES } from "../_shared/pplp-helper.ts";
+### Logic xu ly whitelist:
 
-// Sau khi hanh dong thanh cong:
-submitAndScorePPLPAction(supabase, {
-  action_type: PPLP_ACTION_TYPES.DONATE_SUPPORT,
-  actor_id: userId,
-  target_id: recordId,
-  metadata: { /* chi tiet hanh dong */ },
-  impact: {
-    scope: 'group', // hoac 'ecosystem'
-    reach_count: 1,
-    quality_indicators: ['generosity'],
-  },
-  integrity: {
-    source_verified: true,
-  },
-  reward_amount: amount,
-}).then(r => {
-  if (r.success) console.log(`[PPLP] Scored: ${r.action_id}, FUN: ${r.reward}`);
-}).catch(e => console.warn('[PPLP] Error:', e));
+```typescript
+function sanitizeForCheck(text: string): string {
+  let sanitized = text.toLowerCase();
+  for (const phrase of VIETNAMESE_SAFE_PHRASES) {
+    sanitized = sanitized.replaceAll(phrase, ' __safe__ ');
+  }
+  return sanitized;
+}
 ```
 
-### Luu y quan trong:
-- Tat ca PPLP call deu la **fire-and-forget** (dung `.then().catch()`) de khong lam cham response chinh
-- Khong tang them Camly Coin trong PPLP (da tach biet theo thiet ke "decoupled reward")
-- FUN Money duoc tao qua PPLP scoring, nguoi dung se thay o trang /mint
+### Regex boundary cho tieng Viet:
 
+Thay vi dung `\b` (khong xu ly tot voi Unicode), su dung boundary tuy chinh:
+- Bat dau/ket thuc chuoi
+- Dau cach
+- Dau cau (, . ! ? ; : " ' vv.)
+
+Dieu nay dam bao:
+- "gay go" -> "gay" la tu rieng biet -> nhung da bi xoa khoi danh sach nen OK
+- "dam ra" -> "dam" co boundary nhung nam trong whitelist -> OK  
+- "dit me" -> "dit" la tu rieng biet + khong trong whitelist -> BI CHAN (dung)
+
+### Luu y:
+- Thay doi nay chi anh huong den client-side moderation (truoc khi gui bai)
+- Server-side (process-community-post) van hoat dong binh thuong vi no khong dung file nay
+- Khong can deploy lai Edge Functions
