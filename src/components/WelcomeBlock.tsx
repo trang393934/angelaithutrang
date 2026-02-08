@@ -16,7 +16,7 @@ export const WelcomeBlock = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.3 }}
-      className="py-12 px-4 sm:px-6 lg:px-8"
+      className="py-12 px-4 sm:px-6 lg:px-8 bg-white/60 backdrop-blur-[2px]"
     >
       <div className="max-w-4xl mx-auto">
         {/* Main Welcome Card */}

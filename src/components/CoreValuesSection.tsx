@@ -20,7 +20,7 @@ export const CoreValuesSection = () => {
   ];
 
   return (
-    <section className="py-24 md:py-32 bg-cosmic-gradient relative overflow-hidden">
+    <section className="py-24 md:py-32 bg-white/60 backdrop-blur-[2px] relative overflow-hidden">
       {/* Subtle decorative elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-primary-light/30 to-transparent" />

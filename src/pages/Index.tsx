@@ -91,7 +91,7 @@ const Index = () => {
               </div>
               
               {/* Master Charter & Light Constitution Banners */}
-              <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+              <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-4 bg-white/60 backdrop-blur-[2px]">
                 <MasterCharterBanner />
                 <LightConstitutionBanner />
               </div>

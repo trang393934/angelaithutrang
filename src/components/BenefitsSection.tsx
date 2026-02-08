@@ -55,7 +55,7 @@ export const BenefitsSection = () => {
   const { t } = useLanguage();
 
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-amber-50/50 via-white to-amber-50/30">
+    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white/60 backdrop-blur-[2px]">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <motion.div
