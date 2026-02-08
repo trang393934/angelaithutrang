@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Users, MessageCircle, ShoppingBag, Plus, User, LogOut, Star, ChevronDown } from "lucide-react";
+import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -171,7 +172,7 @@ export function CommunityHeader() {
               {/* Right: Notifications & Profile */}
               <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-end">
                 <NotificationDropdown variant="community" />
-                
+                <Web3WalletButton />
                 {user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
