@@ -1,136 +1,102 @@
 
 
-# Tạo bảng thông báo chúc mừng Lì xì cho người dùng
+# Hiển thị công khai số liệu tài chính trên trang cá nhân
 
 ## Mục tiêu
 
-Tạo popup chúc mừng Lì xì cho người dùng theo đúng mẫu thiết kế đã đính kèm, với giao diện phong cách Tết truyền thống (nền vàng gold, viền giấy cổ, hoa đào, đèn lồng), hiển thị số lượng Camly Coin và FUN Money cá nhân của từng user. Thêm logo đồng FUN Money và đồng Camly Coin vào vị trí phù hợp trên mẫu.
+Mở rộng mục "Giới thiệu" trên trang cá nhân `/user/:userId` để hiển thị **công khai** toàn bộ số liệu tài chính cho **tất cả người xem** (không chỉ chủ sở hữu), bao gồm:
 
-## Luồng hoạt động
+1. **Camly Coin**: Số dư hiện tại + Tổng tích lũy
+2. **PoPL Score**: Điểm + Cấp bậc huy hiệu + Số hành động tốt
+3. **FUN Money (On-chain)**: Tổng FUN + Sẵn sàng claim / Đã mint / Đang chờ
+4. Cập nhật **thời gian thực** khi user nhận thưởng
 
-```text
-Admin duyệt và chuyển thưởng Lì xì tại /admin/tet-reward
-              |
-              v
-  Edge Function xử lý:
-    1. Cập nhật số dư Camly Coin (đã có)
-    2. Ghi giao dịch (đã có)
-    3. Gửi healing_messages (đã có)
-    4. [MỚI] Chèn notification loại "tet_lixi_reward" với metadata
-              |
-              v
-  Người dùng truy cập trang cá nhân (/profile)
-              |
-              v
-  Hook useLiXiCelebration phát hiện notification chưa đọc
-              |
-              v
-  Hiện popup chúc mừng theo mẫu Tết + hiệu ứng confetti
-              |
-              v
-  Người dùng nhấn "CLAIM" -> đóng popup, đánh dấu đã đọc
-  Người dùng nhấn "Thêm thông tin" -> mở /admin/tet-reward
-```
+Giao diện giống hình mẫu đã đính kèm (image-303.png).
 
-## Thiết kế giao diện (theo đúng mẫu đính kèm)
+## Phân tích vấn đề hiện tại
 
-Popup sẽ tái tạo lại mẫu với CSS/Tailwind, bao gồm:
+### 1. Dữ liệu bị khóa bởi RLS (Row Level Security)
+- `user_light_totals`: Chỉ chủ sở hữu xem được -> PoPL Score không hiển thị cho khách
+- `pplp_actions` + `pplp_scores`: Chỉ chủ sở hữu xem được -> FUN Money Stats không hiển thị cho khách
+- `camly_coin_balances`: Đã có chính sách public SELECT -> OK
 
-- **Nền ngoài**: Gradient vàng gold (Gold 11) với hoa đào, cành cây, đèn lồng đỏ bằng emoji/CSS
-- **Bao lì xì đỏ**: Icon bao lì xì ở trên cùng giữa (emoji)
-- **Khung giấy cổ**: Nền trắng kem với viền trang trí, bo góc, chứa nội dung chính
-- **Nội dung bên trong khung**:
-  - Tiêu đề: "Chúc mừng bạn đã nhận được Lì xì!"
-  - Dòng 1: Icon quà + "Bạn nhận được **{camly_amount}** Camly Coin," kèm **logo đồng Camly** bên cạnh
-  - Dòng phụ: "được quy đổi dựa trên **{fun_amount}** FUN Money." kèm **logo đồng FUN** bên cạnh
-  - Dòng 2: Icon quà + "Chương trình Lì xì Tết tổng giá trị **26.000.000.000 VND**,"
-  - Dòng phụ: "được phân phối bằng FUN Money & Camly Coin."
-- **2 nút hành động**:
-  - "CLAIM" (nút xanh lá đậm, bo tròn, chữ in hoa trắng)
-  - "Thêm thông tin" (nút viền xám, có icon tay chỉ)
-- **Dòng cuối**: "Áp dụng đến 08/02/2026"
-- **Logo đồng coin**: 
-  - Đồng Camly Coin ở góc dưới trái (giống mẫu)
-  - Đồng FUN Money ở góc dưới phải (vị trí đối xứng)
+### 2. Hook không hỗ trợ xem hồ sơ người khác
+- `useCamlyCoin()` chỉ lấy dữ liệu của `auth.uid()` (người đăng nhập), không nhận tham số `userId`
+
+### 3. Giao diện bị giới hạn
+- 3 thẻ tài chính (Camly, PoPL, FUN Money) bị bọc trong `{isOwnProfile && (...)}` ở dòng 741-823
 
 ## Chi tiết kỹ thuật
 
-### Bước 1: Sao chép hình ảnh logo vào dự án
+### Bước 1: Cập nhật RLS (Row Level Security)
 
-Sao chép 2 logo đồng coin mà con đã upload vào thư mục `src/assets/`:
-- `user-uploads://16-3.png` -> `src/assets/fun-money-coin.png` (logo đồng FUN Money mới)
-- `user-uploads://17-2.png` -> `src/assets/camly-coin-new.png` (logo đồng Camly Coin mới)
+Thêm chính sách SELECT công khai cho 3 bảng:
 
-### Bước 2: Cập nhật Edge Function `distribute-fun-camly-reward`
+```sql
+-- 1. user_light_totals: Cho phép xem PoPL Score của bất kỳ ai
+CREATE POLICY "Public can view PoPL scores"
+  ON public.user_light_totals FOR SELECT
+  USING (true);
 
-**Tệp chỉnh sửa**: `supabase/functions/distribute-fun-camly-reward/index.ts`
+-- 2. pplp_actions: Cho phép xem trạng thái action (cho FUN Money Stats)
+CREATE POLICY "Public can view action status"
+  ON public.pplp_actions FOR SELECT
+  USING (true);
 
-Thêm đoạn chèn notification sau dòng gửi `healing_messages` (dòng 211):
-
-```typescript
-// Gửi notification cho popup chúc mừng Lì xì
-await supabaseAdmin.from("notifications").insert({
-  user_id,
-  type: "tet_lixi_reward",
-  title: "Chúc mừng bạn đã nhận được Lì xì!",
-  content: `Bạn nhận được ${camlyAmount.toLocaleString("vi-VN")} Camly Coin, được quy đổi dựa trên ${fun_amount.toLocaleString("vi-VN")} FUN Money.`,
-  metadata: {
-    camly_amount: camlyAmount,
-    fun_amount: fun_amount,
-    source: "fun_to_camly_reward",
-    batch_date: batchDate,
-  },
-});
+-- 3. pplp_scores: Cho phép xem điểm thưởng (cho FUN Money Stats)
+CREATE POLICY "Public can view scores"
+  ON public.pplp_scores FOR SELECT
+  USING (true);
 ```
 
-### Bước 3: Tạo hook `useLiXiCelebration`
+### Bước 2: Tạo hook `useUserCamlyCoin(userId)`
 
-**Tệp mới**: `src/hooks/useLiXiCelebration.ts`
+**Tệp mới**: `src/hooks/useUserCamlyCoin.ts`
 
-Chức năng:
-- Khi người dùng đăng nhập, truy vấn bảng `notifications` tìm loại `tet_lixi_reward` chưa đọc (`is_read = false`)
-- Lấy `camly_amount` và `fun_amount` từ trường `metadata`
-- Cung cấp hàm `claim()` để đánh dấu `is_read = true`
-- Trả về trạng thái `showPopup`, `camlyAmount`, `funAmount` để hiển thị popup
+Hook mới nhận tham số `userId` (bất kỳ) thay vì chỉ dùng `auth.uid()`:
+- Truy vấn `camly_coin_balances` theo `userId` được truyền vào
+- Trả về `balance` (số dư hiện tại) và `lifetimeEarned` (tổng tích lũy)
+- Đăng ký **realtime subscription** để cập nhật tức thì khi số dư thay đổi
+- Nhẹ hơn `useCamlyCoin` (không cần daily status, transactions)
 
-### Bước 4: Tạo component `UserLiXiCelebrationPopup`
+### Bước 3: Cập nhật `UserProfile.tsx` — Mở khóa thẻ tài chính cho khách
 
-**Tệp mới**: `src/components/UserLiXiCelebrationPopup.tsx`
+**Tệp chỉnh sửa**: `src/pages/UserProfile.tsx`
 
-Giao diện tái tạo theo mẫu đính kèm:
-- Tái sử dụng hiệu ứng `ConfettiPiece`, `FallingCoin`, `FloatingSparkle` từ `LiXiCelebrationDialog`
-- Nền gradient vàng gold với trang trí Tết (hoa đào, đèn lồng, cành cây bằng emoji/CSS)
-- Khung giấy cổ trắng kem chứa nội dung chính
-- Import và hiển thị **logo đồng FUN Money** (`fun-money-coin.png`) ở góc dưới phải
-- Import và hiển thị **logo đồng Camly** (`camly-coin-new.png`) ở góc dưới trái
-- Nút "CLAIM" màu xanh lá đậm + nút "Thêm thông tin" viền xám
-- Dòng cuối: "Áp dụng đến 08/02/2026"
+Thay đổi chính:
 
-### Bước 5: Tích hợp vào trang Profile
+1. **Import hook mới** `useUserCamlyCoin(userId)` thay vì `useCamlyCoin()` (vốn chỉ lấy auth user)
 
-**Tệp chỉnh sửa**: `src/pages/Profile.tsx`
+2. **Xóa điều kiện `isOwnProfile`** trên đoạn dòng 741-823 — cho phép tất cả người xem thấy:
+   - Thẻ Camly Coin (số dư + tích lũy)
+   - Thẻ PoPL Score (điểm + huy hiệu + hành động tốt)
+   - Thẻ FUN Money (tổng + sẵn sàng claim / đã mint / đang chờ)
 
-Thêm component `UserLiXiCelebrationPopup` vào cuối trang Profile (trước thẻ đóng `</div>` cuối cùng, khoảng dòng 1619):
+3. **Cập nhật tab "Giới thiệu"** (dòng 1095-1138) để cũng hiển thị 3 thẻ tài chính (đồng bộ với sidebar)
 
-```tsx
-import { UserLiXiCelebrationPopup } from "@/components/UserLiXiCelebrationPopup";
+4. **Thêm realtime subscription** cho `camly_coin_balances` theo `userId` đang xem — khi admin cộng thưởng, số liệu tự cập nhật ngay
 
-// Trong JSX:
-<UserLiXiCelebrationPopup />
-```
+### Bước 4: Cập nhật trang HandleProfile (Public Profile)
 
-Component tự động kiểm tra và hiển thị khi có notification Lì xì chưa đọc. Nếu không có, không render gì cả.
+**Tệp chỉnh sửa**: `src/hooks/usePublicProfile.ts`
+
+Thêm truy vấn `camly_coin_balances.balance` (số dư hiện tại) và FUN Money Stats vào hàm `fetchPublicProfile`. Hiện tại chỉ lấy `lifetime_earned`.
+
+**Tệp chỉnh sửa**: `src/components/public-profile/PublicProfileStats.tsx`
+
+Thêm hiển thị:
+- Số dư Camly Coin hiện tại (bên cạnh "tổng tích lũy" đã có)
+- FUN Money tổng
 
 ## Tóm tắt tác động
 
 | STT | Tệp | Hành động | Mô tả |
 |-----|------|-----------|-------|
-| 1 | `src/assets/fun-money-coin.png` | Sao chép | Logo đồng FUN Money từ file upload |
-| 2 | `src/assets/camly-coin-new.png` | Sao chép | Logo đồng Camly Coin từ file upload |
-| 3 | `supabase/functions/distribute-fun-camly-reward/index.ts` | Chỉnh sửa | Thêm gửi notification loại `tet_lixi_reward` |
-| 4 | `src/hooks/useLiXiCelebration.ts` | Tạo mới | Hook kiểm tra notification Lì xì chưa đọc |
-| 5 | `src/components/UserLiXiCelebrationPopup.tsx` | Tạo mới | Popup chúc mừng theo mẫu Tết + logo 2 đồng coin |
-| 6 | `src/pages/Profile.tsx` | Chỉnh sửa | Tích hợp popup vào giao diện trang cá nhân |
+| 1 | Database (RLS) | Migration | Thêm 3 chính sách public SELECT cho `user_light_totals`, `pplp_actions`, `pplp_scores` |
+| 2 | `src/hooks/useUserCamlyCoin.ts` | Tạo mới | Hook lấy Camly balance cho bất kỳ userId + realtime |
+| 3 | `src/pages/UserProfile.tsx` | Chỉnh sửa | Xóa guard `isOwnProfile`, dùng hook mới, thêm realtime |
+| 4 | `src/hooks/usePublicProfile.ts` | Chỉnh sửa | Thêm truy vấn balance + FUN Money |
+| 5 | `src/components/public-profile/PublicProfileStats.tsx` | Chỉnh sửa | Hiển thị thêm số dư Camly + FUN Money |
 
-**Tổng cộng**: 2 file ảnh sao chép, 2 file mới, 2 file chỉnh sửa. Không cần thay đổi cơ sở dữ liệu (bảng `notifications` đã có sẵn các cột `type`, `metadata`, `is_read`).
+**Tổng cộng**: 1 migration, 1 file mới, 3 file chỉnh sửa.
 
