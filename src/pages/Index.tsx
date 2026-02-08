@@ -32,7 +32,7 @@ const Index = () => {
           muted
           playsInline
           className="fixed top-14 sm:top-16 left-0 right-0 bottom-0 w-full h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] object-cover z-[1] pointer-events-none"
-          style={{ opacity: 0.7 }}
+          style={{ opacity: 0.9 }}
         >
           <source src="/videos/tet-background.mp4" type="video/mp4" />
         </video>
