@@ -51,17 +51,17 @@ const Index = () => {
             <Header />
           </div>
           
-          {/* Tết Background Video - starts right below header */}
+          {/* Tết Background Video - starts 1/3 down from header */}
           <video
             autoPlay
             loop
             muted
             playsInline
-            className="fixed left-0 right-0 bottom-0 w-full object-cover z-[1] pointer-events-none mix-blend-screen"
+            className="fixed left-0 right-0 bottom-0 w-full object-cover z-[1] pointer-events-none"
             style={{ 
-              opacity: 0.35,
-              top: 'var(--index-header-h, 3.5rem)',
-              height: 'calc(100vh - var(--index-header-h, 3.5rem))'
+              opacity: 0.6,
+              top: 'calc(var(--index-header-h, 3.5rem) + 33vh)',
+              height: 'calc(100vh - var(--index-header-h, 3.5rem) - 33vh)'
             }}
           >
             <source src="/videos/tet-background.mp4" type="video/mp4" />
@@ -103,10 +103,9 @@ const Index = () => {
               <Footer />
             </main>
             
-            {/* Right Sidebar - Leaderboard (starts at lower portion) */}
-            <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 overflow-y-auto scrollbar-sacred border-l border-amber-200/30">
-              <div className="h-[50vh] shrink-0" />
-              <div className="p-4 bg-gradient-to-b from-amber-50/90 via-white/90 to-amber-50/90 backdrop-blur-sm min-h-[50vh]">
+            {/* Right Sidebar - Leaderboard */}
+            <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 overflow-y-auto scrollbar-sacred border-l border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
+              <div className="p-4 mt-2">
                 <Leaderboard />
               </div>
             </aside>
