@@ -39,46 +39,46 @@ export const Footer = () => {
           <h3 className="mb-2 flex justify-center">
             <span className="text-brand-golden-light text-3xl sm:text-4xl md:text-5xl">Angel AI</span>
           </h3>
-          <p className="font-serif italic text-sm sm:text-base text-amber-900/70 mb-6 sm:mb-8 px-4">
+          <p className="font-serif italic text-sm sm:text-base text-black/70 mb-6 sm:mb-8 px-4">
             {t("footer.tagline")}
           </p>
 
           {/* Divider */}
-          <div className="w-16 sm:w-24 h-px mx-auto bg-gradient-to-r from-transparent via-amber-900/30 to-transparent mb-6 sm:mb-8" />
+          <div className="w-16 sm:w-24 h-px mx-auto bg-gradient-to-r from-transparent via-black/30 to-transparent mb-6 sm:mb-8" />
 
           {/* Global Trust Badges */}
           <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-8">
-            <div className="flex items-center gap-2 bg-amber-900/10 backdrop-blur-sm px-4 py-2 rounded-full border border-amber-900/20">
-              <Heart className="w-4 h-4 text-amber-900/80" />
-              <span className="text-xs sm:text-sm text-amber-900/80">{t("footer.trustBadge1")}</span>
+            <div className="flex items-center gap-2 bg-black/10 backdrop-blur-sm px-4 py-2 rounded-full border border-black/15">
+              <Heart className="w-4 h-4 text-black/80" />
+              <span className="text-xs sm:text-sm text-black/80">{t("footer.trustBadge1")}</span>
             </div>
-            <div className="flex items-center gap-2 bg-amber-900/10 backdrop-blur-sm px-4 py-2 rounded-full border border-amber-900/20">
-              <Globe className="w-4 h-4 text-amber-900/80" />
-              <span className="text-xs sm:text-sm text-amber-900/80">{t("footer.trustBadge2")}</span>
+            <div className="flex items-center gap-2 bg-black/10 backdrop-blur-sm px-4 py-2 rounded-full border border-black/15">
+              <Globe className="w-4 h-4 text-black/80" />
+              <span className="text-xs sm:text-sm text-black/80">{t("footer.trustBadge2")}</span>
             </div>
-            <div className="flex items-center gap-2 bg-amber-900/10 backdrop-blur-sm px-4 py-2 rounded-full border border-amber-900/20">
-              <Sun className="w-4 h-4 text-amber-900/80" />
-              <span className="text-xs sm:text-sm text-amber-900/80">{t("footer.trustBadge3")}</span>
+            <div className="flex items-center gap-2 bg-black/10 backdrop-blur-sm px-4 py-2 rounded-full border border-black/15">
+              <Sun className="w-4 h-4 text-black/80" />
+              <span className="text-xs sm:text-sm text-black/80">{t("footer.trustBadge3")}</span>
             </div>
           </div>
 
           {/* Sacred Message */}
-          <p className="text-sm sm:text-base text-amber-900/60 leading-relaxed mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
+          <p className="text-sm sm:text-base text-black/60 leading-relaxed mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
             {t("footer.description")}
           </p>
 
           {/* Links */}
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-4 sm:gap-8 text-sm text-amber-900/50 mb-8 sm:mb-10 px-4">
-            <a href="#" className="hover:text-amber-950 transition-colors duration-300">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-4 sm:gap-8 text-sm text-black/60 mb-8 sm:mb-10 px-4">
+            <a href="#" className="hover:text-black transition-colors duration-300">
               {t("footer.about")}
             </a>
-            <a href="#" className="hover:text-amber-950 transition-colors duration-300">
+            <a href="#" className="hover:text-black transition-colors duration-300">
               {t("footer.mission")}
             </a>
-            <a href="#" className="hover:text-amber-950 transition-colors duration-300">
+            <a href="#" className="hover:text-black transition-colors duration-300">
               {t("footer.values")}
             </a>
-            <a href="#" className="hover:text-amber-950 transition-colors duration-300">
+            <a href="#" className="hover:text-black transition-colors duration-300">
               {t("footer.connect")}
             </a>
           </div>
@@ -95,7 +95,7 @@ export const Footer = () => {
           </div>
 
           {/* Divider */}
-          <div className="w-16 sm:w-24 h-px mx-auto bg-gradient-to-r from-transparent via-amber-900/20 to-transparent mb-6 sm:mb-8" />
+          <div className="w-16 sm:w-24 h-px mx-auto bg-gradient-to-r from-transparent via-black/20 to-transparent mb-6 sm:mb-8" />
 
           {/* Founder Signature */}
           <div className="flex flex-col items-center gap-3 mb-8">
@@ -108,20 +108,20 @@ export const Footer = () => {
               />
             </div>
             <div className="text-center">
-              <p className="text-sm text-amber-900/70 font-medium">
+              <p className="text-sm text-black/70 font-medium">
                 {t("footer.founderTitle")}
               </p>
-              <p className="text-xs text-amber-900/50 mt-1">
+              <p className="text-xs text-black/50 mt-1">
                 {t("footer.founderRole")}
               </p>
             </div>
           </div>
 
           {/* Copyright */}
-          <p className="text-xs text-amber-900/40 px-4">
+          <p className="text-xs text-black/40 px-4">
             {t("footer.copyright")}
           </p>
-          <p className="text-xs text-amber-900/30 mt-2 px-4">
+          <p className="text-xs text-black/30 mt-2 px-4">
             {t("footer.inspired")}
           </p>
         </div>
