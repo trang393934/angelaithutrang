@@ -38,7 +38,7 @@ const StatItem = ({
     />
     
     {/* Main content - bright Gold 11 metallic surface */}
-    <div className="relative flex items-center justify-between px-4 py-3 rounded-[20px] overflow-hidden min-h-[52px]"
+    <div className={`relative ${isCoin ? 'flex flex-col items-center text-center px-4 py-3' : 'flex items-center justify-between px-4 py-3'} rounded-[20px] overflow-hidden min-h-[52px]`}
       style={{ 
         background: 'linear-gradient(180deg, #ffec8b 0%, #ffd700 20%, #daa520 50%, #ffd700 80%, #ffec8b 100%)',
         boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.8), inset 0 -2px 4px rgba(180,130,0,0.3), 0 4px 12px rgba(0,0,0,0.15)' 
@@ -62,31 +62,48 @@ const StatItem = ({
         style={{ background: 'linear-gradient(105deg, transparent 25%, rgba(255,255,255,0.5) 45%, transparent 60%)' }}
       />
       
-      {/* Left side - Icon and label */}
-      <div className="flex items-center gap-2 relative min-w-0 flex-shrink">
-        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border border-amber-600/20"
-          style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,215,0,0.2) 100%)' }}
-        >
-          <Icon className="w-3.5 h-3.5 text-amber-900 drop-shadow-[0_0_1px_rgba(255,215,0,0.4)]" />
-        </div>
-        <span className="font-bold text-xs sm:text-sm tracking-wide uppercase text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)] leading-tight">{label}</span>
-      </div>
-      
-      {/* Right side - Value */}
-      <div className="flex items-center gap-1 relative flex-shrink-0 ml-2">
-        <span className="font-extrabold text-base sm:text-lg tracking-wider text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)]">
-          {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
-        </span>
-        {isCoin && (
-          <motion.span
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="text-amber-800 font-bold drop-shadow-[0_0_2px_rgba(255,215,0,0.4)]"
-          >
-            ©
-          </motion.span>
-        )}
-      </div>
+      {isCoin ? (
+        <>
+          {/* Coin layout: label on top, value on bottom */}
+          <div className="flex items-center gap-2 relative">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border border-amber-600/20"
+              style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,215,0,0.2) 100%)' }}
+            >
+              <Icon className="w-3.5 h-3.5 text-amber-900 drop-shadow-[0_0_1px_rgba(255,215,0,0.4)]" />
+            </div>
+            <span className="font-bold text-xs sm:text-sm tracking-wide uppercase text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)] leading-tight">{label}</span>
+          </div>
+          <div className="flex items-center gap-1.5 relative mt-1">
+            <span className="font-extrabold text-lg sm:text-xl tracking-wider text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)]">
+              {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
+            </span>
+            <motion.span
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="text-amber-800 font-bold drop-shadow-[0_0_2px_rgba(255,215,0,0.4)]"
+            >
+              ©
+            </motion.span>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Normal layout: icon+label left, value right */}
+          <div className="flex items-center gap-2 relative min-w-0 flex-shrink">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border border-amber-600/20"
+              style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,215,0,0.2) 100%)' }}
+            >
+              <Icon className="w-3.5 h-3.5 text-amber-900 drop-shadow-[0_0_1px_rgba(255,215,0,0.4)]" />
+            </div>
+            <span className="font-bold text-xs sm:text-sm tracking-wide uppercase text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)] leading-tight">{label}</span>
+          </div>
+          <div className="flex items-center gap-1 relative flex-shrink-0 ml-2">
+            <span className="font-extrabold text-base sm:text-lg tracking-wider text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)]">
+              {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   </motion.div>
 );
