@@ -105,7 +105,7 @@ const Index = () => {
             </main>
             
             {/* Right Sidebar - Leaderboard */}
-            <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 overflow-y-auto scrollbar-sacred border-l border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
+            <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 overflow-y-auto scrollbar-sacred border-l border-amber-200/30 bg-white/60 backdrop-blur-sm">
               <div className="p-4 mt-2">
                 <Leaderboard />
               </div>

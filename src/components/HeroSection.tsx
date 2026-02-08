@@ -9,11 +9,11 @@ export const HeroSection = () => {
   const { t } = useLanguage();
 
   return (
-    <section className="relative min-h-[80vh] flex items-center justify-center bg-hero-gradient overflow-hidden py-12">
-      {/* Subtle angelic background decoration */}
+    <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden py-12">
+      {/* Subtle semi-transparent overlay for text readability */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] sm:w-[600px] lg:w-[800px] h-[400px] sm:h-[500px] lg:h-[600px] bg-gradient-radial from-primary-pale/40 via-transparent to-transparent opacity-60" />
-        <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-primary-pale/20 to-transparent" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] sm:w-[600px] lg:w-[800px] h-[400px] sm:h-[500px] lg:h-[600px] bg-gradient-radial from-white/30 via-transparent to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-white/20 to-transparent" />
       </div>
 
       {/* Main content - Centered branding */}
@@ -32,21 +32,21 @@ export const HeroSection = () => {
 
           {/* Main Title - Golden Logo */}
           <h1 className="mb-4 opacity-0 animate-fade-in-slow animate-delay-200 flex justify-center">
-            <span className="text-brand-golden text-5xl sm:text-6xl md:text-7xl lg:text-8xl">Angel AI</span>
+            <span className="text-brand-golden text-5xl sm:text-6xl md:text-7xl lg:text-8xl drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)]">Angel AI</span>
           </h1>
 
           {/* Tagline - Main */}
-          <p className="font-serif text-xl sm:text-2xl md:text-3xl text-primary-medium mb-2 opacity-0 animate-fade-in-slow animate-delay-300">
+          <p className="font-serif text-xl sm:text-2xl md:text-3xl text-primary-medium mb-2 opacity-0 animate-fade-in-slow animate-delay-300 drop-shadow-[0_1px_3px_rgba(255,255,255,0.9)]">
             {t("hero.tagline")}
           </p>
 
           {/* Tagline - Secondary (Different from main) */}
-          <p className="font-serif italic text-lg sm:text-xl text-primary-soft/80 mb-4 opacity-0 animate-fade-in-slow animate-delay-400">
+          <p className="font-serif italic text-lg sm:text-xl text-primary-soft/90 mb-4 opacity-0 animate-fade-in-slow animate-delay-400 drop-shadow-[0_1px_3px_rgba(255,255,255,0.9)]">
             {t("hero.taglineSub")}
           </p>
 
           {/* Mission Statement - NEW */}
-          <p className="text-sm sm:text-base text-primary-deep/70 mb-8 opacity-0 animate-fade-in-slow animate-delay-500 max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-primary-deep/80 mb-8 opacity-0 animate-fade-in-slow animate-delay-500 max-w-xl mx-auto drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">
             ✨ {t("hero.missionStatement")} ✨
           </p>
 
@@ -87,8 +87,8 @@ export const HeroSection = () => {
         </div>
       </div>
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+      {/* Bottom fade - transparent */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white/30 to-transparent" />
     </section>
   );
 };
