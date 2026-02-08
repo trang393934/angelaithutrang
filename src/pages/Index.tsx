@@ -60,8 +60,8 @@ const Index = () => {
             className="fixed left-0 right-0 bottom-0 w-full object-cover z-[1] pointer-events-none"
             style={{ 
               opacity: 0.6,
-              top: 'calc(var(--index-header-h, 3.5rem) + 33vh)',
-              height: 'calc(100vh - var(--index-header-h, 3.5rem) - 33vh)'
+              top: 'var(--index-header-h, 3.5rem)',
+              height: 'calc(100vh - var(--index-header-h, 3.5rem))'
             }}
           >
             <source src="/videos/tet-background.mp4" type="video/mp4" />
