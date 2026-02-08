@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LeaderboardUser } from "@/hooks/useLeaderboard";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 import { ImageLightbox } from "@/components/community/ImageLightbox";
 import angelAvatar from "@/assets/angel-avatar.png";
@@ -54,6 +55,7 @@ interface RankingCardProps {
 }
 
 function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProps) {
+  const { t } = useLanguage();
   if (!user) return null;
 
   // Compact sizes for homepage sidebar display
@@ -87,7 +89,7 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
   const handleAvatarClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onAvatarClick(avatarUrl, user.display_name || "Ẩn danh");
+    onAvatarClick(avatarUrl, user.display_name || t("common.anonymous"));
   };
 
   return (
@@ -212,7 +214,7 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
       {/* User Name */}
       <Link to={`/user/${user.user_id}`} className="group mt-0.5">
         <p className={`${config.name} font-bold text-amber-900 group-hover:text-amber-600 transition-colors text-center max-w-[80px] md:max-w-[100px] leading-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] truncate`}>
-          {user.display_name || "Ẩn danh"}
+          {user.display_name || t("common.anonymous")}
         </p>
       </Link>
       
@@ -233,6 +235,7 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
 }
 
 export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
+  const { t } = useLanguage();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState({ url: "", name: "" });
   
@@ -318,7 +321,7 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <RainbowTitle text="⭐ TOP RANKING ⭐" />
+          <RainbowTitle text={`⭐ ${t("leaderboard.topRanking")} ⭐`} />
         </motion.h2>
 
         {/* Compact Rankings Layout */}
@@ -374,7 +377,7 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
 
       <ImageLightbox
         imageUrl={selectedImage.url}
-        alt={`Avatar của ${selectedImage.name}`}
+        alt={`${selectedImage.name}`}
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
       />
