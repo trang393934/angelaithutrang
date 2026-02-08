@@ -94,15 +94,22 @@ export function useNotifications() {
 
   const markAllAsRead = useCallback(async () => {
     if (!user) return;
+    // Exclude tet_lixi_reward notifications — they must only be dismissed via the popup CLAIM button
     await supabase
       .from("notifications")
       .update({ is_read: true, read_at: new Date().toISOString() })
       .eq("user_id", user.id)
-      .eq("is_read", false);
+      .eq("is_read", false)
+      .neq("type", "tet_lixi_reward");
 
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() })));
-    setUnreadCount(0);
-  }, [user]);
+    setNotifications(prev => prev.map(n => 
+      n.type === "tet_lixi_reward" ? n : { ...n, is_read: true, read_at: new Date().toISOString() }
+    ));
+    setUnreadCount(prev => {
+      const lixiUnread = notifications.filter(n => n.type === "tet_lixi_reward" && !n.is_read).length;
+      return lixiUnread;
+    });
+  }, [user, notifications]);
 
   // Initial fetch
   useEffect(() => {

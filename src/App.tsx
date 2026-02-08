@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ProfileCompletionGate } from "@/components/ProfileCompletionGate";
 import { WithdrawalCelebration } from "@/components/WithdrawalCelebration";
+import { UserLiXiCelebrationPopup } from "@/components/UserLiXiCelebrationPopup";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { BackToTopButton } from "@/components/BackToTopButton";
 import Index from "./pages/Index";
@@ -68,6 +69,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <WithdrawalCelebration />
+          <UserLiXiCelebrationPopup />
           <BrowserRouter>
             <ScrollToTop />
             <BackToTopButton />
