@@ -23,6 +23,7 @@ import {
   Loader2,
   Send,
   FileCheck,
+  Zap,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -83,6 +84,8 @@ export default function AdminMintApproval() {
   const [isLoading, setIsLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState("pending");
+  const [isRetryingAll, setIsRetryingAll] = useState(false);
+  const [retryProgress, setRetryProgress] = useState({ done: 0, total: 0 });
 
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
@@ -214,6 +217,57 @@ export default function AdminMintApproval() {
     [fetchRequests]
   );
 
+  // Retry all signed requests
+  const handleRetryAll = useCallback(async () => {
+    const signedRequests = requests.filter((r) => r.status === "signed");
+    if (signedRequests.length === 0) {
+      toast.info("Không có giao dịch nào cần retry");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Bạn sẽ retry ${signedRequests.length} giao dịch on-chain. Tiếp tục?`
+    );
+    if (!confirmed) return;
+
+    setIsRetryingAll(true);
+    setRetryProgress({ done: 0, total: signedRequests.length });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < signedRequests.length; i++) {
+      const req = signedRequests[i];
+      try {
+        const { data, error } = await supabase.functions.invoke("pplp-authorize-mint", {
+          body: {
+            action_id: req.action_id,
+            wallet_address: req.recipient_address,
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.tx_hash) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch {
+        failCount++;
+      }
+
+      setRetryProgress({ done: i + 1, total: signedRequests.length });
+    }
+
+    toast.success(
+      `✅ Retry hoàn tất: ${successCount} thành công, ${failCount} thất bại`
+    );
+
+    setIsRetryingAll(false);
+    await fetchRequests();
+  }, [requests, fetchRequests]);
+
   // Filter by tab
   const filteredRequests = requests.filter((r) => {
     if (activeTab === "pending") return r.status === "pending";
@@ -250,10 +304,33 @@ export default function AdminMintApproval() {
                 </p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchRequests} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
-              Làm mới
-            </Button>
+            <div className="flex items-center gap-2">
+              {counts.signed > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRetryAll}
+                  disabled={isLoading || isRetryingAll}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/30"
+                >
+                  {isRetryingAll ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      {retryProgress.done}/{retryProgress.total}
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 mr-1" />
+                      Retry All ({counts.signed})
+                    </>
+                  )}
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={fetchRequests} disabled={isLoading}>
+                <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
+                Làm mới
+              </Button>
+            </div>
           </div>
 
           {/* Info Alert */}
@@ -265,6 +342,22 @@ export default function AdminMintApproval() {
               User activate → User claim về ví.
             </AlertDescription>
           </Alert>
+
+          {/* Retry All Progress */}
+          {isRetryingAll && (
+            <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              <AlertDescription className="text-blue-700 dark:text-blue-300 text-sm">
+                <strong>Đang retry on-chain...</strong> {retryProgress.done}/{retryProgress.total} giao dịch
+                <div className="mt-2 w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(retryProgress.done / retryProgress.total) * 100}%` }}
+                  />
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* On-chain Error Summary */}
           <OnChainErrorSummary requests={requests} />
