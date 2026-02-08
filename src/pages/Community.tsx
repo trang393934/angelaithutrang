@@ -25,6 +25,7 @@ import { DonateProjectDialog } from "@/components/gifts/DonateProjectDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { AuthActionGuard } from "@/components/AuthActionGuard";
+import { BackToTopButton } from "@/components/BackToTopButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -52,6 +53,7 @@ const Community = () => {
   const [showMobileLeaderboard, setShowMobileLeaderboard] = useState(false);
   const [showGiftDialog, setShowGiftDialog] = useState(false);
   const [showDonateDialog, setShowDonateDialog] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
   const rightSidebarRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -149,7 +151,7 @@ const Community = () => {
             </aside>
 
             {/* Main Content - SCROLLABLE */}
-            <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden space-y-3 sm:space-y-4 lg:space-y-6 pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
+            <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden space-y-3 sm:space-y-4 lg:space-y-6 pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
               {/* Create Post */}
               <AuthActionGuard message={t("community.loginToJoin")}>
                 {user ? (
@@ -344,6 +346,8 @@ const Community = () => {
             </aside>
           </div>
         </div>
+        {/* Back to Top Button */}
+        <BackToTopButton scrollRef={mainRef} />
 
         {/* Gift & Donate Dialogs */}
         <GiftCoinDialog 
