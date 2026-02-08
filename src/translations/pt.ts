@@ -829,6 +829,26 @@ const translations: Record<string, string> = {
   "notifications.type.rewardApproved": "Sua recompensa foi aprovada 🎉",
   "notifications.type.rewardRejected": "Pedido de recompensa precisa de revisão",
   "notifications.type.interacted": "interagiu com você",
+  // Token Lifecycle - Wallet Mismatch
+  "mint.walletMismatch.title": "Seu FUN Money está em outra carteira",
+  "mint.walletMismatch.description": "Você tem {amount} FUN bloqueados na carteira {address}. Mude para essa carteira para ativar e reivindicar.",
+  "mint.walletMismatch.hint": "Abra o MetaMask → mude para a carteira acima → volte a esta página",
+  "mint.walletMismatch.copied": "Endereço da carteira copiado",
+  "mint.tokenLifecycle.title": "Ciclo de Vida do Token",
+  "mint.tokenLifecycle.connectPrompt": "Conecte a carteira para gerenciar FUN Money on-chain",
+  "mint.tokenLifecycle.connectButton": "Conectar MetaMask",
+  "mint.tokenLifecycle.installButton": "Instalar MetaMask",
+  "mint.tokenLifecycle.networkError": "Rede/Contrato inválido",
+  "mint.tokenLifecycle.resetBSC": "Redefinir BSC Testnet",
+  "mint.tokenLifecycle.locked": "Bloqueado",
+  "mint.tokenLifecycle.activated": "Ativado",
+  "mint.tokenLifecycle.flowing": "Em circulação",
+  "mint.tokenLifecycle.pipelineProgress": "Progresso do Pipeline",
+  "mint.tokenLifecycle.flowingPercent": "{percent}% Em circulação",
+  "mint.tokenLifecycle.activate": "Ativar",
+  "mint.tokenLifecycle.claim": "Reivindicar",
+  "mint.tokenLifecycle.noLocked": "Nenhum FUN bloqueado",
+  "mint.tokenLifecycle.noActivated": "Nenhum FUN ativado",
 };
 
 export default translations;

@@ -1239,6 +1239,26 @@ const translations: Record<string, string> = {
   "publicProfile.joinDesc": "Sign up for free to connect, message, send gifts and explore the FUN world with the Light community ✨",
   "publicProfile.joinNow": "Join Now",
   "publicProfile.login": "Log In",
+  // Token Lifecycle - Wallet Mismatch
+  "mint.walletMismatch.title": "Your FUN Money is in another wallet",
+  "mint.walletMismatch.description": "You have {amount} FUN locked at wallet {address}. Please switch to that wallet to activate and claim.",
+  "mint.walletMismatch.hint": "Open MetaMask → switch to the wallet above → return to this page",
+  "mint.walletMismatch.copied": "Wallet address copied",
+  "mint.tokenLifecycle.title": "Token Lifecycle",
+  "mint.tokenLifecycle.connectPrompt": "Connect wallet to manage FUN Money on-chain",
+  "mint.tokenLifecycle.connectButton": "Connect MetaMask",
+  "mint.tokenLifecycle.installButton": "Install MetaMask",
+  "mint.tokenLifecycle.networkError": "Invalid Network/Contract",
+  "mint.tokenLifecycle.resetBSC": "Reset BSC Testnet",
+  "mint.tokenLifecycle.locked": "Locked",
+  "mint.tokenLifecycle.activated": "Activated",
+  "mint.tokenLifecycle.flowing": "Flowing",
+  "mint.tokenLifecycle.pipelineProgress": "Pipeline Progress",
+  "mint.tokenLifecycle.flowingPercent": "{percent}% Flowing",
+  "mint.tokenLifecycle.activate": "Activate",
+  "mint.tokenLifecycle.claim": "Claim",
+  "mint.tokenLifecycle.noLocked": "No FUN tokens are locked",
+  "mint.tokenLifecycle.noActivated": "No FUN tokens are activated",
 };
 
 export default translations;

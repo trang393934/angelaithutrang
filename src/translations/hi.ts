@@ -810,6 +810,26 @@ const translations: Record<string, string> = {
   "notifications.type.rewardApproved": "आपका इनाम स्वीकृत हुआ 🎉",
   "notifications.type.rewardRejected": "इनाम अनुरोध की समीक्षा आवश्यक",
   "notifications.type.interacted": "ने आपसे संपर्क किया",
+  // Token Lifecycle - Wallet Mismatch
+  "mint.walletMismatch.title": "आपका FUN Money दूसरे वॉलेट में है",
+  "mint.walletMismatch.description": "वॉलेट {address} में {amount} FUN लॉक है। कृपया उस वॉलेट पर स्विच करें ताकि एक्टिवेट और क्लेम कर सकें।",
+  "mint.walletMismatch.hint": "MetaMask खोलें → ऊपर दिए वॉलेट पर स्विच करें → इस पेज पर वापस आएं",
+  "mint.walletMismatch.copied": "वॉलेट पता कॉपी हो गया",
+  "mint.tokenLifecycle.title": "टोकन लाइफसाइकल",
+  "mint.tokenLifecycle.connectPrompt": "FUN Money ऑन-चेन प्रबंधित करने के लिए वॉलेट कनेक्ट करें",
+  "mint.tokenLifecycle.connectButton": "MetaMask कनेक्ट करें",
+  "mint.tokenLifecycle.installButton": "MetaMask इंस्टॉल करें",
+  "mint.tokenLifecycle.networkError": "अमान्य नेटवर्क/कॉन्ट्रैक्ट",
+  "mint.tokenLifecycle.resetBSC": "BSC Testnet रीसेट करें",
+  "mint.tokenLifecycle.locked": "लॉक्ड",
+  "mint.tokenLifecycle.activated": "एक्टिवेटेड",
+  "mint.tokenLifecycle.flowing": "प्रचलन में",
+  "mint.tokenLifecycle.pipelineProgress": "पाइपलाइन प्रगति",
+  "mint.tokenLifecycle.flowingPercent": "{percent}% प्रचलन में",
+  "mint.tokenLifecycle.activate": "एक्टिवेट",
+  "mint.tokenLifecycle.claim": "क्लेम",
+  "mint.tokenLifecycle.noLocked": "कोई लॉक्ड FUN नहीं",
+  "mint.tokenLifecycle.noActivated": "कोई एक्टिवेटेड FUN नहीं",
 };
 
 export default translations;
