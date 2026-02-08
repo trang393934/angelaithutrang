@@ -99,7 +99,9 @@ export default function Receipt() {
 
         <Card className="border-2 border-amber-200 shadow-xl overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-6 py-4 text-center">
+          <div className="px-6 py-4 text-center" style={{
+            backgroundImage: `linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.3) 30%, transparent 50%, rgba(255,255,255,0.15) 70%, transparent 100%), linear-gradient(135deg, #b8860b 0%, #daa520 15%, #ffd700 30%, #ffec8b 45%, #ffd700 55%, #daa520 70%, #b8860b 85%, #cd950c 100%)`,
+          }}>
             <div className="flex items-center justify-center gap-2 mb-1">
               <Gift className="w-6 h-6 text-white" />
               <h1 className="text-xl font-bold text-white">Biên Nhận Tặng Thưởng</h1>

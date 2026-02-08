@@ -125,7 +125,10 @@ export const WithdrawalCelebration = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: 'spring', duration: 0.5 }}
-              className="relative bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 rounded-2xl p-6 shadow-2xl overflow-hidden"
+              className="relative rounded-2xl p-6 shadow-2xl overflow-hidden"
+              style={{
+                backgroundImage: `linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.3) 30%, transparent 50%, rgba(255,255,255,0.15) 70%, transparent 100%), linear-gradient(135deg, #b8860b 0%, #daa520 15%, #ffd700 30%, #ffec8b 45%, #ffd700 55%, #daa520 70%, #b8860b 85%, #cd950c 100%)`,
+              }}
             >
               {/* Falling coins animation */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none">

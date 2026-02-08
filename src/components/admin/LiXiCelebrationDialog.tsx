@@ -115,7 +115,7 @@ export function LiXiCelebrationDialog({
           transition={{ type: "spring", duration: 0.5 }}
           className="relative rounded-2xl p-6 shadow-2xl overflow-hidden"
           style={{
-            background: "linear-gradient(135deg, #8B6914, #C49B30, #E8C252, #F5D976, #E8C252, #C49B30)",
+            backgroundImage: `linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.3) 30%, transparent 50%, rgba(255,255,255,0.15) 70%, transparent 100%), linear-gradient(135deg, #b8860b 0%, #daa520 15%, #ffd700 30%, #ffec8b 45%, #ffd700 55%, #daa520 70%, #b8860b 85%, #cd950c 100%)`,
           }}
         >
           {/* Hiệu ứng confetti + đồng Camly rơi + lấp lánh */}
