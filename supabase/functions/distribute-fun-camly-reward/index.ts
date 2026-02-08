@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
         }
 
         // Ghi giao dịch
-        const { error: txError } = await supabaseAdmin
+        const { data: txData, error: txError } = await supabaseAdmin
           .from("camly_coin_transactions")
           .insert({
             user_id,
@@ -188,9 +188,13 @@ Deno.serve(async (req) => {
               batch_date: batchDate,
               distributed_by: adminId,
             },
-          });
+          })
+          .select("id")
+          .single();
 
         if (txError) throw txError;
+
+        const txId = txData?.id || null;
 
         // Lấy tên người dùng để gửi thông báo
         const { data: profileData } = await supabaseAdmin
@@ -226,7 +230,7 @@ Deno.serve(async (req) => {
 
         successCount++;
         totalCamlyDistributed += camlyAmount;
-        results.push({ user_id, status: "success", camly_amount: camlyAmount });
+        results.push({ user_id, status: "success", camly_amount: camlyAmount, tx_id: txId });
 
         console.log(`[Lì xì] ✅ ${displayName} (${user_id}): ${fun_amount} FUN → ${camlyAmount.toLocaleString()} Camly`);
       } catch (err) {
