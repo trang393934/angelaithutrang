@@ -52,6 +52,7 @@ import ActivityHistory from "./pages/ActivityHistory";
 import Mint from "./pages/Mint";
 import Receipt from "./pages/Receipt";
 import AdminTipReports from "./pages/AdminTipReports";
+import AdminTetReward from "./pages/AdminTetReward";
 import Notifications from "./pages/Notifications";
 import HandleProfile from "./pages/HandleProfile";
 
@@ -101,6 +102,7 @@ const App = () => (
               <Route path="/admin/mint-stats" element={<AdminMintStats />} />
               <Route path="/admin/mint-approval" element={<AdminMintApproval />} />
               <Route path="/admin/tip-reports" element={<AdminTipReports />} />
+              <Route path="/admin/tet-reward" element={<AdminTetReward />} />
               <Route path="/receipt/:receiptId" element={<Receipt />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/community-questions" element={<CommunityQuestions />} />
