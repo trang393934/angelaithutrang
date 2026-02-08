@@ -1567,6 +1567,59 @@ export type Database = {
         }
         Relationships: []
       }
+      lixi_claims: {
+        Row: {
+          camly_amount: number
+          claimed_at: string
+          error_message: string | null
+          fun_amount: number
+          id: string
+          notification_id: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          tx_hash: string | null
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          camly_amount: number
+          claimed_at?: string
+          error_message?: string | null
+          fun_amount: number
+          id?: string
+          notification_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          tx_hash?: string | null
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          camly_amount?: number
+          claimed_at?: string
+          error_message?: string | null
+          fun_amount?: number
+          id?: string
+          notification_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          tx_hash?: string | null
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lixi_claims_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string | null

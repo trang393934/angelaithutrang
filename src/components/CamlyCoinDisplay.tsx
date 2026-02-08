@@ -1,11 +1,17 @@
-import { Coins, TrendingUp, MessageCircle, BookOpen, Sparkles } from "lucide-react";
+import { Coins, TrendingUp, MessageCircle, BookOpen, Sparkles, Gift } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserCamlyCoin } from "@/hooks/useUserCamlyCoin";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
 export function CamlyCoinDisplay() {
+  const { user } = useAuth();
   const { balance, lifetimeEarned, isLoading, dailyStatus, recentTransactions } = useCamlyCoin();
+  const { lixiReward } = useUserCamlyCoin(user?.id);
+
+  const naturalLifetimeEarned = lifetimeEarned - lixiReward;
 
   if (isLoading) {
     return (
@@ -47,10 +53,31 @@ export function CamlyCoinDisplay() {
             <p className="text-xs text-amber-600/60">Tổng tích lũy</p>
             <p className="text-sm font-medium text-amber-700 flex items-center gap-1 justify-end">
               <TrendingUp className="w-4 h-4" />
-              {Math.floor(lifetimeEarned).toLocaleString()}
+              {Math.floor(naturalLifetimeEarned).toLocaleString()}
             </p>
           </div>
         </div>
+
+        {/* Lì xì Reward - Separated */}
+        {lixiReward > 0 && (
+          <div className="flex items-center justify-between bg-gradient-to-r from-red-50/80 to-amber-50/60 rounded-xl p-4 border border-red-200/40">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🧧</span>
+              <div>
+                <p className="text-sm text-red-700/70">Nhận thưởng Lì xì Tết</p>
+                <p className="text-lg font-bold text-red-800 flex items-center gap-1">
+                  <Gift className="w-4 h-4 text-red-600" />
+                  {Math.floor(lixiReward).toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 border border-amber-200/50">
+                🎁 Lì xì Tết
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Daily Status */}
         {dailyStatus && (

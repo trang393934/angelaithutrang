@@ -13,13 +13,15 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Sparkles, LogOut, Search, Download,
-  Coins, Users, ArrowUpDown, Star, Gift, CheckCircle2, XCircle, Clock, ExternalLink
+  Coins, Users, ArrowUpDown, Star, Gift, CheckCircle2, XCircle, Clock, ExternalLink,
+  Wallet
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import angelAvatar from "@/assets/angel-avatar.png";
 import ExcelJS from "exceljs";
 import { LiXiCelebrationDialog } from "@/components/admin/LiXiCelebrationDialog";
 import AdminNavToolbar from "@/components/admin/AdminNavToolbar";
+import { useLixiClaims } from "@/hooks/useLixiClaims";
 import {
   tetRewardData, TET_REWARD_SNAPSHOT_DATE, CAMLY_MULTIPLIER,
   type TetRewardUser,
@@ -69,6 +71,12 @@ const AdminTetReward = () => {
   // Distribution results per user (keyed by display_name)
   const [distributionResults, setDistributionResults] = useState<Map<string, DistributionResult>>(new Map());
 
+  // Name to userId mapping for claim lookup
+  const [nameToUserIdMap, setNameToUserIdMap] = useState<Map<string, string>>(new Map());
+
+  // Lixi claims hook
+  const { claims: lixiClaims, updateClaimStatus } = useLixiClaims();
+
   // Auth guard
   useEffect(() => {
     if (!authLoading && isAdminChecked) {
@@ -110,9 +118,14 @@ const AdminTetReward = () => {
           .in("user_id", userIds);
 
         const userIdToName = new Map<string, string>();
+        const nameToId = new Map<string, string>();
         for (const p of profiles || []) {
-          if (p.display_name) userIdToName.set(p.user_id, p.display_name);
+          if (p.display_name) {
+            userIdToName.set(p.user_id, p.display_name);
+            nameToId.set(p.display_name, p.user_id);
+          }
         }
+        setNameToUserIdMap(nameToId);
 
         const results = new Map<string, DistributionResult>();
         for (const tx of rewardTxs) {
@@ -630,12 +643,18 @@ const AdminTetReward = () => {
                         <span className="text-[10px] leading-none">Lì xì</span>
                       </span>
                     </th>
+                    <th className="px-2 py-2 text-center font-medium min-w-[100px]">
+                      <span className="flex flex-col items-center gap-0.5 leading-tight">
+                        <span className="text-base">🎫</span>
+                        <span className="text-[10px] leading-none">Claim</span>
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRows.length === 0 ? (
                     <tr>
-                      <td colSpan={ACTION_COLS.length + 7} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={ACTION_COLS.length + 8} className="text-center py-12 text-muted-foreground">
                         Không tìm thấy user nào
                       </td>
                     </tr>
@@ -768,6 +787,93 @@ const AdminTetReward = () => {
                                 </Tooltip>
                               </TooltipProvider>
                             );
+                          })()}
+                        </td>
+                        {/* Claim Status Column */}
+                        <td className="px-2 py-2.5 text-center">
+                          {(() => {
+                            const userId = nameToUserIdMap.get(row.name);
+                            if (!userId) return <span className="text-muted-foreground/30">—</span>;
+                            
+                            const claim = lixiClaims.find(c => c.user_id === userId);
+                            if (!claim) {
+                              return <span className="text-muted-foreground/30">—</span>;
+                            }
+                            
+                            if (claim.status === "completed") {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-flex items-center gap-1 text-green-600 cursor-help">
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        <span className="text-[10px]">Xong</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="max-w-xs">
+                                      <div className="space-y-1 text-xs">
+                                        <p className="font-semibold text-green-600">✅ Đã chuyển on-chain</p>
+                                        {claim.tx_hash && (
+                                          <p className="font-mono break-all">TX: {claim.tx_hash.slice(0, 10)}...{claim.tx_hash.slice(-6)}</p>
+                                        )}
+                                        {claim.wallet_address && (
+                                          <p className="font-mono">Ví: {claim.wallet_address.slice(0, 6)}...{claim.wallet_address.slice(-4)}</p>
+                                        )}
+                                        <p>Số lượng: {claim.camly_amount.toLocaleString("vi-VN")} CAMLY</p>
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            
+                            if (claim.status === "pending") {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-flex items-center gap-1 text-amber-500 cursor-help">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        <span className="text-[10px]">Chờ</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="max-w-xs">
+                                      <div className="space-y-1 text-xs">
+                                        <p className="font-semibold text-amber-600">⏳ User đã nhấn CLAIM</p>
+                                        {claim.wallet_address && (
+                                          <p className="font-mono">Ví: {claim.wallet_address.slice(0, 6)}...{claim.wallet_address.slice(-4)}</p>
+                                        )}
+                                        {!claim.wallet_address && (
+                                          <p className="text-red-500">⚠️ Chưa có ví Web3</p>
+                                        )}
+                                        <p>Số lượng: {claim.camly_amount.toLocaleString("vi-VN")} CAMLY</p>
+                                        <p>Thời gian: {new Date(claim.claimed_at).toLocaleString("vi-VN")}</p>
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            
+                            if (claim.status === "failed") {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-flex items-center gap-1 text-red-500 cursor-help">
+                                        <XCircle className="w-3.5 h-3.5" />
+                                        <span className="text-[10px]">Lỗi</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="max-w-xs">
+                                      <p className="text-xs text-red-500">{claim.error_message || "Lỗi không xác định"}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            
+                            return <span className="text-muted-foreground/30">—</span>;
                           })()}
                         </td>
                       </tr>

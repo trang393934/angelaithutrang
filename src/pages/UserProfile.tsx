@@ -55,7 +55,8 @@ const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { balance, lifetimeEarned } = useUserCamlyCoin(userId);
+  const { balance, lifetimeEarned, lixiReward } = useUserCamlyCoin(userId);
+  const naturalLifetimeEarned = lifetimeEarned - lixiReward;
   const { score: poplScore, badgeLevel, positiveActions } = usePoPLScore(userId);
   const funMoneyStats = useFUNMoneyStats(userId);
   const navigate = useNavigate();
@@ -753,10 +754,28 @@ const UserProfile = () => {
                     <div className="text-right">
                       <p className="text-xs text-gray-500 dark:text-gray-400">Tổng tích lũy</p>
                       <p className="text-sm font-semibold text-amber-600 dark:text-amber-500">
-                        {Math.floor(lifetimeEarned).toLocaleString()} <span className="text-xs font-normal">CAMLY</span>
+                        {Math.floor(naturalLifetimeEarned).toLocaleString()} <span className="text-xs font-normal">CAMLY</span>
                       </p>
                     </div>
                   </div>
+
+                  {/* Lì xì Reward - Separated */}
+                  {lixiReward > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-red-50/80 to-amber-50/60 dark:from-red-950/30 dark:to-amber-950/20 border border-red-200/40 dark:border-red-800/30">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-2xl">🧧</span>
+                        <div>
+                          <p className="text-xs text-red-600/70 dark:text-red-400">Nhận thưởng Lì xì Tết</p>
+                          <p className="text-lg font-bold text-red-700 dark:text-red-400">
+                            {Math.floor(lixiReward).toLocaleString()} <span className="text-xs font-medium">CAMLY</span>
+                          </p>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200/50">
+                        🎁 Lì xì
+                      </span>
+                    </div>
+                  )}
 
                   {/* PoPL Score / Light Points */}
                   <div className="flex items-center justify-between p-3 rounded-lg bg-primary-pale/30 border border-primary/10">
@@ -824,8 +843,14 @@ const UserProfile = () => {
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-3 text-[15px] text-gray-700">
                     <Award className="w-5 h-5 text-gray-500" />
-                    <span><strong>{Math.floor(lifetimeEarned).toLocaleString()}</strong> Camly Coin tích lũy</span>
+                    <span><strong>{Math.floor(naturalLifetimeEarned).toLocaleString()}</strong> Camly Coin tích lũy</span>
                   </div>
+                  {lixiReward > 0 && (
+                    <div className="flex items-center gap-3 text-[15px] text-red-700">
+                      <Gift className="w-5 h-5 text-red-500" />
+                      <span><strong>{Math.floor(lixiReward).toLocaleString()}</strong> Camly Coin Lì xì Tết 🧧</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 text-[15px] text-gray-700">
                     <FileText className="w-5 h-5 text-gray-500" />
                     <span><strong>{stats.posts}</strong> bài viết</span>
@@ -1121,10 +1146,28 @@ const UserProfile = () => {
                       <div className="text-right">
                         <p className="text-xs text-gray-500">Tổng tích lũy</p>
                         <p className="text-sm font-semibold text-amber-600 dark:text-amber-500">
-                          {Math.floor(lifetimeEarned).toLocaleString()} <span className="text-xs font-normal">CAMLY</span>
+                          {Math.floor(naturalLifetimeEarned).toLocaleString()} <span className="text-xs font-normal">CAMLY</span>
                         </p>
                       </div>
                     </div>
+
+                    {/* Lì xì Reward in About tab */}
+                    {lixiReward > 0 && (
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-red-50/80 to-amber-50/60 dark:from-red-950/30 dark:to-amber-950/20 border border-red-200/40 dark:border-red-800/30">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-2xl">🧧</span>
+                          <div>
+                            <p className="text-xs text-red-600/70 dark:text-red-400">Nhận thưởng Lì xì Tết</p>
+                            <p className="text-lg font-bold text-red-700 dark:text-red-400">
+                              {Math.floor(lixiReward).toLocaleString()} <span className="text-xs font-medium">CAMLY</span>
+                            </p>
+                          </div>
+                        </div>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                          🎁 Lì xì
+                        </span>
+                      </div>
+                    )}
 
                     {/* PoPL Score */}
                     <div className="flex items-center justify-between p-3 rounded-lg bg-primary-pale/30 border border-primary/10">
