@@ -116,20 +116,19 @@ export function CommunityHeader() {
           {/* Inner shadow for 3D depth */}
           <div className="absolute inset-0 pointer-events-none rounded-none shadow-[inset_0_2px_4px_rgba(255,255,255,0.7),inset_0_-2px_6px_rgba(139,105,20,0.3)]" />
           
-          <div className="container mx-auto px-4 relative">
-            <div className="flex items-center justify-between h-14 sm:h-16">
+          <div className="container mx-auto px-2 sm:px-4 relative">
+            <div className="flex items-center justify-between h-14 sm:h-16 gap-1 sm:gap-0">
               {/* Left: Logo & Search */}
-              <div className="flex items-center gap-3 flex-1">
-                <Link to="/" className="flex-shrink-0 flex items-center gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <Link to="/" className="flex-shrink-0">
                   <img 
                     src={angelAiLogo} 
                     alt="Angel AI" 
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+                    className="w-8 h-8 sm:w-11 sm:h-11 rounded-full object-cover drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
                   />
-                  <span className="hidden sm:inline text-lg font-bold text-black/90 drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)] tracking-wide">Angel AI</span>
                 </Link>
                 
-                {/* Search Bar */}
+                {/* Search Bar - desktop only */}
                 <div className="hidden sm:block max-w-xs">
                   <GlobalSearch 
                     variant="community" 
@@ -140,7 +139,7 @@ export function CommunityHeader() {
               </div>
 
               {/* Center: Navigation Icons */}
-              <nav className="flex items-center gap-1 sm:gap-2">
+              <nav className="flex items-center gap-0.5 sm:gap-2">
               {navItems.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
@@ -148,7 +147,7 @@ export function CommunityHeader() {
                     <Link
                       key={item.href}
                       to={item.href}
-                      className={`relative flex items-center justify-center w-12 h-10 sm:w-20 sm:h-12 rounded-lg transition-all ${
+                      className={`relative flex items-center justify-center w-10 h-9 sm:w-20 sm:h-12 rounded-lg transition-all ${
                         active 
                           ? "bg-white shadow-[0_2px_10px_rgba(139,105,20,0.4)] ring-2 ring-yellow-300/60" 
                           : "hover:bg-white/30 text-black/80"
@@ -171,9 +170,9 @@ export function CommunityHeader() {
               </nav>
 
               {/* Right: Notifications & Profile */}
-              <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-end">
+              <div className="flex items-center gap-1 sm:gap-3 shrink-0 justify-end">
                 <NotificationDropdown variant="community" />
-                <Web3WalletButton />
+                <span className="hidden sm:block"><Web3WalletButton /></span>
                 {user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
