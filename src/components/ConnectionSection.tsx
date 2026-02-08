@@ -25,7 +25,7 @@ export const ConnectionSection = () => {
   };
 
   return (
-    <section className="py-24 md:py-32 bg-background-pure relative overflow-hidden">
+    <section className="py-24 md:py-32 bg-white/60 backdrop-blur-[2px] relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gradient-radial from-primary-pale/30 to-transparent" />

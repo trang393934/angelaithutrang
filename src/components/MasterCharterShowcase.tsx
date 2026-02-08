@@ -31,7 +31,7 @@ export const MasterCharterShowcase = () => {
   const currentVersion = versions[activeVersion];
 
   return (
-    <section className="relative py-12 md:py-20 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50 overflow-hidden">
+    <section className="relative py-12 md:py-20 bg-white/60 backdrop-blur-[2px] overflow-hidden">
       {/* Sacred background decorations */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-radial from-amber-200/30 via-transparent to-transparent" />

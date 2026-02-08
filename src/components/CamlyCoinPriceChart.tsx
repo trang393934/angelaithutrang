@@ -66,7 +66,7 @@ export const CamlyCoinPriceChart = () => {
   const currentPrice = priceData?.priceUsd || 0;
 
   return (
-    <section className="py-4 sm:py-6 lg:py-8 bg-background overflow-hidden">
+    <section className="py-4 sm:py-6 lg:py-8 bg-white/60 backdrop-blur-[2px] overflow-hidden">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6">
         <div className="max-w-7xl mx-auto">
           {isLoading && !priceData ? (
