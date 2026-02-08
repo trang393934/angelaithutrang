@@ -1,4 +1,4 @@
-import { Users, FileText, Heart, Award, Star, Coins, Wallet } from "lucide-react";
+import { Users, FileText, Heart, Award, Star, Coins, Wallet, Gift } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { PublicProfileStats as StatsType } from "@/hooks/usePublicProfile";
@@ -15,6 +15,7 @@ const statItems = [
   { key: "likes", icon: Heart, labelKey: "publicProfile.statLikes" },
   { key: "balance", icon: Wallet, labelKey: "publicProfile.statBalance" },
   { key: "lifetimeEarned", icon: Award, labelKey: "publicProfile.statCoins" },
+  { key: "lixiReward", icon: Gift, labelKey: "publicProfile.statLixi" },
   { key: "poplScore", icon: Star, labelKey: "publicProfile.statPoPL" },
   { key: "funMoneyTotal", icon: Coins, labelKey: "publicProfile.statFUN" },
 ] as const;
@@ -28,6 +29,7 @@ export function PublicProfileStats({ stats }: PublicProfileStatsProps) {
     likes: stats.likes.toLocaleString(),
     balance: Math.floor(stats.balance).toLocaleString(),
     lifetimeEarned: Math.floor(stats.lifetimeEarned).toLocaleString(),
+    lixiReward: stats.lixiReward > 0 ? Math.floor(stats.lixiReward).toLocaleString() : "0",
     poplScore: `${stats.poplScore}/100`,
     funMoneyTotal: stats.funMoneyTotal.toLocaleString(),
   };
@@ -35,6 +37,9 @@ export function PublicProfileStats({ stats }: PublicProfileStatsProps) {
   const getIcon = (key: string, Icon: any) => {
     if (key === "balance" || key === "lifetimeEarned") {
       return <img src={camlyCoinLogo} alt="CAMLY" className="w-5 h-5 rounded-full" />;
+    }
+    if (key === "lixiReward") {
+      return <span className="text-lg">🧧</span>;
     }
     if (key === "funMoneyTotal") {
       return <img src={funMoneyLogo} alt="FUN" className="w-5 h-5" />;
@@ -51,6 +56,7 @@ export function PublicProfileStats({ stats }: PublicProfileStatsProps) {
       case "likes": return "Lượt thích";
       case "balance": return "Số dư";
       case "lifetimeEarned": return "Tích lũy";
+      case "lixiReward": return "Lì xì Tết";
       case "poplScore": return "PoPL";
       case "funMoneyTotal": return "FUN Money";
       default: return key;
@@ -62,7 +68,7 @@ export function PublicProfileStats({ stats }: PublicProfileStatsProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="grid grid-cols-4 sm:grid-cols-7 gap-2 mt-8 max-w-3xl mx-auto"
+      className="grid grid-cols-4 sm:grid-cols-9 gap-2 mt-8 max-w-4xl mx-auto"
     >
       {statItems.map(({ key, icon: Icon, labelKey }, index) => (
         <motion.div

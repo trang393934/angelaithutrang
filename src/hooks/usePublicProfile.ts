@@ -16,6 +16,7 @@ export interface PublicProfileStats {
   posts: number;
   balance: number;
   lifetimeEarned: number;
+  lixiReward: number;
   likes: number;
   poplScore: number;
   badgeLevel: string;
@@ -46,6 +47,7 @@ export function usePublicProfile(handle?: string) {
     posts: 0,
     balance: 0,
     lifetimeEarned: 0,
+    lixiReward: 0,
     likes: 0,
     poplScore: 0,
     badgeLevel: "newcomer",
@@ -94,6 +96,7 @@ export function usePublicProfile(handle?: string) {
           recentPostsResult,
           poplResult,
           funMoneyResult,
+          lixiTxsResult,
         ] = await Promise.all([
           supabase
             .from("community_posts")
@@ -133,6 +136,11 @@ export function usePublicProfile(handle?: string) {
             .from("pplp_actions")
             .select("status, pplp_scores(final_reward, decision)")
             .eq("actor_id", userId),
+          supabase
+            .from("camly_coin_transactions")
+            .select("amount, metadata")
+            .eq("user_id", userId)
+            .eq("transaction_type", "admin_adjustment"),
         ]);
 
         // Calculate total likes
@@ -166,11 +174,22 @@ export function usePublicProfile(handle?: string) {
           }
         });
 
+        // Calculate Lì xì reward total
+        const lixiTotal = (lixiTxsResult.data || [])
+          .filter((tx: any) => {
+            const meta = tx.metadata;
+            return meta && typeof meta === "object" && meta.source === "fun_to_camly_reward";
+          })
+          .reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
+
+        const rawLifetimeEarned = balanceResult.data?.lifetime_earned || 0;
+
         setStats({
           friends: friendsCountResult.count || 0,
           posts: postsResult.count || 0,
           balance: balanceResult.data?.balance || 0,
-          lifetimeEarned: balanceResult.data?.lifetime_earned || 0,
+          lifetimeEarned: rawLifetimeEarned - lixiTotal,
+          lixiReward: lixiTotal,
           likes: totalLikes,
           poplScore,
           badgeLevel,
