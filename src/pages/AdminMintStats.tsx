@@ -29,10 +29,17 @@ import { LiXiCelebrationDialog } from "@/components/admin/LiXiCelebrationDialog"
 const ACTION_TYPES = [
   "QUESTION_ASK",
   "POST_CREATE",
+  "COMMENT_CREATE",
+  "POST_ENGAGEMENT",
+  "SHARE_CONTENT",
   "GRATITUDE_PRACTICE",
   "CONTENT_CREATE",
   "JOURNAL_WRITE",
-  "LEARN_COMPLETE",
+  "DONATE_SUPPORT",
+  "DAILY_LOGIN",
+  "HELP_COMMUNITY",
+  "IDEA_SUBMIT",
+  "FEEDBACK_GIVE",
 ] as const;
 
 type ActionType = typeof ACTION_TYPES[number];
@@ -40,28 +47,49 @@ type ActionType = typeof ACTION_TYPES[number];
 const ACTION_LABELS: Record<string, string> = {
   QUESTION_ASK: "Hỏi đáp",
   POST_CREATE: "Đăng bài",
+  COMMENT_CREATE: "Bình luận",
+  POST_ENGAGEMENT: "Tương tác",
+  SHARE_CONTENT: "Chia sẻ",
   GRATITUDE_PRACTICE: "Biết ơn",
   CONTENT_CREATE: "Tạo nội dung",
   JOURNAL_WRITE: "Nhật ký",
-  LEARN_COMPLETE: "Học tập",
+  DONATE_SUPPORT: "Tặng quà",
+  DAILY_LOGIN: "Đăng nhập",
+  HELP_COMMUNITY: "Giúp đỡ",
+  IDEA_SUBMIT: "Ý tưởng",
+  FEEDBACK_GIVE: "Phản hồi",
 };
 
 const ACTION_SHORT: Record<string, string> = {
   QUESTION_ASK: "Hỏi",
   POST_CREATE: "Bài",
+  COMMENT_CREATE: "B.luận",
+  POST_ENGAGEMENT: "Like",
+  SHARE_CONTENT: "Share",
   GRATITUDE_PRACTICE: "Ơn",
   CONTENT_CREATE: "N.dung",
   JOURNAL_WRITE: "N.ký",
-  LEARN_COMPLETE: "Học",
+  DONATE_SUPPORT: "Quà",
+  DAILY_LOGIN: "D.nhập",
+  HELP_COMMUNITY: "Giúp",
+  IDEA_SUBMIT: "Ý.tưởng",
+  FEEDBACK_GIVE: "P.hồi",
 };
 
 const ACTION_ICONS: Record<string, string> = {
   QUESTION_ASK: "💬",
   POST_CREATE: "📢",
+  COMMENT_CREATE: "💭",
+  POST_ENGAGEMENT: "❤️",
+  SHARE_CONTENT: "🔗",
   GRATITUDE_PRACTICE: "🙏",
   CONTENT_CREATE: "✍️",
   JOURNAL_WRITE: "📝",
-  LEARN_COMPLETE: "📚",
+  DONATE_SUPPORT: "🎁",
+  DAILY_LOGIN: "📅",
+  HELP_COMMUNITY: "🤝",
+  IDEA_SUBMIT: "💡",
+  FEEDBACK_GIVE: "📋",
 };
 
 interface UserPPLPRow {
@@ -518,7 +546,6 @@ const AdminMintStats = () => {
         row[ACTION_LABELS[at]] = r.by_type[at]?.fun || 0;
       }
       row["Tổng FUN"] = r.total_fun;
-      row["Thưởng Camly"] = r.total_fun * CAMLY_MULTIPLIER;
       row["Pass"] = r.total_passed;
       row["Fail"] = r.total_failed;
       row["Avg Light Score"] = r.avg_light_score;
@@ -842,13 +869,6 @@ const AdminMintStats = () => {
                         <ArrowUpDown className={`w-2 h-2 flex-shrink-0 ${sortKey === "total_fun" ? "text-primary" : "text-muted-foreground/30"}`} />
                       </span>
                     </th>
-                    {/* Cột Thưởng Camly */}
-                    <th className="px-2 py-2 text-center font-semibold">
-                      <span className="flex flex-col items-center gap-0.5 leading-tight">
-                        <span className="text-base">🧧</span>
-                        <span className="text-[10px] leading-none">Camly</span>
-                      </span>
-                    </th>
                     <th
                       className="px-2 py-2 text-center font-medium cursor-pointer hover:text-primary transition-colors"
                       onClick={() => toggleSort("total_passed")}
@@ -934,16 +954,6 @@ const AdminMintStats = () => {
                         })}
                         <td className="px-2 py-2.5 text-center font-bold tabular-nums text-primary">
                           {formatNum(row.total_fun)}
-                        </td>
-                        {/* Cột Thưởng Camly */}
-                        <td className="px-2 py-2.5 text-center tabular-nums">
-                          {row.total_fun > 0 ? (
-                            <span className="font-semibold text-amber-600 dark:text-amber-400">
-                              {formatNum(row.total_fun * CAMLY_MULTIPLIER)}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground/30">—</span>
-                          )}
                         </td>
                         <td className="px-2 py-2.5 text-center">
                           <span className="text-green-600 font-medium">{row.total_passed}</span>
