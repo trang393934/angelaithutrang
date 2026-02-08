@@ -32,53 +32,56 @@ const StatItem = ({
     transition={{ delay, duration: 0.4 }}
     className="relative group"
   >
-    {/* Outer glow - bright gold shimmer */}
-    <div className="absolute -inset-[4px] rounded-full opacity-100 shadow-[0_0_16px_rgba(255,215,0,0.7)] group-hover:shadow-[0_0_24px_rgba(255,215,0,0.9)] transition-all duration-300"
-      style={{ background: 'linear-gradient(180deg, #FFE082 0%, #FFD54F 30%, #FFC107 50%, #FFB300 70%, #FF8F00 100%)' }}
-    />
-    
-    {/* Middle metallic band */}
+    {/* Outer dark border frame */}
     <div className="absolute -inset-[3px] rounded-full"
-      style={{ background: 'linear-gradient(180deg, #FFF8E1 0%, #FFE082 25%, #FFD54F 50%, #FFC107 75%, #FFB300 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #b8860b 0%, #8B6914 50%, #6B4F00 100%)' }}
     />
     
-    {/* Inner highlight for 3D depth */}
-    <div className="absolute -inset-[2px] rounded-full shadow-[inset_0_2px_6px_rgba(255,255,255,1),inset_0_-2px_6px_rgba(180,130,0,0.5)]"
-      style={{ background: 'linear-gradient(180deg, #FFFDE7 0%, #FFF9C4 30%, #FFE082 60%, #FFD54F 100%)' }}
-    />
-    
-    {/* Main content - metallic gold 3D background */}
-    <div className="relative flex items-center justify-between px-5 py-3 rounded-full text-white overflow-hidden"
+    {/* Main content - bright Gold 11 metallic surface */}
+    <div className="relative flex items-center justify-between px-5 py-3.5 rounded-full overflow-hidden"
       style={{ 
-        background: 'linear-gradient(180deg, #D4A017 0%, #C49B30 15%, #B8860B 30%, #A67C00 50%, #8B6914 70%, #7A5C00 85%, #6B4F00 100%)',
-        boxShadow: '0 3px 10px rgba(0,0,0,0.35), inset 0 2px 3px rgba(255,235,170,0.5), inset 0 -1px 3px rgba(100,70,0,0.4)' 
+        background: 'linear-gradient(180deg, #ffec8b 0%, #ffd700 20%, #daa520 50%, #ffd700 80%, #ffec8b 100%)',
+        boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.8), inset 0 -2px 4px rgba(180,130,0,0.3), 0 4px 12px rgba(0,0,0,0.25)' 
       }}
     >
+      {/* Brushed metal texture lines */}
+      <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
+        style={{ 
+          backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(0,0,0,0.15) 1px, rgba(0,0,0,0.15) 2px)',
+          backgroundSize: '3px 100%'
+        }}
+      />
+      
+      {/* Top shine highlight */}
+      <div className="absolute inset-x-4 top-1 h-[40%] rounded-full opacity-60 pointer-events-none"
+        style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%)' }}
+      />
+
       {/* Shimmer sweep on hover */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: 'linear-gradient(105deg, transparent 25%, rgba(255,245,200,0.4) 45%, transparent 60%)' }}
+        style={{ background: 'linear-gradient(105deg, transparent 25%, rgba(255,255,255,0.5) 45%, transparent 60%)' }}
       />
       
       {/* Left side - Icon and label */}
       <div className="flex items-center gap-3 relative">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center border border-yellow-300/50"
-          style={{ background: 'linear-gradient(135deg, rgba(255,235,170,0.35) 0%, rgba(255,215,0,0.2) 100%)' }}
+        <div className="w-8 h-8 rounded-full flex items-center justify-center border border-amber-700/30"
+          style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,215,0,0.2) 100%)' }}
         >
-          <Icon className="w-4 h-4 text-yellow-100 drop-shadow-[0_0_3px_rgba(255,215,0,0.6)]" />
+          <Icon className="w-4 h-4 text-amber-900 drop-shadow-[0_0_1px_rgba(255,215,0,0.4)]" />
         </div>
-        <span className="font-bold text-sm tracking-wide uppercase text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">{label}</span>
+        <span className="font-bold text-sm tracking-wide uppercase text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)]">{label}</span>
       </div>
       
       {/* Right side - Value */}
       <div className="flex items-center gap-1.5 relative">
-        <span className="font-bold text-lg tracking-wider text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">
+        <span className="font-extrabold text-lg tracking-wider text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)]">
           {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
         </span>
         {isCoin && (
           <motion.span
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="text-yellow-200 drop-shadow-[0_0_4px_rgba(255,215,0,0.6)]"
+            className="text-amber-800 font-bold drop-shadow-[0_0_2px_rgba(255,215,0,0.4)]"
           >
             ©
           </motion.span>
