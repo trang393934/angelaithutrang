@@ -47,6 +47,7 @@ const navGroups: NavGroup[] = [
       { to: "/admin/mint-stats", icon: Sparkles, label: "FUN Money" },
       { to: "/admin/mint-approval", icon: Shield, label: "Mint Approval" },
       { to: "/admin/tip-reports", icon: Gift, label: "Tip Reports" },
+      { to: "/admin/tet-reward", icon: Gift, label: "Thưởng Tết" },
     ],
   },
   {
