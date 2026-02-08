@@ -11,17 +11,19 @@ import { ConnectionSection } from "@/components/ConnectionSection";
 import { Footer } from "@/components/Footer";
 import { DailyLoginReward } from "@/components/earn/DailyLoginReward";
 import { useAuth } from "@/hooks/useAuth";
-
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { MainSidebar } from "@/components/MainSidebar";
 import Leaderboard from "@/components/Leaderboard";
 import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
 import { MasterCharterBanner } from "@/components/MasterCharterBanner";
 import { BackToTopButton } from "@/components/BackToTopButton";
+
 const Index = () => {
   const { user } = useAuth();
   const mainRef = useRef<HTMLElement>(null);
 
   return (
+    <SidebarProvider defaultOpen={true}>
       <div className="h-screen bg-background flex w-full overflow-hidden relative">
         {/* Tết Background Video */}
         <video
@@ -85,9 +87,10 @@ const Index = () => {
               </div>
             </aside>
           </div>
-          </div>
-          <BackToTopButton scrollRef={mainRef} />
+        </div>
+        <BackToTopButton scrollRef={mainRef} />
       </div>
+    </SidebarProvider>
   );
 };
 
