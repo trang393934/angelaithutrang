@@ -27,7 +27,7 @@ const HARMFUL_WORDS_VI = [
   'địt', 'đụ', 'chịch', 'fuck', 'sex', 'porn', 'làm tình', 'quan hệ tình dục',
   // Discrimination/Hate
   'đồ chó', 'con chó', 'thằng ngu', 'con ngu', 'đồ ngu', 'mặt lồn', 'đồ điếm',
-  'gay', 'bê đê', 'pê đê', 
+  'bê đê', 'pê đê', 
   // Drugs
   'ma túy', 'cocaine', 'heroin', 'thuốc lắc', 'cần sa', 'ketamine',
 ];
@@ -44,6 +44,23 @@ const HARMFUL_WORDS_EN = [
   'cocaine', 'heroin', 'meth', 'crack', 'ecstasy', 'lsd',
 ];
 
+// Vietnamese safe phrases that contain syllables matching harmful words
+// These are replaced with placeholders before moderation to avoid false positives
+const VIETNAMESE_SAFE_PHRASES = [
+  // Phrases containing "đâm" (stab) but meaning something else
+  'đâm ra',      // trở nên (become)
+  'đâm đầu',     // lao vào (dive into)
+  // Phrases containing "chém" (slash) but meaning something else  
+  'chém gió',    // nói phét (brag/chat idly)
+  'chém breeze',
+  // Phrases containing "giết" but in idiomatic use
+  'giết thời gian', // kill time
+  // Phrases containing "gay" syllable (already removed from list but extra safety)
+  'gây gổ',      // quarrel
+  'gây dựng',    // build up
+  'gây quỹ',     // fundraise
+];
+
 // Suspicious URL shorteners often used for malicious links
 const SUSPICIOUS_SHORTENERS = [
   'bit.ly', 'tinyurl', 'goo.gl', 't.co', 'ow.ly', 'is.gd', 'buff.ly',
@@ -56,6 +73,33 @@ export interface ModerationResult {
   blockedItems?: string[];
   gentleReminder: string;
 }
+
+/**
+ * Sanitize text by replacing known safe Vietnamese phrases with placeholders
+ * This prevents false positives when safe phrases contain harmful syllables
+ */
+function sanitizeForCheck(text: string): string {
+  let sanitized = text.toLowerCase();
+  for (const phrase of VIETNAMESE_SAFE_PHRASES) {
+    sanitized = sanitized.split(phrase.toLowerCase()).join(' __safe__ ');
+  }
+  return sanitized;
+}
+
+/**
+ * Escape special regex characters in a string
+ */
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Custom word boundary pattern for Vietnamese text
+ * Uses whitespace and punctuation as boundaries instead of \b
+ * which doesn't work well with Unicode/diacritics
+ */
+const WORD_BOUNDARY_START = '(^|\\s|[.,!?;:\\"\'()\\[\\]{}])';
+const WORD_BOUNDARY_END = '($|\\s|[.,!?;:\\"\'()\\[\\]{}])';
 
 /**
  * Check if a URL contains harmful patterns
@@ -74,22 +118,26 @@ function checkHarmfulUrl(url: string): { isHarmful: boolean; pattern?: string } 
 
 /**
  * Check if text contains harmful words
+ * Uses word-boundary regex for both Vietnamese and English to avoid false positives
  */
 function checkHarmfulWords(text: string): { isHarmful: boolean; words: string[] } {
-  const lowerText = text.toLowerCase();
+  // First sanitize safe phrases to avoid false positives
+  const sanitizedText = sanitizeForCheck(text);
   const foundWords: string[] = [];
   
-  // Check Vietnamese harmful words
+  // Check Vietnamese harmful words (with custom word boundary for Unicode support)
   for (const word of HARMFUL_WORDS_VI) {
-    if (lowerText.includes(word.toLowerCase())) {
+    const escapedWord = escapeRegex(word.toLowerCase());
+    const regex = new RegExp(`${WORD_BOUNDARY_START}${escapedWord}${WORD_BOUNDARY_END}`, 'i');
+    if (regex.test(sanitizedText)) {
       foundWords.push(word);
     }
   }
   
-  // Check English harmful words (with word boundary)
+  // Check English harmful words (with standard word boundary)
   for (const word of HARMFUL_WORDS_EN) {
-    const regex = new RegExp(`\\b${word}\\b`, 'i');
-    if (regex.test(lowerText)) {
+    const regex = new RegExp(`\\b${escapeRegex(word)}\\b`, 'i');
+    if (regex.test(sanitizedText)) {
       foundWords.push(word);
     }
   }
@@ -172,15 +220,18 @@ Xin con hãy xóa những liên kết này và chia sẻ những điều tốt �
 
 /**
  * Check image filename for suspicious patterns
+ * Uses word-boundary matching to avoid false positives (e.g. "sunset_sexy" won't match "sex")
  */
 export function checkImageFilename(filename: string): ModerationResult {
-  const lowerName = filename.toLowerCase();
+  // Normalize filename: replace separators with spaces for word-boundary matching
+  const normalizedName = filename.toLowerCase().replace(/[-_./\\]/g, ' ');
   
   // Check for explicit terms in filename
   const explicitPatterns = ['nude', 'naked', 'porn', 'sex', 'xxx', 'nsfw', 'gore', 'blood'];
   
   for (const pattern of explicitPatterns) {
-    if (lowerName.includes(pattern)) {
+    const regex = new RegExp(`(^|\\s)${escapeRegex(pattern)}($|\\s)`, 'i');
+    if (regex.test(normalizedName)) {
       return {
         isAllowed: false,
         reason: 'harmful_image_name',
