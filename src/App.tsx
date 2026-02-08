@@ -52,6 +52,7 @@ import Mint from "./pages/Mint";
 import Receipt from "./pages/Receipt";
 import AdminTipReports from "./pages/AdminTipReports";
 import Notifications from "./pages/Notifications";
+import HandleProfile from "./pages/HandleProfile";
 
 // Note: Global error handling is in main.tsx (registered before React renders)
 
@@ -103,6 +104,7 @@ const App = () => (
               <Route path="/community-questions" element={<CommunityQuestions />} />
               <Route path="/community" element={<Community />} />
               <Route path="/user/:userId" element={<UserProfile />} />
+              <Route path="/@:handle" element={<HandleProfile />} />
               <Route path="/messages" element={<ProfileCompletionGate><Messages /></ProfileCompletionGate>} />
               <Route path="/messages/:userId" element={<ProfileCompletionGate><Messages /></ProfileCompletionGate>} />
               <Route path="/docs/platform" element={<PlatformDocs />} />

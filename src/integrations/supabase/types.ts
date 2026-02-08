@@ -1294,6 +1294,33 @@ export type Database = {
         }
         Relationships: []
       }
+      handle_audit_log: {
+        Row: {
+          created_at: string
+          id: string
+          new_handle: string
+          old_handle: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          new_handle: string
+          old_handle?: string | null
+          source?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          new_handle?: string
+          old_handle?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       healing_messages: {
         Row: {
           content: string
@@ -2477,6 +2504,8 @@ export type Database = {
           cover_photo_url: string | null
           created_at: string
           display_name: string | null
+          handle: string | null
+          handle_updated_at: string | null
           id: string
           popl_badge_level: string | null
           popl_verified: boolean | null
@@ -2492,6 +2521,8 @@ export type Database = {
           cover_photo_url?: string | null
           created_at?: string
           display_name?: string | null
+          handle?: string | null
+          handle_updated_at?: string | null
           id?: string
           popl_badge_level?: string | null
           popl_verified?: boolean | null
@@ -2507,6 +2538,8 @@ export type Database = {
           cover_photo_url?: string | null
           created_at?: string
           display_name?: string | null
+          handle?: string | null
+          handle_updated_at?: string | null
           id?: string
           popl_badge_level?: string | null
           popl_verified?: boolean | null
@@ -2606,6 +2639,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reserved_handles: {
+        Row: {
+          created_at: string
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          word: string
+        }
+        Update: {
+          created_at?: string
+          word?: string
+        }
+        Relationships: []
       }
       typing_indicators: {
         Row: {
