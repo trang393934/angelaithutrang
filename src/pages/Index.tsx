@@ -71,10 +71,10 @@ const Index = () => {
           {/* Daily Login Reward - shows popup when user logs in */}
           {user && <DailyLoginReward />}
           
-          {/* Content area with fixed sidebars and scrollable center */}
-          <div className="flex-1 flex min-h-0">
+            {/* Content area with fixed sidebars and scrollable center */}
+            <div className="flex-1 flex min-h-0 relative z-[2]">
             {/* Center Content - Scrollable */}
-            <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto scrollbar-hide">
+            <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto scrollbar-hide relative z-[2]">
               <HeroSection />
               
               {/* Master Charter Showcase - MOST PROMINENT POSITION */}

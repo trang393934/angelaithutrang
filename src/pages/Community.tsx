@@ -176,7 +176,7 @@ const Community = () => {
             </aside>
 
             {/* Main Content - SCROLLABLE */}
-            <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden space-y-3 sm:space-y-4 lg:space-y-6 pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
+            <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden space-y-3 sm:space-y-4 lg:space-y-6 pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40 relative z-[2]">
               {/* Create Post */}
               <AuthActionGuard message={t("community.loginToJoin")}>
                 {user ? (
@@ -196,22 +196,22 @@ const Community = () => {
 
               {/* Gift & Donate Action Buttons */}
               <AuthActionGuard message="Bạn cần đăng nhập để tặng quà">
-                <div className="flex gap-2 sm:gap-3 items-center">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <motion.div 
-                    className="flex-[2] min-w-0"
+                    className="flex-1 min-w-0"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Button
                       onClick={() => user && setShowGiftDialog(true)}
-                      className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 text-white font-semibold px-2 sm:px-4 text-xs sm:text-sm relative overflow-hidden"
+                      className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 text-white font-semibold px-3 sm:px-4 text-sm h-10 relative overflow-hidden"
                       style={{
                         boxShadow: '0 0 12px 2px hsla(43, 96%, 56%, 0.4), 0 4px 15px -3px hsla(43, 96%, 56%, 0.3), inset 0 1px 0 hsla(0, 0%, 100%, 0.3)',
                       }}
                     >
                       <span className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-white/25 pointer-events-none rounded-md" />
-                      <Gift className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0 relative z-10" />
-                      <span className="truncate relative z-10">{t("gift.title")}</span>
+                      <Gift className="w-4 h-4 mr-2 flex-shrink-0 relative z-10" />
+                      <span className="relative z-10">{t("gift.title")}</span>
                     </Button>
                   </motion.div>
                   <motion.div 
@@ -221,10 +221,10 @@ const Community = () => {
                   >
                     <Button
                       onClick={() => user && setShowDonateDialog(true)}
-                      className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 text-white font-semibold shadow-lg px-2 sm:px-4 text-xs sm:text-sm"
+                      className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 text-white font-semibold shadow-lg px-3 sm:px-4 text-sm h-10"
                     >
-                      <Heart className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
-                      <span className="truncate">{t("donate.title")}</span>
+                      <Heart className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span>{t("donate.title")}</span>
                     </Button>
                   </motion.div>
                 </div>
