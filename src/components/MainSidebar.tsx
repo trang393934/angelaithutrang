@@ -15,7 +15,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -24,7 +23,7 @@ import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthActionGuard } from "@/components/AuthActionGuard";
 
-function MainSidebarContent() {
+export function MainSidebar() {
   const { t } = useLanguage();
   const location = useLocation();
   const { state } = useSidebar();
@@ -125,14 +124,6 @@ function MainSidebarContent() {
         contextType="global"
       />
     </Sidebar>
-  );
-}
-
-export function MainSidebar() {
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <MainSidebarContent />
-    </SidebarProvider>
   );
 }
 
