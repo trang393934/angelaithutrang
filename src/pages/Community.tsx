@@ -123,12 +123,25 @@ const Community = () => {
   };
 
   return (
-      <div className="h-screen flex flex-col bg-gradient-to-b from-primary-pale via-background to-background">
-        {/* Header - fixed height */}
-        <CommunityHeader />
+      <div className="h-screen flex flex-col bg-gradient-to-b from-primary-pale via-background to-background relative">
+        {/* Tết Background Video - Fixed */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+          style={{ opacity: 0.35 }}
+        >
+          <source src="/videos/tet-background.mp4" type="video/mp4" />
+        </video>
+        {/* Header - fixed height, above video */}
+        <div className="relative z-10">
+          <CommunityHeader />
+        </div>
 
-        {/* Content area - fills remaining height */}
-        <div className="flex-1 flex overflow-hidden">
+        {/* Content area - fills remaining height, above video */}
+        <div className="flex-1 flex overflow-hidden relative z-10">
           <div className="container mx-auto flex gap-2 sm:gap-4 lg:gap-6 px-2 sm:px-3 lg:px-4 py-3 sm:py-4 h-full">
             {/* Left Sidebar - scrollable with visible scrollbar */}
             <aside className="hidden xl:flex flex-col w-[280px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50 pr-1">
