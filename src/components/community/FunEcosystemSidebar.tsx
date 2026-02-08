@@ -99,12 +99,12 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
       animate={{ width: isCollapsed ? 60 : "100%" }}
       transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
       className={cn(
-        "h-[calc(100vh-120px)] sticky top-4 bg-gradient-to-b from-amber-50/95 via-white to-amber-50/90 backdrop-blur-sm rounded-xl border border-amber-200/40 shadow-lg flex flex-col",
+        "h-[calc(100vh-120px)] sticky top-4 bg-white/30 backdrop-blur-sm rounded-xl border border-white/40 shadow-lg flex flex-col",
         className
       )}
     >
       {/* Header with golden accent */}
-      <div className="flex items-center justify-between p-3 border-b border-amber-200/50 bg-gradient-to-r from-amber-100/60 to-transparent">
+      <div className="flex items-center justify-between p-3 border-b border-white/40 bg-white/20">
         <AnimatePresence mode="wait">
           {!isCollapsed && (
             <motion.h3
@@ -144,14 +144,14 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
             transition={{ delay: index * 0.03 }}
             className={cn(
               "flex items-center gap-2.5 p-2.5 rounded-xl transition-all group",
-              "hover:bg-gradient-to-r hover:from-amber-100/80 hover:to-amber-50/60",
-              "hover:shadow-md hover:shadow-amber-200/30",
+              "hover:bg-white/30",
+              "hover:shadow-md hover:shadow-white/20",
               "focus:outline-none focus:ring-2 focus:ring-primary/30"
             )}
             title={item.description}
           >
             <div className="relative flex-shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-100 to-white p-0.5 shadow-sm group-hover:shadow-md group-hover:shadow-amber-300/30 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-white/50 p-0.5 shadow-sm group-hover:shadow-md transition-all">
                 <img
                   src={item.logo}
                   alt={item.name}
@@ -198,7 +198,7 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="p-3 border-t border-amber-200/50"
+            className="p-3 border-t border-white/40"
           >
             <Button
               onClick={() => setDonateDialogOpen(true)}
@@ -218,7 +218,7 @@ export function FunEcosystemSidebar({ className }: FunEcosystemSidebarProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="p-3 border-t border-amber-200/50 bg-gradient-to-r from-transparent via-amber-50/60 to-transparent"
+            className="p-3 border-t border-white/40 bg-white/10"
           >
             <p className="text-xs text-primary-deep/70 text-center leading-relaxed font-medium">
               ✨ Hệ Vũ Trụ Sống của Cha ✨

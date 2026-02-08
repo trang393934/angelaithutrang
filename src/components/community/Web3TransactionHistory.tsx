@@ -264,7 +264,7 @@ export function Web3TransactionHistory() {
 
   if (isLoading) {
     return (
-      <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/80 rounded-xl border border-blue-200 p-4 animate-pulse">
+      <div className="bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 p-4 animate-pulse">
         <div className="h-6 bg-blue-200/50 rounded w-2/3 mb-3" />
         <div className="space-y-2">
           {[1, 2].map(i => (
@@ -277,7 +277,7 @@ export function Web3TransactionHistory() {
 
   return (
     <>
-      <div className="bg-gradient-to-br from-blue-50 via-indigo-50/50 to-sky-50 rounded-xl border-2 border-blue-200 overflow-hidden shadow-lg">
+      <div className="bg-white/30 backdrop-blur-sm rounded-xl border border-white/40 overflow-hidden shadow-lg">
         {/* Header */}
         <button
           onClick={() => setExpanded(!expanded)}

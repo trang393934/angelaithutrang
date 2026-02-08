@@ -30,7 +30,7 @@ export function Leaderboard() {
 
   if (isLoading) {
     return (
-      <Card className="bg-white/90 backdrop-blur-sm border-primary/10 shadow-xl animate-pulse">
+      <Card className="bg-white/30 backdrop-blur-sm border-white/40 shadow-lg animate-pulse">
         <CardContent className="p-6">
           <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto mb-6" />
           <div className="flex justify-center gap-4 mb-6">
@@ -49,7 +49,7 @@ export function Leaderboard() {
   }
 
   return (
-    <Card className="bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50 border-amber-200/50 shadow-xl overflow-hidden">
+    <Card className="bg-white/30 backdrop-blur-sm border-white/40 shadow-lg overflow-hidden">
       <CardContent className="p-3 md:p-4">
         {/* Compact Header with Logo and Title */}
         <div className="flex items-center justify-center gap-2 mb-3">

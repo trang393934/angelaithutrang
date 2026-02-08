@@ -124,7 +124,7 @@ export function GiftHonorBoard() {
 
   return (
     <>
-      <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-300 overflow-hidden shadow-xl">
+      <div className="bg-white/30 backdrop-blur-sm rounded-xl border border-white/40 overflow-hidden shadow-lg">
         {/* Header */}
         <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-4 py-3 relative overflow-hidden">
           <motion.div
