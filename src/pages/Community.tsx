@@ -55,6 +55,20 @@ const Community = () => {
   const [showDonateDialog, setShowDonateDialog] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const rightSidebarRef = useRef<HTMLElement | null>(null);
+  const communityHeaderRef = useRef<HTMLDivElement>(null);
+
+  // Measure community header height and set CSS variable for video clip
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (communityHeaderRef.current) {
+        const h = communityHeaderRef.current.getBoundingClientRect().height;
+        document.documentElement.style.setProperty('--community-header-h', `${h}px`);
+      }
+    };
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+    return () => window.removeEventListener('resize', updateHeaderHeight);
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -126,19 +140,20 @@ const Community = () => {
 
   return (
       <div className="h-screen flex flex-col bg-gradient-to-b from-primary-pale via-background to-background relative">
-        {/* Tết Background Video - Fixed */}
+        {/* Tết Background Video - Positioned below community header (toolbar + stories) */}
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="fixed top-14 sm:top-16 left-0 right-0 bottom-0 w-full h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] object-cover z-[1] pointer-events-none"
-          style={{ opacity: 0.9 }}
+          className="fixed top-0 left-0 right-0 bottom-0 w-full h-full object-cover z-[1] pointer-events-none"
+          style={{ opacity: 0.9, clipPath: 'inset(var(--community-header-h, 0px) 0 0 0)' }}
+          id="community-bg-video"
         >
           <source src="/videos/tet-background.mp4" type="video/mp4" />
         </video>
         {/* Header - fixed height, above video */}
-        <div className="relative z-10">
+        <div className="relative z-10" ref={communityHeaderRef}>
           <CommunityHeader />
         </div>
 
