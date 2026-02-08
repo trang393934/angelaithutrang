@@ -42,7 +42,7 @@ const FallingCoin = ({ delay, left, size }: { delay: number; left: number; size:
     }}
     transition={{ duration: 3.5 + Math.random() * 2, delay, ease: "easeIn" }}
   >
-    <img src={camlyCoinLogo} alt="" className="w-full h-full drop-shadow-md" />
+    <img src={camlyCoinLogo} alt="" className="w-full h-full drop-shadow-md rounded-full" />
   </motion.div>
 );
 
@@ -161,7 +161,7 @@ export function LiXiCelebrationDialog({
             >
               <div className="relative">
                 <div className="absolute inset-0 bg-yellow-300/50 blur-xl rounded-full" />
-                <img src={camlyCoinLogo} alt="Camly Coin" className="w-20 h-20 relative z-10 drop-shadow-lg" />
+                <img src={camlyCoinLogo} alt="Camly Coin" className="w-20 h-20 relative z-10 drop-shadow-lg rounded-full" />
               </div>
             </motion.div>
 
@@ -183,7 +183,7 @@ export function LiXiCelebrationDialog({
               className="w-full bg-white/95 backdrop-blur rounded-xl p-5 shadow-lg space-y-3"
             >
               <div className="flex items-center justify-center gap-2">
-                <img src={camlyCoinLogo} alt="coin" className="w-8 h-8" />
+                <img src={camlyCoinLogo} alt="coin" className="w-8 h-8 rounded-full" />
                 <span className="text-3xl font-bold" style={{ color: "#8B6914" }}>
                   {formatNum(totalCamly)}
                 </span>

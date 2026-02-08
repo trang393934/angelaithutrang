@@ -34,7 +34,7 @@ export function PublicProfileStats({ stats }: PublicProfileStatsProps) {
 
   const getIcon = (key: string, Icon: any) => {
     if (key === "balance" || key === "lifetimeEarned") {
-      return <img src={camlyCoinLogo} alt="CAMLY" className="w-5 h-5" />;
+      return <img src={camlyCoinLogo} alt="CAMLY" className="w-5 h-5 rounded-full" />;
     }
     if (key === "funMoneyTotal") {
       return <img src={funMoneyLogo} alt="FUN" className="w-5 h-5" />;

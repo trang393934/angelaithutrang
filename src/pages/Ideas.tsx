@@ -167,7 +167,7 @@ export default function Ideas() {
               Chia sẻ ý tưởng để cùng xây dựng Angel AI tốt hơn
             </p>
             <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400">
-              <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
+              <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6 rounded-full" />
               <span className="font-medium">Nhận 1000 Camly Coin khi ý tưởng được duyệt!</span>
             </div>
             <Button
@@ -218,7 +218,7 @@ export default function Ideas() {
                     Mỗi ý tưởng hay được Admin duyệt sẽ nhận <strong>1000 Camly Coin</strong>
                   </p>
                 </div>
-                <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12" />
+                <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12 rounded-full" />
               </CardContent>
             </Card>
 
@@ -356,7 +356,7 @@ export default function Ideas() {
 
                       {idea.is_rewarded && idea.reward_amount && (
                         <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300">
-                          <img src={camlyCoinLogo} alt="Camly Coin" className="w-5 h-5" />
+                          <img src={camlyCoinLogo} alt="Camly Coin" className="w-5 h-5 rounded-full" />
                           <span className="text-sm font-medium">
                             +{idea.reward_amount.toLocaleString()} Camly Coin
                           </span>

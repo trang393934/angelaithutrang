@@ -34,7 +34,7 @@ const FireworkCoin = ({ delay, startX, startY }: { delay: number; startX: number
         ease: "easeOut",
       }}
     >
-      <img src={camlyCoinLogo} alt="" className="w-full h-full drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]" />
+      <img src={camlyCoinLogo} alt="" className="w-full h-full drop-shadow-[0_0_8px_rgba(255,215,0,0.8)] rounded-full" />
     </motion.div>
   );
 };
@@ -216,7 +216,7 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
       
       {/* Camly Coin Balance */}
       <div className="flex items-center gap-0.5 mt-0.5 bg-gradient-to-r from-amber-100/80 to-yellow-100/80 px-1.5 py-0.5 rounded-full border border-amber-300/50 shadow-sm">
-        <img src={camlyCoinLogo} alt="Camly" className="w-3 h-3 md:w-3.5 md:h-3.5" />
+        <img src={camlyCoinLogo} alt="Camly" className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full" />
         <span 
           className="text-[9px] md:text-[10px] font-bold text-amber-700"
           style={{

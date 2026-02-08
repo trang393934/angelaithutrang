@@ -107,7 +107,7 @@ function TransactionRow({ tx, compact = false }: { tx: GiftTransaction; compact?
 
         {/* Amount */}
         <div className="flex items-center gap-1.5 mt-0.5">
-          <img src={camlyCoinLogo} alt="coin" className="w-3.5 h-3.5" />
+          <img src={camlyCoinLogo} alt="coin" className="w-3.5 h-3.5 rounded-full" />
           <span className={`font-bold text-sm ${isGift ? 'text-amber-600' : 'text-rose-500'}`}>
             {tx.amount.toLocaleString()}
           </span>
@@ -306,14 +306,14 @@ export function GiftTransactionHistory() {
                 <div className="flex-1 bg-amber-100/60 rounded-lg px-2.5 py-1.5 text-center">
                   <p className="text-[10px] text-amber-600 font-medium">Thưởng</p>
                   <div className="flex items-center justify-center gap-1">
-                    <img src={camlyCoinLogo} alt="coin" className="w-3 h-3" />
+                    <img src={camlyCoinLogo} alt="coin" className="w-3 h-3 rounded-full" />
                     <span className="text-xs font-bold text-amber-700">{totalGiftAmount.toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="flex-1 bg-rose-100/60 rounded-lg px-2.5 py-1.5 text-center">
                   <p className="text-[10px] text-rose-600 font-medium">Tặng dự án</p>
                   <div className="flex items-center justify-center gap-1">
-                    <img src={camlyCoinLogo} alt="coin" className="w-3 h-3" />
+                    <img src={camlyCoinLogo} alt="coin" className="w-3 h-3 rounded-full" />
                     <span className="text-xs font-bold text-rose-600">{totalDonationAmount.toLocaleString()}</span>
                   </div>
                 </div>
@@ -362,7 +362,7 @@ export function GiftTransactionHistory() {
             </DialogTitle>
             <div className="flex gap-3 mt-1">
               <div className="flex items-center gap-1">
-                <img src={camlyCoinLogo} alt="coin" className="w-3.5 h-3.5" />
+                <img src={camlyCoinLogo} alt="coin" className="w-3.5 h-3.5 rounded-full" />
                 <span className="text-xs text-white/90 font-medium">
                   Thưởng: {totalGiftAmount.toLocaleString()}
                 </span>

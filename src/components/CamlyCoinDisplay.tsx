@@ -29,7 +29,7 @@ export function CamlyCoinDisplay() {
     <Card className="bg-gradient-to-br from-amber-50/80 via-orange-50/40 to-yellow-50/60 border-amber-200/50 shadow-lg overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-amber-800">
-          <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
+          <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6 rounded-full" />
           Camly Coin
         </CardTitle>
       </CardHeader>

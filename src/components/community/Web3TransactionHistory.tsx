@@ -100,7 +100,7 @@ function Web3TxRow({ tx }: { tx: Web3Transaction }) {
 
       {/* Row 2: Amount + Coin type */}
       <div className="flex items-center gap-2 mt-2">
-        <img src={camlyCoinLogo} alt="CAMLY" className="w-4 h-4" />
+        <img src={camlyCoinLogo} alt="CAMLY" className="w-4 h-4 rounded-full" />
         <span className="font-bold text-blue-700 text-base">
           {tx.amount.toLocaleString()}
         </span>
@@ -314,7 +314,7 @@ export function Web3TransactionHistory() {
                   <div>
                     <p className="text-[10px] text-blue-600 font-medium">Tổng giao dịch Web3</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <img src={camlyCoinLogo} alt="CAMLY" className="w-4 h-4" />
+                      <img src={camlyCoinLogo} alt="CAMLY" className="w-4 h-4 rounded-full" />
                       <span className="text-sm font-bold text-blue-700">{totalAmount.toLocaleString()}</span>
                       <span className="text-[10px] text-blue-500 font-medium">CAMLY</span>
                     </div>
@@ -372,7 +372,7 @@ export function Web3TransactionHistory() {
             </DialogTitle>
             <div className="flex gap-4 mt-1">
               <div className="flex items-center gap-1">
-                <img src={camlyCoinLogo} alt="CAMLY" className="w-3.5 h-3.5" />
+                <img src={camlyCoinLogo} alt="CAMLY" className="w-3.5 h-3.5 rounded-full" />
                 <span className="text-xs text-white/90 font-medium">
                   Tổng: {totalAmount.toLocaleString()} CAMLY
                 </span>

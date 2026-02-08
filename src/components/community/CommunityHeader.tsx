@@ -218,7 +218,7 @@ export function CommunityHeader() {
                       {/* Earn Link */}
                       <DropdownMenuItem asChild className="cursor-pointer">
                         <Link to="/earn" className="flex items-center gap-2">
-                          <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4" />
+                          <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4 rounded-full" />
                           <span>{t("nav.earn") || "Kiếm xu"}</span>
                           <span className="ml-auto text-xs font-semibold text-amber-600">
                             {Math.floor(balance).toLocaleString()}

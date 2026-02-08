@@ -178,7 +178,7 @@ export const Header = () => {
                       to="/earn"
                       className="flex items-center gap-0.5 lg:gap-1 px-1.5 lg:px-2 py-1 lg:py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                     >
-                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-3.5 h-3.5 lg:w-4 lg:h-4 rounded-full" />
                       <span className="text-[10px] lg:text-xs font-semibold text-amber-700 dark:text-amber-400">
                         {Math.floor(balance).toLocaleString()}
                       </span>
@@ -237,7 +237,7 @@ export const Header = () => {
                         {/* Earn Link */}
                         <DropdownMenuItem asChild className="cursor-pointer">
                           <Link to="/earn" className="flex items-center gap-2">
-                            <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4" />
+                            <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4 rounded-full" />
                             <span>{t("nav.earn") || "Kiếm xu"}</span>
                             <span className="ml-auto text-xs font-semibold text-amber-600">
                               {Math.floor(balance).toLocaleString()}
@@ -392,7 +392,7 @@ export const Header = () => {
                             hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8" />
+                            <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8 rounded-full" />
                             <span className="font-semibold text-foreground">{t("header.camlyCoin")}</span>
                           </div>
                           <span className="text-xl font-bold text-amber-600 dark:text-amber-400">

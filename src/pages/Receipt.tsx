@@ -125,7 +125,7 @@ export default function Receipt() {
 
               <div className="flex flex-col items-center shrink-0">
                 <ArrowRight className="w-6 h-6 text-amber-400" />
-                <img src={camlyCoinLogo} alt="coin" className="w-8 h-8 mt-1" />
+                <img src={camlyCoinLogo} alt="coin" className="w-8 h-8 mt-1 rounded-full" />
               </div>
 
               <Link to={`/user/${receipt.receiver.user_id}`} className="flex flex-col items-center gap-2 flex-1 hover:opacity-80">
@@ -143,7 +143,7 @@ export default function Receipt() {
             {/* Amount */}
             <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-4 text-center border border-amber-200">
               <div className="flex items-center justify-center gap-2">
-                <img src={camlyCoinLogo} alt="coin" className="w-8 h-8" />
+                <img src={camlyCoinLogo} alt="coin" className="w-8 h-8 rounded-full" />
                 <span className="text-3xl font-bold text-amber-700">{formatAmount(receipt.amount)}</span>
               </div>
               <p className="text-sm text-amber-600 mt-1">Camly Coin</p>

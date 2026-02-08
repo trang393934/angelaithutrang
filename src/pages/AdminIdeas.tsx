@@ -689,7 +689,7 @@ export default function AdminIdeas() {
                   {/* Reward info */}
                   {idea.is_rewarded && idea.reward_amount && (
                     <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-50 text-amber-700">
-                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-5 h-5" />
+                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-5 h-5 rounded-full" />
                       <span className="text-sm font-medium">
                         Đã thưởng {idea.reward_amount.toLocaleString()} Camly Coin
                       </span>
@@ -817,7 +817,7 @@ export default function AdminIdeas() {
               <div className="space-y-2">
                 <Label htmlFor="batchReward">Số coin thưởng cho mỗi ý tưởng</Label>
                 <div className="flex items-center gap-2">
-                  <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
+                  <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6 rounded-full" />
                   <Input
                     id="batchReward"
                     type="number"
@@ -951,7 +951,7 @@ export default function AdminIdeas() {
               <div className="space-y-2">
                 <Label htmlFor="reward">Số coin thưởng</Label>
                 <div className="flex items-center gap-2">
-                  <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
+                  <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6 rounded-full" />
                   <Input
                     id="reward"
                     type="number"

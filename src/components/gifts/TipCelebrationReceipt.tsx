@@ -65,7 +65,7 @@ const FallingCoin = ({ delay, left, size }: { delay: number; left: number; size:
       ease: "easeIn",
     }}
   >
-    <img src={camlyCoinLogo} alt="" className="w-full h-full drop-shadow-md" />
+    <img src={camlyCoinLogo} alt="" className="w-full h-full drop-shadow-md rounded-full" />
   </motion.div>
 );
 
@@ -202,7 +202,7 @@ export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrati
             >
               <div className="relative">
                 <div className="absolute inset-0 bg-yellow-300/50 blur-xl rounded-full" />
-                <img src={camlyCoinLogo} alt="Camly Coin" className="w-16 h-16 relative z-10 drop-shadow-lg" />
+                <img src={camlyCoinLogo} alt="Camly Coin" className="w-16 h-16 relative z-10 drop-shadow-lg rounded-full" />
               </div>
             </motion.div>
 
@@ -253,7 +253,7 @@ export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrati
               {/* Amount */}
               <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg p-3 text-center border border-amber-200">
                 <div className="flex items-center justify-center gap-2">
-                  <img src={camlyCoinLogo} alt="coin" className="w-6 h-6" />
+                  <img src={camlyCoinLogo} alt="coin" className="w-6 h-6 rounded-full" />
                   <span className="text-2xl font-bold text-amber-700">{formatAmount(data.amount)}</span>
                   <span className="text-sm text-amber-600 font-medium">Camly Coin</span>
                 </div>
