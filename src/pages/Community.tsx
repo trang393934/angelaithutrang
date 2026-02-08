@@ -57,17 +57,22 @@ const Community = () => {
   const rightSidebarRef = useRef<HTMLElement | null>(null);
   const communityHeaderRef = useRef<HTMLDivElement>(null);
 
-  // Measure community header height and set CSS variable for video clip
+  // Measure community header height dynamically (stories load async)
   useEffect(() => {
-    const updateHeaderHeight = () => {
-      if (communityHeaderRef.current) {
-        const h = communityHeaderRef.current.getBoundingClientRect().height;
-        document.documentElement.style.setProperty('--community-header-h', `${h}px`);
-      }
+    const el = communityHeaderRef.current;
+    if (!el) return;
+
+    const updateHeight = () => {
+      const h = el.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--community-header-h', `${h}px`);
     };
-    updateHeaderHeight();
-    window.addEventListener('resize', updateHeaderHeight);
-    return () => window.removeEventListener('resize', updateHeaderHeight);
+
+    updateHeight();
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(el);
+
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
