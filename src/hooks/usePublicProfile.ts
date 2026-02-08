@@ -14,10 +14,12 @@ export interface PublicProfileData {
 export interface PublicProfileStats {
   friends: number;
   posts: number;
+  balance: number;
   lifetimeEarned: number;
   likes: number;
   poplScore: number;
   badgeLevel: string;
+  funMoneyTotal: number;
 }
 
 export interface PublicFriend {
@@ -42,10 +44,12 @@ export function usePublicProfile(handle?: string) {
   const [stats, setStats] = useState<PublicProfileStats>({
     friends: 0,
     posts: 0,
+    balance: 0,
     lifetimeEarned: 0,
     likes: 0,
     poplScore: 0,
     badgeLevel: "newcomer",
+    funMoneyTotal: 0,
   });
   const [recentPosts, setRecentPosts] = useState<PublicPost[]>([]);
   const [friends, setFriends] = useState<PublicFriend[]>([]);
@@ -89,6 +93,7 @@ export function usePublicProfile(handle?: string) {
           friendsListResult,
           recentPostsResult,
           poplResult,
+          funMoneyResult,
         ] = await Promise.all([
           supabase
             .from("community_posts")
@@ -101,7 +106,7 @@ export function usePublicProfile(handle?: string) {
             .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`),
           supabase
             .from("camly_coin_balances")
-            .select("lifetime_earned")
+            .select("balance, lifetime_earned")
             .eq("user_id", userId)
             .maybeSingle(),
           supabase
@@ -124,6 +129,10 @@ export function usePublicProfile(handle?: string) {
             .from("light_points")
             .select("points")
             .eq("user_id", userId),
+          supabase
+            .from("pplp_actions")
+            .select("status, pplp_scores(final_reward, decision)")
+            .eq("actor_id", userId),
         ]);
 
         // Calculate total likes
@@ -148,13 +157,24 @@ export function usePublicProfile(handle?: string) {
             ? "contributor"
             : "newcomer";
 
+        // Calculate FUN Money total
+        let funMoneyTotal = 0;
+        (funMoneyResult.data || []).forEach((action: any) => {
+          const score = action.pplp_scores as { final_reward: number; decision: string } | null;
+          if (score) {
+            funMoneyTotal += score.final_reward || 0;
+          }
+        });
+
         setStats({
           friends: friendsCountResult.count || 0,
           posts: postsResult.count || 0,
+          balance: balanceResult.data?.balance || 0,
           lifetimeEarned: balanceResult.data?.lifetime_earned || 0,
           likes: totalLikes,
           poplScore,
           badgeLevel,
+          funMoneyTotal,
         });
 
         setRecentPosts(recentPostsResult.data || []);

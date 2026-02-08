@@ -7,7 +7,7 @@ import {
   ImageIcon, Smile, Globe, Briefcase, GraduationCap, Heart, Maximize2, Gift,
   Star, History, Settings, Lock, CheckCircle, Coins
 } from "lucide-react";
-import { useCamlyCoin } from "@/hooks/useCamlyCoin";
+import { useUserCamlyCoin } from "@/hooks/useUserCamlyCoin";
 import { usePoPLScore } from "@/hooks/usePoPLScore";
 import { useFUNMoneyStats } from "@/hooks/useFUNMoneyStats";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
@@ -55,7 +55,7 @@ const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { balance, lifetimeEarned } = useCamlyCoin();
+  const { balance, lifetimeEarned } = useUserCamlyCoin(userId);
   const { score: poplScore, badgeLevel, positiveActions } = usePoPLScore(userId);
   const funMoneyStats = useFUNMoneyStats(userId);
   const navigate = useNavigate();
@@ -737,91 +737,89 @@ const UserProfile = () => {
                   </Link>
                 )}
 
-                {/* Personal Info Section - Only for own profile */}
-                {isOwnProfile && (
-                  <div className="space-y-2 pt-1">
-                    {/* Camly Coin Balance */}
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40">
-                      <div className="flex items-center gap-2.5">
-                        <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8" />
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Số dư hiện tại</p>
-                          <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
-                            {Math.floor(balance).toLocaleString()} <span className="text-xs font-medium">CAMLY</span>
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Tổng tích lũy</p>
-                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-500">
-                          {Math.floor(lifetimeEarned).toLocaleString()} <span className="text-xs font-normal">CAMLY</span>
+                {/* Financial Stats Section - Public for all viewers */}
+                <div className="space-y-2 pt-1">
+                  {/* Camly Coin Balance */}
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40">
+                    <div className="flex items-center gap-2.5">
+                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8" />
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Số dư hiện tại</p>
+                        <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
+                          {Math.floor(balance).toLocaleString()} <span className="text-xs font-medium">CAMLY</span>
                         </p>
                       </div>
                     </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Tổng tích lũy</p>
+                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-500">
+                        {Math.floor(lifetimeEarned).toLocaleString()} <span className="text-xs font-normal">CAMLY</span>
+                      </p>
+                    </div>
+                  </div>
 
-                    {/* PoPL Score / Light Points */}
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary-pale/30 border border-primary/10">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Star className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">PoPL Score</p>
-                          <p className="text-lg font-bold text-primary">{poplScore}</p>
-                        </div>
+                  {/* PoPL Score / Light Points */}
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-primary-pale/30 border border-primary/10">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Star className="w-4 h-4 text-primary" />
                       </div>
-                      <div className="text-right">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize
-                          bg-primary/10 text-primary">
-                          {badgeLevel === "angel" ? "👼 Angel" :
-                           badgeLevel === "lightworker" ? "✨ Lightworker" :
-                           badgeLevel === "guardian" ? "🛡️ Guardian" :
-                           badgeLevel === "contributor" ? "🌟 Contributor" :
-                           "🌱 Newcomer"}
-                        </span>
-                        <p className="text-xs text-gray-500 mt-0.5">{positiveActions} hành động tốt</p>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">PoPL Score</p>
+                        <p className="text-lg font-bold text-primary">{poplScore}</p>
                       </div>
                     </div>
+                    <div className="text-right">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize
+                        bg-primary/10 text-primary">
+                        {badgeLevel === "angel" ? "👼 Angel" :
+                         badgeLevel === "lightworker" ? "✨ Lightworker" :
+                         badgeLevel === "guardian" ? "🛡️ Guardian" :
+                         badgeLevel === "contributor" ? "🌟 Contributor" :
+                         "🌱 Newcomer"}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-0.5">{positiveActions} hành động tốt</p>
+                    </div>
+                  </div>
 
-                    {/* FUN Money Stats */}
-                    {!funMoneyStats.isLoading && funMoneyStats.totalAmount > 0 && (
-                      <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40">
-                        <div className="flex items-center gap-2.5 mb-2">
-                          <img src={funMoneyLogo} alt="FUN Money" className="w-7 h-7" />
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">FUN Money (On-chain)</p>
-                            <p className="text-base font-bold text-emerald-700 dark:text-emerald-400">
-                              {funMoneyStats.totalAmount.toLocaleString()} <span className="text-xs font-medium">FUN</span>
-                            </p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
-                            <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
-                              <CheckCircle className="h-2.5 w-2.5" />
-                              {t("earn.funMoney.scored")}
-                            </div>
-                            <p className="text-xs font-semibold text-emerald-600">{funMoneyStats.totalScored.toLocaleString()}</p>
-                          </div>
-                          <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
-                            <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
-                              <Coins className="h-2.5 w-2.5" />
-                              {t("earn.funMoney.minted")}
-                            </div>
-                            <p className="text-xs font-semibold text-blue-600">{funMoneyStats.totalMinted.toLocaleString()}</p>
-                          </div>
-                          <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
-                            <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
-                              <Lock className="h-2.5 w-2.5" />
-                              {t("earn.funMoney.pending")}
-                            </div>
-                            <p className="text-xs font-semibold text-amber-600">{funMoneyStats.totalPending.toLocaleString()}</p>
-                          </div>
+                  {/* FUN Money Stats */}
+                  {!funMoneyStats.isLoading && funMoneyStats.totalAmount > 0 && (
+                    <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40">
+                      <div className="flex items-center gap-2.5 mb-2">
+                        <img src={funMoneyLogo} alt="FUN Money" className="w-7 h-7" />
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">FUN Money (On-chain)</p>
+                          <p className="text-base font-bold text-emerald-700 dark:text-emerald-400">
+                            {funMoneyStats.totalAmount.toLocaleString()} <span className="text-xs font-medium">FUN</span>
+                          </p>
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
+                          <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                            <CheckCircle className="h-2.5 w-2.5" />
+                            {t("earn.funMoney.scored")}
+                          </div>
+                          <p className="text-xs font-semibold text-emerald-600">{funMoneyStats.totalScored.toLocaleString()}</p>
+                        </div>
+                        <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
+                          <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                            <Coins className="h-2.5 w-2.5" />
+                            {t("earn.funMoney.minted")}
+                          </div>
+                          <p className="text-xs font-semibold text-blue-600">{funMoneyStats.totalMinted.toLocaleString()}</p>
+                        </div>
+                        <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
+                          <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                            <Lock className="h-2.5 w-2.5" />
+                            {t("earn.funMoney.pending")}
+                          </div>
+                          <p className="text-xs font-semibold text-amber-600">{funMoneyStats.totalPending.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-3 text-[15px] text-gray-700">
@@ -1104,14 +1102,95 @@ const UserProfile = () => {
                       <p className="text-[15px] text-gray-700">{profile.bio}</p>
                     </div>
                   )}
+
+                  {/* Financial Stats - Public */}
+                  <div className="space-y-3">
+                    <h3 className="text-[17px] font-semibold text-gray-900">Tài chính & Thành tích</h3>
+                    
+                    {/* Camly Coin */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40">
+                      <div className="flex items-center gap-2.5">
+                        <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8" />
+                        <div>
+                          <p className="text-xs text-gray-500">Số dư hiện tại</p>
+                          <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
+                            {Math.floor(balance).toLocaleString()} <span className="text-xs font-medium">CAMLY</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">Tổng tích lũy</p>
+                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-500">
+                          {Math.floor(lifetimeEarned).toLocaleString()} <span className="text-xs font-normal">CAMLY</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* PoPL Score */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary-pale/30 border border-primary/10">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Star className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">PoPL Score</p>
+                          <p className="text-lg font-bold text-primary">{poplScore}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize bg-primary/10 text-primary">
+                          {badgeLevel === "angel" ? "👼 Angel" :
+                           badgeLevel === "lightworker" ? "✨ Lightworker" :
+                           badgeLevel === "guardian" ? "🛡️ Guardian" :
+                           badgeLevel === "contributor" ? "🌟 Contributor" :
+                           "🌱 Newcomer"}
+                        </span>
+                        <p className="text-xs text-gray-500 mt-0.5">{positiveActions} hành động tốt</p>
+                      </div>
+                    </div>
+
+                    {/* FUN Money */}
+                    {!funMoneyStats.isLoading && funMoneyStats.totalAmount > 0 && (
+                      <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40">
+                        <div className="flex items-center gap-2.5 mb-2">
+                          <img src={funMoneyLogo} alt="FUN Money" className="w-7 h-7" />
+                          <div>
+                            <p className="text-xs text-gray-500">FUN Money (On-chain)</p>
+                            <p className="text-base font-bold text-emerald-700 dark:text-emerald-400">
+                              {funMoneyStats.totalAmount.toLocaleString()} <span className="text-xs font-medium">FUN</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
+                            <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                              <CheckCircle className="h-2.5 w-2.5" />
+                              {t("earn.funMoney.scored")}
+                            </div>
+                            <p className="text-xs font-semibold text-emerald-600">{funMoneyStats.totalScored.toLocaleString()}</p>
+                          </div>
+                          <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
+                            <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                              <Coins className="h-2.5 w-2.5" />
+                              {t("earn.funMoney.minted")}
+                            </div>
+                            <p className="text-xs font-semibold text-blue-600">{funMoneyStats.totalMinted.toLocaleString()}</p>
+                          </div>
+                          <div className="flex flex-col items-center p-1.5 rounded bg-white/60 dark:bg-white/5">
+                            <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                              <Lock className="h-2.5 w-2.5" />
+                              {t("earn.funMoney.pending")}
+                            </div>
+                            <p className="text-xs font-semibold text-amber-600">{funMoneyStats.totalPending.toLocaleString()}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="space-y-4">
                     <h3 className="text-[17px] font-semibold text-gray-900">Thông tin cơ bản</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3 text-[15px] text-gray-700">
-                        <Award className="w-5 h-5 text-gray-500" />
-                        <span><strong>{Math.floor(stats.coins).toLocaleString()}</strong> Camly Coin</span>
-                      </div>
                       <div className="flex items-center gap-3 text-[15px] text-gray-700">
                         <Users className="w-5 h-5 text-gray-500" />
                         <span><strong>{stats.friends}</strong> bạn bè</span>
