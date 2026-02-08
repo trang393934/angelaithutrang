@@ -1,127 +1,73 @@
 
 
-# Kế hoạch: Tách biệt Lì xì Tết & Quy trình Claim thưởng
+# Reset 2 lệnh chuyển Lì xì theo quy trình mới
 
-## Tổng quan
+## Tình trạng hiện tại
 
-Hiện tại, Camly Coin nhận từ chương trình Lì xì Tết đang được tính chung vào "Tổng tích lũy" (`lifetime_earned`). Kế hoạch này sẽ:
+| User | Balance hiện tại | Lifetime Earned | Lì xì đã cộng | Claim |
+|------|-----------------|-----------------|----------------|-------|
+| Angel Ai Van | 1,121,997 | 1,233,997 | 1,073,000 | Co (pending) |
+| ANGEL ANH NGUYET | 628,400 | 640,500 | 621,000 | Chua |
 
-1. **Tách riêng** số Camly Coin Lì xì ra khỏi "Tổng tích lũy", hiển thị trong mục "Nhận thưởng" riêng biệt
-2. **Thay đổi quy trình Claim**: Khi user nhấn CLAIM, hệ thống ghi nhận yêu cầu claim (chưa chuyển coin ngay). Admin thấy yêu cầu và chủ động chuyển CAMLY token từ ví Treasury đến ví Web3 của user
-3. **Thêm cột trạng thái Claim** trên trang admin để theo dõi ai đã claim, ví nhận, và trạng thái chuyển on-chain
+Vấn đề: Camly Coin từ Lì xì Tết đã được cộng thẳng vào `balance` và `lifetime_earned`, chưa đi theo quy trình claim mới (user nhấn CLAIM -> admin chuyển on-chain).
 
----
+## Các bước thực hiện
 
-## Chi tiết kỹ thuật
+### Bước 1: Trừ số Lì xì khỏi balance và lifetime_earned
 
-### 1. Database Migration
+Trừ lại số Camly Coin Lì xì đã cộng nhầm vào `camly_coin_balances`:
 
-Tạo bảng `lixi_claims` để lưu yêu cầu claim từ user:
+- **Angel Ai Van**: balance 1,121,997 -> 48,997 | lifetime_earned 1,233,997 -> 160,997
+- **ANGEL ANH NGUYET**: balance 628,400 -> 7,400 | lifetime_earned 640,500 -> 19,500
 
-```text
-lixi_claims
-----------------------------------------------
-id               UUID (PK, default gen_random_uuid())
-user_id          UUID (NOT NULL)
-notification_id  UUID (NOT NULL, FK -> notifications.id)
-camly_amount     BIGINT (NOT NULL)
-fun_amount       BIGINT (NOT NULL)
-wallet_address   TEXT (nullable - ví Web3 của user)
-status           TEXT (default 'pending') -- pending | processing | completed | failed
-tx_hash          TEXT (nullable - hash giao dịch on-chain)
-claimed_at       TIMESTAMPTZ (default now())
-processed_at     TIMESTAMPTZ (nullable)
-processed_by     UUID (nullable - admin ID)
-error_message    TEXT (nullable)
-----------------------------------------------
-```
+Giao dịch `camly_coin_transactions` vẫn giữ nguyên làm lịch sử kiểm toán (dùng để hiển thị riêng trong mục "Nhận thưởng Lì xì Tết").
 
-RLS policies:
-- User SELECT: chỉ xem claim của mình
-- User INSERT: chỉ tạo claim cho mình
-- Admin ALL: quản lý toàn bộ
+### Bước 2: Reset notification Lì xì
 
-Enable realtime cho bảng này.
+Đặt lại `is_read = false` cho 2 notification `tet_lixi_reward` để user thấy lại popup chúc mừng và có thể nhấn CLAIM theo quy trình mới.
 
-### 2. Hook `useLiXiCelebration` - Cập nhật logic Claim
+### Bước 3: Xóa lixi_claims cũ
 
-Khi user nhấn CLAIM:
-- Lấy `wallet_address` từ bảng `user_wallet_addresses` (ví Web3 đã đăng ký)
-- Insert record vào `lixi_claims` với status `pending`
-- Đánh dấu notification `is_read = true`
-- Hiển thị thông báo "Yêu cầu claim đã gửi, admin sẽ chuyển thưởng đến ví Web3 của bạn"
+Xóa record claim hiện tại của Angel Ai Van (đã tạo theo quy trình mới nhưng dựa trên dữ liệu cũ) để user claim lại sạch sẽ.
 
-### 3. UI - Tách mục "Nhận thưởng" trên Profile
+## Kết quả sau reset
 
-**a. Hook `useUserCamlyCoin`** - Thêm trường `lixiReward`:
-- Query bảng `camly_coin_transactions` lọc `metadata.source = 'fun_to_camly_reward'` để tính tổng Camly Coin từ Lì xì
-- Trả về: `balance`, `lifetimeEarned` (trừ Lì xì), `lixiReward` (riêng Lì xì)
+| User | Balance moi | Lifetime Earned moi | Li xi (rieng) | Notification | Claim |
+|------|------------|--------------------|--------------:|--------------|-------|
+| Angel Ai Van | 48,997 | 160,997 | 1,073,000 | Popup hien lai | Cho claim lai |
+| ANGEL ANH NGUYET | 7,400 | 19,500 | 621,000 | Popup hien lai | Cho claim lai |
 
-**b. `CamlyCoinDisplay`** (trang Profile cá nhân):
-- "Tổng tích lũy" = `lifetime_earned - lixiReward`
-- Thêm dòng mới "Nhận thưởng Lì xì" với icon bao lì xì, hiển thị số Camly Coin + trạng thái claim
+Profile se hien thi:
+- **So du hien tai**: chi gom Camly tu hoat dong tu nhien (chat, bai viet, nhat ky...)
+- **Tong tich luy**: chi tinh tu hoat dong dong gop (da tru Li xi)
+- **Nhan thuong Li xi Tet**: hien thi rieng biet so Camly Coin tu chuong trinh Li xi
 
-**c. `UserProfile.tsx`** (trang xem profile người khác):
-- Tương tự: tách "Tổng tích lũy" và "Nhận thưởng" trong sidebar Intro và tab About
-
-**d. `PublicProfileStats`** (profile công khai):
-- Cập nhật `lifetimeEarned` chỉ hiển thị phần tích lũy tự nhiên (không bao gồm Lì xì)
-
-### 4. Admin Dashboard - Cột trạng thái Claim
-
-Trên trang `/admin/tet-reward`, thêm:
-- **Cột "Claim"** mới bên cạnh cột "Lì xì": hiển thị trạng thái claim của từng user
-  - Chưa claim: icon "---"
-  - Đã claim (pending): icon dong ho vang + ví Web3 rut gon
-  - Admin đã chuyển (completed): icon xanh + tx hash on-chain
-  - Lỗi: icon đỏ + lý do
-
-- **Nút "Chuyển thưởng On-chain"**: Admin chọn user đã claim, xác nhận chuyển CAMLY token từ ví Treasury (`0x02D5...9a0D`) đến ví Web3 của user. Sau khi chuyển thành công, cập nhật `lixi_claims.status = 'completed'` + `tx_hash`
-
-- Admin cũng thấy **realtime notification** khi có user claim mới
-
-### 5. Realtime notification cho Admin
-
-Khi user claim, insert record vào `notifications` cho admin (type: `lixi_claim_request`) để admin biết ngay có yêu cầu mới.
-
----
-
-## Luong xu ly
+## Quy trinh moi sau reset
 
 ```text
-User thay popup Li xi
-        |
-        v
-User nhan CLAIM
-        |
-        v
-He thong:
-  1. Insert lixi_claims (status: pending, wallet_address)
-  2. Danh dau notification da doc
-  3. Gui notification cho admin (lixi_claim_request)
-        |
-        v
-Admin thay yeu cau claim tren /admin/tet-reward
-        |
-        v
-Admin ket noi vi Treasury (MetaMask)
-  -> Chuyen CAMLY token den vi Web3 cua user
-        |
-        v
-Ghi nhan tx_hash, cap nhat status = completed
+User mo app -> Thay popup Li xi
+      |
+      v
+User nhan CLAIM -> Tao lixi_claims (pending)
+      |
+      v
+Admin thay claim tren /admin/tet-reward
+      |
+      v
+Admin chuyen CAMLY token on-chain tu vi Treasury
+      |
+      v
+Cap nhat lixi_claims -> status: completed + tx_hash
 ```
 
----
+## Chi tiet ky thuat
 
-## Danh sach file can sua
+4 lenh SQL can thuc hien (chi la data update, khong thay doi schema):
 
-| File | Thay doi |
-|------|----------|
-| Database migration | Tao bang `lixi_claims` + RLS + realtime |
-| `src/hooks/useLiXiCelebration.ts` | Cap nhat ham `claim()` de insert vao `lixi_claims` |
-| `src/hooks/useUserCamlyCoin.ts` | Them truong `lixiReward` tu transactions |
-| `src/components/CamlyCoinDisplay.tsx` | Tach "Tong tich luy" va "Nhan thuong Li xi" |
-| `src/pages/UserProfile.tsx` | Tach hien thi tuong tu tren sidebar + tab About |
-| `src/components/public-profile/PublicProfileStats.tsx` | Tru Li xi khoi lifetimeEarned |
-| `src/pages/AdminTetReward.tsx` | Them cot Claim, nut chuyen on-chain |
+1. UPDATE `camly_coin_balances` SET balance = balance - 1073000, lifetime_earned = lifetime_earned - 1073000 WHERE user_id = Angel Ai Van
+2. UPDATE `camly_coin_balances` SET balance = balance - 621000, lifetime_earned = lifetime_earned - 621000 WHERE user_id = ANGEL ANH NGUYET
+3. UPDATE `notifications` SET is_read = false, read_at = NULL WHERE type = 'tet_lixi_reward'
+4. DELETE FROM `lixi_claims` WHERE user_id = Angel Ai Van
+
+Khong can sua code, chi cap nhat du lieu.
 
