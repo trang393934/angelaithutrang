@@ -57,9 +57,9 @@ const Index = () => {
             loop
             muted
             playsInline
-            className="fixed left-0 right-0 bottom-0 w-full object-cover z-[1] pointer-events-none"
+            className="fixed left-0 right-0 bottom-0 w-full object-contain object-top z-[1] pointer-events-none"
             style={{ 
-              opacity: 0.6,
+              opacity: 0.8,
               top: 'var(--index-header-h, 3.5rem)',
               height: 'calc(100vh - var(--index-header-h, 3.5rem))'
             }}

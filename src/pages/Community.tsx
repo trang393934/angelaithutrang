@@ -156,9 +156,9 @@ const Community = () => {
           loop
           muted
           playsInline
-          className="fixed left-0 right-0 bottom-0 w-full object-cover z-[1] pointer-events-none"
+           className="fixed left-0 right-0 bottom-0 w-full object-contain object-top z-[1] pointer-events-none"
           style={{ 
-            opacity: 0.9, 
+            opacity: 0.8, 
             top: 'var(--community-header-h, 0px)',
             height: 'calc(100vh - var(--community-header-h, 0px))'
           }}
