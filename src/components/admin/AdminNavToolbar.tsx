@@ -13,6 +13,7 @@ import {
   BarChart3,
   Image,
   Gift,
+  Shield,
 } from "lucide-react";
 
 interface NavGroup {
@@ -44,6 +45,7 @@ const navGroups: NavGroup[] = [
       { to: "/admin/withdrawals", icon: Wallet, label: "Rút coin" },
       { to: "/admin/project-fund", icon: Heart, label: "Quỹ" },
       { to: "/admin/mint-stats", icon: Sparkles, label: "FUN Money" },
+      { to: "/admin/mint-approval", icon: Shield, label: "Mint Approval" },
       { to: "/admin/tip-reports", icon: Gift, label: "Tip Reports" },
     ],
   },
