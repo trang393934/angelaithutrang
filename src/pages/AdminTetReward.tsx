@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Sparkles, LogOut, Search, Download,
-  Coins, Users, ArrowUpDown, Star, Gift
+  Coins, Users, ArrowUpDown, Star, Gift, CheckCircle2, XCircle, Clock, ExternalLink
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import angelAvatar from "@/assets/angel-avatar.png";
 import ExcelJS from "exceljs";
 import { LiXiCelebrationDialog } from "@/components/admin/LiXiCelebrationDialog";
@@ -35,6 +36,14 @@ const ACTION_COLS = [
 ];
 
 type SortKey = "name" | "question" | "post" | "gratitude" | "content" | "journal" | "learn" | "totalFun" | "pass" | "avgLightScore";
+
+interface DistributionResult {
+  status: "success" | "skipped" | "failed";
+  txId?: string;
+  camlyAmount?: number;
+  reason?: string;
+  createdAt?: string;
+}
 
 // ─── Component ───────────────────────────────────────────────
 const AdminTetReward = () => {
@@ -57,6 +66,9 @@ const AdminTetReward = () => {
     successCount: number;
   } | null>(null);
 
+  // Distribution results per user (keyed by display_name)
+  const [distributionResults, setDistributionResults] = useState<Map<string, DistributionResult>>(new Map());
+
   // Auth guard
   useEffect(() => {
     if (!authLoading && isAdminChecked) {
@@ -67,6 +79,62 @@ const AdminTetReward = () => {
       }
     }
   }, [user, isAdmin, authLoading, isAdminChecked, navigate]);
+
+  // Load existing distribution records
+  useEffect(() => {
+    const loadDistributionStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("camly_coin_transactions")
+          .select("id, user_id, amount, created_at, metadata")
+          .eq("transaction_type", "admin_adjustment");
+
+        if (error) {
+          console.error("Lỗi tải trạng thái phân phối:", error);
+          return;
+        }
+
+        // Filter for fun_to_camly_reward source
+        const rewardTxs = (data || []).filter((tx: any) => {
+          const meta = tx.metadata;
+          return meta && typeof meta === "object" && meta.source === "fun_to_camly_reward";
+        });
+
+        if (rewardTxs.length === 0) return;
+
+        // Get user_ids to fetch display_names
+        const userIds = [...new Set(rewardTxs.map((tx: any) => tx.user_id))];
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, display_name")
+          .in("user_id", userIds);
+
+        const userIdToName = new Map<string, string>();
+        for (const p of profiles || []) {
+          if (p.display_name) userIdToName.set(p.user_id, p.display_name);
+        }
+
+        const results = new Map<string, DistributionResult>();
+        for (const tx of rewardTxs) {
+          const name = userIdToName.get(tx.user_id);
+          if (name) {
+            results.set(name, {
+              status: "success",
+              txId: tx.id,
+              camlyAmount: tx.amount,
+              createdAt: tx.created_at,
+            });
+          }
+        }
+
+        setDistributionResults(results);
+      } catch (err) {
+        console.error("Lỗi tải trạng thái Lì xì:", err);
+      }
+    };
+
+    loadDistributionStatus();
+  }, []);
 
   // ─── Overview stats ────────────────────────────────────────
   const overview = useMemo(() => {
@@ -160,8 +228,12 @@ const AdminTetReward = () => {
       if (profileError) throw profileError;
 
       const nameToUserId = new Map<string, string>();
+      const userIdToName = new Map<string, string>();
       for (const p of profiles || []) {
-        if (p.display_name) nameToUserId.set(p.display_name, p.user_id);
+        if (p.display_name) {
+          nameToUserId.set(p.display_name, p.user_id);
+          userIdToName.set(p.user_id, p.display_name);
+        }
       }
 
       const recipients = selectedSummary.selected
@@ -174,6 +246,13 @@ const AdminTetReward = () => {
       if (recipients.length === 0) {
         toast.error("Không tìm được user_id cho các user đã chọn");
         return;
+      }
+
+      // Mark users not found in profiles as failed
+      const notFoundUsers = selectedSummary.selected.filter(s => !nameToUserId.has(s.name));
+      const newResults = new Map(distributionResults);
+      for (const u of notFoundUsers) {
+        newResults.set(u.name, { status: "failed", reason: "Không tìm thấy user_id" });
       }
 
       const BATCH_SIZE = 20;
@@ -191,17 +270,48 @@ const AdminTetReward = () => {
         if (error) {
           console.error("Lỗi chuyển thưởng batch:", error);
           totalFailed += batch.length;
-        } else if (data?.summary) {
-          totalSuccess += data.summary.success_count || 0;
-          totalSkipped += data.summary.skipped_count || 0;
-          totalFailed += data.summary.failed_count || 0;
-          totalCamlyDistributed += data.summary.total_camly_distributed || 0;
+          // Mark all in batch as failed
+          for (const r of batch) {
+            const name = userIdToName.get(r.user_id);
+            if (name) {
+              newResults.set(name, { status: "failed", reason: String(error.message || error) });
+            }
+          }
+        } else if (data) {
+          if (data.summary) {
+            totalSuccess += data.summary.success_count || 0;
+            totalSkipped += data.summary.skipped_count || 0;
+            totalFailed += data.summary.failed_count || 0;
+            totalCamlyDistributed += data.summary.total_camly_distributed || 0;
+          }
+          // Process per-user results
+          if (data.results && Array.isArray(data.results)) {
+            for (const r of data.results) {
+              const name = userIdToName.get(r.user_id);
+              if (name) {
+                if (r.status === "success") {
+                  newResults.set(name, {
+                    status: "success",
+                    txId: r.tx_id,
+                    camlyAmount: r.camly_amount,
+                    createdAt: new Date().toISOString(),
+                  });
+                } else if (r.status === "skipped") {
+                  newResults.set(name, { status: "skipped", reason: r.reason });
+                } else {
+                  newResults.set(name, { status: "failed", reason: r.reason });
+                }
+              }
+            }
+          }
         }
 
+        setDistributionResults(new Map(newResults));
         setDistributionProgress(Math.min(100, Math.round(((i + batch.length) / recipients.length) * 100)));
       }
 
       setDistributionProgress(100);
+      setDistributionResults(new Map(newResults));
 
       if (totalSuccess > 0) {
         setLastDistributionResult({
@@ -514,12 +624,18 @@ const AdminTetReward = () => {
                         <ArrowUpDown className={`w-2 h-2 flex-shrink-0 ${sortKey === "avgLightScore" ? "text-primary" : "text-muted-foreground/30"}`} />
                       </span>
                     </th>
+                    <th className="px-2 py-2 text-center font-medium min-w-[100px]">
+                      <span className="flex flex-col items-center gap-0.5 leading-tight">
+                        <span className="text-base">📋</span>
+                        <span className="text-[10px] leading-none">Lì xì</span>
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRows.length === 0 ? (
                     <tr>
-                      <td colSpan={ACTION_COLS.length + 6} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={ACTION_COLS.length + 7} className="text-center py-12 text-muted-foreground">
                         Không tìm thấy user nào
                       </td>
                     </tr>
@@ -588,6 +704,71 @@ const AdminTetReward = () => {
                           ) : (
                             <span className="text-muted-foreground/30">—</span>
                           )}
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          {(() => {
+                            const result = distributionResults.get(row.name);
+                            if (!result) {
+                              return <span className="text-muted-foreground/30">—</span>;
+                            }
+                            if (result.status === "success") {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-flex items-center gap-1 text-green-600 cursor-help">
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        <span className="text-[10px] font-mono">
+                                          {result.txId ? result.txId.slice(0, 8) + "..." : "OK"}
+                                        </span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="max-w-xs">
+                                      <div className="space-y-1 text-xs">
+                                        <p className="font-semibold text-green-600">✅ Đã chuyển thành công</p>
+                                        {result.txId && <p className="font-mono break-all">ID: {result.txId}</p>}
+                                        {result.camlyAmount && <p>Số lượng: {result.camlyAmount.toLocaleString("vi-VN")} Camly</p>}
+                                        {result.createdAt && <p>Thời gian: {new Date(result.createdAt).toLocaleString("vi-VN")}</p>}
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            if (result.status === "skipped") {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-flex items-center gap-1 text-amber-500 cursor-help">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        <span className="text-[10px]">Đã nhận</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left">
+                                      <p className="text-xs">{result.reason || "Đã được thưởng trước đó"}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            // Failed
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-flex items-center gap-1 text-red-500 cursor-help">
+                                      <XCircle className="w-3.5 h-3.5" />
+                                      <span className="text-[10px]">Lỗi</span>
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" className="max-w-xs">
+                                    <p className="text-xs text-red-500 break-all">{result.reason || "Lỗi không xác định"}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
                         </td>
                       </tr>
                     ))
