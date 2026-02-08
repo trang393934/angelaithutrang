@@ -501,49 +501,70 @@ const getMetaMaskDeepLink = (): string => {
      setState((prev) => ({ ...prev, balances }));
    }, [state.address, fetchBalances]);
  
-   // Listen for account and chain changes
-   useEffect(() => {
-     if (!hasWallet) return;
- 
-     const ethereum = (window as any).ethereum;
- 
-     const handleAccountsChanged = async (accounts: string[]) => {
-       if (accounts.length === 0) {
-         disconnect();
-       } else if (state.isConnected) {
-         const newAddress = accounts[0];
-         const balances = await fetchBalances(newAddress);
-         setState((prev) => ({
-           ...prev,
-           address: newAddress,
-           shortAddress: getShortAddress(newAddress),
-           balances,
-         }));
-       }
-     };
- 
-     const handleChainChanged = (chainIdHex: string) => {
-       const chainId = parseInt(chainIdHex, 16);
-       const isCorrectChain = chainId === BSC_CHAIN_ID;
-       setState((prev) => ({
-         ...prev,
-         chainId,
-         isCorrectChain,
-       }));
- 
-       if (isCorrectChain && state.address) {
-         refreshBalances();
-       }
-     };
- 
-     ethereum.on("accountsChanged", handleAccountsChanged);
-     ethereum.on("chainChanged", handleChainChanged);
- 
-     return () => {
-       ethereum.removeListener("accountsChanged", handleAccountsChanged);
-       ethereum.removeListener("chainChanged", handleChainChanged);
-     };
-   }, [hasWallet, state.isConnected, state.address, disconnect, fetchBalances, refreshBalances]);
+    // Listen for account and chain changes
+    useEffect(() => {
+      if (!hasWallet) return;
+
+      const ethereum = (window as any).ethereum;
+
+      // Guard: ensure ethereum provider has .on / .removeListener
+      if (typeof ethereum?.on !== "function" || typeof ethereum?.removeListener !== "function") {
+        return;
+      }
+
+      const handleAccountsChanged = async (accounts: string[]) => {
+        try {
+          if (accounts.length === 0) {
+            disconnect();
+          } else if (state.isConnected) {
+            const newAddress = accounts[0];
+            const balances = await fetchBalances(newAddress);
+            setState((prev) => ({
+              ...prev,
+              address: newAddress,
+              shortAddress: getShortAddress(newAddress),
+              balances,
+            }));
+          }
+        } catch (err) {
+          console.warn("[Angel AI] accountsChanged handler error:", err);
+        }
+      };
+
+      const handleChainChanged = (chainIdHex: string) => {
+        try {
+          const chainId = parseInt(chainIdHex, 16);
+          const isCorrectChain = chainId === BSC_CHAIN_ID;
+          setState((prev) => ({
+            ...prev,
+            chainId,
+            isCorrectChain,
+          }));
+
+          if (isCorrectChain && state.address) {
+            refreshBalances();
+          }
+        } catch (err) {
+          console.warn("[Angel AI] chainChanged handler error:", err);
+        }
+      };
+
+      try {
+        ethereum.on("accountsChanged", handleAccountsChanged);
+        ethereum.on("chainChanged", handleChainChanged);
+      } catch (err) {
+        console.warn("[Angel AI] Failed to attach wallet listeners:", err);
+      }
+
+      return () => {
+        try {
+          ethereum.removeListener("accountsChanged", handleAccountsChanged);
+          ethereum.removeListener("chainChanged", handleChainChanged);
+        } catch {
+          // Extension may already be torn down
+        }
+      };
+    }, [hasWallet, state.isConnected, state.address, disconnect, fetchBalances, refreshBalances]);
  
      // Auto-reconnect on page load
      useEffect(() => {
