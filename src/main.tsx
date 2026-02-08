@@ -7,22 +7,26 @@ import "./index.css";
 // (MetaMask inpage.js, WalletConnect, etc.) that would otherwise blank-screen.
 
 window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
-  const msg = event.reason?.message || String(event.reason || "");
-  const stack = event.reason?.stack || "";
+  try {
+    const msg = event.reason?.message || String(event.reason || "");
+    const stack = event.reason?.stack || "";
 
-  const isWalletError =
-    msg.includes("MetaMask") ||
-    msg.includes("ethereum") ||
-    msg.includes("wallet") ||
-    msg.includes("Failed to connect") ||
-    stack.includes("inpage.js") ||
-    stack.includes("chrome-extension://") ||
-    stack.includes("moz-extension://");
+    const isWalletError =
+      msg.includes("MetaMask") ||
+      msg.includes("ethereum") ||
+      msg.includes("wallet") ||
+      msg.includes("Failed to connect") ||
+      stack.includes("inpage.js") ||
+      stack.includes("chrome-extension://") ||
+      stack.includes("moz-extension://");
 
-  if (isWalletError) {
-    console.warn("[Angel AI] Wallet extension rejection caught:", msg);
-    // Clear stale wallet connection state to prevent auto-reconnect loop
-    try { localStorage.removeItem("wallet_connected"); } catch {}
+    if (isWalletError) {
+      console.warn("[Angel AI] Wallet extension rejection caught:", msg);
+      // Clear stale wallet connection state to prevent auto-reconnect loop
+      try { localStorage.removeItem("wallet_connected"); } catch {}
+    }
+  } catch {
+    // Safety: even if introspecting the reason throws, never crash
   }
 
   // Always prevent – no unhandled rejection should crash the app
