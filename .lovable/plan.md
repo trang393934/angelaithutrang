@@ -1,116 +1,87 @@
 
-# Tao bang thong ke Tet co dinh cho chuong trinh Li xi
 
-## Muc tieu
+# Cap nhat bang FUN Money Stats - Bo sung day du hanh dong PPLP
 
-Tao mot trang admin rieng biet tai `/admin/tet-reward` hien thi bang thong ke FUN Money **co dinh** (snapshot ngay 07/02/2026) tu file Excel da tai len. Bang nay doc lap voi `/admin/mint-stats` (du lieu dong tu database) va duoc su dung de thuc hien chuong trinh thuong Li xi Tet voi cong thuc **1 FUN = 1.000 Camly Coin**.
+## Van de hien tai
 
-## Du lieu tu file Excel
+Bang thong ke tai `/admin/mint-stats` chi theo doi **6/14 loai hanh dong** PPLP, nghia la:
+- Cot "Tong FUN" dang **thieu** FUN tu 8 loai hanh dong con lai
+- Cac hanh dong like, comment, share, tang qua, dang nhap, giup do, y tuong, phan hoi deu khong duoc hien thi
 
-File Excel chua **205 nguoi dung** voi cac cot:
-- #, User, Hoi dap, Dang bai, Biet on, Tao noi dung, Nhat ky, Hoc tap, Tong FUN, Pass, Fail, Avg Light Score, Mint Status
+## Thay doi chi tiet
 
-Trong do:
-- 166 users co FUN > 0 (du dieu kien nhan thuong)
-- 39 users co FUN = 0 (chi co Fail, chua du dieu kien)
+### File: `src/pages/AdminMintStats.tsx`
 
-## Giao dien tham khao
+#### 1. Cap nhat danh sach ACTION_TYPES
 
-Dua theo hinh mau da gui (giong bang hien tai o /admin/mint-stats) nhung them cot "Camly" (FUN x 1.000) va bo cac cot khong can thiet (checkbox chon, Mint status). Thiet ke Gold 11 phu hop voi chuong trinh Tet.
+**Bo**: `LEARN_COMPLETE` (Hoc tap)
+
+**Them 8 loai moi**:
+
+| Action Type | Nhan | Viet tat | Icon | Base FUN |
+|---|---|---|---|---|
+| POST_ENGAGEMENT | Tuong tac | Like | ❤️ | 40 |
+| COMMENT_CREATE | Binh luan | B.luan | 💭 | 40 |
+| SHARE_CONTENT | Chia se | Share | 🔗 | 40 |
+| DONATE_SUPPORT | Tang qua | Qua | 🎁 | 120 |
+| DAILY_LOGIN | Dang nhap | D.nhap | 📅 | 20 |
+| HELP_COMMUNITY | Giup do | Giup | 🤝 | 120 |
+| IDEA_SUBMIT | Y tuong | Y.tuong | 💡 | 150 |
+| FEEDBACK_GIVE | Phan hoi | P.hoi | 📋 | 60 |
+
+**Tong cong**: 13 cot hanh dong (thay vi 6 cot hien tai)
+
+#### 2. Bo cot "Camly"
+
+- Xoa cot header Camly (🧧) trong bang
+- Xoa cell Camly trong moi hang
+- Xoa cot "Thuong Camly" trong Excel export
+- **Giu nguyen** chuc nang li xi (CAMLY_MULTIPLIER van duoc dung trong phan chon va chuyen thuong)
+
+#### 3. Cap nhat colSpan
+
+- Cap nhat so cot trong dong "Khong co du lieu" tu `ACTION_TYPES.length + 7` thanh gia tri moi phu hop
+
+#### 4. Cap nhat data aggregation
+
+Vong lap `for (const at of ACTION_TYPES)` se tu dong bao gom tat ca 13 loai hanh dong, dam bao "Tong FUN" chinh xac 100%.
+
+#### 5. Cap nhat Excel export
+
+- Bo cot "Thuong Camly"
+- Them cac cot moi vao file xuat
+
+## Tac dong
+
+| Truoc | Sau |
+|---|---|
+| 6 loai hanh dong | 13 loai hanh dong |
+| Co cot Camly | Khong co cot Camly |
+| Tong FUN thieu | Tong FUN chinh xac |
+| 1 file chinh sua | 1 file chinh sua |
+
+**Luu y**: Vi them 7 cot moi, bang se rong hon, nhung da co `overflow-x-auto` nen cuon ngang tren mobile khong bi loi.
 
 ## Chi tiet ky thuat
 
-### Buoc 1: Tao file du lieu tinh (`src/data/tetRewardData.ts`)
-
-Chuyen toan bo 205 dong du lieu tu file Excel thanh mot mang TypeScript const. Moi dong gom:
-
 ```typescript
-interface TetRewardUser {
-  rank: number;
-  name: string;
-  question: number;   // Hoi dap
-  post: number;       // Dang bai
-  gratitude: number;  // Biet on
-  content: number;    // Tao noi dung
-  journal: number;    // Nhat ky
-  learn: number;      // Hoc tap
-  totalFun: number;   // Tong FUN
-  pass: number;
-  fail: number;
-  avgLightScore: number;
-  mintStatus: string;
-}
+// Danh sach day du 13 ACTION_TYPES
+const ACTION_TYPES = [
+  "QUESTION_ASK",
+  "POST_CREATE", 
+  "COMMENT_CREATE",     // Moi
+  "POST_ENGAGEMENT",    // Moi
+  "SHARE_CONTENT",      // Moi
+  "GRATITUDE_PRACTICE",
+  "CONTENT_CREATE",
+  "JOURNAL_WRITE",
+  "DONATE_SUPPORT",     // Moi
+  "DAILY_LOGIN",        // Moi
+  "HELP_COMMUNITY",     // Moi
+  "IDEA_SUBMIT",        // Moi
+  "FEEDBACK_GIVE",      // Moi
+] as const;
 ```
 
-### Buoc 2: Tao trang admin (`src/pages/AdminTetReward.tsx`)
+Khong can thay doi database, Edge Functions, hay bat ky file nao khac.
 
-Trang admin moi tai `/admin/tet-reward` voi cac thanh phan:
-
-**Header**: 
-- Logo Angel AI + tieu de "Thuong Tet 2026 - FUN Money Snapshot"
-- Ngay snapshot: 07/02/2026
-- Nut "Xuat Excel", "Lam moi"
-
-**Thong ke tong quan** (4 card):
-- Tong FUN Money (toan bo)
-- Tong Camly Coin se thuong (FUN x 1.000)
-- So nguoi du dieu kien (FUN > 0)
-- Avg Light Score trung binh
-
-**Bang du lieu chinh**:
-- Cac cot giong hinh mau: #, User, Hoi, Bai, On, N.dung, N.ky, Hoc, Tong, Camly, P/F, LS
-- Co icon emoji cho header giong bang hien tai
-- Co tinh nang tim kiem va sap xep
-- Hien thi so lieu dinh dang tieng Viet (dau cham phan cach)
-- Cot Camly hien mau vang gold (FUN x 1.000)
-
-**Tinh nang chon va chuyen thuong**:
-- Checkbox chon user (giong bang hien tai)
-- Thanh hanh dong khi co user duoc chon: hien tong FUN, tong Camly, nut "Chuyen thuong Li xi"
-- Goi edge function `distribute-fun-camly-reward` de xu ly
-- Hien popup chuc mung `LiXiCelebrationDialog` sau khi thanh cong
-
-**Banner chuong trinh**:
-- Gradient Gold 11 
-- Noi dung: "Li xi Tet 26.000.000.000 VND"
-- Cong thuc: 1 FUN = 1.000 Camly Coin
-- Han: 08/02/2026
-
-### Buoc 3: Dang ky route trong `src/App.tsx`
-
-Them route moi:
-```typescript
-import AdminTetReward from "./pages/AdminTetReward";
-// ...
-<Route path="/admin/tet-reward" element={<AdminTetReward />} />
-```
-
-### Buoc 4: Them link vao `AdminNavToolbar.tsx`
-
-Them muc moi trong nhom "Tai chinh":
-```typescript
-{ to: "/admin/tet-reward", icon: Gift, label: "Thuong Tet" },
-```
-
-Dung icon `Gift` mau do/vang de phan biet voi cac muc khac.
-
-## Tom tat tac dong
-
-| STT | File | Hanh dong | Mo ta |
-|-----|------|-----------|-------|
-| 1 | `src/data/tetRewardData.ts` | Tao moi | Du lieu 205 users tu Excel (snapshot co dinh) |
-| 2 | `src/pages/AdminTetReward.tsx` | Tao moi | Trang admin voi bang thong ke + tinh nang chuyen thuong |
-| 3 | `src/App.tsx` | Chinh sua | Them route `/admin/tet-reward` |
-| 4 | `src/components/admin/AdminNavToolbar.tsx` | Chinh sua | Them link "Thuong Tet" vao nhom Tai chinh |
-
-**Tong cong**: 2 file moi, 2 file chinh sua. Khong can thay doi database hay Edge Functions (tai su dung `distribute-fun-camly-reward` da co).
-
-## Diem khac biet voi /admin/mint-stats
-
-| Tieu chi | /admin/mint-stats | /admin/tet-reward |
-|----------|-------------------|-------------------|
-| Nguon du lieu | Database (realtime) | File tinh (snapshot 07/02/2026) |
-| So luong users | Thay doi theo thoi gian | Co dinh 205 users |
-| Muc dich | Giam sat PPLP | Thuc hien chuong trinh Li xi |
-| Bo loc thoi gian | Co (7d, 30d, 90d, All) | Khong (du lieu co dinh) |
-| Cap nhat | Tu dong (realtime) | Khong cap nhat |
