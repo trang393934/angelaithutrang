@@ -210,6 +210,20 @@ Deno.serve(async (req) => {
           triggered_by: "fun_to_camly_reward",
         });
 
+        // Gửi notification cho popup chúc mừng Lì xì
+        await supabaseAdmin.from("notifications").insert({
+          user_id,
+          type: "tet_lixi_reward",
+          title: "Chúc mừng bạn đã nhận được Lì xì!",
+          content: `Bạn nhận được ${camlyAmount.toLocaleString("vi-VN")} Camly Coin, được quy đổi dựa trên ${fun_amount.toLocaleString("vi-VN")} FUN Money.`,
+          metadata: {
+            camly_amount: camlyAmount,
+            fun_amount: fun_amount,
+            source: "fun_to_camly_reward",
+            batch_date: batchDate,
+          },
+        });
+
         successCount++;
         totalCamlyDistributed += camlyAmount;
         results.push({ user_id, status: "success", camly_amount: camlyAmount });
