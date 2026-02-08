@@ -6,6 +6,7 @@ import { CorePromptBanner } from "@/components/CorePromptBanner";
 import { PoPLBanner } from "@/components/PoPLBanner";
 import { MasterCharterBanner } from "@/components/MasterCharterBanner";
 import { AngelCTOAppointment } from "@/components/AngelCTOAppointment";
+import { FunGovernanceBanner } from "@/components/FunGovernanceBanner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import beLyFounder from "@/assets/be-ly-founder.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
@@ -103,6 +104,7 @@ const About = () => {
             <MasterCharterBanner />
             <LightConstitutionBanner />
             <CorePromptBanner />
+            <FunGovernanceBanner />
             <PoPLBanner />
           </div>
         </div>
