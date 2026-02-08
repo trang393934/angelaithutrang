@@ -374,6 +374,8 @@ serve(async (req) => {
     // ============================================
     
     let txHash: string | null = null;
+    let onChainError: string | null = null;
+    let onChainErrorDetails: string | null = null;
     
     if (signature && signerPrivateKey) {
       try {
@@ -387,14 +389,23 @@ serve(async (req) => {
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
         
         // Check if signer is an attester
-        const isAttester = await contract.isAttester(signer.address);
+        let isAttester = false;
+        try {
+          isAttester = await contract.isAttester(signer.address);
+        } catch (attesterCheckErr: any) {
+          onChainError = "RPC_FAILURE";
+          onChainErrorDetails = `Cannot check attester status: ${attesterCheckErr?.message || "unknown"}`;
+          console.error(`[PPLP Lock] ${onChainError}: ${onChainErrorDetails}`);
+          throw attesterCheckErr;
+        }
         console.log(`[PPLP Lock] Signer ${signer.address} isAttester: ${isAttester}`);
         
         if (!isAttester) {
-          console.error(`[PPLP Lock] Signer is NOT an attester. guardianGov must call govSetAttester first.`);
           const guardianGov = await contract.guardianGov();
-          console.error(`[PPLP Lock] guardianGov: ${guardianGov}. Ask them to call: govSetAttester(${signer.address}, true)`);
-          throw new Error(`Signer (${signer.address}) is not an attester. Contact guardianGov (${guardianGov}) to register.`);
+          onChainError = "ATTESTER_NOT_REGISTERED";
+          onChainErrorDetails = `Signer ${signer.address} chưa được đăng ký Attester. guardianGov (${guardianGov}) cần gọi govSetAttester("${signer.address}", true)`;
+          console.error(`[PPLP Lock] ${onChainError}: ${onChainErrorDetails}`);
+          throw new Error(onChainErrorDetails);
         }
 
         // Check if action is registered
@@ -406,11 +417,11 @@ serve(async (req) => {
         });
         
         if (!actionInfo.allowed) {
-          // Action not registered - cannot auto-register (Treasury is not guardianGov)
           const guardianGov = await contract.guardianGov();
-          console.error(`[PPLP Lock] Action "${actionName}" is NOT registered on-chain.`);
-          console.error(`[PPLP Lock] guardianGov (${guardianGov}) must call: govRegisterAction("${actionName}", 1)`);
-          throw new Error(`Action "${actionName}" not registered on-chain. Ask guardianGov to register it.`);
+          onChainError = "ACTION_NOT_REGISTERED";
+          onChainErrorDetails = `Action "${actionName}" chưa đăng ký on-chain. guardianGov (${guardianGov}) cần gọi govRegisterAction("${actionName}", 1)`;
+          console.error(`[PPLP Lock] ${onChainError}: ${onChainErrorDetails}`);
+          throw new Error(onChainErrorDetails);
         }
         
         // ============================================
@@ -431,12 +442,34 @@ serve(async (req) => {
         
         const receipt = await tx.wait(1);
         txHash = receipt.hash;
+        onChainError = null; // Clear any prior error
+        onChainErrorDetails = null;
         
         console.log(`[PPLP Lock] ✓ Transaction confirmed: ${txHash} in block ${receipt.blockNumber}`);
       } catch (txError: any) {
-        console.error(`[PPLP Lock] On-chain transaction failed:`, txError?.message || txError);
-        // Don't fail the whole request - off-chain minting can still proceed
-        // The signature is stored for manual/retry submission
+        const errMsg = txError?.message || String(txError);
+        console.error(`[PPLP Lock] On-chain transaction failed:`, errMsg);
+        
+        // Classify the error if not already classified
+        if (!onChainError) {
+          if (errMsg.includes("insufficient funds") || errMsg.includes("gas") || errMsg.includes("INSUFFICIENT_FUNDS")) {
+            onChainError = "INSUFFICIENT_GAS";
+            onChainErrorDetails = `Ví Treasury thiếu tBNB để trả gas. Cần nạp thêm tBNB vào ${signerPrivateKey ? new ethers.Wallet(signerPrivateKey.startsWith("0x") ? signerPrivateKey : `0x${signerPrivateKey}`).address : "unknown"}`;
+          } else if (errMsg.includes("ACTION_INVALID") || errMsg.includes("action")) {
+            onChainError = "ACTION_NOT_REGISTERED";
+            onChainErrorDetails = `Contract revert: Action "${actionName}" không hợp lệ hoặc chưa đăng ký. Chi tiết: ${errMsg.slice(0, 200)}`;
+          } else if (errMsg.includes("ATTESTER") || errMsg.includes("attester")) {
+            onChainError = "ATTESTER_NOT_REGISTERED";
+            onChainErrorDetails = `Contract revert liên quan đến Attester. Chi tiết: ${errMsg.slice(0, 200)}`;
+          } else if (errMsg.includes("timeout") || errMsg.includes("ETIMEDOUT") || errMsg.includes("network")) {
+            onChainError = "RPC_FAILURE";
+            onChainErrorDetails = `Kết nối BSC Testnet thất bại: ${errMsg.slice(0, 200)}`;
+          } else {
+            onChainError = "CONTRACT_REVERT";
+            onChainErrorDetails = `Hợp đồng từ chối giao dịch: ${errMsg.slice(0, 300)}`;
+          }
+        }
+        // Don't fail the whole request - signature is stored for retry
       }
     }
 
@@ -461,6 +494,7 @@ serve(async (req) => {
         status: txHash ? "minted" : (signature ? "signed" : "pending"),
         tx_hash: txHash,
         minted_at: txHash ? new Date().toISOString() : null,
+        on_chain_error: txHash ? null : onChainError,
       },
       { onConflict: "action_id" }
     );
@@ -535,11 +569,15 @@ serve(async (req) => {
         },
         tx_hash: txHash,
         on_chain_success: !!txHash,
+        on_chain_error: onChainError,
+        on_chain_error_details: onChainErrorDetails,
         message: txHash
           ? `✓ ${rewardAmount} FUN Money đã được lock on-chain thành công! TX: ${txHash}`
-          : (signature
-            ? `Signature đã ký. On-chain lock đang chờ xử lý (${rewardAmount} FUN).`
-            : "Chưa có TREASURY_PRIVATE_KEY để ký on-chain."),
+          : (onChainError
+            ? `⚠️ Ký thành công nhưng on-chain thất bại: ${onChainError}`
+            : (signature
+              ? `Signature đã ký. On-chain lock đang chờ xử lý (${rewardAmount} FUN).`
+              : "Chưa có TREASURY_PRIVATE_KEY để ký on-chain.")),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

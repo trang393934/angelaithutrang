@@ -1,0 +1,1 @@
+ALTER TABLE pplp_mint_requests ADD COLUMN IF NOT EXISTS on_chain_error text DEFAULT NULL;

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import AdminNavToolbar from "@/components/admin/AdminNavToolbar";
+import { OnChainErrorBanner, OnChainErrorSummary } from "@/components/admin/OnChainErrorBanner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +43,7 @@ interface MintRequestRow {
   nonce: number;
   created_at: string;
   minted_at: string | null;
+  on_chain_error: string | null;
   // Joined data
   pplp_actions?: {
     action_type: string;
@@ -137,8 +139,6 @@ export default function AdminMintApproval() {
       try {
         toast.loading("Đang ký và gửi giao dịch on-chain...", { id: `approve-${request.id}` });
 
-        // Call the existing pplp-authorize-mint function
-        // This will sign + try to execute lockWithPPLP on-chain
         const { data, error } = await supabase.functions.invoke("pplp-authorize-mint", {
           body: {
             action_id: request.action_id,
@@ -151,6 +151,17 @@ export default function AdminMintApproval() {
         if (data?.tx_hash) {
           toast.success(`✅ Đã mint on-chain! TX: ${data.tx_hash.slice(0, 10)}...`, {
             id: `approve-${request.id}`,
+          });
+        } else if (data?.on_chain_error) {
+          // Signed successfully but on-chain failed with classified error
+          const errLabel = data.on_chain_error === "ATTESTER_NOT_REGISTERED" ? "Attester chưa đăng ký"
+            : data.on_chain_error === "ACTION_NOT_REGISTERED" ? "Action chưa đăng ký"
+            : data.on_chain_error === "INSUFFICIENT_GAS" ? "Thiếu tBNB"
+            : data.on_chain_error === "RPC_FAILURE" ? "RPC thất bại"
+            : "Contract revert";
+          toast.warning(`⚠️ Đã ký nhưng on-chain thất bại: ${errLabel}`, {
+            id: `approve-${request.id}`,
+            duration: 8000,
           });
         } else if (data?.success) {
           toast.success("✅ Đã ký thành công. Chờ giao dịch on-chain.", {
@@ -254,6 +265,9 @@ export default function AdminMintApproval() {
               User activate → User claim về ví.
             </AlertDescription>
           </Alert>
+
+          {/* On-chain Error Summary */}
+          <OnChainErrorSummary requests={requests} />
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -369,6 +383,15 @@ function MintRequestCard({
               <p className="text-xs text-muted-foreground">
                 ✍️ Đã ký bởi: {request.signer_address?.slice(0, 10)}...
               </p>
+            )}
+
+            {/* On-chain error diagnostic */}
+            {request.status === "signed" && request.on_chain_error && (
+              <OnChainErrorBanner
+                error={request.on_chain_error}
+                signerAddress={request.signer_address}
+                actionType={actionType}
+              />
             )}
           </div>
 

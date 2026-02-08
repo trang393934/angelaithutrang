@@ -2122,6 +2122,7 @@ export type Database = {
           id: string
           minted_at: string | null
           nonce: number
+          on_chain_error: string | null
           policy_version: number
           recipient_address: string
           signature: string | null
@@ -2142,6 +2143,7 @@ export type Database = {
           id?: string
           minted_at?: string | null
           nonce: number
+          on_chain_error?: string | null
           policy_version?: number
           recipient_address: string
           signature?: string | null
@@ -2162,6 +2164,7 @@ export type Database = {
           id?: string
           minted_at?: string | null
           nonce?: number
+          on_chain_error?: string | null
           policy_version?: number
           recipient_address?: string
           signature?: string | null
