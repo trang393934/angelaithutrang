@@ -76,12 +76,12 @@
     /* Sidebar - Warm Gold */
     --sidebar-background: 45 18% 97%;
     --sidebar-foreground: 35 12% 28%;
-    --sidebar-primary: 38 70% 38%;
+    --sidebar-primary: 40 85% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 45 55% 95%;
     --sidebar-accent-foreground: 35 75% 28%;
     --sidebar-border: 40 25% 90%;
-    --sidebar-ring: 38 70% 38%;
+    --sidebar-ring: 40 85% 42%;
   }
 
   .dark {
@@ -119,12 +119,12 @@
     
     --sidebar-background: 30 15% 7%;
     --sidebar-foreground: 38 18% 85%;
-    --sidebar-primary: 42 65% 55%;
+    --sidebar-primary: 40 85% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 35 25% 14%;
     --sidebar-accent-foreground: 38 18% 85%;
     --sidebar-border: 35 22% 20%;
-    --sidebar-ring: 42 65% 55%;
+    --sidebar-ring: 40 85% 42%;
   }
 }
 
