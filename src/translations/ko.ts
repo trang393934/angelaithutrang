@@ -829,6 +829,26 @@ const translations: Record<string, string> = {
   "notifications.type.rewardApproved": "보상이 승인되었습니다 🎉",
   "notifications.type.rewardRejected": "보상 요청이 검토가 필요합니다",
   "notifications.type.interacted": "님이 상호작용했습니다",
+  // Token Lifecycle - Wallet Mismatch
+  "mint.walletMismatch.title": "FUN Money가 다른 지갑에 있습니다",
+  "mint.walletMismatch.description": "지갑 {address}에 {amount} FUN이 잠겨 있습니다. 해당 지갑으로 전환하여 활성화하고 청구하세요.",
+  "mint.walletMismatch.hint": "MetaMask 열기 → 위 지갑으로 전환 → 이 페이지로 돌아오기",
+  "mint.walletMismatch.copied": "지갑 주소 복사됨",
+  "mint.tokenLifecycle.title": "토큰 라이프사이클",
+  "mint.tokenLifecycle.connectPrompt": "지갑을 연결하여 온체인 FUN Money 관리",
+  "mint.tokenLifecycle.connectButton": "MetaMask 연결",
+  "mint.tokenLifecycle.installButton": "MetaMask 설치",
+  "mint.tokenLifecycle.networkError": "유효하지 않은 네트워크/컨트랙트",
+  "mint.tokenLifecycle.resetBSC": "BSC 테스트넷 초기화",
+  "mint.tokenLifecycle.locked": "잠김",
+  "mint.tokenLifecycle.activated": "활성화됨",
+  "mint.tokenLifecycle.flowing": "유통 중",
+  "mint.tokenLifecycle.pipelineProgress": "파이프라인 진행",
+  "mint.tokenLifecycle.flowingPercent": "{percent}% 유통",
+  "mint.tokenLifecycle.activate": "활성화",
+  "mint.tokenLifecycle.claim": "청구",
+  "mint.tokenLifecycle.noLocked": "잠긴 FUN이 없습니다",
+  "mint.tokenLifecycle.noActivated": "활성화된 FUN이 없습니다",
 };
 
 export default translations;

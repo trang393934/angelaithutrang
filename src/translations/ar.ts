@@ -821,6 +821,26 @@ const translations: Record<string, string> = {
   "notifications.type.rewardApproved": "تمت الموافقة على مكافأتك 🎉",
   "notifications.type.rewardRejected": "طلب المكافأة يحتاج مراجعة",
   "notifications.type.interacted": "تفاعل معك",
+  // Token Lifecycle - Wallet Mismatch
+  "mint.walletMismatch.title": "أموال FUN الخاصة بك في محفظة أخرى",
+  "mint.walletMismatch.description": "لديك {amount} FUN مقفلة في المحفظة {address}. يرجى التبديل إلى تلك المحفظة للتفعيل والمطالبة.",
+  "mint.walletMismatch.hint": "افتح MetaMask → انتقل إلى المحفظة أعلاه → عد إلى هذه الصفحة",
+  "mint.walletMismatch.copied": "تم نسخ عنوان المحفظة",
+  "mint.tokenLifecycle.title": "دورة حياة الرمز",
+  "mint.tokenLifecycle.connectPrompt": "اربط محفظتك لإدارة FUN Money على السلسلة",
+  "mint.tokenLifecycle.connectButton": "ربط MetaMask",
+  "mint.tokenLifecycle.installButton": "تثبيت MetaMask",
+  "mint.tokenLifecycle.networkError": "شبكة/عقد غير صالح",
+  "mint.tokenLifecycle.resetBSC": "إعادة تعيين BSC Testnet",
+  "mint.tokenLifecycle.locked": "مقفل",
+  "mint.tokenLifecycle.activated": "مفعّل",
+  "mint.tokenLifecycle.flowing": "متداول",
+  "mint.tokenLifecycle.pipelineProgress": "تقدم العملية",
+  "mint.tokenLifecycle.flowingPercent": "{percent}% متداول",
+  "mint.tokenLifecycle.activate": "تفعيل",
+  "mint.tokenLifecycle.claim": "مطالبة",
+  "mint.tokenLifecycle.noLocked": "لا يوجد FUN مقفل",
+  "mint.tokenLifecycle.noActivated": "لا يوجد FUN مفعّل",
 };
 
 export default translations;

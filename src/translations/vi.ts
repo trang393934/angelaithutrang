@@ -1267,6 +1267,26 @@ const translations: Record<string, string> = {
   "publicProfile.joinDesc": "Đăng ký miễn phí để kết nối, nhắn tin, tặng quà và khám phá thế giới FUN cùng cộng đồng Ánh Sáng ✨",
   "publicProfile.joinNow": "Tham gia ngay",
   "publicProfile.login": "Đăng nhập",
+  // Token Lifecycle - Wallet Mismatch
+  "mint.walletMismatch.title": "FUN Money của bạn đang ở ví khác",
+  "mint.walletMismatch.description": "Bạn có {amount} FUN đang locked tại ví {address}. Vui lòng chuyển về ví đó để activate và claim.",
+  "mint.walletMismatch.hint": "Mở MetaMask → chuyển sang ví trên → quay lại trang này",
+  "mint.walletMismatch.copied": "Đã sao chép địa chỉ ví",
+  "mint.tokenLifecycle.title": "Token Lifecycle",
+  "mint.tokenLifecycle.connectPrompt": "Kết nối ví để quản lý FUN Money on-chain",
+  "mint.tokenLifecycle.connectButton": "Kết nối MetaMask",
+  "mint.tokenLifecycle.installButton": "Cài đặt MetaMask",
+  "mint.tokenLifecycle.networkError": "Network/Contract không hợp lệ",
+  "mint.tokenLifecycle.resetBSC": "Reset BSC Testnet",
+  "mint.tokenLifecycle.locked": "Locked",
+  "mint.tokenLifecycle.activated": "Activated",
+  "mint.tokenLifecycle.flowing": "Flowing",
+  "mint.tokenLifecycle.pipelineProgress": "Pipeline Progress",
+  "mint.tokenLifecycle.flowingPercent": "{percent}% Flowing",
+  "mint.tokenLifecycle.activate": "Activate",
+  "mint.tokenLifecycle.claim": "Claim",
+  "mint.tokenLifecycle.noLocked": "Không có FUN nào đang locked",
+  "mint.tokenLifecycle.noActivated": "Không có FUN nào đang activated",
 };
 
 export default translations;

@@ -829,6 +829,26 @@ const translations: Record<string, string> = {
   "notifications.type.rewardApproved": "Ваша награда одобрена 🎉",
   "notifications.type.rewardRejected": "Запрос на награду требует проверки",
   "notifications.type.interacted": "взаимодействовал(а) с вами",
+  // Token Lifecycle - Wallet Mismatch
+  "mint.walletMismatch.title": "Ваши FUN Money в другом кошельке",
+  "mint.walletMismatch.description": "У вас {amount} FUN заблокировано в кошельке {address}. Переключитесь на этот кошелёк для активации и получения.",
+  "mint.walletMismatch.hint": "Откройте MetaMask → переключитесь на кошелёк выше → вернитесь на эту страницу",
+  "mint.walletMismatch.copied": "Адрес кошелька скопирован",
+  "mint.tokenLifecycle.title": "Жизненный цикл токена",
+  "mint.tokenLifecycle.connectPrompt": "Подключите кошелёк для управления FUN Money on-chain",
+  "mint.tokenLifecycle.connectButton": "Подключить MetaMask",
+  "mint.tokenLifecycle.installButton": "Установить MetaMask",
+  "mint.tokenLifecycle.networkError": "Недействительная сеть/контракт",
+  "mint.tokenLifecycle.resetBSC": "Сбросить BSC Testnet",
+  "mint.tokenLifecycle.locked": "Заблокировано",
+  "mint.tokenLifecycle.activated": "Активировано",
+  "mint.tokenLifecycle.flowing": "В обращении",
+  "mint.tokenLifecycle.pipelineProgress": "Прогресс пайплайна",
+  "mint.tokenLifecycle.flowingPercent": "{percent}% В обращении",
+  "mint.tokenLifecycle.activate": "Активировать",
+  "mint.tokenLifecycle.claim": "Получить",
+  "mint.tokenLifecycle.noLocked": "Нет заблокированных FUN",
+  "mint.tokenLifecycle.noActivated": "Нет активированных FUN",
 };
 
 export default translations;

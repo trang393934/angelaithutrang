@@ -822,6 +822,26 @@ const translations: Record<string, string> = {
   "notifications.type.rewardApproved": "報酬が承認されました 🎉",
   "notifications.type.rewardRejected": "報酬リクエストの確認が必要です",
   "notifications.type.interacted": "さんがあなたと交流しました",
+  // Token Lifecycle - Wallet Mismatch
+  "mint.walletMismatch.title": "FUN Moneyは別のウォレットにあります",
+  "mint.walletMismatch.description": "ウォレット {address} に {amount} FUN がロックされています。そのウォレットに切り替えてアクティベートとクレームを行ってください。",
+  "mint.walletMismatch.hint": "MetaMaskを開く → 上記ウォレットに切替 → このページに戻る",
+  "mint.walletMismatch.copied": "ウォレットアドレスをコピーしました",
+  "mint.tokenLifecycle.title": "トークンライフサイクル",
+  "mint.tokenLifecycle.connectPrompt": "ウォレットを接続してFUN Moneyをオンチェーンで管理",
+  "mint.tokenLifecycle.connectButton": "MetaMaskに接続",
+  "mint.tokenLifecycle.installButton": "MetaMaskをインストール",
+  "mint.tokenLifecycle.networkError": "無効なネットワーク/コントラクト",
+  "mint.tokenLifecycle.resetBSC": "BSCテストネットをリセット",
+  "mint.tokenLifecycle.locked": "ロック済",
+  "mint.tokenLifecycle.activated": "アクティブ",
+  "mint.tokenLifecycle.flowing": "流通中",
+  "mint.tokenLifecycle.pipelineProgress": "パイプライン進捗",
+  "mint.tokenLifecycle.flowingPercent": "{percent}% 流通",
+  "mint.tokenLifecycle.activate": "アクティベート",
+  "mint.tokenLifecycle.claim": "クレーム",
+  "mint.tokenLifecycle.noLocked": "ロックされたFUNはありません",
+  "mint.tokenLifecycle.noActivated": "アクティベートされたFUNはありません",
 };
 
 export default translations;

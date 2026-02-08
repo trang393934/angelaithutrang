@@ -1019,6 +1019,26 @@ const translations: Record<string, string> = {
   "notifications.type.rewardApproved": "你的奖励已通过 🎉",
   "notifications.type.rewardRejected": "奖励申请需要重新审核",
   "notifications.type.interacted": "与你互动了",
+  // Token Lifecycle - Wallet Mismatch
+  "mint.walletMismatch.title": "您的 FUN Money 在其他钱包中",
+  "mint.walletMismatch.description": "您有 {amount} FUN 锁定在钱包 {address}。请切换到该钱包以激活和领取。",
+  "mint.walletMismatch.hint": "打开 MetaMask → 切换到上方钱包 → 返回此页面",
+  "mint.walletMismatch.copied": "钱包地址已复制",
+  "mint.tokenLifecycle.title": "代币生命周期",
+  "mint.tokenLifecycle.connectPrompt": "连接钱包以管理链上 FUN Money",
+  "mint.tokenLifecycle.connectButton": "连接 MetaMask",
+  "mint.tokenLifecycle.installButton": "安装 MetaMask",
+  "mint.tokenLifecycle.networkError": "网络/合约无效",
+  "mint.tokenLifecycle.resetBSC": "重置 BSC 测试网",
+  "mint.tokenLifecycle.locked": "已锁定",
+  "mint.tokenLifecycle.activated": "已激活",
+  "mint.tokenLifecycle.flowing": "流通中",
+  "mint.tokenLifecycle.pipelineProgress": "流程进度",
+  "mint.tokenLifecycle.flowingPercent": "{percent}% 流通",
+  "mint.tokenLifecycle.activate": "激活",
+  "mint.tokenLifecycle.claim": "领取",
+  "mint.tokenLifecycle.noLocked": "没有锁定的 FUN",
+  "mint.tokenLifecycle.noActivated": "没有已激活的 FUN",
 };
 
 export default translations;
