@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { MasterCharterShowcase } from "@/components/MasterCharterShowcase";
@@ -15,8 +16,10 @@ import { MainSidebar } from "@/components/MainSidebar";
 import Leaderboard from "@/components/Leaderboard";
 import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
 import { MasterCharterBanner } from "@/components/MasterCharterBanner";
+import { BackToTopButton } from "@/components/BackToTopButton";
 const Index = () => {
   const { user } = useAuth();
+  const mainRef = useRef<HTMLElement>(null);
 
   return (
     <SidebarProvider defaultOpen={true}>
@@ -46,7 +49,7 @@ const Index = () => {
           {/* Content area with fixed sidebars and scrollable center */}
           <div className="flex-1 flex min-h-0">
             {/* Center Content - Scrollable */}
-            <main className="flex-1 min-w-0 overflow-y-auto scrollbar-hide">
+            <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto scrollbar-hide">
               <HeroSection />
               
               {/* Master Charter Showcase - MOST PROMINENT POSITION */}
@@ -83,7 +86,8 @@ const Index = () => {
               </div>
             </aside>
           </div>
-        </div>
+          </div>
+          <BackToTopButton scrollRef={mainRef} />
       </div>
     </SidebarProvider>
   );
