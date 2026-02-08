@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { MasterCharterShowcase } from "@/components/MasterCharterShowcase";
@@ -21,28 +21,51 @@ import { BackToTopButton } from "@/components/BackToTopButton";
 const Index = () => {
   const { user } = useAuth();
   const mainRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  // Measure header height dynamically for video positioning
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+
+    const updateHeight = () => {
+      const h = el.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--index-header-h', `${h}px`);
+    };
+
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="h-screen bg-background flex w-full overflow-hidden relative">
-        {/* Tết Background Video */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="fixed top-14 sm:top-16 left-0 right-0 bottom-0 w-full h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] object-cover z-[1] pointer-events-none"
-          style={{ opacity: 0.9 }}
-        >
-          <source src="/videos/tet-background.mp4" type="video/mp4" />
-        </video>
-        
+      <div className="h-screen flex w-full overflow-hidden relative">
         {/* Left Sidebar - Navigation (sticky via Sidebar component) */}
         <MainSidebar />
         
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative z-10">
-          <Header />
+          <div ref={headerRef}>
+            <Header />
+          </div>
+          
+          {/* Tết Background Video - starts right below header */}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="fixed left-0 right-0 bottom-0 w-full object-cover z-[1] pointer-events-none"
+            style={{ 
+              opacity: 0.9,
+              top: 'var(--index-header-h, 3.5rem)',
+              height: 'calc(100vh - var(--index-header-h, 3.5rem))'
+            }}
+          >
+            <source src="/videos/tet-background.mp4" type="video/mp4" />
+          </video>
           
           {/* Daily Login Reward - shows popup when user logs in */}
           {user && <DailyLoginReward />}
@@ -81,7 +104,7 @@ const Index = () => {
             </main>
             
             {/* Right Sidebar - Leaderboard (sticky with own scroll) */}
-            <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 overflow-y-auto scrollbar-sacred border-l border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
+            <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 overflow-y-auto scrollbar-sacred border-l border-amber-200/30">
               <div className="p-4">
                 <Leaderboard />
               </div>
