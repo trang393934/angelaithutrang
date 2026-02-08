@@ -20,12 +20,24 @@ const Index = () => {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="h-screen bg-background flex w-full overflow-hidden">
+      <div className="h-screen bg-background flex w-full overflow-hidden relative">
+        {/* Tết Background Video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+          style={{ opacity: 0.18 }}
+        >
+          <source src="/videos/tet-background.mp4" type="video/mp4" />
+        </video>
+        
         {/* Left Sidebar - Navigation (sticky via Sidebar component) */}
         <MainSidebar />
         
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative z-10">
           <Header />
           
           {/* Daily Login Reward - shows popup when user logs in */}
