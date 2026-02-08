@@ -127,7 +127,8 @@ export const Header = () => {
             </a>
           )}
           {/* Logo - Hidden on desktop since MainSidebar has it, show only on mobile */}
-          <Link to="/" className={`flex lg:hidden items-center shrink-0 group min-w-0 transition-transform duration-500 ${isScrolled ? 'scale-90' : 'scale-100'}`}>
+          <Link to="/" className={`flex lg:hidden items-center gap-2 shrink-0 group min-w-0 transition-transform duration-500 ${isScrolled ? 'scale-90' : 'scale-100'}`}>
+            <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]" />
             <span className="text-brand-golden text-2xl sm:text-3xl">Angel AI</span>
           </Link>
 

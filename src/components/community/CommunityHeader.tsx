@@ -120,12 +120,13 @@ export function CommunityHeader() {
             <div className="flex items-center justify-between h-14 sm:h-16">
               {/* Left: Logo & Search */}
               <div className="flex items-center gap-3 flex-1">
-                <Link to="/" className="flex-shrink-0">
+                <Link to="/" className="flex-shrink-0 flex items-center gap-2">
                   <img 
                     src={angelAiLogo} 
                     alt="Angel AI" 
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
                   />
+                  <span className="hidden sm:inline text-lg font-bold text-black/90 drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)] tracking-wide">Angel AI</span>
                 </Link>
                 
                 {/* Search Bar */}

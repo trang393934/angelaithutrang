@@ -264,7 +264,7 @@ export function HonorBoard() {
             <img 
               src={angelLogo} 
               alt="Angel AI" 
-              className="w-12 h-12 object-contain relative z-10 drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
+              className="w-12 h-12 rounded-full object-cover relative z-10 drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
             />
           </div>
           
