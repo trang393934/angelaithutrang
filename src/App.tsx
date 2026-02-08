@@ -44,6 +44,7 @@ import LightConstitution from "./pages/docs/LightConstitution";
 import CorePrompt from "./pages/docs/CorePrompt";
 import PoPLWhitepaper from "./pages/docs/PoPLWhitepaper";
 import MasterCharter from "./pages/docs/MasterCharter";
+import FunGovernance from "./pages/docs/FunGovernance";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
 import ActivityHistory from "./pages/ActivityHistory";
@@ -109,6 +110,7 @@ const App = () => (
               <Route path="/docs/core-prompt" element={<CorePrompt />} />
               <Route path="/docs/popl" element={<PoPLWhitepaper />} />
               <Route path="/docs/master-charter" element={<MasterCharter />} />
+              <Route path="/docs/fun-governance" element={<FunGovernance />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
