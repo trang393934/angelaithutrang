@@ -115,7 +115,7 @@ export function LiXiCelebrationDialog({
           transition={{ type: "spring", duration: 0.5 }}
           className="relative rounded-2xl p-6 shadow-2xl overflow-hidden"
           style={{
-            backgroundImage: `linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.08) 30%, transparent 50%, rgba(255,255,255,0.04) 70%, transparent 100%), linear-gradient(135deg, #1a1a1a 0%, #2a2520 15%, #1c1c1c 30%, #252018 50%, #1c1c1c 70%, #2a2520 85%, #1a1a1a 100%)`,
+            backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 30%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.2) 70%, rgba(255,255,255,0) 100%), linear-gradient(135deg, #b8860b 0%, #daa520 15%, #ffd700 35%, #ffec8b 50%, #ffd700 65%, #daa520 85%, #b8860b 100%)`,
           }}
         >
           {/* Hiệu ứng confetti + đồng Camly rơi + lấp lánh */}
@@ -142,14 +142,14 @@ export function LiXiCelebrationDialog({
           </AnimatePresence>
 
           {/* Lớp phủ sáng tạo chiều sâu */}
-          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-white/20 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/15 to-white/30 pointer-events-none" />
 
           {/* Nút đóng */}
           <button
             onClick={() => onOpenChange(false)}
-            className="absolute top-3 right-3 z-30 p-1.5 rounded-full bg-black/20 hover:bg-black/40 transition-colors"
+            className="absolute top-3 right-3 z-30 p-1.5 rounded-full bg-amber-900/20 hover:bg-amber-900/40 transition-colors"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-amber-900" />
           </button>
 
           {/* Nội dung chính */}
@@ -170,7 +170,7 @@ export function LiXiCelebrationDialog({
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-xl font-bold text-white drop-shadow-md"
+              className="text-xl font-bold text-amber-900 drop-shadow-sm"
             >
               🧧 Chúc mừng bạn được Lì xì
             </motion.h2>
@@ -233,7 +233,7 @@ export function LiXiCelebrationDialog({
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 bg-white/20 border-white/40 text-white hover:bg-white/30"
+                className="flex-1 bg-amber-900/15 border-amber-800/30 text-amber-900 hover:bg-amber-900/25"
                 size="lg"
                 onClick={() => window.open("/admin/mint-stats", "_blank")}
               >
