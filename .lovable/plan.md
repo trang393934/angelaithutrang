@@ -1,102 +1,127 @@
 
 
-# Hiển thị công khai số liệu tài chính trên trang cá nhân
+# Kế hoạch: Tách biệt Lì xì Tết & Quy trình Claim thưởng
 
-## Mục tiêu
+## Tổng quan
 
-Mở rộng mục "Giới thiệu" trên trang cá nhân `/user/:userId` để hiển thị **công khai** toàn bộ số liệu tài chính cho **tất cả người xem** (không chỉ chủ sở hữu), bao gồm:
+Hiện tại, Camly Coin nhận từ chương trình Lì xì Tết đang được tính chung vào "Tổng tích lũy" (`lifetime_earned`). Kế hoạch này sẽ:
 
-1. **Camly Coin**: Số dư hiện tại + Tổng tích lũy
-2. **PoPL Score**: Điểm + Cấp bậc huy hiệu + Số hành động tốt
-3. **FUN Money (On-chain)**: Tổng FUN + Sẵn sàng claim / Đã mint / Đang chờ
-4. Cập nhật **thời gian thực** khi user nhận thưởng
+1. **Tách riêng** số Camly Coin Lì xì ra khỏi "Tổng tích lũy", hiển thị trong mục "Nhận thưởng" riêng biệt
+2. **Thay đổi quy trình Claim**: Khi user nhấn CLAIM, hệ thống ghi nhận yêu cầu claim (chưa chuyển coin ngay). Admin thấy yêu cầu và chủ động chuyển CAMLY token từ ví Treasury đến ví Web3 của user
+3. **Thêm cột trạng thái Claim** trên trang admin để theo dõi ai đã claim, ví nhận, và trạng thái chuyển on-chain
 
-Giao diện giống hình mẫu đã đính kèm (image-303.png).
-
-## Phân tích vấn đề hiện tại
-
-### 1. Dữ liệu bị khóa bởi RLS (Row Level Security)
-- `user_light_totals`: Chỉ chủ sở hữu xem được -> PoPL Score không hiển thị cho khách
-- `pplp_actions` + `pplp_scores`: Chỉ chủ sở hữu xem được -> FUN Money Stats không hiển thị cho khách
-- `camly_coin_balances`: Đã có chính sách public SELECT -> OK
-
-### 2. Hook không hỗ trợ xem hồ sơ người khác
-- `useCamlyCoin()` chỉ lấy dữ liệu của `auth.uid()` (người đăng nhập), không nhận tham số `userId`
-
-### 3. Giao diện bị giới hạn
-- 3 thẻ tài chính (Camly, PoPL, FUN Money) bị bọc trong `{isOwnProfile && (...)}` ở dòng 741-823
+---
 
 ## Chi tiết kỹ thuật
 
-### Bước 1: Cập nhật RLS (Row Level Security)
+### 1. Database Migration
 
-Thêm chính sách SELECT công khai cho 3 bảng:
+Tạo bảng `lixi_claims` để lưu yêu cầu claim từ user:
 
-```sql
--- 1. user_light_totals: Cho phép xem PoPL Score của bất kỳ ai
-CREATE POLICY "Public can view PoPL scores"
-  ON public.user_light_totals FOR SELECT
-  USING (true);
-
--- 2. pplp_actions: Cho phép xem trạng thái action (cho FUN Money Stats)
-CREATE POLICY "Public can view action status"
-  ON public.pplp_actions FOR SELECT
-  USING (true);
-
--- 3. pplp_scores: Cho phép xem điểm thưởng (cho FUN Money Stats)
-CREATE POLICY "Public can view scores"
-  ON public.pplp_scores FOR SELECT
-  USING (true);
+```text
+lixi_claims
+----------------------------------------------
+id               UUID (PK, default gen_random_uuid())
+user_id          UUID (NOT NULL)
+notification_id  UUID (NOT NULL, FK -> notifications.id)
+camly_amount     BIGINT (NOT NULL)
+fun_amount       BIGINT (NOT NULL)
+wallet_address   TEXT (nullable - ví Web3 của user)
+status           TEXT (default 'pending') -- pending | processing | completed | failed
+tx_hash          TEXT (nullable - hash giao dịch on-chain)
+claimed_at       TIMESTAMPTZ (default now())
+processed_at     TIMESTAMPTZ (nullable)
+processed_by     UUID (nullable - admin ID)
+error_message    TEXT (nullable)
+----------------------------------------------
 ```
 
-### Bước 2: Tạo hook `useUserCamlyCoin(userId)`
+RLS policies:
+- User SELECT: chỉ xem claim của mình
+- User INSERT: chỉ tạo claim cho mình
+- Admin ALL: quản lý toàn bộ
 
-**Tệp mới**: `src/hooks/useUserCamlyCoin.ts`
+Enable realtime cho bảng này.
 
-Hook mới nhận tham số `userId` (bất kỳ) thay vì chỉ dùng `auth.uid()`:
-- Truy vấn `camly_coin_balances` theo `userId` được truyền vào
-- Trả về `balance` (số dư hiện tại) và `lifetimeEarned` (tổng tích lũy)
-- Đăng ký **realtime subscription** để cập nhật tức thì khi số dư thay đổi
-- Nhẹ hơn `useCamlyCoin` (không cần daily status, transactions)
+### 2. Hook `useLiXiCelebration` - Cập nhật logic Claim
 
-### Bước 3: Cập nhật `UserProfile.tsx` — Mở khóa thẻ tài chính cho khách
+Khi user nhấn CLAIM:
+- Lấy `wallet_address` từ bảng `user_wallet_addresses` (ví Web3 đã đăng ký)
+- Insert record vào `lixi_claims` với status `pending`
+- Đánh dấu notification `is_read = true`
+- Hiển thị thông báo "Yêu cầu claim đã gửi, admin sẽ chuyển thưởng đến ví Web3 của bạn"
 
-**Tệp chỉnh sửa**: `src/pages/UserProfile.tsx`
+### 3. UI - Tách mục "Nhận thưởng" trên Profile
 
-Thay đổi chính:
+**a. Hook `useUserCamlyCoin`** - Thêm trường `lixiReward`:
+- Query bảng `camly_coin_transactions` lọc `metadata.source = 'fun_to_camly_reward'` để tính tổng Camly Coin từ Lì xì
+- Trả về: `balance`, `lifetimeEarned` (trừ Lì xì), `lixiReward` (riêng Lì xì)
 
-1. **Import hook mới** `useUserCamlyCoin(userId)` thay vì `useCamlyCoin()` (vốn chỉ lấy auth user)
+**b. `CamlyCoinDisplay`** (trang Profile cá nhân):
+- "Tổng tích lũy" = `lifetime_earned - lixiReward`
+- Thêm dòng mới "Nhận thưởng Lì xì" với icon bao lì xì, hiển thị số Camly Coin + trạng thái claim
 
-2. **Xóa điều kiện `isOwnProfile`** trên đoạn dòng 741-823 — cho phép tất cả người xem thấy:
-   - Thẻ Camly Coin (số dư + tích lũy)
-   - Thẻ PoPL Score (điểm + huy hiệu + hành động tốt)
-   - Thẻ FUN Money (tổng + sẵn sàng claim / đã mint / đang chờ)
+**c. `UserProfile.tsx`** (trang xem profile người khác):
+- Tương tự: tách "Tổng tích lũy" và "Nhận thưởng" trong sidebar Intro và tab About
 
-3. **Cập nhật tab "Giới thiệu"** (dòng 1095-1138) để cũng hiển thị 3 thẻ tài chính (đồng bộ với sidebar)
+**d. `PublicProfileStats`** (profile công khai):
+- Cập nhật `lifetimeEarned` chỉ hiển thị phần tích lũy tự nhiên (không bao gồm Lì xì)
 
-4. **Thêm realtime subscription** cho `camly_coin_balances` theo `userId` đang xem — khi admin cộng thưởng, số liệu tự cập nhật ngay
+### 4. Admin Dashboard - Cột trạng thái Claim
 
-### Bước 4: Cập nhật trang HandleProfile (Public Profile)
+Trên trang `/admin/tet-reward`, thêm:
+- **Cột "Claim"** mới bên cạnh cột "Lì xì": hiển thị trạng thái claim của từng user
+  - Chưa claim: icon "---"
+  - Đã claim (pending): icon dong ho vang + ví Web3 rut gon
+  - Admin đã chuyển (completed): icon xanh + tx hash on-chain
+  - Lỗi: icon đỏ + lý do
 
-**Tệp chỉnh sửa**: `src/hooks/usePublicProfile.ts`
+- **Nút "Chuyển thưởng On-chain"**: Admin chọn user đã claim, xác nhận chuyển CAMLY token từ ví Treasury (`0x02D5...9a0D`) đến ví Web3 của user. Sau khi chuyển thành công, cập nhật `lixi_claims.status = 'completed'` + `tx_hash`
 
-Thêm truy vấn `camly_coin_balances.balance` (số dư hiện tại) và FUN Money Stats vào hàm `fetchPublicProfile`. Hiện tại chỉ lấy `lifetime_earned`.
+- Admin cũng thấy **realtime notification** khi có user claim mới
 
-**Tệp chỉnh sửa**: `src/components/public-profile/PublicProfileStats.tsx`
+### 5. Realtime notification cho Admin
 
-Thêm hiển thị:
-- Số dư Camly Coin hiện tại (bên cạnh "tổng tích lũy" đã có)
-- FUN Money tổng
+Khi user claim, insert record vào `notifications` cho admin (type: `lixi_claim_request`) để admin biết ngay có yêu cầu mới.
 
-## Tóm tắt tác động
+---
 
-| STT | Tệp | Hành động | Mô tả |
-|-----|------|-----------|-------|
-| 1 | Database (RLS) | Migration | Thêm 3 chính sách public SELECT cho `user_light_totals`, `pplp_actions`, `pplp_scores` |
-| 2 | `src/hooks/useUserCamlyCoin.ts` | Tạo mới | Hook lấy Camly balance cho bất kỳ userId + realtime |
-| 3 | `src/pages/UserProfile.tsx` | Chỉnh sửa | Xóa guard `isOwnProfile`, dùng hook mới, thêm realtime |
-| 4 | `src/hooks/usePublicProfile.ts` | Chỉnh sửa | Thêm truy vấn balance + FUN Money |
-| 5 | `src/components/public-profile/PublicProfileStats.tsx` | Chỉnh sửa | Hiển thị thêm số dư Camly + FUN Money |
+## Luong xu ly
 
-**Tổng cộng**: 1 migration, 1 file mới, 3 file chỉnh sửa.
+```text
+User thay popup Li xi
+        |
+        v
+User nhan CLAIM
+        |
+        v
+He thong:
+  1. Insert lixi_claims (status: pending, wallet_address)
+  2. Danh dau notification da doc
+  3. Gui notification cho admin (lixi_claim_request)
+        |
+        v
+Admin thay yeu cau claim tren /admin/tet-reward
+        |
+        v
+Admin ket noi vi Treasury (MetaMask)
+  -> Chuyen CAMLY token den vi Web3 cua user
+        |
+        v
+Ghi nhan tx_hash, cap nhat status = completed
+```
+
+---
+
+## Danh sach file can sua
+
+| File | Thay doi |
+|------|----------|
+| Database migration | Tao bang `lixi_claims` + RLS + realtime |
+| `src/hooks/useLiXiCelebration.ts` | Cap nhat ham `claim()` de insert vao `lixi_claims` |
+| `src/hooks/useUserCamlyCoin.ts` | Them truong `lixiReward` tu transactions |
+| `src/components/CamlyCoinDisplay.tsx` | Tach "Tong tich luy" va "Nhan thuong Li xi" |
+| `src/pages/UserProfile.tsx` | Tach hien thi tuong tu tren sidebar + tab About |
+| `src/components/public-profile/PublicProfileStats.tsx` | Tru Li xi khoi lifetimeEarned |
+| `src/pages/AdminTetReward.tsx` | Them cot Claim, nut chuyen on-chain |
 
