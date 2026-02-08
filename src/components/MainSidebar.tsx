@@ -45,13 +45,10 @@ export function MainSidebar() {
   return (
     <Sidebar 
       collapsible="icon" 
-      className="border-r border-amber-200/30 bg-transparent"
+      className="border-r border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50"
     >
-      {/* Spacer to push content down below video area */}
-      <div className="h-[50vh] shrink-0" />
-
-      {/* Header with Logo */}
-      <SidebarHeader className="border-b border-amber-200/30 py-4 bg-gradient-to-b from-amber-50/90 to-white/90 backdrop-blur-sm">
+      {/* Header with Logo - 2cm (~20px) gap from top */}
+      <SidebarHeader className="border-b border-amber-200/30 py-4 mt-5">
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-2'}`}>
           {isCollapsed ? (
             <div className="relative shrink-0">
@@ -67,7 +64,7 @@ export function MainSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-4 bg-gradient-to-b from-white/90 via-amber-50/80 to-amber-50/90 backdrop-blur-sm">
+      <SidebarContent className="py-4">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -116,7 +113,7 @@ export function MainSidebar() {
       </SidebarContent>
 
       {/* Toggle Button at bottom */}
-      <div className={`p-3 border-t border-amber-200/30 bg-amber-50/90 backdrop-blur-sm ${isCollapsed ? 'flex justify-center' : ''}`}>
+      <div className={`p-3 border-t border-amber-200/30 ${isCollapsed ? 'flex justify-center' : ''}`}>
         <SidebarTrigger className="w-full justify-center hover:bg-amber-100/70" />
       </div>
 
