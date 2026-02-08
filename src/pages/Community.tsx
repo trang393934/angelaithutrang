@@ -196,9 +196,9 @@ const Community = () => {
 
               {/* Gift & Donate Action Buttons */}
               <AuthActionGuard message="Bạn cần đăng nhập để tặng quà">
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div className="flex flex-row gap-2 sm:gap-3">
                   <motion.div 
-                    className="flex-1 min-w-0"
+                    className="flex-[2] min-w-0"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
