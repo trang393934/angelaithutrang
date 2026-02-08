@@ -1,48 +1,46 @@
 
 
-# Fix: Allow Users to Create Mint Requests
+# Fix: Admin Khong Thay Cac Yeu Cau Mint Tu User
 
-## Problem
-The "Request Mint FUN" button fails with error "Khong the tao yeu cau mint" because the `pplp_mint_requests` table is missing an INSERT RLS policy for authenticated users. Currently only `service_role` (backend functions) can insert records.
+## Van de
+Bang `pplp_mint_requests` hien chi co 3 RLS policy:
+1. `Service role manages mint requests` - chi cho service_role (backend), khong ap dung cho admin dang nhap qua frontend
+2. `Users can view own mint requests` - SELECT voi `auth.uid() = actor_id` (chi thay cua minh)
+3. `Users can create own mint requests` + `Users can update own pending mint requests` - INSERT/UPDATE cho user
 
-## Root Cause
-The table has only 2 RLS policies:
-- `Service role manages mint requests` (ALL for service_role)
-- `Users can view own mint requests` (SELECT for own records)
+**Khong co policy nao cho phep admin (is_admin()) xem tat ca records!**
 
-Missing: INSERT policy for users to create their own mint requests.
+## Du lieu hien co trong database
+- 22 yeu cau **pending** tu nhieu user (tong ~2,253 FUN)
+- 36 yeu cau **signed** tu 10+ user
+- 2 yeu cau **minted**, 2 **expired**
+- Tong: 62+ yeu cau tu nhieu tai khoan khac nhau
 
-## Solution
-Add an RLS policy that allows authenticated users to INSERT mint requests where `actor_id` matches their user ID. This is safe because the `useMintRequest` hook already validates the action ownership and score before attempting the insert.
+## Giai phap
+Them 2 RLS policy cho admin:
 
-## Technical Details
-
-### 1. Database Migration
-Add a new RLS policy on `pplp_mint_requests`:
-
+### 1. Admin SELECT policy
+Cho phep admin xem tat ca mint requests:
 ```text
-Policy: "Users can create own mint requests"
-Command: INSERT
-Check: auth.uid() = actor_id
+Policy: "Admins can view all mint requests"
+Command: SELECT
+Using: is_admin()
 ```
 
-This ensures users can only create mint requests for their own actions (actor_id must match their auth user ID).
-
-### 2. Optional: Add UPDATE policy for users
-Allow users to update their OWN pending mint requests (e.g., to change wallet address before admin approval):
-
+### 2. Admin UPDATE policy
+Cho phep admin cap nhat (approve/reject) bat ky mint request nao:
 ```text
-Policy: "Users can update own pending mint requests"
+Policy: "Admins can manage all mint requests"
 Command: UPDATE
-Using: auth.uid() = actor_id AND status = 'pending'
-Check: auth.uid() = actor_id AND status = 'pending'
+Using: is_admin()
 ```
 
-This restricts updates to only pending requests -- once an admin has signed or minted, users cannot modify the record.
+## Chi tiet ky thuat
+- Su dung ham `is_admin()` da ton tai san trong he thong (goi `has_role(auth.uid(), 'admin')`)
+- Khong can thay doi code frontend (`AdminMintApproval.tsx`) vi logic query da dung san, chi thieu quyen truy cap database
+- Sau khi them policy, admin se thay tat ca 62+ yeu cau tu moi user trong bang Mint Approval
+- Cac tab "Cho duyet (22)", "Da ky (36)", "Da mint (2)", "Tu choi (2)" se hien thi dung so lieu
 
-### 3. No code changes needed
-The existing `useMintRequest.ts` hook already correctly sets `actor_id: user.id` and validates the action before inserting. The only missing piece is the database-level permission.
-
-### Files affected
-- Database migration only (no code file changes)
+## Files can thay doi
+- Chi can 1 migration SQL (khong can sua code)
 
