@@ -41,6 +41,7 @@ interface UserProfileData {
   avatar_url: string | null;
   bio: string | null;
   cover_photo_url: string | null;
+  handle: string | null;
   created_at: string;
 }
 
@@ -328,6 +329,7 @@ const UserProfile = () => {
             avatar_url: null,
             bio: null,
             cover_photo_url: null,
+            handle: null,
             created_at: new Date().toISOString(),
           });
         }
@@ -649,6 +651,11 @@ const UserProfile = () => {
                 <h1 className="text-[32px] font-bold text-gray-900 leading-tight">
                   {profile?.display_name || "Người dùng ẩn danh"}
                 </h1>
+                {profile?.handle && (
+                  <p className="text-sm text-divine-gold font-medium mt-0.5">
+                    fun.rich/{profile.handle}
+                  </p>
+                )}
                 <p className="text-[15px] text-gray-500 font-medium mt-1">
                   {stats.friends} bạn bè
                 </p>

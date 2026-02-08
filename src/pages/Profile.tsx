@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon, MessageCircle, Move, Maximize2 } from "lucide-react";
 import { ApiKeysSection } from "@/components/profile/ApiKeysSection";
+import { HandleSelector } from "@/components/profile/HandleSelector";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { CoverPositionEditor } from "@/components/profile/CoverPositionEditor";
 import { PoPLScoreCard } from "@/components/profile/PoPLScoreCard";
@@ -1260,8 +1261,24 @@ const Profile = () => {
             </CardContent>
           </Card>
 
+          {/* FUN Profile Link / Handle */}
+          <Card className="border-divine-gold/20 shadow-soft">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Sparkles className="w-5 h-5 text-divine-gold" />
+                FUN Profile Link
+              </CardTitle>
+              <CardDescription>
+                Chọn link hồ sơ công khai của bạn (giống LinkedIn). Ví dụ: fun.rich/camly_duong
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <HandleSelector source="settings" />
+            </CardContent>
+          </Card>
+
           {/* PoPL Score Card - Pure Love Score */}
-          <PoPLScoreCard 
+          <PoPLScoreCard
             score={poplScore.score}
             positiveActions={poplScore.positiveActions}
             negativeActions={poplScore.negativeActions}
