@@ -1,134 +1,116 @@
 
+# Tao bang thong ke Tet co dinh cho chuong trinh Li xi
 
-# Ke hoach sua loi Content Moderation - False Positive
+## Muc tieu
 
-## Van de chinh
+Tao mot trang admin rieng biet tai `/admin/tet-reward` hien thi bang thong ke FUN Money **co dinh** (snapshot ngay 07/02/2026) tu file Excel da tai len. Bang nay doc lap voi `/admin/mint-stats` (du lieu dong tu database) va duoc su dung de thuc hien chuong trinh thuong Li xi Tet voi cong thuc **1 FUN = 1.000 Camly Coin**.
 
-He thong kiem duyet noi dung (`src/lib/contentModeration.ts`) dang chan nhieu bai viet hop le vi 2 ly do:
+## Du lieu tu file Excel
 
-1. **Tu "gay" bi liet ke la tu co hai** (dong 30) - nhung day la am tiet tieng Viet binh thuong ("gay go", "gay gat", "gay can")
-2. **Kiem tra tu tieng Viet dung `includes()` (dong 83-84)** - tim chuoi con thay vi tim tu nguyen ven, gay ra false positive hang loat
+File Excel chua **205 nguoi dung** voi cac cot:
+- #, User, Hoi dap, Dang bai, Biet on, Tao noi dung, Nhat ky, Hoc tap, Tong FUN, Pass, Fail, Avg Light Score, Mint Status
 
-Trong khi do, kiem tra tu tieng Anh (dong 90-91) da dung dung cach `\b` word boundary.
+Trong do:
+- 166 users co FUN > 0 (du dieu kien nhan thuong)
+- 39 users co FUN = 0 (chi co Fail, chua du dieu kien)
 
-## Giai phap
+## Giao dien tham khao
 
-### Buoc 1: Xoa "gay" khoi danh sach tu co hai
-
-**File**: `src/lib/contentModeration.ts`, dong 30
-
-**Thay doi**: Xoa `'gay'` khoi mang `HARMFUL_WORDS_VI`. Day khong phai tu co hai trong tieng Viet, va viec liet ke no gay chan hang loat bai viet hop le.
-
-**Truoc:**
-```
-'do cho', 'con cho', 'thang ngu', 'con ngu', 'do ngu', 'mat lon', 'do diem',
-'gay', 'be de', 'pe de',
-```
-
-**Sau:**
-```
-'do cho', 'con cho', 'thang ngu', 'con ngu', 'do ngu', 'mat lon', 'do diem',
-'be de', 'pe de',
-```
-
-### Buoc 2: Chuyen kiem tra tu tieng Viet sang word-boundary regex
-
-**File**: `src/lib/contentModeration.ts`, dong 82-87
-
-**Van de**: `lowerText.includes(word)` tim chuoi con, nen tu "dam" trong "dam ra" cung bi bat.
-
-**Thay doi**: Su dung `\b` regex giong nhu kiem tra tieng Anh. Tieng Viet tach am tiet bang dau cach, nen `\b` hoat dong tot.
-
-**Truoc:**
-```typescript
-// Check Vietnamese harmful words
-for (const word of HARMFUL_WORDS_VI) {
-  if (lowerText.includes(word.toLowerCase())) {
-    foundWords.push(word);
-  }
-}
-```
-
-**Sau:**
-```typescript
-// Check Vietnamese harmful words (with word boundary to avoid false positives)
-for (const word of HARMFUL_WORDS_VI) {
-  const escapedWord = word.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(^|\\s|[.,!?;:"'()\\[\\]{}])${escapedWord}($|\\s|[.,!?;:"'()\\[\\]{}])`, 'i');
-  if (regex.test(lowerText)) {
-    foundWords.push(word);
-  }
-}
-```
-
-Dung boundary tuy chinh (dau cach + dau cau) thay vi `\b` de xu ly chinh xac hon voi cac ky tu Unicode/dau thanh tieng Viet.
-
-### Buoc 3: Them whitelist cac cum tu tieng Viet vo hai
-
-**File**: `src/lib/contentModeration.ts`
-
-**Them moi**: Mot danh sach whitelist cac cum tu tieng Viet pho bien chua am tiet trung voi tu co hai nhung hoan toan vo hai:
-
-```typescript
-const VIETNAMESE_SAFE_PHRASES = [
-  'dam ra',     // tro nen (khac voi "dam" bao luc)
-  'chem gio',   // noi chuyen phiem (khac voi "chem" bao luc)
-  'gay go',     // kho khan
-  'gay gat',    // khan truong
-  'gay can',    // hoi hop
-];
-```
-
-Logic: Truoc khi kiem tra tu co hai, thay the cac cum tu vo hai bang placeholder de chung khong bi bat lam.
-
-### Buoc 4: Cai thien kiem tra ten file anh
-
-**File**: `src/lib/contentModeration.ts`, dong 180
-
-**Van de**: Ham `checkImageFilename` cung dung `includes()`, co the chan file anh co ten nhu "sunset_sexy_beach.jpg" khi nguoi dung chi muon chia se anh hoang hon.
-
-**Thay doi**: Ap dung word-boundary check tuong tu cho ten file.
-
----
-
-## Tom tat tac dong
-
-| STT | Thay doi | Ket qua |
-|-----|----------|---------|
-| 1 | Xoa "gay" khoi HARMFUL_WORDS_VI | Cac bai viet chua "gay go", "gay gat" khong bi chan nua |
-| 2 | Chuyen sang word-boundary regex | Cac tu nhu "dam ra" khong bi nham la "dam" bao luc |
-| 3 | Them whitelist cum tu vo hai | Bao ve them cac truong hop phuc tap |
-| 4 | Sua checkImageFilename | Giam false positive cho ten file anh |
-
-**Tong cong**: 1 file can chinh sua (`src/lib/contentModeration.ts`), khong can thay doi database.
+Dua theo hinh mau da gui (giong bang hien tai o /admin/mint-stats) nhung them cot "Camly" (FUN x 1.000) va bo cac cot khong can thiet (checkbox chon, Mint status). Thiet ke Gold 11 phu hop voi chuong trinh Tet.
 
 ## Chi tiet ky thuat
 
-### Logic xu ly whitelist:
+### Buoc 1: Tao file du lieu tinh (`src/data/tetRewardData.ts`)
+
+Chuyen toan bo 205 dong du lieu tu file Excel thanh mot mang TypeScript const. Moi dong gom:
 
 ```typescript
-function sanitizeForCheck(text: string): string {
-  let sanitized = text.toLowerCase();
-  for (const phrase of VIETNAMESE_SAFE_PHRASES) {
-    sanitized = sanitized.replaceAll(phrase, ' __safe__ ');
-  }
-  return sanitized;
+interface TetRewardUser {
+  rank: number;
+  name: string;
+  question: number;   // Hoi dap
+  post: number;       // Dang bai
+  gratitude: number;  // Biet on
+  content: number;    // Tao noi dung
+  journal: number;    // Nhat ky
+  learn: number;      // Hoc tap
+  totalFun: number;   // Tong FUN
+  pass: number;
+  fail: number;
+  avgLightScore: number;
+  mintStatus: string;
 }
 ```
 
-### Regex boundary cho tieng Viet:
+### Buoc 2: Tao trang admin (`src/pages/AdminTetReward.tsx`)
 
-Thay vi dung `\b` (khong xu ly tot voi Unicode), su dung boundary tuy chinh:
-- Bat dau/ket thuc chuoi
-- Dau cach
-- Dau cau (, . ! ? ; : " ' vv.)
+Trang admin moi tai `/admin/tet-reward` voi cac thanh phan:
 
-Dieu nay dam bao:
-- "gay go" -> "gay" la tu rieng biet -> nhung da bi xoa khoi danh sach nen OK
-- "dam ra" -> "dam" co boundary nhung nam trong whitelist -> OK  
-- "dit me" -> "dit" la tu rieng biet + khong trong whitelist -> BI CHAN (dung)
+**Header**: 
+- Logo Angel AI + tieu de "Thuong Tet 2026 - FUN Money Snapshot"
+- Ngay snapshot: 07/02/2026
+- Nut "Xuat Excel", "Lam moi"
 
-### Luu y:
-- Thay doi nay chi anh huong den client-side moderation (truoc khi gui bai)
-- Server-side (process-community-post) van hoat dong binh thuong vi no khong dung file nay
-- Khong can deploy lai Edge Functions
+**Thong ke tong quan** (4 card):
+- Tong FUN Money (toan bo)
+- Tong Camly Coin se thuong (FUN x 1.000)
+- So nguoi du dieu kien (FUN > 0)
+- Avg Light Score trung binh
+
+**Bang du lieu chinh**:
+- Cac cot giong hinh mau: #, User, Hoi, Bai, On, N.dung, N.ky, Hoc, Tong, Camly, P/F, LS
+- Co icon emoji cho header giong bang hien tai
+- Co tinh nang tim kiem va sap xep
+- Hien thi so lieu dinh dang tieng Viet (dau cham phan cach)
+- Cot Camly hien mau vang gold (FUN x 1.000)
+
+**Tinh nang chon va chuyen thuong**:
+- Checkbox chon user (giong bang hien tai)
+- Thanh hanh dong khi co user duoc chon: hien tong FUN, tong Camly, nut "Chuyen thuong Li xi"
+- Goi edge function `distribute-fun-camly-reward` de xu ly
+- Hien popup chuc mung `LiXiCelebrationDialog` sau khi thanh cong
+
+**Banner chuong trinh**:
+- Gradient Gold 11 
+- Noi dung: "Li xi Tet 26.000.000.000 VND"
+- Cong thuc: 1 FUN = 1.000 Camly Coin
+- Han: 08/02/2026
+
+### Buoc 3: Dang ky route trong `src/App.tsx`
+
+Them route moi:
+```typescript
+import AdminTetReward from "./pages/AdminTetReward";
+// ...
+<Route path="/admin/tet-reward" element={<AdminTetReward />} />
+```
+
+### Buoc 4: Them link vao `AdminNavToolbar.tsx`
+
+Them muc moi trong nhom "Tai chinh":
+```typescript
+{ to: "/admin/tet-reward", icon: Gift, label: "Thuong Tet" },
+```
+
+Dung icon `Gift` mau do/vang de phan biet voi cac muc khac.
+
+## Tom tat tac dong
+
+| STT | File | Hanh dong | Mo ta |
+|-----|------|-----------|-------|
+| 1 | `src/data/tetRewardData.ts` | Tao moi | Du lieu 205 users tu Excel (snapshot co dinh) |
+| 2 | `src/pages/AdminTetReward.tsx` | Tao moi | Trang admin voi bang thong ke + tinh nang chuyen thuong |
+| 3 | `src/App.tsx` | Chinh sua | Them route `/admin/tet-reward` |
+| 4 | `src/components/admin/AdminNavToolbar.tsx` | Chinh sua | Them link "Thuong Tet" vao nhom Tai chinh |
+
+**Tong cong**: 2 file moi, 2 file chinh sua. Khong can thay doi database hay Edge Functions (tai su dung `distribute-fun-camly-reward` da co).
+
+## Diem khac biet voi /admin/mint-stats
+
+| Tieu chi | /admin/mint-stats | /admin/tet-reward |
+|----------|-------------------|-------------------|
+| Nguon du lieu | Database (realtime) | File tinh (snapshot 07/02/2026) |
+| So luong users | Thay doi theo thoi gian | Co dinh 205 users |
+| Muc dich | Giam sat PPLP | Thuc hien chuong trinh Li xi |
+| Bo loc thoi gian | Co (7d, 30d, 90d, All) | Khong (du lieu co dinh) |
+| Cap nhat | Tu dong (realtime) | Khong cap nhat |
