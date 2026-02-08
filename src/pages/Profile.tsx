@@ -29,6 +29,7 @@ import CamlyCoinDisplay from "@/components/CamlyCoinDisplay";
 import CoinWithdrawal from "@/components/CoinWithdrawal";
 import GratitudeJournal from "@/components/GratitudeJournal";
 import { compressImage, formatFileSize } from "@/lib/imageCompression";
+import { UserLiXiCelebrationPopup } from "@/components/UserLiXiCelebrationPopup";
 
 interface Profile {
   id: string;
@@ -1616,6 +1617,8 @@ const Profile = () => {
           }}
         />
       )}
+      {/* Popup chúc mừng Lì xì Tết */}
+      <UserLiXiCelebrationPopup />
     </div>
   );
 };
