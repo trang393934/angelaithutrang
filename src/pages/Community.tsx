@@ -144,23 +144,27 @@ const Community = () => {
   };
 
   return (
-      <div className="h-screen flex flex-col bg-gradient-to-b from-primary-pale via-background to-background relative">
-        {/* Tết Background Video - Positioned below community header (toolbar + stories) */}
+      <div className="h-screen flex flex-col relative">
+        {/* Header - above video */}
+        <div className="relative z-10 bg-white" ref={communityHeaderRef}>
+          <CommunityHeader />
+        </div>
+
+        {/* Tết Background Video - starts right below the header */}
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="fixed top-0 left-0 right-0 bottom-0 w-full h-full object-cover z-[1] pointer-events-none"
-          style={{ opacity: 0.9, clipPath: 'inset(var(--community-header-h, 0px) 0 0 0)' }}
-          id="community-bg-video"
+          className="fixed left-0 right-0 bottom-0 w-full object-cover z-[1] pointer-events-none"
+          style={{ 
+            opacity: 0.9, 
+            top: 'var(--community-header-h, 0px)',
+            height: 'calc(100vh - var(--community-header-h, 0px))'
+          }}
         >
           <source src="/videos/tet-background.mp4" type="video/mp4" />
         </video>
-        {/* Header - fixed height, above video */}
-        <div className="relative z-10" ref={communityHeaderRef}>
-          <CommunityHeader />
-        </div>
 
         {/* Content area - fills remaining height, above video */}
         <div className="flex-1 flex overflow-hidden relative z-10">
