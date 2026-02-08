@@ -103,9 +103,10 @@ const Index = () => {
               <Footer />
             </main>
             
-            {/* Right Sidebar - Leaderboard (sticky with own scroll) */}
+            {/* Right Sidebar - Leaderboard (starts at lower portion) */}
             <aside className="hidden xl:block w-80 2xl:w-96 shrink-0 overflow-y-auto scrollbar-sacred border-l border-amber-200/30">
-              <div className="p-4">
+              <div className="h-[50vh] shrink-0" />
+              <div className="p-4 bg-gradient-to-b from-amber-50/90 via-white/90 to-amber-50/90 backdrop-blur-sm min-h-[50vh]">
                 <Leaderboard />
               </div>
             </aside>
