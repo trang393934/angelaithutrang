@@ -1,46 +1,48 @@
 
 
-# Cai thien UX: Canh bao vi khong khop tren Token Lifecycle
+# Fix: Allow Users to Create Mint Requests
 
-## Van de hien tai
-Khi user ket noi vi khac voi vi da nhan FUN Money locked (qua `lockWithPPLP`), giao dien hien thi Locked/Activated/Flowing = 0 ma khong giai thich. User khong biet phai chuyen lai vi cu de activate/claim.
+## Problem
+The "Request Mint FUN" button fails with error "Khong the tao yeu cau mint" because the `pplp_mint_requests` table is missing an INSERT RLS policy for authenticated users. Currently only `service_role` (backend functions) can insert records.
 
-## Giai phap
-Bo sung canh bao thong minh tren TokenLifecyclePanel khi phat hien vi hien tai khong co allocation nhung database ghi nhan mint_request thanh cong cho vi khac.
+## Root Cause
+The table has only 2 RLS policies:
+- `Service role manages mint requests` (ALL for service_role)
+- `Users can view own mint requests` (SELECT for own records)
 
-## Chi tiet ky thuat
+Missing: INSERT policy for users to create their own mint requests.
 
-### 1. Cap nhat TokenLifecyclePanel.tsx
-- Khi ket noi vi va tat ca allocation = 0, truy van bang `pplp_mint_requests` de kiem tra xem user hien tai co mint_request nao da thanh cong (`status = 'minted'` va co `tx_hash`) voi `recipient_address` khac voi vi dang ket noi hay khong.
-- Neu co, hien thi Alert voi noi dung:
-  - "Ban co 124 FUN dang locked tai vi 0x8004...6966. Vui long chuyen ve vi do de activate va claim."
-  - Nut "Sao chep dia chi vi" de user copy dia chi vi cu
-  - Link den BSCScan de kiem tra giao dich
+## Solution
+Add an RLS policy that allows authenticated users to INSERT mint requests where `actor_id` matches their user ID. This is safe because the `useMintRequest` hook already validates the action ownership and score before attempting the insert.
 
-### 2. Logic kiem tra
+## Technical Details
+
+### 1. Database Migration
+Add a new RLS policy on `pplp_mint_requests`:
+
 ```text
-1. User ket noi vi A (vi moi)
-2. Contract doc alloc(vi A) = {locked: 0, activated: 0}
-3. Query Supabase: SELECT recipient_address, amount, tx_hash 
-   FROM pplp_mint_requests 
-   WHERE status = 'minted' AND tx_hash IS NOT NULL 
-   AND action_id IN (SELECT id FROM pplp_actions WHERE actor_id = current_user_id)
-   AND recipient_address != vi A
-4. Neu co ket qua -> hien thi canh bao voi thong tin vi cu va so FUN
+Policy: "Users can create own mint requests"
+Command: INSERT
+Check: auth.uid() = actor_id
 ```
 
-### 3. Giao dien canh bao
-- Dat trong TokenLifecyclePanel, ngay duoi phan 3-Stage Pipeline khi tat ca = 0
-- Mau vang/amber de canh bao (khong phai loi)
-- Noi dung: 
-  - Icon canh bao + "FUN Money cua ban dang o vi khac"
-  - Dia chi vi cu (truncated voi nut copy)
-  - So luong FUN locked
-  - Huong dan ngan: "Chuyen ve vi nay trong MetaMask de activate va claim"
+This ensures users can only create mint requests for their own actions (actor_id must match their auth user ID).
 
-### 4. Files can sua
-- `src/components/mint/TokenLifecyclePanel.tsx` - Them logic kiem tra va UI canh bao
+### 2. Optional: Add UPDATE policy for users
+Allow users to update their OWN pending mint requests (e.g., to change wallet address before admin approval):
 
-### 5. Khong can migration database
-- Chi doc du lieu tu bang `pplp_mint_requests` va `pplp_actions` da co san
+```text
+Policy: "Users can update own pending mint requests"
+Command: UPDATE
+Using: auth.uid() = actor_id AND status = 'pending'
+Check: auth.uid() = actor_id AND status = 'pending'
+```
+
+This restricts updates to only pending requests -- once an admin has signed or minted, users cannot modify the record.
+
+### 3. No code changes needed
+The existing `useMintRequest.ts` hook already correctly sets `actor_id: user.id` and validates the action before inserting. The only missing piece is the database-level permission.
+
+### Files affected
+- Database migration only (no code file changes)
 
