@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -252,6 +253,32 @@ Deno.serve(async (req) => {
     });
 
     console.log(`Gift successful: ${senderId} -> ${receiver_id}, amount=${giftAmount}, receipt=${receiptPublicId}`);
+
+    // ============= PPLP Integration: Gift sent (DONATE_SUPPORT) =============
+    submitAndScorePPLPAction(supabaseAdmin, {
+      action_type: PPLP_ACTION_TYPES.DONATE_SUPPORT,
+      actor_id: senderId,
+      target_id: giftRecord?.id || undefined,
+      metadata: {
+        gift_type: 'camly_coin',
+        amount: giftAmount,
+        receiver_id,
+        context_type: context_type || 'global',
+        context_id: context_id || null,
+      },
+      impact: {
+        scope: 'group',
+        reach_count: 1,
+        quality_indicators: ['generosity', 'community_support'],
+      },
+      integrity: {
+        source_verified: true,
+      },
+      reward_amount: giftAmount,
+    }).then(r => {
+      if (r.success) console.log(`[PPLP] Gift scored: ${r.action_id}, FUN: ${r.reward}`);
+    }).catch(e => console.warn('[PPLP] Gift error:', e));
+    // ============= End PPLP Integration =============
 
     return new Response(
       JSON.stringify({

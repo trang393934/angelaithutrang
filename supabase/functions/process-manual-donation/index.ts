@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -115,6 +116,32 @@ Deno.serve(async (req) => {
     });
 
     console.log(`Manual donation recorded successfully: donation_id=${donation.id}`);
+
+    // ============= PPLP Integration: Manual crypto donation (DONATE_SUPPORT) =============
+    submitAndScorePPLPAction(supabase, {
+      action_type: PPLP_ACTION_TYPES.DONATE_SUPPORT,
+      actor_id: user.id,
+      target_id: donation.id,
+      metadata: {
+        donation_type: 'crypto_manual',
+        amount,
+        tx_hash: txHash || null,
+        message: message || null,
+      },
+      impact: {
+        scope: 'ecosystem',
+        reach_count: 1,
+        quality_indicators: ['crypto_donation', 'ecosystem_builder'],
+      },
+      integrity: {
+        source_verified: !!txHash,
+        content_hash: txHash || undefined,
+      },
+      reward_amount: amount,
+    }).then(r => {
+      if (r.success) console.log(`[PPLP] Manual donation scored: ${r.action_id}, FUN: ${r.reward}`);
+    }).catch(e => console.warn('[PPLP] Manual donation error:', e));
+    // ============= End PPLP Integration =============
 
     return new Response(
       JSON.stringify({

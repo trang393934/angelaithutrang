@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -156,6 +157,29 @@ Deno.serve(async (req) => {
     });
 
     console.log(`Donation successful: donor=${donorId}, amount=${donationAmount}`);
+
+    // ============= PPLP Integration: Project donation (DONATE_SUPPORT) =============
+    submitAndScorePPLPAction(supabaseAdmin, {
+      action_type: PPLP_ACTION_TYPES.DONATE_SUPPORT,
+      actor_id: donorId,
+      metadata: {
+        donation_type: 'project_camly',
+        amount: donationAmount,
+        message: message || null,
+      },
+      impact: {
+        scope: 'ecosystem',
+        reach_count: 1,
+        quality_indicators: ['project_support', 'ecosystem_builder'],
+      },
+      integrity: {
+        source_verified: true,
+      },
+      reward_amount: donationAmount,
+    }).then(r => {
+      if (r.success) console.log(`[PPLP] Project donation scored: ${r.action_id}, FUN: ${r.reward}`);
+    }).catch(e => console.warn('[PPLP] Project donation error:', e));
+    // ============= End PPLP Integration =============
 
     return new Response(
       JSON.stringify({

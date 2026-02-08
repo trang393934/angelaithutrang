@@ -374,6 +374,10 @@ export function mapRewardToPPLPAction(transactionType: string): PPLPActionType |
     'donation_support': PPLP_ACTION_TYPES.DONATE_SUPPORT,
     'idea_submit': PPLP_ACTION_TYPES.IDEA_SUBMIT,
     'feedback_reward': PPLP_ACTION_TYPES.FEEDBACK_GIVE,
+    // Gift & Donation mappings
+    'gift_sent': PPLP_ACTION_TYPES.DONATE_SUPPORT,
+    'crypto_donation': PPLP_ACTION_TYPES.DONATE_SUPPORT,
+    'project_donation': PPLP_ACTION_TYPES.DONATE_SUPPORT,
   };
   
   return mapping[transactionType] || null;
