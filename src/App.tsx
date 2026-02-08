@@ -29,6 +29,7 @@ import AdminIdeas from "./pages/AdminIdeas";
 import AdminBounty from "./pages/AdminBounty";
 import AdminProjectFund from "./pages/AdminProjectFund";
 import AdminMintStats from "./pages/AdminMintStats";
+import AdminMintApproval from "./pages/AdminMintApproval";
 import CommunityQuestions from "./pages/CommunityQuestions";
 import Community from "./pages/Community";
 import Earn from "./pages/Earn";
@@ -98,6 +99,7 @@ const App = () => (
               <Route path="/admin/bounty" element={<AdminBounty />} />
               <Route path="/admin/project-fund" element={<AdminProjectFund />} />
               <Route path="/admin/mint-stats" element={<AdminMintStats />} />
+              <Route path="/admin/mint-approval" element={<AdminMintApproval />} />
               <Route path="/admin/tip-reports" element={<AdminTipReports />} />
               <Route path="/receipt/:receiptId" element={<Receipt />} />
               <Route path="/notifications" element={<Notifications />} />

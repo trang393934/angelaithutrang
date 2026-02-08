@@ -1,15 +1,16 @@
- import { Header } from "@/components/Header";
- import { Footer } from "@/components/Footer";
- import { FUNMoneyBalanceCard } from "@/components/mint/FUNMoneyBalanceCard";
- import { MintActionsList } from "@/components/mint/MintActionsList";
- import { useAuth } from "@/hooks/useAuth";
- import { Button } from "@/components/ui/button";
- import { Card, CardContent } from "@/components/ui/card";
- import { Link } from "react-router-dom";
- import { ArrowRight, Coins, Sparkles, Shield, Zap, ExternalLink, Info } from "lucide-react";
- import funMoneyLogo from "@/assets/fun-money-logo.png";
- 
- import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+  import { Header } from "@/components/Header";
+  import { Footer } from "@/components/Footer";
+  import { FUNMoneyBalanceCard } from "@/components/mint/FUNMoneyBalanceCard";
+  import { MintActionsList } from "@/components/mint/MintActionsList";
+  import { TokenLifecyclePanel } from "@/components/mint/TokenLifecyclePanel";
+  import { useAuth } from "@/hooks/useAuth";
+  import { Button } from "@/components/ui/button";
+  import { Card, CardContent } from "@/components/ui/card";
+  import { Link } from "react-router-dom";
+  import { ArrowRight, Coins, Sparkles, Shield, Zap, ExternalLink, Info, Lock } from "lucide-react";
+  import funMoneyLogo from "@/assets/fun-money-logo.png";
+  
+  import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
  
  export default function Mint() {
    const { user } = useAuth();
@@ -79,47 +80,56 @@
                </AlertDescription>
              </Alert>
  
-             {/* Main Layout */}
-             <div className="grid gap-6 lg:grid-cols-3">
-               {/* Balance Card - Sticky on desktop */}
-               <div className="lg:col-span-1">
-                 <div className="lg:sticky lg:top-24 space-y-4">
-                   <FUNMoneyBalanceCard />
- 
-                   {/* Quick Info */}
-                   <Card>
-                     <CardContent className="p-4 space-y-3">
-                       <h4 className="font-medium text-sm">Cách thức hoạt động</h4>
-                       <div className="space-y-2 text-xs text-muted-foreground">
-                         <div className="flex items-start gap-2">
-                           <div className="p-1 rounded-full bg-amber-100 dark:bg-amber-900/30 mt-0.5">
-                             <Sparkles className="h-3 w-3 text-amber-600" />
-                           </div>
-                           <span>Thực hiện hành động yêu thương (chat, đăng bài, viết nhật ký...)</span>
-                         </div>
-                         <div className="flex items-start gap-2">
-                           <div className="p-1 rounded-full bg-blue-100 dark:bg-blue-900/30 mt-0.5">
-                             <Shield className="h-3 w-3 text-blue-600" />
-                           </div>
-                           <span>Angel AI chấm điểm theo 5 trụ cột PPLP (S/T/H/C/U)</span>
-                         </div>
-                         <div className="flex items-start gap-2">
-                           <div className="p-1 rounded-full bg-green-100 dark:bg-green-900/30 mt-0.5">
-                             <Zap className="h-3 w-3 text-green-600" />
-                           </div>
-                           <span>Nếu đạt Light Score ≥60, bạn có thể claim FUN về ví</span>
-                         </div>
-                         <div className="flex items-start gap-2">
-                           <div className="p-1 rounded-full bg-purple-100 dark:bg-purple-900/30 mt-0.5">
-                             <Coins className="h-3 w-3 text-purple-600" />
-                           </div>
-                           <span>FUN Money là BEP-20 token thật trên BSC blockchain</span>
-                         </div>
-                       </div>
-                     </CardContent>
-                   </Card>
-                 </div>
-               </div>
+              {/* Main Layout */}
+              <div className="grid gap-6 lg:grid-cols-3">
+                {/* Balance Card + Lifecycle - Sticky on desktop */}
+                <div className="lg:col-span-1">
+                  <div className="lg:sticky lg:top-24 space-y-4">
+                    <FUNMoneyBalanceCard />
+
+                    {/* Token Lifecycle Panel */}
+                    <TokenLifecyclePanel />
+
+                    {/* Quick Info */}
+                    <Card>
+                      <CardContent className="p-4 space-y-3">
+                        <h4 className="font-medium text-sm">Cách thức hoạt động</h4>
+                        <div className="space-y-2 text-xs text-muted-foreground">
+                          <div className="flex items-start gap-2">
+                            <div className="p-1 rounded-full bg-amber-100 dark:bg-amber-900/30 mt-0.5">
+                              <Sparkles className="h-3 w-3 text-amber-600" />
+                            </div>
+                            <span>Thực hiện hành động yêu thương (chat, đăng bài, viết nhật ký...)</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="p-1 rounded-full bg-blue-100 dark:bg-blue-900/30 mt-0.5">
+                              <Shield className="h-3 w-3 text-blue-600" />
+                            </div>
+                            <span>Angel AI chấm điểm theo 5 trụ cột PPLP</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="p-1 rounded-full bg-green-100 dark:bg-green-900/30 mt-0.5">
+                              <Zap className="h-3 w-3 text-green-600" />
+                            </div>
+                            <span>Nếu đạt Light Score ≥60, bạn Request Mint FUN</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="p-1 rounded-full bg-orange-100 dark:bg-orange-900/30 mt-0.5">
+                              <Lock className="h-3 w-3 text-orange-600" />
+                            </div>
+                            <span>Admin phê duyệt → FUN được lock on-chain</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="p-1 rounded-full bg-purple-100 dark:bg-purple-900/30 mt-0.5">
+                              <Coins className="h-3 w-3 text-purple-600" />
+                            </div>
+                            <span>Activate → Claim → FUN về ví của bạn</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
  
                {/* Actions List */}
                <div className="lg:col-span-2">
