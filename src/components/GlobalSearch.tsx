@@ -256,7 +256,7 @@ export function GlobalSearch({
     : "text-muted-foreground";
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative z-[9999] ${className}`}>
       {/* Search Input */}
       <div className="relative">
         <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${iconClasses}`} />
@@ -287,7 +287,7 @@ export function GlobalSearch({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-border/50 overflow-hidden z-[100] min-w-[320px] max-w-[480px]"
+            className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-border/50 overflow-hidden z-[9999] min-w-[320px] max-w-[480px]"
           >
             {/* Loading State */}
             {isLoading && (
