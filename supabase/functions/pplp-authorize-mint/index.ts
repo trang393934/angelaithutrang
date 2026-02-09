@@ -370,7 +370,43 @@ serve(async (req) => {
     }
 
     // ============================================
-    // CHECK & REGISTER ACTION IF NEEDED
+    // STORE MINT REQUEST EARLY (before on-chain tx to avoid connection reset)
+    // ============================================
+
+    const { error: earlyInsertError } = await supabase.from("pplp_mint_requests").upsert(
+      {
+        action_id: action.id,
+        actor_id: action.actor_id,
+        recipient_address: wallet_address,
+        amount: rewardAmount,
+        action_hash: actionHash,
+        evidence_hash: evidenceHash,
+        policy_version: 1,
+        valid_after: new Date().toISOString(),
+        valid_before: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        nonce: onChainNonce.toString(),
+        signature: signature,
+        signer_address: signerAddress,
+        status: signature ? "signed" : "pending",
+        tx_hash: null,
+        minted_at: null,
+        on_chain_error: null,
+      },
+      { onConflict: "action_id" }
+    );
+
+    if (earlyInsertError) {
+      console.error("Failed to store mint request (early):", earlyInsertError);
+      return new Response(
+        JSON.stringify({ error: "Failed to store mint request", details: earlyInsertError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[PPLP Lock] ✓ Mint request stored early for action ${action.id}`);
+
+    // ============================================
+    // CHECK & REGISTER ACTION IF NEEDED + ON-CHAIN TX
     // ============================================
     
     let txHash: string | null = null;
@@ -442,7 +478,7 @@ serve(async (req) => {
         
         const receipt = await tx.wait(1);
         txHash = receipt.hash;
-        onChainError = null; // Clear any prior error
+        onChainError = null;
         onChainErrorDetails = null;
         
         console.log(`[PPLP Lock] ✓ Transaction confirmed: ${txHash} in block ${receipt.blockNumber}`);
@@ -474,37 +510,23 @@ serve(async (req) => {
     }
 
     // ============================================
-    // STORE MINT REQUEST
+    // UPDATE MINT REQUEST WITH ON-CHAIN RESULT (fresh connection)
     // ============================================
 
-    const { error: insertError } = await supabase.from("pplp_mint_requests").upsert(
-      {
-        action_id: action.id,
-        actor_id: action.actor_id,
-        recipient_address: wallet_address,
-        amount: rewardAmount,
-        action_hash: actionHash,
-        evidence_hash: evidenceHash,
-        policy_version: 1,
-        valid_after: new Date().toISOString(),
-        valid_before: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        nonce: onChainNonce.toString(),
-        signature: signature,
-        signer_address: signerAddress,
+    try {
+      const freshSupabase = createClient(supabaseUrl, serviceRoleKey);
+      await freshSupabase.from("pplp_mint_requests").update({
         status: txHash ? "minted" : (signature ? "signed" : "pending"),
         tx_hash: txHash,
         minted_at: txHash ? new Date().toISOString() : null,
         on_chain_error: txHash ? null : onChainError,
-      },
-      { onConflict: "action_id" }
-    );
-
-    if (insertError) {
-      console.error("Failed to store mint request:", insertError);
-      return new Response(
-        JSON.stringify({ error: "Failed to store mint request", details: insertError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+        nonce: onChainNonce.toString(),
+        signature: signature,
+        signer_address: signerAddress,
+      }).eq("action_id", action.id);
+    } catch (updateErr) {
+      console.error("[PPLP Lock] Failed to update mint request after on-chain tx:", updateErr);
+      // Non-fatal: the early insert already saved the signed state
     }
 
     // ============================================
