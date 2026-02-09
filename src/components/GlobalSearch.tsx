@@ -37,12 +37,14 @@ interface GlobalSearchProps {
   variant?: "header" | "community" | "standalone";
   placeholder?: string;
   className?: string;
+  autoFocus?: boolean;
 }
 
 export function GlobalSearch({ 
   variant = "header", 
   placeholder,
-  className = "" 
+  className = "",
+  autoFocus = false
 }: GlobalSearchProps) {
   const { t } = useLanguage();
   const searchPlaceholder = placeholder || t("search.placeholder");
@@ -56,6 +58,16 @@ export function GlobalSearch({
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-focus when prop is set
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+        setIsOpen(true);
+      }, 100);
+    }
+  }, [autoFocus]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

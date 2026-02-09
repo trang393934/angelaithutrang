@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { Home, Users, MessageCircle, ShoppingBag, Plus, User, LogOut, Star, ChevronDown } from "lucide-react";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -30,6 +30,8 @@ export function CommunityHeader() {
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const shouldAutoFocusSearch = searchParams.get("search") === "1";
   const { balance } = useCamlyCoin();
   const { unreadCount } = useDirectMessages();
   const [showStoryViewer, setShowStoryViewer] = useState(false);
@@ -48,12 +50,19 @@ export function CommunityHeader() {
   // Navigation items similar to Fun.rich
   const navItems = [
     { icon: Home, href: "/community", label: t("community.navHome") },
-    { icon: Users, href: "/community-questions", label: t("community.navQuestions") },
+    { icon: Users, href: "/community?search=1", label: t("community.navFindFriends") || "Tìm bạn bè" },
     { icon: MessageCircle, href: "/messages", label: t("community.navMessages") },
     { icon: ShoppingBag, href: "/earn", label: t("community.navEarn") },
   ];
 
-  const isActive = (href: string) => location.pathname === href;
+  const isActive = (href: string) => {
+    // Handle search param for Users/Find Friends tab
+    if (href.includes("?")) {
+      const [path, params] = href.split("?");
+      return location.pathname === path && location.search.includes(params);
+    }
+    return location.pathname === href && !location.search.includes("search=1");
+  };
 
   const [userProfile, setUserProfile] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null);
 
@@ -134,6 +143,7 @@ export function CommunityHeader() {
                     variant="community" 
                     placeholder={t("community.search")}
                     className="w-full"
+                    autoFocus={shouldAutoFocusSearch}
                   />
                 </div>
               </div>
