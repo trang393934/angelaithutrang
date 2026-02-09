@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Search, X, Loader2, BookOpen, Users, MessageCircle, Sparkles, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,32 @@ export function GlobalSearch({
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  // Update dropdown position based on container
+  const updateDropdownPosition = useCallback(() => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: Math.max(rect.width, 320),
+      });
+    }
+  }, []);
+
+  // Recalculate position on scroll/resize when open
+  useEffect(() => {
+    if (!isOpen) return;
+    updateDropdownPosition();
+    const handleUpdate = () => updateDropdownPosition();
+    window.addEventListener("scroll", handleUpdate, true);
+    window.addEventListener("resize", handleUpdate);
+    return () => {
+      window.removeEventListener("scroll", handleUpdate, true);
+      window.removeEventListener("resize", handleUpdate);
+    };
+  }, [isOpen, updateDropdownPosition]);
 
   // Auto-focus and load all users when prop is set (community variant)
   useEffect(() => {
@@ -92,12 +119,16 @@ export function GlobalSearch({
     }
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside (account for portal-rendered dropdown)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+      const target = event.target as Node;
+      // Check if click is inside the container (input area)
+      if (containerRef.current?.contains(target)) return;
+      // Check if click is inside the portal dropdown (look for our specific dropdown)
+      const portalDropdown = document.querySelector('[data-global-search-dropdown]');
+      if (portalDropdown?.contains(target)) return;
+      setIsOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -256,7 +287,7 @@ export function GlobalSearch({
     : "text-muted-foreground";
 
   return (
-    <div ref={containerRef} className={`relative z-[9999] ${className}`}>
+    <div ref={containerRef} className={`relative ${className}`}>
       {/* Search Input */}
       <div className="relative">
         <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${iconClasses}`} />
@@ -279,191 +310,203 @@ export function GlobalSearch({
         )}
       </div>
 
-      {/* Search Results Dropdown */}
-      <AnimatePresence>
-        {isOpen && (query.length >= 2 || (variant === "community" && userResults.length > 0)) && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-border/50 overflow-hidden z-[9999] min-w-[320px] max-w-[480px]"
-          >
-            {/* Loading State */}
-            {isLoading && (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                <span className="ml-2 text-sm text-muted-foreground">{t("search.searching")}</span>
-              </div>
-            )}
-
-            {/* Error State */}
-            {error && !isLoading && (
-              <div className="p-4 text-center text-sm text-red-500">
-                {error}
-              </div>
-            )}
-
-            {/* Community Variant: User Results */}
-            {!isLoading && !error && variant === "community" && userResults.length > 0 && (
-              <div className="max-h-[400px] overflow-y-auto">
-                <div className="px-4 py-2 bg-muted/30 border-b">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    {t("search.users") || "Users"} ({userResults.length})
-                  </span>
+      {/* Search Results Dropdown - rendered via Portal to escape stacking contexts */}
+      {createPortal(
+        <AnimatePresence>
+          {isOpen && dropdownPos && (query.length >= 2 || (variant === "community" && userResults.length > 0)) && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="fixed bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-border/50 overflow-hidden"
+              data-global-search-dropdown
+              style={{
+                zIndex: 99999,
+                top: dropdownPos.top,
+                left: dropdownPos.left,
+                width: dropdownPos.width,
+                maxWidth: 480,
+                minWidth: 320,
+              }}
+            >
+              {/* Loading State */}
+              {isLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <span className="ml-2 text-sm text-muted-foreground">{t("search.searching")}</span>
                 </div>
-                {userResults.map((user) => (
-                  <button
-                    key={user.user_id}
-                    onClick={() => {
-                      setIsOpen(false);
-                      setQuery("");
-                      navigate(`/user/${user.user_id}`);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-b border-border/30 last:border-b-0"
-                  >
-                    <Avatar className="w-9 h-9">
-                      <AvatarImage src={user.avatar_url || ""} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {user.display_name?.charAt(0)?.toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {user.display_name || t("common.anonymous")}
-                      </p>
-                      {user.bio && (
-                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                          {user.bio}
-                        </p>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+              )}
 
-            {/* Community Variant: No Results */}
-            {!isLoading && !error && variant === "community" && userResults.length === 0 && (query.length >= 2 || autoFocus) && (
-              <div className="p-6 text-center">
-                <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  {query.length >= 2 
-                    ? `${t("search.noResults")} "${query}"`
-                    : t("search.noUsers") || "Chưa có thành viên nào"
-                  }
-                </p>
-              </div>
-            )}
+              {/* Error State */}
+              {error && !isLoading && (
+                <div className="p-4 text-center text-sm text-red-500">
+                  {error}
+                </div>
+              )}
 
-            {/* Default Variant: Global Results */}
-            {!isLoading && !error && variant !== "community" && results && (
-              <div className="max-h-[400px] overflow-y-auto">
-                {/* AI Summary */}
-                {results.aiSummary && (
-                  <div className="p-4 bg-gradient-to-r from-primary/5 to-purple-50 dark:from-primary/10 dark:to-purple-900/20 border-b">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="w-8 h-8 ring-2 ring-primary/30">
-                        <AvatarImage src={angelAvatar} />
-                        <AvatarFallback>AI</AvatarFallback>
+              {/* Community Variant: User Results */}
+              {!isLoading && !error && variant === "community" && userResults.length > 0 && (
+                <div className="max-h-[400px] overflow-y-auto">
+                  <div className="px-4 py-2 bg-muted/30 border-b">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t("search.users") || "Users"} ({userResults.length})
+                    </span>
+                  </div>
+                  {userResults.map((user) => (
+                    <button
+                      key={user.user_id}
+                      onClick={() => {
+                        setIsOpen(false);
+                        setQuery("");
+                        navigate(`/user/${user.user_id}`);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-b border-border/30 last:border-b-0"
+                    >
+                      <Avatar className="w-9 h-9">
+                        <AvatarImage src={user.avatar_url || ""} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {user.display_name?.charAt(0)?.toUpperCase() || "U"}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Sparkles className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-semibold text-primary">{t("search.angelAnswer")}</span>
-                        </div>
-                        <p className="text-sm text-foreground leading-relaxed">
-                          {results.aiSummary.content}
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {user.display_name || t("common.anonymous")}
                         </p>
+                        {user.bio && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                            {user.bio}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Community Variant: No Results */}
+              {!isLoading && !error && variant === "community" && userResults.length === 0 && (query.length >= 2 || autoFocus) && (
+                <div className="p-6 text-center">
+                  <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    {query.length >= 2 
+                      ? `${t("search.noResults")} "${query}"`
+                      : t("search.noUsers") || "Chưa có thành viên nào"
+                    }
+                  </p>
+                </div>
+              )}
+
+              {/* Default Variant: Global Results */}
+              {!isLoading && !error && variant !== "community" && results && (
+                <div className="max-h-[400px] overflow-y-auto">
+                  {/* AI Summary */}
+                  {results.aiSummary && (
+                    <div className="p-4 bg-gradient-to-r from-primary/5 to-purple-50 dark:from-primary/10 dark:to-purple-900/20 border-b">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="w-8 h-8 ring-2 ring-primary/30">
+                          <AvatarImage src={angelAvatar} />
+                          <AvatarFallback>AI</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            <span className="text-xs font-semibold text-primary">{t("search.angelAnswer")}</span>
+                          </div>
+                          <p className="text-sm text-foreground leading-relaxed">
+                            {results.aiSummary.content}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Knowledge Results */}
-                {results.knowledge.length > 0 && (
-                  <div>
-                    <div className="px-4 py-2 bg-muted/30 border-b">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        {t("search.knowledge")} ({results.knowledge.length})
-                      </span>
+                  {/* Knowledge Results */}
+                  {results.knowledge.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-muted/30 border-b">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          {t("search.knowledge")} ({results.knowledge.length})
+                        </span>
+                      </div>
+                      {results.knowledge.map((result) => (
+                        <ResultItem 
+                          key={result.id} 
+                          result={result} 
+                          onClick={() => handleResultClick(result)}
+                          icon={getTypeIcon(result.type)}
+                        />
+                      ))}
                     </div>
-                    {results.knowledge.map((result) => (
-                      <ResultItem 
-                        key={result.id} 
-                        result={result} 
-                        onClick={() => handleResultClick(result)}
-                        icon={getTypeIcon(result.type)}
-                      />
-                    ))}
-                  </div>
-                )}
+                  )}
 
-                {/* Community Results */}
-                {results.community.length > 0 && (
-                  <div>
-                    <div className="px-4 py-2 bg-muted/30 border-b">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        {t("search.community")} ({results.community.length})
-                      </span>
+                  {/* Community Results */}
+                  {results.community.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-muted/30 border-b">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          {t("search.community")} ({results.community.length})
+                        </span>
+                      </div>
+                      {results.community.map((result) => (
+                        <ResultItem 
+                          key={result.id} 
+                          result={result} 
+                          onClick={() => handleResultClick(result)}
+                          icon={getTypeIcon(result.type)}
+                          showAvatar
+                        />
+                      ))}
                     </div>
-                    {results.community.map((result) => (
-                      <ResultItem 
-                        key={result.id} 
-                        result={result} 
-                        onClick={() => handleResultClick(result)}
-                        icon={getTypeIcon(result.type)}
-                        showAvatar
-                      />
-                    ))}
-                  </div>
-                )}
+                  )}
 
-                {/* Question Results */}
-                {results.questions.length > 0 && (
-                  <div>
-                    <div className="px-4 py-2 bg-muted/30 border-b">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        {t("search.questions")} ({results.questions.length})
-                      </span>
+                  {/* Question Results */}
+                  {results.questions.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-muted/30 border-b">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          {t("search.questions")} ({results.questions.length})
+                        </span>
+                      </div>
+                      {results.questions.map((result) => (
+                        <ResultItem 
+                          key={result.id} 
+                          result={result} 
+                          onClick={() => handleResultClick(result)}
+                          icon={getTypeIcon(result.type)}
+                        />
+                      ))}
                     </div>
-                    {results.questions.map((result) => (
-                      <ResultItem 
-                        key={result.id} 
-                        result={result} 
-                        onClick={() => handleResultClick(result)}
-                        icon={getTypeIcon(result.type)}
-                      />
-                    ))}
-                  </div>
-                )}
+                  )}
 
-                {/* No Results */}
-                {totalResults === 0 && !results.aiSummary && (
-                  <div className="p-6 text-center">
-                    <Search className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {t("search.noResults")} "{query}"
-                    </p>
-                  </div>
-                )}
+                  {/* No Results */}
+                  {totalResults === 0 && !results.aiSummary && (
+                    <div className="p-6 text-center">
+                      <Search className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {t("search.noResults")} "{query}"
+                      </p>
+                    </div>
+                  )}
 
-                {/* Ask Angel AI Button */}
-                <div className="p-3 border-t bg-muted/20">
-                  <Button
-                    onClick={handleAskAngel}
-                    className="w-full bg-sapphire-gradient text-white hover:opacity-90 transition-opacity"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {t("search.askAngel")} "{query.length > 20 ? query.substring(0, 20) + "..." : query}"
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  {/* Ask Angel AI Button */}
+                  <div className="p-3 border-t bg-muted/20">
+                    <Button
+                      onClick={handleAskAngel}
+                      className="w-full bg-sapphire-gradient text-white hover:opacity-90 transition-opacity"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      {t("search.askAngel")} "{query.length > 20 ? query.substring(0, 20) + "..." : query}"
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
