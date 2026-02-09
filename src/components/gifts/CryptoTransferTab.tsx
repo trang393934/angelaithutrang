@@ -107,6 +107,7 @@ export function CryptoTransferTab({
     setWalletAddress("");
 
     try {
+      // 1. Primary: check user_wallet_addresses
       const { data, error } = await supabase
         .from("user_wallet_addresses")
         .select("wallet_address")
@@ -117,9 +118,46 @@ export function CryptoTransferTab({
 
       if (data?.wallet_address) {
         setWalletAddress(data.wallet_address);
-      } else {
-        setWalletLookupError("Người này chưa đăng ký ví Web3");
+        return;
       }
+
+      // 2. Fallback: check coin_withdrawals for a known wallet
+      const { data: withdrawal } = await supabase
+        .from("coin_withdrawals")
+        .select("wallet_address")
+        .eq("user_id", selectedProfile.user_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (withdrawal?.wallet_address) {
+        setWalletAddress(withdrawal.wallet_address);
+        // Auto-save to user_wallet_addresses for future lookups
+        await supabase
+          .from("user_wallet_addresses")
+          .upsert({ user_id: selectedProfile.user_id, wallet_address: withdrawal.wallet_address }, { onConflict: "user_id" })
+          .then(() => console.log("[Wallet] Backfilled from withdrawals"));
+        return;
+      }
+
+      // 3. Fallback: check coin_gifts for a known tx_hash sender address
+      const { data: gift } = await supabase
+        .from("coin_gifts")
+        .select("tx_hash")
+        .eq("sender_id", selectedProfile.user_id)
+        .not("tx_hash", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (gift?.tx_hash) {
+        // User has done Web3 transfers but wallet not saved - show helpful message
+        setWalletLookupError("Người này đã giao dịch Web3 nhưng chưa lưu địa chỉ ví. Hãy nhập địa chỉ ví trực tiếp.");
+        setCryptoRecipient("address");
+        return;
+      }
+
+      setWalletLookupError("Người này chưa đăng ký ví Web3");
     } catch (err) {
       console.error("Wallet lookup error:", err);
       setWalletLookupError("Không thể tìm địa chỉ ví");
