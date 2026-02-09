@@ -1,170 +1,106 @@
 
-## Kế hoạch: Cập nhật Luật Ánh Sáng mới & Sửa lỗi Google OAuth
 
-### 📋 Phân tích hiện trạng
+## Plan: Fix Celebration Receipt + Add Token Selector & Message Templates
 
-#### 1. Vấn đề với flow đăng ký/đăng nhập hiện tại:
-- **Đăng ký mới**: Người dùng phải đọc và đồng ý "Pure Love Pledge" (nội dung cũ) → đúng logic
-- **Đăng nhập (người dùng đã đồng ý trước đó)**: Vẫn BẮT BUỘC phải đánh dấu checkbox → **SAI** → cần sửa
+### Problem Analysis
 
-#### 2. Vấn đề Google OAuth:
-- Import hiện tại: `import { lovable } from "@/integrations/lovable"` → đúng (TypeScript tự resolve đến `/index.ts`)
-- Cấu hình OAuth đã có sẵn trong Lovable Cloud (managed solution)
-- **Cần debug thêm** bằng cách kiểm tra thực tế khi click nút Google
-
-#### 3. Database `user_light_agreements`:
-- Đã có bảng lưu trữ: `id`, `user_id`, `agreed_at`, `created_at`
-- Logic check đã đúng trong `useLightAgreement.ts`
+1. **Wrong coin label in celebration**: `TipCelebrationReceipt` hardcodes "Camly Coin" on line 258 and uses `camlyCoinLogo` everywhere, even when the user transferred FUN Money.
+2. **No token type passed to receipt**: `handleCryptoSuccess` in `GiftCoinDialog` passes `tokenSymbol` in the message field but doesn't propagate it to the receipt component for display purposes.
+3. **No dynamic token selector**: Currently the dialog uses fixed 3 tabs (Camly, CAMLY Web3, FUN Money) rather than reading actual wallet balances.
+4. **No message input for Web3 transfers**: The `CryptoTransferTab` component has no message/note field, unlike the internal Camly tab.
 
 ---
 
-### 🔧 Thay đổi cần thực hiện
+### Changes Required
 
-#### **File 1: `src/pages/Auth.tsx`**
+#### File 1: `src/components/gifts/TipCelebrationReceipt.tsx`
 
-**A. Cập nhật nội dung component `PureLovePledge` thành "Luật Ánh Sáng" mới:**
+- Add `tokenType` field to `TipReceiptData` interface: `tokenType?: "camly" | "camly_web3" | "fun_money" | "internal"`
+- Dynamically select coin logo based on `tokenType`:
+  - `"internal"` or `"camly"` -> `camly-coin-logo.png` + label "Camly Coin"
+  - `"camly_web3"` -> `camly-coin-logo.png` + label "CAMLY"
+  - `"fun_money"` -> `fun-money-logo.png` + label "FUN Money"
+- Update the falling coin animation to use the correct logo
+- Update the amount display area (line 254-259) to show correct token name and logo
+- Update the BscScan link to use correct explorer URL (mainnet vs testnet) based on `tokenType`
+- Add message template suggestions in the display (pre-filled messages like "Chuc mung ban!", "Cam on ban!")
 
-Nội dung mới gồm:
-- Tiêu đề: "🌈 LUẬT ÁNH SÁNG CỦA CỘNG ĐỒNG FUN (PPLP)"
-- Giới thiệu FUN Ecosystem với tagline "Free to Join ✨ Free to Use ✨ Earn Together"
-- 5 Cột Trụ Ánh Sáng (Chân thật, Đóng góp, Chữa lành, Phụng sự, Hợp Nhất)
-- 8 Thần Chú Ánh Sáng
-- 5 Điều Cam Kết
+#### File 2: `src/components/gifts/GiftCoinDialog.tsx`
 
-**B. Thay đổi logic flow đăng nhập:**
+- Pass `tokenType` in `celebrationData` for all three flows:
+  - Internal Camly: `tokenType: "internal"`
+  - CAMLY Web3: `tokenType: "camly_web3"`
+  - FUN Money: `tokenType: "fun_money"`
+- Update `handleCryptoSuccess` to accept and forward `tokenType`
+
+#### File 3: `src/components/gifts/CryptoTransferTab.tsx`
+
+- Add a message input field with template suggestions:
+  - Template messages: "Chuc mung ban!", "Cam on ban rat nhieu!", "Yeu thuong gui ban!", "Tang ban mon qua nho!", custom input
+  - Quick-select chips + free text input
+- Add a dropdown/select for other ERC-20 tokens found in the sender's wallet:
+  - On wallet connect, scan for known token contracts (CAMLY, FUN, and a configurable list of popular BSC tokens)
+  - Display token balances in a dropdown selector
+  - When user selects a different token, update the transfer logic accordingly
+- Pass the message through to the `onSuccess` callback so it reaches the celebration receipt
+
+---
+
+### Technical Details
+
+#### Token Detection Logic (new utility)
+
+When the wallet is connected, the system will attempt to read balances of known tokens using their contract addresses via `balanceOf()`. Tokens with balance > 0 will appear in a dropdown above the amount input. The list of known tokens includes:
+- CAMLY (BSC Mainnet, 0x0910...)
+- FUN Money (BSC Testnet, contract from funMoneyABI)
+- BNB/tBNB (native balance via `provider.getBalance()`)
+
+This will be implemented as a lightweight scan within the existing `CryptoTransferTab`, not a full token indexer.
+
+#### Message Templates
+
+Pre-defined message chips:
+- "Chuc mung ban! 🎉"
+- "Cam on ban rat nhieu! 💚"
+- "Yeu thuong gui ban! 💕"
+- "Tang ban mon qua nho! 🎁"
+- "FUN cung nhau! 🌟"
+- Custom text input
+
+#### Updated TipReceiptData Interface
 
 ```typescript
-// TRƯỚC (SAI - yêu cầu checkbox cả khi đã đồng ý)
-if (!agreedToLightLaw) { return error; }
-
-// SAU (ĐÚNG - chỉ yêu cầu checkbox cho signup, login bypass nếu đã có agreement)
-- Khi isSignUp = true: Bắt buộc đọc và đồng ý
-- Khi isSignUp = false (login): 
-  - Không hiển thị checkbox agreement
-  - Sau khi login thành công, check database
-  - Nếu chưa có agreement → redirect tới màn hình đồng ý
-  - Nếu đã có → redirect tới /profile
+interface TipReceiptData {
+  // ...existing fields...
+  tokenType?: "internal" | "camly_web3" | "fun_money";
+  tokenSymbol?: string;
+  explorerUrl?: string;
+}
 ```
 
-**C. Cấu trúc UI mới:**
+#### Celebration Receipt Dynamic Display
 
 ```text
-┌─────────────────────────────────────────┐
-│         ĐĂNG KÝ (isSignUp=true)         │
-├─────────────────────────────────────────┤
-│  Email input                            │
-│  Password input                         │
-│                                         │
-│  ┌─────────────────────────────────┐   │
-│  │ ☐ Tôi đã đọc và đồng ý với      │   │
-│  │   "Luật Ánh Sáng" (bấm để đọc)  │   │
-│  └─────────────────────────────────┘   │
-│                                         │
-│  [Đăng ký & Bước vào Cổng Ánh Sáng]    │
-│  ─────── hoặc ──────                    │
-│  [Đăng nhập với Google]                 │
-└─────────────────────────────────────────┘
-
-┌─────────────────────────────────────────┐
-│         ĐĂNG NHẬP (isSignUp=false)      │
-├─────────────────────────────────────────┤
-│  Email input                            │
-│  Password input                         │
-│                                         │
-│  [Đăng nhập] ← KHÔNG CẦN checkbox      │
-│  ─────── hoặc ──────                    │
-│  [Đăng nhập với Google]                 │
-└─────────────────────────────────────────┘
+Token: FUN Money -> logo: fun-money-logo.png, label: "FUN Money", explorer: testnet.bscscan.com
+Token: CAMLY     -> logo: camly-coin-logo.png, label: "CAMLY", explorer: bscscan.com
+Token: internal  -> logo: camly-coin-logo.png, label: "Camly Coin", explorer: none (no tx_hash)
 ```
 
 ---
 
-### 📝 Chi tiết kỹ thuật
+### Files to Modify
 
-#### 1. Component `LightLawContent` mới (thay thế `PureLovePledge`):
+| File | Changes |
+|------|---------|
+| `src/components/gifts/TipCelebrationReceipt.tsx` | Add tokenType-aware logo/label/explorer, message display |
+| `src/components/gifts/GiftCoinDialog.tsx` | Pass tokenType + explorerUrl in celebrationData |
+| `src/components/gifts/CryptoTransferTab.tsx` | Add message input with templates, token dropdown, pass message to onSuccess |
 
-```tsx
-const LightLawContent = () => (
-  <div className="space-y-6">
-    {/* Header */}
-    <div className="text-center">
-      <span className="text-4xl">🌈</span>
-      <h2>LUẬT ÁNH SÁNG CỦA CỘNG ĐỒNG FUN</h2>
-      <p>(PPLP – Proof of Pure Love Protocol)</p>
-    </div>
-    
-    {/* Intro */}
-    <div>Chào mừng bạn đến với Cộng đồng FUN 💚...</div>
-    
-    {/* 5 Cột Trụ Ánh Sáng */}
-    <div>
-      1. 🔎 Chân thật & minh bạch
-      2. 💎 Đóng góp bền vững
-      3. 💚 Chữa lành & yêu thương
-      4. 🌿 Phụng sự sự sống
-      5. 🌟 Hợp Nhất với Nguồn
-    </div>
-    
-    {/* 8 Thần Chú */}
-    <div>8 THẦN CHÚ ÁNH SÁNG...</div>
-    
-    {/* 5 Cam Kết */}
-    <div>5 Điều tôi cam kết...</div>
-  </div>
-);
-```
+### Expected Results
 
-#### 2. Logic flow mới:
+1. When sending FUN Money -> celebration shows FUN Money logo + "FUN Money" label + testnet.bscscan.com link
+2. When sending CAMLY -> celebration shows CAMLY logo + "CAMLY" label + bscscan.com link
+3. When sending internal Camly Coin -> celebration shows Camly Coin logo + "Camly Coin" label
+4. Users can write/select a message before sending Web3 transfers
+5. Users can see other available tokens in their wallet and select them
 
-```typescript
-// Đăng nhập thường (email/password)
-const handleSubmit = async () => {
-  if (isSignUp) {
-    // ĐĂNG KÝ: Bắt buộc đồng ý
-    if (!agreedToLightLaw) return showError();
-    
-    await signUp(email, password);
-    await saveAgreement(user.id);
-    navigate("/profile");
-  } else {
-    // ĐĂNG NHẬP: Không cần checkbox
-    await signIn(email, password);
-    
-    // Check agreement sau khi login
-    const hasAgreement = await checkAgreement(user.id);
-    if (!hasAgreement) {
-      // Hiển thị dialog đồng ý (user cũ chưa ký)
-      setShowPostLoginAgreement(true);
-    } else {
-      navigate("/profile");
-    }
-  }
-};
-
-// Google Sign In
-const handleGoogleSignIn = async () => {
-  // Cho phép sign in mà không cần checkbox trước
-  // Sau khi auth xong, check agreement và xử lý
-};
-```
-
-#### 3. Sửa lỗi Google OAuth:
-
-- Thêm logging để debug khi click nút Google
-- Đảm bảo `redirect_uri` đúng
-- Kiểm tra flow sau khi OAuth redirect về
-
----
-
-### 📁 Danh sách file cần sửa
-
-| File | Thay đổi |
-|------|----------|
-| `src/pages/Auth.tsx` | Cập nhật nội dung Luật Ánh Sáng mới, thay đổi logic login/signup flow |
-
-### ✅ Kết quả mong đợi
-
-1. **Đăng ký mới**: Phải đọc và đồng ý "Luật Ánh Sáng" mới (PPLP) → lưu agreement → chuyển tới /profile
-2. **Đăng nhập (đã đồng ý)**: Nhập email/password → đăng nhập ngay → không hiển thị Luật Ánh Sáng
-3. **Đăng nhập (chưa đồng ý - user cũ)**: Đăng nhập → hiển thị dialog đồng ý → đồng ý → chuyển tới /profile  
-4. **Google OAuth**: Hoạt động bình thường với cùng logic
