@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
+import { useWeb3WalletContext as useWeb3Wallet } from "@/contexts/Web3WalletContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";

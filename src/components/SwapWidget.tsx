@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ArrowDownUp, Settings, RefreshCw, ExternalLink, ChevronDown, AlertCircle } from "lucide-react";
 import { usePancakeSwap, SWAP_TOKENS } from "@/hooks/usePancakeSwap";
-import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
+import { useWeb3WalletContext as useWeb3Wallet } from "@/contexts/Web3WalletContext";
 import { toast } from "sonner";
 import {
   Dialog,
