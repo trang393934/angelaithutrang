@@ -25,19 +25,7 @@ import { CryptoTransferTab } from "./CryptoTransferTab";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
 
-interface TipReceiptData {
-  receipt_public_id: string;
-  sender_id: string;
-  sender_name: string;
-  sender_avatar?: string | null;
-  receiver_id: string;
-  receiver_name: string;
-  receiver_avatar?: string | null;
-  amount: number;
-  message?: string | null;
-  tx_hash?: string | null;
-  created_at?: string;
-}
+import type { TipReceiptData } from "./TipCelebrationReceipt";
 
 interface GiftCoinDialogProps {
   open: boolean;
@@ -174,6 +162,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
           receiver_avatar: selectedUser.avatar_url,
           amount: numAmount,
           message: message || null,
+          tokenType: "internal",
         });
         onOpenChange(false);
         setShowCelebration(true);
@@ -192,7 +181,8 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
     recipientUser: UserSearchResult | null,
     targetAddress: string,
     transferAmount: number,
-    tokenSymbol: string
+    tokenSymbol: string,
+    cryptoMessage?: string
   ) => {
     let senderName = "Bạn";
     let senderAvatar: string | null = null;
@@ -210,6 +200,10 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
       console.warn("[Web3 Gift] Could not fetch sender profile:", e);
     }
 
+    // Determine tokenType from symbol
+    const resolvedTokenType = tokenSymbol === "FUN" ? "fun_money" : "camly_web3";
+    const resolvedExplorer = tokenSymbol === "FUN" ? "https://testnet.bscscan.com" : "https://bscscan.com";
+
     setCelebrationData({
       receipt_public_id: "",
       sender_id: user!.id,
@@ -219,8 +213,10 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
       receiver_name: recipientUser?.display_name || `${targetAddress.slice(0, 6)}...${targetAddress.slice(-4)}`,
       receiver_avatar: recipientUser?.avatar_url || null,
       amount: transferAmount,
-      message: `[Web3] ${tokenSymbol} transfer`,
+      message: cryptoMessage || null,
       tx_hash: result.txHash || null,
+      tokenType: resolvedTokenType,
+      explorerUrl: resolvedExplorer,
     });
     onOpenChange(false);
     setShowCelebration(true);
@@ -429,8 +425,8 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                 onConnect={connect}
                 onTransfer={transferCamly}
                 onFetchBalance={fetchCamlyBalance}
-                onSuccess={(result, recipientUser, targetAddress, transferAmount) =>
-                  handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "CAMLY")
+                onSuccess={(result, recipientUser, targetAddress, transferAmount, msg) =>
+                  handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "CAMLY", msg)
                 }
               />
             </TabsContent>
@@ -450,8 +446,8 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                 onConnect={connect}
                 onTransfer={transferFunMoney}
                 onFetchBalance={fetchFunMoneyBalance}
-                onSuccess={(result, recipientUser, targetAddress, transferAmount) =>
-                  handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "FUN")
+                onSuccess={(result, recipientUser, targetAddress, transferAmount, msg) =>
+                  handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "FUN", msg)
                 }
               />
             </TabsContent>

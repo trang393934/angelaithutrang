@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Loader2, User, Wallet, Sparkles, ExternalLink } from "lucide-react";
+import { Search, Loader2, User, Wallet, Sparkles, ExternalLink, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -15,6 +16,14 @@ interface UserSearchResult {
   avatar_url: string | null;
 }
 
+const MESSAGE_TEMPLATES = [
+  "Chúc mừng bạn! 🎉",
+  "Cảm ơn bạn rất nhiều! 💚",
+  "Yêu thương gửi bạn! 💕",
+  "Tặng bạn món quà nhỏ! 🎁",
+  "FUN cùng nhau! 🌟",
+];
+
 interface CryptoTransferTabProps {
   tokenType: TokenType;
   tokenSymbol: string;
@@ -24,11 +33,11 @@ interface CryptoTransferTabProps {
   address: string | undefined;
   hasWallet: boolean;
   explorerUrl: string;
-  accentColor: string; // e.g. "orange" or "violet"
+  accentColor: string;
   onConnect: () => Promise<void>;
   onTransfer: (toAddress: string, amount: number) => Promise<TransferResult>;
   onFetchBalance: () => void;
-  onSuccess: (result: TransferResult, recipientUser: UserSearchResult | null, targetAddress: string, amount: number) => void;
+  onSuccess: (result: TransferResult, recipientUser: UserSearchResult | null, targetAddress: string, amount: number, message?: string) => void;
 }
 
 export function CryptoTransferTab({
@@ -53,6 +62,7 @@ export function CryptoTransferTab({
   const [walletAddress, setWalletAddress] = useState("");
   const [cryptoAmount, setCryptoAmount] = useState("");
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+  const [giftMessage, setGiftMessage] = useState("");
 
   const [cryptoSelectedUser, setCryptoSelectedUser] = useState<UserSearchResult | null>(null);
   const [cryptoSearchQuery, setCryptoSearchQuery] = useState("");
@@ -60,14 +70,12 @@ export function CryptoTransferTab({
   const [isCryptoSearching, setIsCryptoSearching] = useState(false);
   const [walletLookupError, setWalletLookupError] = useState<string | null>(null);
 
-  // Fetch balance when connected
   useEffect(() => {
     if (isConnected) {
       onFetchBalance();
     }
   }, [isConnected, onFetchBalance]);
 
-  // Profile search with debounce
   useEffect(() => {
     if (cryptoSearchQuery.length < 2) {
       setCryptoSearchResults([]);
@@ -138,13 +146,12 @@ export function CryptoTransferTab({
         toast.success(result.message);
         onFetchBalance();
 
-        // Save to DB
         const receiverUserId = cryptoSelectedUser?.user_id || null;
         const giftRecord = {
           sender_id: user!.id,
           receiver_id: receiverUserId || user!.id,
           amount: numAmount,
-          message: `[Web3] ${tokenSymbol} transfer to ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+          message: giftMessage || `[Web3] ${tokenSymbol} transfer to ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
           tx_hash: result.txHash || null,
           gift_type: "web3",
         };
@@ -160,7 +167,7 @@ export function CryptoTransferTab({
           }, 2000);
         }
 
-        onSuccess(result, cryptoSelectedUser, walletAddress, numAmount);
+        onSuccess(result, cryptoSelectedUser, walletAddress, numAmount, giftMessage || undefined);
       } else {
         toast.error(result.message);
       }
@@ -380,6 +387,37 @@ export function CryptoTransferTab({
         <p className="text-xs text-muted-foreground">
           {t("crypto.gasNote")}
         </p>
+      </div>
+
+      {/* Message Input with Templates */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium flex items-center gap-1.5">
+          <MessageCircle className="w-3.5 h-3.5" />
+          Lời nhắn
+        </label>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {MESSAGE_TEMPLATES.map((tmpl) => (
+            <button
+              key={tmpl}
+              type="button"
+              onClick={() => setGiftMessage(tmpl)}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                giftMessage === tmpl
+                  ? `${activeBtn} text-white border-transparent`
+                  : "border-border hover:bg-accent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tmpl}
+            </button>
+          ))}
+        </div>
+        <Textarea
+          placeholder="Hoặc nhập lời nhắn tùy chọn..."
+          value={giftMessage}
+          onChange={(e) => setGiftMessage(e.target.value)}
+          rows={2}
+          className="resize-none"
+        />
       </div>
 
       {/* Transfer Button */}
