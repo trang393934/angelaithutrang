@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History, Bell, Copy, X, Loader2, Gift, MessageSquare, BookOpen, Calendar, Users } from "lucide-react";
+import { TransactionExportButton } from "@/components/admin/TransactionExportButton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -661,6 +662,7 @@ const AdminWithdrawals = () => {
               <History className="w-4 h-4" />
               Lịch sử chat
             </Link>
+            <TransactionExportButton />
             <Button
               variant="outline"
               size="sm"
