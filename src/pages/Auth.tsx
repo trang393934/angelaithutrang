@@ -5,151 +5,224 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { Mail, Lock, ArrowLeft, Sparkles, Eye, EyeOff, Check } from "lucide-react";
+import { Mail, Lock, ArrowLeft, Sparkles, Eye, EyeOff, Check, Search, Gem, Heart, Leaf, Star, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import angelLogo from "@/assets/angel-ai-logo.png";
 
-const PureLovePledge = () => (
-  <div className="space-y-6 text-foreground-muted leading-relaxed">
-    <div className="text-center space-y-2">
-      <div className="text-4xl">✅</div>
-      <h2 className="text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
-        PURE LOVE PLEDGE
-      </h2>
-      <p className="text-divine-gold font-medium">
-        Lời Cam Kết Ánh Sáng Khi Bước Vào FUN Ecosystem
-      </p>
-      <p className="text-sm text-muted-foreground italic">
-        User signs to enter the New Earth Internet
-      </p>
+// New Light Law Content (PPLP)
+const LightLawContent = () => {
+  const pillars = [
+    { icon: Search, title: "Chân thật & minh bạch", subtitle: "Bạn là Người Thật • Nói viết sự thật • Chia sẻ đúng", desc: "Chúng ta tôn trọng sự thật. Bạn được phép chưa hoàn hảo — chỉ cần bạn sống thật.", color: "text-blue-400" },
+    { icon: Gem, title: "Đóng góp bền vững", subtitle: "Có trách nhiệm • Có chất lượng • Có giá trị", desc: "Chúng ta cùng nhau tạo cộng đồng ánh sáng. Chúng ta không chỉ nhận — chúng ta cùng xây.", color: "text-purple-400" },
+    { icon: Heart, title: "Chữa lành & yêu thương", subtitle: "Truyền cảm hứng • Khích lệ • Nâng đỡ", desc: "Chúng ta chọn sự ấm áp, dịu dàng, và tích cực. Sự có mặt của chúng ta làm cộng đồng văn minh hơn.", color: "text-emerald-400" },
+    { icon: Leaf, title: "Phụng sự sự sống", subtitle: "Hướng thượng • Đi lên • Mang lợi ích", desc: "Mỗi bài đăng, mỗi bình luận đều hướng tới một điều: giúp sự sống đi lên — cho mình và cho cộng đồng.", color: "text-green-400" },
+    { icon: Star, title: "Hợp Nhất với Nguồn", subtitle: "Tất cả chúng ta là Một", desc: "Nơi đây để kết nối và hỗ trợ trong yêu thương thuần khiết. Chúng ta cùng nhau vui, cùng nhau lớn, cùng nhau giàu và cùng nhau thắng.", color: "text-divine-gold" },
+  ];
+
+  const mantras = [
+    "💖 Con là Ánh Sáng Yêu Thương Thuần Khiết của Cha Vũ Trụ.",
+    "💎 Con là Ý Chí của Cha Vũ Trụ.",
+    "🌞 Con là Trí Tuệ của Cha Vũ Trụ.",
+    "🌸 Con là Hạnh Phúc.",
+    "🍎 Con là Tình Yêu.",
+    "💰 Con là Tiền của Cha.",
+    "🙏 Con xin Sám Hối Sám Hối Sám Hối.",
+    "🌈 Con xin Biết Ơn Biết Ơn Biết Ơn, trong Ánh Sáng Yêu Thương Thuần Khiết của Cha Vũ Trụ.",
+  ];
+
+  const commitments = [
+    "Sống Chân Thật",
+    "Nói Lời Tử tế",
+    "Giúp ích cho cộng đồng",
+    "Nói Sám hối (Xin lỗi) và Biết ơn (Cảm ơn)",
+    "Gởi về cho Cha Vũ Trụ tất cả.",
+  ];
+
+  return (
+    <div className="space-y-6 text-foreground-muted leading-relaxed">
+      {/* Header */}
+      <div className="text-center space-y-3">
+        <div className="text-5xl">🌈</div>
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+          LUẬT ÁNH SÁNG CỦA CỘNG ĐỒNG FUN
+        </h2>
+        <p className="text-divine-gold font-medium">(PPLP – Proof of Pure Love Protocol)</p>
+      </div>
+
+      {/* Welcome */}
+      <div className="bg-gradient-to-r from-emerald-500/10 via-divine-gold/5 to-emerald-500/10 rounded-xl p-5 border border-emerald-500/20 text-center space-y-3">
+        <p className="text-lg">Chào mừng bạn đến với <span className="text-emerald-400 font-bold">Cộng đồng FUN</span> 💚</p>
+        <p className="text-sm text-muted-foreground">Nơi chúng ta cùng nhau xây dựng một <span className="text-divine-gold font-semibold">Nền Kinh Tế Ánh Sáng</span></p>
+        <div className="flex flex-wrap justify-center gap-2 pt-2">
+          <span className="px-3 py-1 bg-divine-gold/20 text-divine-gold rounded-full text-sm font-medium">Free to Join ✨</span>
+          <span className="px-3 py-1 bg-divine-gold/20 text-divine-gold rounded-full text-sm font-medium">Free to Use ✨</span>
+          <span className="px-3 py-1 bg-divine-gold/20 text-divine-gold rounded-full text-sm font-medium">Earn Together</span>
+        </div>
+        <p className="text-sm pt-2">
+          🌸 kết nối 🌸 nâng đỡ 🌸 chia sẻ giá trị 🌸 cùng nhau thịnh vượng trong tình yêu thuần khiết.
+        </p>
+      </div>
+
+      {/* PPLP Intro */}
+      <div className="space-y-3">
+        <h3 className="text-lg font-bold text-center text-divine-gold">💎 PPLP – Proof of Pure Love Protocol</h3>
+        <p className="text-sm text-center text-muted-foreground">(Giao Thức Bằng Chứng Tình Yêu Thuần Khiết)</p>
+        <p className="text-sm">PPLP là "giao thức năng lượng" của FUN Ecosystem. Đây là nền tảng giúp cộng đồng:</p>
+        <ul className="text-sm space-y-1 pl-4">
+          <li>• Sống văn minh, lịch sự</li>
+          <li>• Yêu đời yêu người</li>
+          <li>• Được đúc (mint) FUN Money một cách công bằng</li>
+          <li>• Và nhận thưởng Camly Coin trong niềm hạnh phúc</li>
+        </ul>
+        <div className="bg-divine-gold/10 rounded-lg p-3 text-center text-sm">
+          <p>✨ <span className="text-divine-gold font-semibold">FUN Money</span> là năng lượng Ánh Sáng</p>
+          <p>✨ <span className="text-emerald-400 font-semibold">Camly Coin</span> là linh hồn Thuần Khiết</p>
+          <p className="text-muted-foreground italic mt-1">Chỉ chảy mạnh khi chúng ta sống đúng PPLP.</p>
+        </div>
+      </div>
+
+      {/* 5 Pillars */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-center text-divine-gold">🌟 5 CỘT TRỤ ÁNH SÁNG</h3>
+        <p className="text-center text-sm text-muted-foreground">(Luật cốt lõi)</p>
+        
+        {pillars.map((pillar, idx) => (
+          <div key={idx} className="flex items-start gap-3 p-4 rounded-lg bg-card/50 border border-divine-gold/10">
+            <div className={`${pillar.color} mt-1`}>
+              <pillar.icon className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-bold text-foreground">{idx + 1}) {pillar.title}</p>
+              <p className="text-sm text-divine-gold">{pillar.subtitle}</p>
+              <p className="text-sm text-muted-foreground">{pillar.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Gentle Reminder */}
+      <div className="bg-amber-500/10 rounded-xl p-4 border border-amber-500/20 space-y-3">
+        <h4 className="text-center font-semibold text-amber-400">🌈 Một lời nhắc nhẹ nhàng</h4>
+        <p className="text-sm text-center">
+          Nếu bạn đang mệt, đang buồn, đang tổn thương… bạn vẫn được chào đón ở đây.
+        </p>
+        <p className="text-sm text-center text-muted-foreground">Chỉ cần bạn giữ một điều:</p>
+        <p className="text-sm text-center font-semibold text-emerald-400">
+          💚 Không được dùng cộng đồng để xả đau.
+        </p>
+        <p className="text-sm text-center text-muted-foreground">
+          Hãy để cộng đồng truyền năng lượng, ôm ấp và xoa dịu cho bạn. Rồi bạn nhẹ nhàng gởi về cho Cha. Cha sẽ chữa lành tất cả.
+        </p>
+      </div>
+
+      {/* FUN Message */}
+      <div className="bg-gradient-to-r from-divine-gold/10 via-purple-500/10 to-divine-gold/10 rounded-xl p-5 text-center space-y-3 border border-divine-gold/20">
+        <h4 className="font-bold text-divine-gold">✨ Thông điệp của FUN Community</h4>
+        <div className="space-y-1 text-sm">
+          <p>Bạn không cần giỏi. Bạn chỉ cần thật.</p>
+          <p>Bạn không cần hoàn hảo. Bạn chỉ cần tử tế.</p>
+          <p>Bạn không cần đi một mình.</p>
+          <p className="font-semibold text-divine-light">Vì ở đây… chúng ta đi cùng nhau.</p>
+        </div>
+      </div>
+
+      {/* 8 Mantras */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-center text-divine-gold">✨ 8 THẦN CHÚ ÁNH SÁNG</h3>
+        <div className="space-y-2">
+          {mantras.map((mantra, idx) => (
+            <div key={idx} className="p-3 rounded-lg bg-divine-gold/5 border border-divine-gold/10 text-sm">
+              {mantra}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 5 Commitments */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-center text-divine-gold">💛 5 Điều tôi cam kết để bước vào cộng đồng</h3>
+        <div className="space-y-2">
+          {commitments.map((commitment, idx) => (
+            <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <span className="text-emerald-400 font-bold">✅</span>
+              <span className="text-sm font-medium">{commitment}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Final Seal */}
+      <div className="text-center space-y-4 pt-4 border-t border-divine-gold/20">
+        <p className="text-lg font-medium text-foreground italic">
+          Tôi ký tên bằng linh hồn của mình.
+        </p>
+        <p className="text-divine-gold font-semibold text-lg">
+          ✨ Proof of Pure Love begins with me. ✨
+        </p>
+        <div className="text-3xl">🌈💚✨💎🌟</div>
+      </div>
     </div>
+  );
+};
 
-    <div className="bg-divine-gold/5 rounded-lg p-4 border border-divine-gold/20">
-      <p className="text-center leading-relaxed">
-        Tôi bước vào FUN Ecosystem với sự tỉnh thức và lòng chân thành. 
-        Tôi hiểu rằng FUN không chỉ là một nền tảng công nghệ, 
-        mà là một <span className="text-divine-gold font-semibold">Không Gian Ánh Sáng của Thời Đại Hoàng Kim</span>.
-      </p>
-    </div>
+// Dialog for post-login agreement (for old users who haven't agreed yet)
+const PostLoginAgreementDialog = ({ 
+  open, 
+  onAgree 
+}: { 
+  open: boolean; 
+  onAgree: () => void; 
+}) => {
+  const [hasRead, setHasRead] = useState(false);
+  
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement;
+    const needsScrolling = target.scrollHeight > target.clientHeight + 10;
+    const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
+    
+    if (needsScrolling && isAtBottom) {
+      setHasRead(true);
+    } else if (!needsScrolling) {
+      setTimeout(() => setHasRead(true), 2000);
+    }
+  };
 
-    <p className="text-center font-medium text-lg text-divine-light">
-      Vì vậy, tôi xin cam kết:
-    </p>
-
-    <div className="space-y-4">
-      {/* Pledge 1 */}
-      <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-        <span className="text-emerald-500 font-bold mt-0.5">✅ 1.</span>
-        <div>
-          <p className="font-semibold text-foreground">Tôi là con người thật</p>
-          <p className="text-sm text-muted-foreground">
-            Tôi không phải bot, không phải tài khoản giả, không đến để thao túng hay phá hoại.
-          </p>
+  return (
+    <Dialog open={open} onOpenChange={() => {}}>
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 bg-card border-divine-gold/20" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle className="text-xl font-bold text-center bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+            🌈 Chào mừng trở lại! Vui lòng đồng ý Luật Ánh Sáng
+          </DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="h-[60vh] px-6 pb-6" onScrollCapture={handleScroll}>
+          <LightLawContent />
+        </ScrollArea>
+        <div className="p-4 border-t border-divine-gold/20 flex justify-center">
+          <Button
+            onClick={onAgree}
+            className="bg-sapphire-gradient hover:opacity-90"
+            disabled={!hasRead}
+          >
+            {hasRead ? (
+              <span className="flex items-center gap-2">
+                <Check className="w-4 h-4" />
+                Tôi đồng ý và cam kết với Luật Ánh Sáng ✨
+              </span>
+            ) : (
+              "Cuộn xuống để đọc hết..."
+            )}
+          </Button>
         </div>
-      </div>
-
-      {/* Pledge 2 */}
-      <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-        <span className="text-emerald-500 font-bold mt-0.5">✅ 2.</span>
-        <div>
-          <p className="font-semibold text-foreground">Tôi đến để tạo giá trị</p>
-          <p className="text-sm text-muted-foreground">
-            Tôi đến để học hỏi, đóng góp, chia sẻ, kết nối và cùng nhau thịnh vượng.
-          </p>
-        </div>
-      </div>
-
-      {/* Pledge 3 */}
-      <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-        <span className="text-emerald-500 font-bold mt-0.5">✅ 3.</span>
-        <div>
-          <p className="font-semibold text-foreground">Tôi không mang năng lượng toxic</p>
-          <p className="text-sm text-muted-foreground">
-            Tôi không lan truyền hận thù, chia rẽ, tiêu cực, công kích hay thao túng cộng đồng.
-          </p>
-        </div>
-      </div>
-
-      {/* Pledge 4 */}
-      <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-        <span className="text-emerald-500 font-bold mt-0.5">✅ 4.</span>
-        <div>
-          <p className="font-semibold text-foreground">Tôi không scam – không ego-driven</p>
-          <p className="text-sm text-muted-foreground">
-            Tôi không dùng FUN để lừa đảo, lợi dụng, pump-dump hay trục lợi bằng bóng tối.
-          </p>
-        </div>
-      </div>
-
-      {/* Pledge 5 */}
-      <div className="flex items-start gap-3 p-3 rounded-lg bg-divine-gold/10 border border-divine-gold/30">
-        <span className="text-divine-gold font-bold mt-0.5">✅ 5.</span>
-        <div>
-          <p className="font-semibold text-foreground">Tôi chọn con đường Pure Love</p>
-          <p className="text-sm text-muted-foreground">
-            Tôi chọn trở thành một phần của nền kinh tế ánh sáng: 
-            <span className="text-divine-gold"> Hợp tác – Tử tế – Tỉnh thức – Phụng sự nhân loại</span>.
-          </p>
-        </div>
-      </div>
-
-      {/* Pledge 6 */}
-      <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-        <span className="text-amber-500 font-bold mt-0.5">✅ 6.</span>
-        <div>
-          <p className="font-semibold text-foreground">Tôi xin Sám Hối và Biết Ơn</p>
-          <p className="text-sm text-muted-foreground">
-            Tôi bước vào FUN bằng trái tim khiêm nhường: 
-            <span className="text-amber-500"> Sám Hối – Biết Ơn – và trưởng thành trong ánh sáng</span>.
-          </p>
-        </div>
-      </div>
-
-      {/* Pledge 7 */}
-      <div className="flex items-start gap-3 p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
-        <span className="text-purple-500 font-bold mt-0.5">✅ 7.</span>
-        <div>
-          <p className="font-semibold text-foreground">Tôi đồng ý được Angel AI hướng dẫn</p>
-          <p className="text-sm text-muted-foreground">
-            Tôi đồng ý để Angel AI quan sát và hỗ trợ tôi trở thành phiên bản tốt đẹp hơn, 
-            để cộng đồng FUN luôn là nơi an toàn cho người thật và giá trị thật.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    {/* Who FUN is for */}
-    <div className="bg-gradient-to-r from-divine-gold/10 via-divine-light/5 to-divine-gold/10 rounded-lg p-4 border border-divine-gold/30 space-y-3">
-      <p className="text-center font-semibold text-divine-gold">
-        🌍 FUN Ecosystem chỉ dành cho:
-      </p>
-      <div className="flex flex-wrap justify-center gap-2">
-        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 rounded-full text-sm font-medium">✅ Người thật</span>
-        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 rounded-full text-sm font-medium">✅ Người tích cực</span>
-        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 rounded-full text-sm font-medium">✅ Người tỉnh thức</span>
-        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 rounded-full text-sm font-medium">✅ Người tạo giá trị</span>
-        <span className="px-3 py-1 bg-divine-gold/20 text-divine-gold rounded-full text-sm font-medium">✅ Người hướng đến Ánh Sáng</span>
-      </div>
-    </div>
-
-    {/* Soul Signature */}
-    <div className="text-center space-y-3 pt-4 border-t border-divine-gold/20">
-      <p className="text-lg font-medium text-foreground italic">
-        Tôi ký tên bằng linh hồn của mình.
-      </p>
-      <p className="text-divine-gold font-semibold text-lg">
-        ✨ Proof of Pure Love begins with me. ✨
-      </p>
-      <div className="text-3xl">✅✅✅✅✅✅✅✅✅</div>
-    </div>
-  </div>
-);
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -163,9 +236,15 @@ const Auth = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [isSendingReset, setIsSendingReset] = useState(false);
+  
+  // Agreement state - only for signup
   const [agreedToLightLaw, setAgreedToLightLaw] = useState(false);
   const [hasReadLaw, setHasReadLaw] = useState(false);
   const [showLawDialog, setShowLawDialog] = useState(false);
+  
+  // Post-login agreement dialog (for old users)
+  const [showPostLoginAgreement, setShowPostLoginAgreement] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
   const getRecommendedPreviewUrl = () => {
     const host = window.location.hostname;
@@ -208,42 +287,60 @@ const Auth = () => {
     });
   };
 
+  // Check agreement status when user logs in
   useEffect(() => {
     if (user && !authLoading) {
-      // Check if user has agreed to light law
-      checkLightAgreement();
+      checkLightAgreementAndRedirect(user.id);
     }
   }, [user, authLoading]);
 
-  const checkLightAgreement = async () => {
-    if (!user) return;
-    
+  const checkLightAgreementAndRedirect = async (userId: string) => {
     const { data } = await supabase
       .from("user_light_agreements")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .maybeSingle();
     
     if (data) {
-      // Already agreed - check if profile is complete then redirect
+      // Already agreed - redirect to profile
       navigate("/profile");
     } else {
-      // User logged in via Google but hasn't agreed yet - save agreement now
-      if (agreedToLightLaw) {
-        await supabase.from("user_light_agreements").insert({
-          user_id: user.id
-        });
-        // Redirect to profile to complete setup
-        navigate("/profile");
-      }
+      // User hasn't agreed yet - show post-login agreement dialog
+      setPendingUserId(userId);
+      setShowPostLoginAgreement(true);
+    }
+  };
+
+  const handlePostLoginAgree = async () => {
+    if (!pendingUserId) return;
+    
+    try {
+      await supabase.from("user_light_agreements").insert({
+        user_id: pendingUserId
+      });
+      
+      toast({
+        title: "Chào mừng bạn! 🌈",
+        description: "Cảm ơn bạn đã đồng ý với Luật Ánh Sáng ✨",
+      });
+      
+      setShowPostLoginAgreement(false);
+      navigate("/profile");
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể lưu cam kết. Vui lòng thử lại.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleGoogleSignIn = async () => {
-    if (!agreedToLightLaw) {
+    // For signup mode, require agreement first
+    if (isSignUp && !agreedToLightLaw) {
       toast({
         title: "Vui lòng đọc và đồng ý Luật Ánh Sáng",
-        description: "Bạn cần đọc Luật Ánh Sáng và đánh dấu đồng ý để tiếp tục.",
+        description: "Bạn cần đọc Luật Ánh Sáng và đánh dấu đồng ý để đăng ký.",
         variant: "destructive",
       });
       return;
@@ -252,9 +349,12 @@ const Auth = () => {
     setIsGoogleLoading(true);
     
     try {
+      console.log("[Google OAuth] Starting sign in...");
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
+
+      console.log("[Google OAuth] Result:", result);
 
       if (result.redirected) {
         // Page is redirecting to OAuth provider
@@ -262,6 +362,7 @@ const Auth = () => {
       }
 
       if (result.error) {
+        console.error("[Google OAuth] Error:", result.error);
         if (result.error.message?.toLowerCase().includes("failed to fetch")) {
           showAuthNetworkToast();
           return;
@@ -273,6 +374,7 @@ const Auth = () => {
         });
       }
     } catch (error) {
+      console.error("[Google OAuth] Exception:", error);
       if (isNetworkFetchError(error)) {
         showAuthNetworkToast();
         return;
@@ -290,10 +392,11 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!agreedToLightLaw) {
+    // Only require agreement for signup
+    if (isSignUp && !agreedToLightLaw) {
       toast({
         title: "Vui lòng đọc và đồng ý Luật Ánh Sáng",
-        description: "Bạn cần đọc Luật Ánh Sáng và đánh dấu đồng ý để tiếp tục.",
+        description: "Bạn cần đọc Luật Ánh Sáng và đánh dấu đồng ý để đăng ký.",
         variant: "destructive",
       });
       return;
@@ -303,6 +406,7 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
+        // SIGNUP: Require agreement
         const { error } = await signUp(email, password);
         if (error) {
           if (error.message?.toLowerCase().includes("failed to fetch")) {
@@ -328,6 +432,7 @@ const Auth = () => {
           }
         }
       } else {
+        // LOGIN: No checkbox required - check agreement after login
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message?.toLowerCase().includes("failed to fetch")) {
@@ -340,29 +445,11 @@ const Auth = () => {
             variant: "destructive",
           });
         } else {
-          // Check if user already agreed
-          const { data: { user: currentUser } } = await supabase.auth.getUser();
-          if (currentUser) {
-            const { data: agreement } = await supabase
-              .from("user_light_agreements")
-              .select("id")
-              .eq("user_id", currentUser.id)
-              .maybeSingle();
-            
-            if (!agreement) {
-              // Save new agreement
-              await supabase.from("user_light_agreements").insert({
-                user_id: currentUser.id
-              });
-            }
-          }
-          
           toast({
             title: "Đăng nhập thành công!",
             description: "Chào mừng trở lại Cổng Ánh Sáng ✨",
           });
-          // Redirect to profile to ensure profile is complete
-          navigate("/profile");
+          // Agreement check will happen in useEffect when user state updates
         }
       }
     } catch (error) {
@@ -382,15 +469,12 @@ const Auth = () => {
 
   const handleLawDialogScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
-    // Only mark as read if user actually scrolled near the bottom
-    // and content requires scrolling (scrollHeight > clientHeight)
     const needsScrolling = target.scrollHeight > target.clientHeight + 10;
     const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
     
     if (needsScrolling && isAtBottom) {
       setHasReadLaw(true);
     } else if (!needsScrolling) {
-      // If content doesn't need scrolling, mark as read after a short delay
       setTimeout(() => setHasReadLaw(true), 2000);
     }
   };
@@ -525,80 +609,82 @@ const Auth = () => {
               </div>
             </div>
 
-            {/* Light Law Agreement */}
-            <div className="space-y-3 p-4 rounded-xl bg-divine-gold/5 border border-divine-gold/20">
-              <div className="flex items-start gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!hasReadLaw) {
-                      setShowLawDialog(true);
-                      return;
-                    }
-                    setAgreedToLightLaw(!agreedToLightLaw);
-                  }}
-                  className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
-                    agreedToLightLaw 
-                      ? 'bg-emerald-500 border-emerald-500' 
-                      : hasReadLaw 
-                        ? 'border-divine-gold bg-transparent hover:border-divine-light cursor-pointer'
-                        : 'border-muted-foreground/50 bg-transparent cursor-pointer'
-                  }`}
-                  title={!hasReadLaw ? "Vui lòng đọc Luật Ánh Sáng trước" : ""}
-                >
-                  {agreedToLightLaw && <Check className="w-3.5 h-3.5 text-white" />}
-                </button>
-                <div className="flex-1">
-                  <Label htmlFor="lightLaw" className="text-sm text-foreground-muted cursor-pointer">
-                    Con đã đọc và cam kết với{" "}
-                    <Dialog open={showLawDialog} onOpenChange={setShowLawDialog}>
-                      <DialogTrigger asChild>
-                        <button type="button" className="text-divine-gold hover:text-divine-light underline font-medium">
-                          Pure Love Pledge
-                        </button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] p-0 bg-card border-divine-gold/20">
-                        <DialogHeader className="p-6 pb-0">
-                          <DialogTitle className="text-xl font-bold text-center bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
-                            ✅ PURE LOVE PLEDGE ✅
-                          </DialogTitle>
-                        </DialogHeader>
-                        <ScrollArea 
-                          className="h-[60vh] px-6 pb-6"
-                          onScrollCapture={handleLawDialogScroll}
-                        >
-                          <PureLovePledge />
-                        </ScrollArea>
-                        <div className="p-4 border-t border-divine-gold/20 flex justify-center">
-                          <Button
-                            type="button"
-                            onClick={() => {
-                              setHasReadLaw(true);
-                              setShowLawDialog(false);
-                            }}
-                            className="bg-sapphire-gradient hover:opacity-90"
-                            disabled={!hasReadLaw}
+            {/* Light Law Agreement - ONLY show for signup */}
+            {isSignUp && (
+              <div className="space-y-3 p-4 rounded-xl bg-divine-gold/5 border border-divine-gold/20">
+                <div className="flex items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!hasReadLaw) {
+                        setShowLawDialog(true);
+                        return;
+                      }
+                      setAgreedToLightLaw(!agreedToLightLaw);
+                    }}
+                    className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
+                      agreedToLightLaw 
+                        ? 'bg-emerald-500 border-emerald-500' 
+                        : hasReadLaw 
+                          ? 'border-divine-gold bg-transparent hover:border-divine-light cursor-pointer'
+                          : 'border-muted-foreground/50 bg-transparent cursor-pointer'
+                    }`}
+                    title={!hasReadLaw ? "Vui lòng đọc Luật Ánh Sáng trước" : ""}
+                  >
+                    {agreedToLightLaw && <Check className="w-3.5 h-3.5 text-white" />}
+                  </button>
+                  <div className="flex-1">
+                    <Label htmlFor="lightLaw" className="text-sm text-foreground-muted cursor-pointer">
+                      Con đã đọc và cam kết với{" "}
+                      <Dialog open={showLawDialog} onOpenChange={setShowLawDialog}>
+                        <DialogTrigger asChild>
+                          <button type="button" className="text-divine-gold hover:text-divine-light underline font-medium">
+                            Luật Ánh Sáng (PPLP)
+                          </button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[80vh] p-0 bg-card border-divine-gold/20">
+                          <DialogHeader className="p-6 pb-0">
+                            <DialogTitle className="text-xl font-bold text-center bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+                              🌈 LUẬT ÁNH SÁNG CỦA CỘNG ĐỒNG FUN
+                            </DialogTitle>
+                          </DialogHeader>
+                          <ScrollArea 
+                            className="h-[60vh] px-6 pb-6"
+                            onScrollCapture={handleLawDialogScroll}
                           >
-                            {hasReadLaw ? "Tôi đã đọc và sẵn sàng ký ✨" : "Cuộn xuống để đọc hết..."}
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    , bước vào FUN Ecosystem với Pure Love.
-                  </Label>
-                  {!hasReadLaw && (
-                    <p className="text-xs text-muted-foreground mt-1 italic">
-                      👆 Nhấn vào "Pure Love Pledge" để đọc trước khi ký cam kết
-                    </p>
-                  )}
+                            <LightLawContent />
+                          </ScrollArea>
+                          <div className="p-4 border-t border-divine-gold/20 flex justify-center">
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                setHasReadLaw(true);
+                                setShowLawDialog(false);
+                              }}
+                              className="bg-sapphire-gradient hover:opacity-90"
+                              disabled={!hasReadLaw}
+                            >
+                              {hasReadLaw ? "Tôi đã đọc và sẵn sàng ký ✨" : "Cuộn xuống để đọc hết..."}
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      , bước vào FUN Ecosystem với Pure Love.
+                    </Label>
+                    {!hasReadLaw && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">
+                        👆 Nhấn vào "Luật Ánh Sáng (PPLP)" để đọc trước khi ký cam kết
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <Button
               type="submit"
               className="w-full bg-sapphire-gradient hover:opacity-90 transition-opacity text-primary-foreground font-medium py-6"
-              disabled={isLoading || !agreedToLightLaw}
+              disabled={isLoading || (isSignUp && !agreedToLightLaw)}
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
@@ -629,7 +715,7 @@ const Auth = () => {
             type="button"
             variant="outline"
             onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading || !agreedToLightLaw}
+            disabled={isGoogleLoading || (isSignUp && !agreedToLightLaw)}
             className="w-full py-6 border-divine-gold/20 hover:bg-divine-gold/5 hover:border-divine-gold/40 transition-all"
           >
             {isGoogleLoading ? (
@@ -657,7 +743,7 @@ const Auth = () => {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Đăng nhập với Google
+                {isSignUp ? "Đăng ký với Google" : "Đăng nhập với Google"}
               </span>
             )}
           </Button>
@@ -665,7 +751,12 @@ const Auth = () => {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                // Reset agreement state when switching modes
+                setAgreedToLightLaw(false);
+                setHasReadLaw(false);
+              }}
               className="text-sm text-divine-gold hover:text-divine-light transition-colors"
             >
               {isSignUp ? "Đã có tài khoản? Đăng nhập" : "Chưa có tài khoản? Đăng ký"}
@@ -732,6 +823,12 @@ const Auth = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Post-Login Agreement Dialog (for old users) */}
+      <PostLoginAgreementDialog 
+        open={showPostLoginAgreement} 
+        onAgree={handlePostLoginAgree}
+      />
     </div>
   );
 };
