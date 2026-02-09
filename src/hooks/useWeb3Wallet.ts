@@ -515,15 +515,27 @@ const getMetaMaskDeepLink = (): string => {
       const handleAccountsChanged = async (accounts: string[]) => {
         try {
           if (accounts.length === 0) {
-            disconnect();
-          } else if (state.isConnected) {
+            // MetaMask locked or account removed — keep wallet_connected flag
+            // so we auto-reconnect when user unlocks MetaMask
+            setState((prev) => ({
+              ...prev,
+              isConnected: false,
+              address: null,
+              shortAddress: null,
+              balances: [],
+              error: null,
+            }));
+            // DO NOT remove wallet_connected — user didn't explicitly disconnect
+          } else if (state.isConnected || localStorage.getItem("wallet_connected") === "true") {
             const newAddress = accounts[0];
             const balances = await fetchBalances(newAddress);
             setState((prev) => ({
               ...prev,
+              isConnected: true,
               address: newAddress,
               shortAddress: getShortAddress(newAddress),
               balances,
+              error: null,
             }));
           }
         } catch (err) {
@@ -566,95 +578,107 @@ const getMetaMaskDeepLink = (): string => {
       };
     }, [hasWallet, state.isConnected, state.address, disconnect, fetchBalances, refreshBalances]);
  
-     // Auto-reconnect on page load
+     // Auto-reconnect on page load + periodic retry
      useEffect(() => {
        // Skip auto-reconnect entirely when inside an iframe
        if (isInIframe()) {
-         localStorage.removeItem("wallet_connected");
          return;
        }
 
        const wasConnected = localStorage.getItem("wallet_connected") === "true";
-       if (wasConnected && hasWallet && !state.isConnecting && !state.isConnected) {
-         const silentReconnect = async () => {
-          try {
-            const ethereum = (window as any).ethereum;
+       if (!wasConnected || !hasWallet) return;
 
-            // Check if ethereum provider is ready
-            if (!ethereum || typeof ethereum.request !== "function") {
-              console.log("Ethereum provider not ready");
-              localStorage.removeItem("wallet_connected");
-              return;
-            }
+       const silentReconnect = async () => {
+         // Don't reconnect if already connected
+         if (state.isConnected || state.isConnecting || connectingRef.current) return;
 
-            // Use eth_accounts only (never eth_requestAccounts for silent reconnect)
-            let accounts: string[] = [];
-            try {
-              const timeoutPromise = new Promise<string[]>((_, reject) =>
-                setTimeout(() => reject(new Error("Timeout")), 5000)
-              );
-              accounts = await Promise.race([
-                ethereum.request({ method: "eth_accounts" }),
-                timeoutPromise,
-              ]);
-            } catch {
-              // Any error (timeout, MetaMask internal) → give up silently
-              console.log("Silent reconnect: eth_accounts failed");
-              localStorage.removeItem("wallet_connected");
-              return;
-            }
+         try {
+           const ethereum = (window as any).ethereum;
 
-            if (!accounts || accounts.length === 0) {
-              localStorage.removeItem("wallet_connected");
-              return;
-            }
+           // Check if ethereum provider is ready
+           if (!ethereum || typeof ethereum.request !== "function") {
+             console.log("[Angel AI] Ethereum provider not ready, will retry...");
+             return; // Don't remove flag — retry later
+           }
 
-            const address = accounts[0];
+           // Use eth_accounts only (never eth_requestAccounts for silent reconnect)
+           let accounts: string[] = [];
+           try {
+             const timeoutPromise = new Promise<string[]>((_, reject) =>
+               setTimeout(() => reject(new Error("Timeout")), 5000)
+             );
+             accounts = await Promise.race([
+               ethereum.request({ method: "eth_accounts" }),
+               timeoutPromise,
+             ]);
+           } catch {
+             console.log("[Angel AI] Silent reconnect: eth_accounts failed, will retry...");
+             return; // Don't remove flag — retry later
+           }
 
-            let chainIdHex = "0x0";
-            try {
-              chainIdHex = await ethereum.request({ method: "eth_chainId" });
-            } catch {
-              localStorage.removeItem("wallet_connected");
-              return;
-            }
+           if (!accounts || accounts.length === 0) {
+             // MetaMask is locked — keep flag, will reconnect when unlocked
+             console.log("[Angel AI] No accounts available (wallet may be locked), will retry...");
+             return;
+           }
 
-            const chainId = parseInt(chainIdHex, 16);
-            const isCorrectChain = chainId === BSC_CHAIN_ID;
+           const address = accounts[0];
 
-            if (isCorrectChain) {
-              let balances: TokenBalance[] = [];
-              try {
-                balances = await fetchBalances(address);
-              } catch {
-                // Balance fetch failed, still show connected
-              }
+           let chainIdHex = "0x0";
+           try {
+             chainIdHex = await ethereum.request({ method: "eth_chainId" });
+           } catch {
+             return; // Don't remove flag — retry later
+           }
 
-              setState({
-                isConnected: true,
-                isConnecting: false,
-                address,
-                shortAddress: getShortAddress(address),
-                chainId: BSC_CHAIN_ID,
-                isCorrectChain: true,
-                balances,
-                totalUsdValue: 0,
-                error: null,
-                networkDiagnostics: null,
-              });
-            }
-          } catch (error) {
-            // Catch-all: never let auto-reconnect crash the app
-            console.log("Silent reconnect failed:", error);
-            localStorage.removeItem("wallet_connected");
-          }
-        };
+           const chainId = parseInt(chainIdHex, 16);
+           const isCorrectChain = chainId === BSC_CHAIN_ID;
 
-        // Delay to ensure MetaMask is fully initialized
-        const timer = setTimeout(silentReconnect, 1000);
-        return () => clearTimeout(timer);
-      }
-    }, [hasWallet]);
+           let balances: TokenBalance[] = [];
+           if (isCorrectChain) {
+             try {
+               balances = await fetchBalances(address);
+             } catch {
+               // Balance fetch failed, still show connected
+             }
+           }
+
+           setState({
+             isConnected: true,
+             isConnecting: false,
+             address,
+             shortAddress: getShortAddress(address),
+             chainId,
+             isCorrectChain,
+             balances,
+             totalUsdValue: 0,
+             error: isCorrectChain ? null : "Vui lòng chuyển sang mạng BSC Testnet",
+             networkDiagnostics: null,
+           });
+         } catch (error) {
+           // Catch-all: never let auto-reconnect crash the app
+           console.log("[Angel AI] Silent reconnect failed, will retry:", error);
+         }
+       };
+
+       // Initial reconnect with delay for MetaMask to initialize
+       const initialTimer = setTimeout(silentReconnect, 1000);
+
+       // Periodic retry every 5 seconds if not yet connected
+       const retryInterval = setInterval(() => {
+         const stillWantsConnection = localStorage.getItem("wallet_connected") === "true";
+         if (stillWantsConnection && !state.isConnected && !connectingRef.current) {
+           silentReconnect();
+         } else if (state.isConnected) {
+           clearInterval(retryInterval);
+         }
+       }, 5000);
+
+       return () => {
+         clearTimeout(initialTimer);
+         clearInterval(retryInterval);
+       };
+     }, [hasWallet, state.isConnected]);
  
    return {
      ...state,
