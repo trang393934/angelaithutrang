@@ -1,106 +1,148 @@
 
 
-## Plan: Fix Celebration Receipt + Add Token Selector & Message Templates
+# FUN Public Landing Profile -- Upgrade Plan
 
-### Problem Analysis
-
-1. **Wrong coin label in celebration**: `TipCelebrationReceipt` hardcodes "Camly Coin" on line 258 and uses `camlyCoinLogo` everywhere, even when the user transferred FUN Money.
-2. **No token type passed to receipt**: `handleCryptoSuccess` in `GiftCoinDialog` passes `tokenSymbol` in the message field but doesn't propagate it to the receipt component for display purposes.
-3. **No dynamic token selector**: Currently the dialog uses fixed 3 tabs (Camly, CAMLY Web3, FUN Money) rather than reading actual wallet balances.
-4. **No message input for Web3 transfers**: The `CryptoTransferTab` component has no message/note field, unlike the internal Camly tab.
+This is a large enhancement to transform `fun.rich/{handle}` into a full "personal brand page + SuperApp gateway." The work is organized into phases to deliver value incrementally.
 
 ---
 
-### Changes Required
+## Phase 1: Database Foundation (Privacy Settings + Profile Fields)
 
-#### File 1: `src/components/gifts/TipCelebrationReceipt.tsx`
+**New table: `profile_public_settings`**
+- `user_id` (PK, references profiles)
+- `public_profile_enabled` (bool, default true)
+- `allow_public_message` (bool, default true)
+- `allow_public_transfer` (bool, default true)
+- `allow_public_follow` (bool, default true)
+- `show_friends_count` (bool, default true)
+- `show_stats` (bool, default true)
+- `show_modules` (bool, default true)
+- `show_donation_button` (bool, default false)
+- `enabled_modules` (jsonb, default all modules)
+- `featured_items` (jsonb, default null -- for pinned content)
+- `tagline` (text, nullable -- one-line description)
+- `badge_type` (text, nullable -- 'founder'/'verified'/'cosmic_coach'/'business')
+- `created_at`, `updated_at`
+- RLS: owner can read/write; anyone can read (for public profile display)
 
-- Add `tokenType` field to `TipReceiptData` interface: `tokenType?: "camly" | "camly_web3" | "fun_money" | "internal"`
-- Dynamically select coin logo based on `tokenType`:
-  - `"internal"` or `"camly"` -> `camly-coin-logo.png` + label "Camly Coin"
-  - `"camly_web3"` -> `camly-coin-logo.png` + label "CAMLY"
-  - `"fun_money"` -> `fun-money-logo.png` + label "FUN Money"
-- Update the falling coin animation to use the correct logo
-- Update the amount display area (line 254-259) to show correct token name and logo
-- Update the BscScan link to use correct explorer URL (mainnet vs testnet) based on `tokenType`
-- Add message template suggestions in the display (pre-filled messages like "Chuc mung ban!", "Cam on ban!")
+**New table: `profile_view_events`** (for analytics)
+- `id` (uuid PK)
+- `profile_user_id` (uuid)
+- `viewer_user_id` (uuid, nullable -- null if anonymous)
+- `event_type` (text -- 'view', 'follow_click', 'message_click', 'transfer_click', 'module_open', 'signup_start')
+- `referrer_handle` (text, nullable)
+- `created_at`
+- RLS: insert for anyone; select for profile owner only
 
-#### File 2: `src/components/gifts/GiftCoinDialog.tsx`
-
-- Pass `tokenType` in `celebrationData` for all three flows:
-  - Internal Camly: `tokenType: "internal"`
-  - CAMLY Web3: `tokenType: "camly_web3"`
-  - FUN Money: `tokenType: "fun_money"`
-- Update `handleCryptoSuccess` to accept and forward `tokenType`
-
-#### File 3: `src/components/gifts/CryptoTransferTab.tsx`
-
-- Add a message input field with template suggestions:
-  - Template messages: "Chuc mung ban!", "Cam on ban rat nhieu!", "Yeu thuong gui ban!", "Tang ban mon qua nho!", custom input
-  - Quick-select chips + free text input
-- Add a dropdown/select for other ERC-20 tokens found in the sender's wallet:
-  - On wallet connect, scan for known token contracts (CAMLY, FUN, and a configurable list of popular BSC tokens)
-  - Display token balances in a dropdown selector
-  - When user selects a different token, update the transfer logic accordingly
-- Pass the message through to the `onSuccess` callback so it reaches the celebration receipt
+**Add `tagline` column to `profiles` table** (or keep it in `profile_public_settings` -- keeping in settings table is cleaner).
 
 ---
 
-### Technical Details
+## Phase 2: Privacy-Aware Public Profile Hook
 
-#### Token Detection Logic (new utility)
-
-When the wallet is connected, the system will attempt to read balances of known tokens using their contract addresses via `balanceOf()`. Tokens with balance > 0 will appear in a dropdown above the amount input. The list of known tokens includes:
-- CAMLY (BSC Mainnet, 0x0910...)
-- FUN Money (BSC Testnet, contract from funMoneyABI)
-- BNB/tBNB (native balance via `provider.getBalance()`)
-
-This will be implemented as a lightweight scan within the existing `CryptoTransferTab`, not a full token indexer.
-
-#### Message Templates
-
-Pre-defined message chips:
-- "Chuc mung ban! 🎉"
-- "Cam on ban rat nhieu! 💚"
-- "Yeu thuong gui ban! 💕"
-- "Tang ban mon qua nho! 🎁"
-- "FUN cung nhau! 🌟"
-- Custom text input
-
-#### Updated TipReceiptData Interface
-
-```typescript
-interface TipReceiptData {
-  // ...existing fields...
-  tokenType?: "internal" | "camly_web3" | "fun_money";
-  tokenSymbol?: string;
-  explorerUrl?: string;
-}
-```
-
-#### Celebration Receipt Dynamic Display
-
-```text
-Token: FUN Money -> logo: fun-money-logo.png, label: "FUN Money", explorer: testnet.bscscan.com
-Token: CAMLY     -> logo: camly-coin-logo.png, label: "CAMLY", explorer: bscscan.com
-Token: internal  -> logo: camly-coin-logo.png, label: "Camly Coin", explorer: none (no tx_hash)
-```
+Update `usePublicProfile.ts`:
+- Fetch `profile_public_settings` alongside profile data
+- Return privacy flags so UI components can conditionally hide/show sections
+- Respect `public_profile_enabled` (show 404 if disabled)
 
 ---
+
+## Phase 3: UI Enhancements
+
+### 3.1 Header Upgrade
+- Add **tagline** display below bio
+- Add **badge** display (Founder / Verified / Cosmic Coach / Business) as a colored chip next to display name
+- Improve "3-second clarity" layout
+
+### 3.2 Privacy-Aware Stats
+- `PublicProfileStats`: hide if `show_stats === false`
+- `PublicProfileFriends`: hide friends count if `show_friends_count === false`
+
+### 3.3 Privacy-Aware Actions
+- Message button: show "Chỉ bạn bè" (Friends only) if `allow_public_message === false` and viewer is not a friend
+- Transfer/Gift button: show locked state if `allow_public_transfer === false` and not friend
+- Donation mode: show "Donate" button if `show_donation_button === true`
+
+### 3.4 Module Gateway (Filtered)
+- `FunWorldsTiles`: only show modules from `enabled_modules` list instead of all modules
+- Each tile shows icon + name + description + "Open" CTA
+
+### 3.5 Featured Content Section (New)
+- New component `PublicProfileFeatured.tsx`
+- Display pinned items from `featured_items` JSON (1 video, 1 post, 1 course, 1 product, 1 campaign)
+- Each item shows thumbnail, title, and link
+
+### 3.6 "Ask Angel About This Person" Button (New)
+- New component `AskAngelButton.tsx`
+- Opens a modal that calls the existing `angel-chat` edge function with a special prompt
+- Only returns public and permissioned data
+- Displays AI summary of the person's public activity
+
+---
+
+## Phase 4: Viral Growth Features
+
+### 4.1 Referral Param Support
+- Parse `?ref=handle` from URL in `HandleProfile.tsx`
+- Store referrer in localStorage
+- After signup, record referral in a new `referrals` column or use existing tracking
+
+### 4.2 Auto-Follow After Join
+- After signup from a profile link, redirect back to the profile
+- Show a "Follow [Name] now?" prompt (1-click)
+
+### 4.3 OpenGraph Meta Tags
+- Add dynamic OG meta tags in `index.html` using a lightweight approach
+- Since this is a SPA, create a small edge function `og-profile` that returns OG-optimized HTML for crawlers
+- Tags: og:title (display name), og:description (tagline/bio), og:image (avatar)
+
+---
+
+## Phase 5: Profile Settings UI
+
+### 5.1 Privacy Settings in Profile Page
+- Add a new section in `src/pages/Profile.tsx` for "Public Profile Settings"
+- Toggle switches for each privacy flag
+- Module selector (checkboxes for which FUN Worlds to show)
+- Featured content picker (select posts/content to pin)
+- Badge selection (if eligible)
+- Tagline input field
+
+---
+
+## Phase 6: Event Tracking
+
+- Create `trackProfileEvent()` utility function
+- Insert events into `profile_view_events` table
+- Track: profile views, follow clicks, message clicks, transfer clicks, module opens, signup starts
+
+---
+
+## Technical Details
+
+### Files to Create
+1. `src/components/public-profile/PublicProfileFeatured.tsx` -- Featured/pinned content section
+2. `src/components/public-profile/AskAngelButton.tsx` -- "Ask Angel" AI integration
+3. `src/components/public-profile/ProfileBadge.tsx` -- Badge chip component
+4. `src/hooks/useProfilePublicSettings.ts` -- Hook for privacy settings CRUD
+5. `src/lib/profileEvents.ts` -- Event tracking utility
 
 ### Files to Modify
+1. `src/hooks/usePublicProfile.ts` -- Add privacy settings fetch, respect flags
+2. `src/pages/HandleProfile.tsx` -- Add referral param parsing, new sections, event tracking
+3. `src/components/public-profile/PublicProfileHeader.tsx` -- Add tagline + badge
+4. `src/components/public-profile/PublicProfileActions.tsx` -- Respect privacy flags (friends-only lock)
+5. `src/components/public-profile/PublicProfileStats.tsx` -- Conditional display based on privacy
+6. `src/components/public-profile/PublicProfileFriends.tsx` -- Conditional display
+7. `src/components/public-profile/FunWorldsTiles.tsx` -- Filter by enabled_modules
+8. `src/components/public-profile/PublicProfileJoinCTA.tsx` -- Add auto-follow logic
+9. `src/pages/Profile.tsx` -- Add privacy settings section
 
-| File | Changes |
-|------|---------|
-| `src/components/gifts/TipCelebrationReceipt.tsx` | Add tokenType-aware logo/label/explorer, message display |
-| `src/components/gifts/GiftCoinDialog.tsx` | Pass tokenType + explorerUrl in celebrationData |
-| `src/components/gifts/CryptoTransferTab.tsx` | Add message input with templates, token dropdown, pass message to onSuccess |
+### Database Migration
+- Create `profile_public_settings` table with RLS policies
+- Create `profile_view_events` table with RLS policies
+- Auto-create settings row via trigger when profile is created
 
-### Expected Results
-
-1. When sending FUN Money -> celebration shows FUN Money logo + "FUN Money" label + testnet.bscscan.com link
-2. When sending CAMLY -> celebration shows CAMLY logo + "CAMLY" label + bscscan.com link
-3. When sending internal Camly Coin -> celebration shows Camly Coin logo + "Camly Coin" label
-4. Users can write/select a message before sending Web3 transfers
-5. Users can see other available tokens in their wallet and select them
+### Estimated Scope
+This is a substantial feature set. The implementation will be done progressively, starting with the database foundation and core privacy controls, then layering on UI enhancements and viral features.
 
