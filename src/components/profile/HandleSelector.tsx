@@ -53,26 +53,7 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
   const isChanged = handle !== (currentHandle || "");
   const canSave = checkResult?.available && isChanged && !isChecking && !isClaiming;
 
-  if (!canChangeHandle && currentHandle) {
-    return (
-      <div className="space-y-2">
-        {showLabel && (
-          <Label className="text-sm font-medium flex items-center gap-2">
-            <LinkIcon className="w-4 h-4 text-divine-gold" />
-            FUN Profile Link
-          </Label>
-        )}
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
-          <span className="text-sm text-muted-foreground">fun.rich/</span>
-          <span className="text-sm font-medium text-foreground">{currentHandle}</span>
-          <Badge variant="outline" className="ml-auto text-xs">
-            <Clock className="w-3 h-3 mr-1" />
-            Đổi sau {daysUntilChange} ngày
-          </Badge>
-        </div>
-      </div>
-    );
-  }
+  // No cooldown restriction - always show editable form
 
   return (
     <div className="space-y-3">

@@ -12,7 +12,7 @@ const HANDLE_REGEX = /^[a-z0-9][a-z0-9_]*[a-z0-9]$/;
 const HANDLE_SHORT_REGEX = /^[a-z0-9]{3}$/; // For 3-char handles
 const MIN_LENGTH = 3;
 const MAX_LENGTH = 30;
-const COOLDOWN_DAYS = 30;
+// No cooldown - users can change handle anytime
 
 function normalizeHandle(input: string): string {
   return input
@@ -97,24 +97,14 @@ export function useHandle() {
     loadHandle();
   }, [user]);
 
-  // Check if user can change handle (30-day cooldown)
+  // Always allow handle changes - no cooldown
   const canChangeHandle = useCallback(() => {
-    if (!currentHandle) return true; // First time setting
-    if (!handleUpdatedAt) return true;
-    
-    const lastChange = new Date(handleUpdatedAt);
-    const now = new Date();
-    const diffDays = (now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays >= COOLDOWN_DAYS;
-  }, [currentHandle, handleUpdatedAt]);
+    return true;
+  }, []);
 
   const daysUntilChange = useCallback(() => {
-    if (!handleUpdatedAt) return 0;
-    const lastChange = new Date(handleUpdatedAt);
-    const now = new Date();
-    const diffDays = (now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
-    return Math.max(0, Math.ceil(COOLDOWN_DAYS - diffDays));
-  }, [handleUpdatedAt]);
+    return 0;
+  }, []);
 
   // Check handle availability
   const checkAvailability = useCallback(async (handleToCheck: string) => {

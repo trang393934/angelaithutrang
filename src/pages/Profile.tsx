@@ -263,15 +263,7 @@ const Profile = () => {
       return;
     }
     
-    // Check monthly limit
-    if (walletChangeCount >= 2) {
-      toast({
-        title: "Đã đạt giới hạn",
-        description: "Bạn chỉ được đổi địa chỉ ví tối đa 2 lần/tháng. Vui lòng thử lại vào tháng sau.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // No monthly limit - users can change wallet anytime
 
     setIsSavingWallet(true);
     const currentMonth = new Date().toISOString().slice(0, 7);
@@ -1014,7 +1006,7 @@ const Profile = () => {
                 Địa chỉ ví Web3
               </CardTitle>
               <CardDescription>
-                Nhập địa chỉ ví BSC/BNB Chain để nhận Camly Coin khi rút. Bạn chỉ được đổi tối đa 2 lần/tháng.
+                Nhập địa chỉ ví BSC/BNB Chain để nhận Camly Coin khi rút.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1029,18 +1021,9 @@ const Profile = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Số lần đổi trong tháng: <span className="font-semibold text-foreground">{walletChangeCount}/2</span>
-                </span>
-                {walletChangeCount >= 2 && (
-                  <span className="text-red-500 text-xs">Đã đạt giới hạn</span>
-                )}
-              </div>
-
               <Button
                 onClick={handleSaveWalletAddress}
-                disabled={isSavingWallet || walletChangeCount >= 2}
+                disabled={isSavingWallet}
                 className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
               >
                 {isSavingWallet ? (
