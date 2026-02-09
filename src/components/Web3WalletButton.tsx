@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Wallet, ChevronDown, RefreshCw, ExternalLink, Copy, LogOut } from "lucide-react";
-import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
+import { useWeb3WalletContext as useWeb3Wallet } from "@/contexts/Web3WalletContext";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {

@@ -2,7 +2,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SwapWidget } from "@/components/SwapWidget";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
-import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
+import { useWeb3WalletContext as useWeb3Wallet } from "@/contexts/Web3WalletContext";
 import { Wallet, ArrowRightLeft, Shield, Zap } from "lucide-react";
 
 const Swap = () => {

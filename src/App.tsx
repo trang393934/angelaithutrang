@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { Web3WalletProvider } from "@/contexts/Web3WalletContext";
 import { ProfileCompletionGate } from "@/components/ProfileCompletionGate";
 import { WithdrawalCelebration } from "@/components/WithdrawalCelebration";
 import { UserLiXiCelebrationPopup } from "@/components/UserLiXiCelebrationPopup";
@@ -65,6 +66,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <AuthProvider>
+        <Web3WalletProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -124,6 +126,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </Web3WalletProvider>
       </AuthProvider>
     </LanguageProvider>
   </QueryClientProvider>

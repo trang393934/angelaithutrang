@@ -14,7 +14,7 @@ import {
   Send,
 } from "lucide-react";
 import { useMintRequest } from "@/hooks/useMintRequest";
-import { useWeb3Wallet } from "@/hooks/useWeb3Wallet";
+import { useWeb3WalletContext as useWeb3Wallet } from "@/contexts/Web3WalletContext";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";

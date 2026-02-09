@@ -127,7 +127,7 @@ const getMetaMaskDeepLink = (): string => {
    networkDiagnostics: NetworkDiagnostics | null;
  }
  
- export function useWeb3Wallet() {
+ export function useWeb3WalletInternal() {
    const [state, setState] = useState<WalletState>({
      isConnected: false,
      isConnecting: false,
@@ -690,4 +690,4 @@ const getMetaMaskDeepLink = (): string => {
      refreshBalances,
      verifyBSCTestnet,
    };
- }
+  }

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { ethers } from "ethers";
-import { useWeb3Wallet } from "./useWeb3Wallet";
+import { useWeb3WalletContext as useWeb3Wallet } from "@/contexts/Web3WalletContext";
 import { FUN_MONEY_ABI, FUN_MONEY_ADDRESSES } from "@/lib/funMoneyABI";
 
 // Detect if running inside an iframe (e.g. Lovable preview)
