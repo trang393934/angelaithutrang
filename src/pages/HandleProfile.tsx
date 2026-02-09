@@ -1,4 +1,5 @@
-import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -9,21 +10,36 @@ import { PublicProfileFriends } from "@/components/public-profile/PublicProfileF
 import { FunWorldsTiles } from "@/components/public-profile/FunWorldsTiles";
 import { PublicProfilePosts } from "@/components/public-profile/PublicProfilePosts";
 import { PublicProfileJoinCTA } from "@/components/public-profile/PublicProfileJoinCTA";
+import { PublicProfileFeatured } from "@/components/public-profile/PublicProfileFeatured";
+import { AskAngelButton } from "@/components/public-profile/AskAngelButton";
+import { trackProfileEvent } from "@/lib/profileEvents";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import angelLogo from "@/assets/angel-ai-golden-logo.png";
 
-/**
- * FUN Public Landing Profile — fun.rich/{handle}
- * Publicly accessible profile page optimized for sharing & viral growth.
- */
 const HandleProfile = () => {
   const { handle } = useParams<{ handle: string }>();
+  const [searchParams] = useSearchParams();
   const { t } = useLanguage();
-  const { profile, stats, recentPosts, friends, isLoading, notFound } =
+  const { profile, stats, recentPosts, friends, publicSettings, isLoading, notFound } =
     usePublicProfile(handle);
 
-  // Loading state
+  // Store referral param
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      localStorage.setItem("fun_referrer", ref);
+    }
+  }, [searchParams]);
+
+  // Track profile view
+  useEffect(() => {
+    if (profile?.user_id) {
+      const ref = searchParams.get("ref") || localStorage.getItem("fun_referrer") || undefined;
+      trackProfileEvent(profile.user_id, "view", undefined, ref);
+    }
+  }, [profile?.user_id]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary-pale via-background to-background">
@@ -37,7 +53,6 @@ const HandleProfile = () => {
     );
   }
 
-  // Not found state
   if (notFound || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary-pale via-background to-background">
@@ -65,29 +80,50 @@ const HandleProfile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary-pale/20">
-      {/* Header: Cover + Avatar + Name + Handle + Bio */}
-      <PublicProfileHeader profile={profile} stats={stats} />
+      {/* Header: Cover + Avatar + Name + Handle + Bio + Tagline + Badge */}
+      <PublicProfileHeader
+        profile={profile}
+        stats={stats}
+        tagline={publicSettings.tagline}
+        badgeType={publicSettings.badge_type}
+      />
 
-      {/* Action Buttons: Follow, Message, Send Gift */}
+      {/* Ask Angel Button */}
+      <div className="flex justify-center mt-2">
+        <AskAngelButton
+          displayName={profile.display_name}
+          userId={profile.user_id}
+          handle={profile.handle}
+        />
+      </div>
+
+      {/* Action Buttons: Follow, Message, Send Gift (privacy-aware) */}
       <div className="px-4">
         <PublicProfileActions
           userId={profile.user_id}
           displayName={profile.display_name}
+          publicSettings={publicSettings}
         />
       </div>
 
-      {/* Social Proof Stats */}
+      {/* Social Proof Stats (privacy-aware) */}
       <div className="px-4">
-        <PublicProfileStats stats={stats} />
+        <PublicProfileStats stats={stats} showStats={publicSettings.show_stats} />
       </div>
 
-      {/* Friends Preview */}
+      {/* Friends Preview (privacy-aware) */}
       <div className="px-4">
         <PublicProfileFriends
           friends={friends}
           totalFriends={stats.friends}
           userId={profile.user_id}
+          showFriendsCount={publicSettings.show_friends_count}
         />
+      </div>
+
+      {/* Featured Content */}
+      <div className="px-4">
+        <PublicProfileFeatured featuredItems={publicSettings.featured_items} />
       </div>
 
       {/* Recent Posts */}
@@ -95,9 +131,12 @@ const HandleProfile = () => {
         <PublicProfilePosts posts={recentPosts} profile={profile} />
       </div>
 
-      {/* FUN Worlds / Ecosystem Tiles */}
+      {/* FUN Worlds / Ecosystem Tiles (filtered by enabled_modules) */}
       <div className="px-4">
-        <FunWorldsTiles />
+        <FunWorldsTiles
+          enabledModules={publicSettings.enabled_modules}
+          showModules={publicSettings.show_modules}
+        />
       </div>
 
       {/* Join CTA for non-logged-in users */}

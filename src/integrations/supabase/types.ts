@@ -2553,6 +2553,90 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_public_settings: {
+        Row: {
+          allow_public_follow: boolean
+          allow_public_message: boolean
+          allow_public_transfer: boolean
+          badge_type: string | null
+          created_at: string
+          enabled_modules: Json | null
+          featured_items: Json | null
+          public_profile_enabled: boolean
+          show_donation_button: boolean
+          show_friends_count: boolean
+          show_modules: boolean
+          show_stats: boolean
+          tagline: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_public_follow?: boolean
+          allow_public_message?: boolean
+          allow_public_transfer?: boolean
+          badge_type?: string | null
+          created_at?: string
+          enabled_modules?: Json | null
+          featured_items?: Json | null
+          public_profile_enabled?: boolean
+          show_donation_button?: boolean
+          show_friends_count?: boolean
+          show_modules?: boolean
+          show_stats?: boolean
+          tagline?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_public_follow?: boolean
+          allow_public_message?: boolean
+          allow_public_transfer?: boolean
+          badge_type?: string | null
+          created_at?: string
+          enabled_modules?: Json | null
+          featured_items?: Json | null
+          public_profile_enabled?: boolean
+          show_donation_button?: boolean
+          show_friends_count?: boolean
+          show_modules?: boolean
+          show_stats?: boolean
+          tagline?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profile_view_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          profile_user_id: string
+          referrer_handle: string | null
+          viewer_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          profile_user_id: string
+          referrer_handle?: string | null
+          viewer_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          profile_user_id?: string
+          referrer_handle?: string | null
+          viewer_user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
