@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { ethers } from "ethers";
 import { useWeb3Wallet } from "./useWeb3Wallet";
+import { FUN_MONEY_ABI, FUN_MONEY_ADDRESSES } from "@/lib/funMoneyABI";
 
 // Detect if running inside an iframe (e.g. Lovable preview)
 const isInIframe = (): boolean => {
@@ -14,6 +15,12 @@ const isInIframe = (): boolean => {
 // CAMLY Token contract on BSC Mainnet
 const CAMLY_TOKEN_ADDRESS = "0x0910320181889fefde0bb1ca63962b0a8882e413";
 const CAMLY_DECIMALS = 3; // CAMLY uses 3 decimals
+
+// FUN Money on BSC Testnet
+const FUN_MONEY_ADDRESS = FUN_MONEY_ADDRESSES[97];
+const FUN_MONEY_DECIMALS = 18;
+const BSC_TESTNET_CHAIN_ID = 97;
+const BSC_TESTNET_RPC = "https://data-seed-prebsc-1-s1.binance.org:8545/";
 
 // BSC Mainnet RPC for reading CAMLY balance (separate from wallet's testnet connection)
 const BSC_MAINNET_RPC = "https://bsc-dataseed.binance.org/";
@@ -38,10 +45,13 @@ export interface TransferResult {
   message: string;
 }
 
+export type TokenType = "camly" | "fun";
+
 export function useWeb3Transfer() {
   const { isConnected, address, connect, hasWallet } = useWeb3Wallet();
   const [isTransferring, setIsTransferring] = useState(false);
   const [camlyCoinBalance, setCamlyCoinBalance] = useState<string>("0");
+  const [funMoneyBalance, setFunMoneyBalance] = useState<string>("0");
 
   // Switch wallet to BSC Mainnet for CAMLY transfers
   const switchToMainnet = useCallback(async (): Promise<boolean> => {
@@ -55,7 +65,6 @@ export function useWeb3Transfer() {
       });
       return true;
     } catch (switchError: any) {
-      // Chain not added yet — add it
       if (switchError.code === 4902) {
         try {
           await (window as any).ethereum.request({
@@ -78,7 +87,41 @@ export function useWeb3Transfer() {
     }
   }, []);
 
-  // Fetch CAMLY token balance using dedicated BSC Mainnet provider (not the wallet's testnet provider)
+  // Switch wallet to BSC Testnet for FUN Money transfers
+  const switchToTestnet = useCallback(async (): Promise<boolean> => {
+    try {
+      const ethereum = (window as any).ethereum;
+      if (!ethereum) return false;
+
+      await ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: "0x61" }], // 0x61 = 97 (BSC Testnet)
+      });
+      return true;
+    } catch (switchError: any) {
+      if (switchError.code === 4902) {
+        try {
+          await (window as any).ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: "0x61",
+              chainName: "BNB Smart Chain Testnet",
+              nativeCurrency: { name: "tBNB", symbol: "tBNB", decimals: 18 },
+              rpcUrls: [BSC_TESTNET_RPC],
+              blockExplorerUrls: ["https://testnet.bscscan.com"],
+            }],
+          });
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      console.error("Error switching to BSC Testnet:", switchError);
+      return false;
+    }
+  }, []);
+
+  // Fetch CAMLY token balance using dedicated BSC Mainnet provider
   const fetchCamlyBalance = useCallback(async () => {
     if (!isConnected || !address || !hasWallet) {
       setCamlyCoinBalance("0");
@@ -86,7 +129,6 @@ export function useWeb3Transfer() {
     }
 
     try {
-      // Use a read-only mainnet provider — independent of the wallet's current chain
       const mainnetProvider = new ethers.JsonRpcProvider(BSC_MAINNET_RPC);
       const contract = new ethers.Contract(CAMLY_TOKEN_ADDRESS, ERC20_TRANSFER_ABI, mainnetProvider);
       
@@ -101,9 +143,30 @@ export function useWeb3Transfer() {
     }
   }, [isConnected, address, hasWallet]);
 
-  // Safe wrapper for wallet connect that catches MetaMask internal errors
+  // Fetch FUN Money balance using dedicated BSC Testnet provider
+  const fetchFunMoneyBalance = useCallback(async () => {
+    if (!isConnected || !address || !hasWallet) {
+      setFunMoneyBalance("0");
+      return "0";
+    }
+
+    try {
+      const testnetProvider = new ethers.JsonRpcProvider(BSC_TESTNET_RPC);
+      const contract = new ethers.Contract(FUN_MONEY_ADDRESS, FUN_MONEY_ABI, testnetProvider);
+      
+      const balance = await contract.balanceOf(address);
+      const formattedBalance = ethers.formatUnits(balance, FUN_MONEY_DECIMALS);
+      setFunMoneyBalance(formattedBalance);
+      return formattedBalance;
+    } catch (error) {
+      console.error("Error fetching FUN Money balance:", error);
+      setFunMoneyBalance("0");
+      return "0";
+    }
+  }, [isConnected, address, hasWallet]);
+
+  // Safe wrapper for wallet connect
   const safeConnect = useCallback(async (): Promise<boolean> => {
-    // Never attempt wallet connection inside iframes
     if (isInIframe()) {
       console.warn("[Web3Transfer] Blocked connect inside iframe");
       return false;
@@ -111,7 +174,6 @@ export function useWeb3Transfer() {
 
     try {
       await connect();
-      // Verify connection actually succeeded by checking ethereum accounts
       const ethereum = (window as any).ethereum;
       if (!ethereum) return false;
       const accounts = await ethereum.request({ method: "eth_accounts" }).catch(() => []);
@@ -122,26 +184,21 @@ export function useWeb3Transfer() {
     }
   }, [connect]);
 
-  // Transfer CAMLY token to another address (requires BSC Mainnet)
-  const transferCamly = useCallback(async (
-    toAddress: string,
-    amount: number
-  ): Promise<TransferResult> => {
-    // Block transfers inside iframes — MetaMask can't open popups
+  // Pre-flight check: verify MetaMask is responsive and get live account
+  const preflightCheck = useCallback(async (): Promise<{ success: boolean; address: string | null; message?: string }> => {
     if (isInIframe()) {
-      return { success: false, message: "Không thể chuyển token trong môi trường preview. Vui lòng mở ứng dụng trong tab mới." };
+      return { success: false, address: null, message: "Không thể chuyển token trong môi trường preview. Vui lòng mở ứng dụng trong tab mới." };
     }
 
     if (!hasWallet) {
-      return { success: false, message: "Vui lòng cài đặt MetaMask hoặc ví Web3 tương thích" };
+      return { success: false, address: null, message: "Vui lòng cài đặt MetaMask hoặc ví Web3 tương thích" };
     }
 
-    // Pre-flight: verify MetaMask is responsive and get live account
     let liveAddress: string | null = null;
     try {
       const ethereum = (window as any).ethereum;
       if (!ethereum || typeof ethereum.request !== "function") {
-        return { success: false, message: "MetaMask không sẵn sàng. Vui lòng mở lại extension." };
+        return { success: false, address: null, message: "MetaMask không sẵn sàng. Vui lòng mở lại extension." };
       }
       const accounts: string[] = await ethereum.request({ method: "eth_accounts" }).catch(() => []);
       if (accounts.length > 0) {
@@ -149,47 +206,61 @@ export function useWeb3Transfer() {
       }
     } catch (healthErr: any) {
       console.warn("[Web3Transfer] MetaMask health check failed:", healthErr?.message);
-      return { success: false, message: "MetaMask không phản hồi. Vui lòng khởi động lại trình duyệt hoặc mở lại MetaMask." };
+      return { success: false, address: null, message: "MetaMask không phản hồi. Vui lòng khởi động lại trình duyệt." };
     }
 
-    // If no live account found, try connecting
     if (!liveAddress) {
       if (!isConnected) {
         const connected = await safeConnect();
         if (!connected) {
-          return { success: false, message: "Không thể kết nối ví. Vui lòng mở MetaMask và thử lại." };
+          return { success: false, address: null, message: "Không thể kết nối ví. Vui lòng mở MetaMask và thử lại." };
         }
-        // Re-check accounts after connect
         try {
           const ethereum = (window as any).ethereum;
           const accounts: string[] = await ethereum.request({ method: "eth_accounts" }).catch(() => []);
-          if (accounts.length > 0) {
-            liveAddress = accounts[0];
-          }
-        } catch {
-          // fall through
-        }
+          if (accounts.length > 0) liveAddress = accounts[0];
+        } catch { /* fall through */ }
       }
       if (!liveAddress) {
-        return { success: false, message: "Vui lòng kết nối ví trước khi chuyển token." };
+        return { success: false, address: null, message: "Vui lòng kết nối ví trước khi chuyển token." };
       }
     }
 
-    // Use live address (from MetaMask directly) instead of potentially stale React state
-    const activeAddress = liveAddress;
+    return { success: true, address: liveAddress };
+  }, [hasWallet, isConnected, safeConnect]);
 
-    // Switch to BSC Mainnet for CAMLY transfers
+  // Generic token transfer function
+  const transferToken = useCallback(async (
+    toAddress: string,
+    amount: number,
+    tokenType: TokenType
+  ): Promise<TransferResult> => {
+    const preflight = await preflightCheck();
+    if (!preflight.success || !preflight.address) {
+      return { success: false, message: preflight.message || "Lỗi kết nối ví" };
+    }
+
+    const activeAddress = preflight.address;
+    const isCamly = tokenType === "camly";
+    const tokenAddress = isCamly ? CAMLY_TOKEN_ADDRESS : FUN_MONEY_ADDRESS;
+    const tokenDecimals = isCamly ? CAMLY_DECIMALS : FUN_MONEY_DECIMALS;
+    const targetChainId = isCamly ? BSC_MAINNET_CHAIN_ID : BSC_TESTNET_CHAIN_ID;
+    const tokenSymbol = isCamly ? "CAMLY" : "FUN";
+    const explorerBase = isCamly ? "https://bscscan.com" : "https://testnet.bscscan.com";
+    const switchFn = isCamly ? switchToMainnet : switchToTestnet;
+
+    // Switch to correct network
     try {
       const ethereum = (window as any).ethereum;
       if (!ethereum || typeof ethereum.request !== "function") {
-        return { success: false, message: "MetaMask không sẵn sàng. Vui lòng mở lại extension." };
+        return { success: false, message: "MetaMask không sẵn sàng." };
       }
       
       const currentChainId = await ethereum.request({ method: "eth_chainId" }).catch(() => "0x0");
-      if (parseInt(currentChainId, 16) !== BSC_MAINNET_CHAIN_ID) {
-        const switched = await switchToMainnet();
+      if (parseInt(currentChainId, 16) !== targetChainId) {
+        const switched = await switchFn();
         if (!switched) {
-          return { success: false, message: "Vui lòng chuyển sang mạng BSC Mainnet để chuyển CAMLY" };
+          return { success: false, message: `Vui lòng chuyển sang mạng ${isCamly ? "BSC Mainnet" : "BSC Testnet"} để chuyển ${tokenSymbol}` };
         }
       }
     } catch (chainError: any) {
@@ -212,10 +283,10 @@ export function useWeb3Transfer() {
       const provider = new ethers.BrowserProvider(ethereum);
       const signer = await provider.getSigner();
       
-      const contract = new ethers.Contract(CAMLY_TOKEN_ADDRESS, ERC20_TRANSFER_ABI, signer);
+      const abi = isCamly ? ERC20_TRANSFER_ABI : FUN_MONEY_ABI;
+      const contract = new ethers.Contract(tokenAddress, abi, signer);
       
-      // Convert amount to smallest unit (3 decimals for CAMLY)
-      const amountInWei = ethers.parseUnits(amount.toString(), CAMLY_DECIMALS);
+      const amountInWei = ethers.parseUnits(amount.toString(), tokenDecimals);
       
       // Check balance
       const balance = await contract.balanceOf(activeAddress);
@@ -223,17 +294,14 @@ export function useWeb3Transfer() {
         setIsTransferring(false);
         return { 
           success: false, 
-          message: `Số dư CAMLY không đủ. Hiện có: ${ethers.formatUnits(balance, CAMLY_DECIMALS)} CAMLY` 
+          message: `Số dư ${tokenSymbol} không đủ. Hiện có: ${ethers.formatUnits(balance, tokenDecimals)} ${tokenSymbol}` 
         };
       }
 
-      // Send transaction
       const tx = await contract.transfer(toAddress, amountInWei);
-      
-      // Wait for confirmation
       const receipt = await tx.wait();
 
-      console.log("[Web3Transfer] TX receipt:", JSON.stringify({
+      console.log(`[Web3Transfer] ${tokenSymbol} TX receipt:`, JSON.stringify({
         hash: receipt.hash,
         blockNumber: receipt.blockNumber,
         status: receipt.status,
@@ -244,23 +312,18 @@ export function useWeb3Transfer() {
       return {
         success: true,
         txHash: receipt.hash,
-        message: `Chuyển thành công ${amount.toLocaleString()} CAMLY!`,
+        message: `Chuyển thành công ${amount.toLocaleString()} ${tokenSymbol}!`,
       };
     } catch (error: any) {
-      console.error("Transfer error:", error);
+      console.error(`${tokenSymbol} Transfer error:`, error);
       setIsTransferring(false);
 
-      // Handle user rejection
       if (error.code === 4001 || error.code === "ACTION_REJECTED") {
         return { success: false, message: "Giao dịch đã bị hủy" };
       }
-
-      // Handle insufficient funds for gas
       if (error.code === "INSUFFICIENT_FUNDS") {
-        return { success: false, message: "Không đủ BNB để thanh toán phí gas" };
+        return { success: false, message: `Không đủ ${isCamly ? "BNB" : "tBNB"} để thanh toán phí gas` };
       }
-
-      // Handle MetaMask internal errors gracefully
       if (error.message?.includes("MetaMask") || error.message?.includes("inpage")) {
         return { success: false, message: "MetaMask gặp lỗi. Vui lòng mở lại MetaMask và thử lại." };
       }
@@ -270,20 +333,32 @@ export function useWeb3Transfer() {
         message: error.reason || error.message || "Lỗi khi chuyển token" 
       };
     }
-  }, [hasWallet, isConnected, address, safeConnect, switchToMainnet]);
+  }, [preflightCheck, switchToMainnet, switchToTestnet]);
+
+  // Transfer CAMLY token (BSC Mainnet)
+  const transferCamly = useCallback(async (toAddress: string, amount: number): Promise<TransferResult> => {
+    return transferToken(toAddress, amount, "camly");
+  }, [transferToken]);
+
+  // Transfer FUN Money token (BSC Testnet)
+  const transferFunMoney = useCallback(async (toAddress: string, amount: number): Promise<TransferResult> => {
+    return transferToken(toAddress, amount, "fun");
+  }, [transferToken]);
 
   // Donate CAMLY to project treasury
-  const donateCamlyToProject = useCallback(async (
-    amount: number
-  ): Promise<TransferResult> => {
+  const donateCamlyToProject = useCallback(async (amount: number): Promise<TransferResult> => {
     return transferCamly(TREASURY_WALLET_ADDRESS, amount);
   }, [transferCamly]);
 
   return {
     isTransferring,
     camlyCoinBalance,
+    funMoneyBalance,
     fetchCamlyBalance,
+    fetchFunMoneyBalance,
     transferCamly,
+    transferFunMoney,
+    transferToken,
     donateCamlyToProject,
     isConnected,
     address,
