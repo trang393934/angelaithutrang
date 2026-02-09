@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PoPLBadge } from "@/components/profile/PoPLBadge";
+import { WalletAddressDisplay } from "@/components/profile/WalletAddressDisplay";
 import angelAvatar from "@/assets/angel-avatar.png";
 import type { PublicProfileData, PublicProfileStats } from "@/hooks/usePublicProfile";
 
@@ -74,6 +75,11 @@ export function PublicProfileHeader({ profile, stats }: PublicProfileHeaderProps
               {profile.bio}
             </p>
           )}
+
+          {/* Wallet Address */}
+          <div className="mt-3">
+            <WalletAddressDisplay userId={profile.user_id} />
+          </div>
         </motion.div>
       </div>
     </div>
