@@ -59,15 +59,38 @@ export function GlobalSearch({
   const navigate = useNavigate();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-focus when prop is set
+  // Auto-focus and load all users when prop is set (community variant)
   useEffect(() => {
     if (autoFocus && inputRef.current) {
       setTimeout(() => {
         inputRef.current?.focus();
         setIsOpen(true);
       }, 100);
+      // Auto-load users list for community variant
+      if (variant === "community") {
+        loadAllUsers();
+      }
     }
-  }, [autoFocus]);
+  }, [autoFocus, variant]);
+
+  const loadAllUsers = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error: dbError } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, avatar_url, bio")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (dbError) throw dbError;
+      setUserResults(data || []);
+      setIsOpen(true);
+    } catch (err) {
+      console.error("Load users error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -258,7 +281,7 @@ export function GlobalSearch({
 
       {/* Search Results Dropdown */}
       <AnimatePresence>
-        {isOpen && query.length >= 2 && (
+        {isOpen && (query.length >= 2 || (variant === "community" && userResults.length > 0)) && (
           <motion.div
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -321,11 +344,14 @@ export function GlobalSearch({
             )}
 
             {/* Community Variant: No Results */}
-            {!isLoading && !error && variant === "community" && userResults.length === 0 && query.length >= 2 && (
+            {!isLoading && !error && variant === "community" && userResults.length === 0 && (query.length >= 2 || autoFocus) && (
               <div className="p-6 text-center">
                 <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  {t("search.noResults")} "{query}"
+                  {query.length >= 2 
+                    ? `${t("search.noResults")} "${query}"`
+                    : t("search.noUsers") || "Chưa có thành viên nào"
+                  }
                 </p>
               </div>
             )}
