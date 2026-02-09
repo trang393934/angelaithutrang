@@ -7,23 +7,31 @@ import { useFUNMoneyContract } from "@/hooks/useFUNMoneyContract";
 import { useCallback, useEffect, useState } from "react";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
 
+// Detect mobile device
+const isMobileDevice = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+};
+
+// Build MetaMask deep link
+const getMetaMaskDeepLink = (): string => {
+  const currentUrl = window.location.href.replace(/^https?:\/\//, "");
+  return `https://metamask.app.link/dapp/${currentUrl}`;
+};
+
 export function FUNMoneyBalanceCard() {
-  // useFUNMoneyContract already calls useWeb3Wallet internally - don't call it separately
   const { 
     isConnected, 
     address, 
     contractInfo, 
     fetchContractInfo, 
-    getContractAddress 
+    getContractAddress,
+    hasWallet,
+    connect,
   } = useFUNMoneyContract();
   
   const [isLoading, setIsLoading] = useState(false);
-  const [hasWallet, setHasWallet] = useState(false);
-
-  // Check if wallet exists on client side only
-  useEffect(() => {
-    setHasWallet(typeof window !== "undefined" && typeof (window as any).ethereum !== "undefined");
-  }, []);
 
   const contractAddress = getContractAddress();
 
@@ -40,42 +48,16 @@ export function FUNMoneyBalanceCard() {
   }, [isConnected, contractAddress, handleRefresh]);
 
   const handleConnect = useCallback(async () => {
-    if (typeof window !== "undefined" && (window as any).ethereum) {
-      try {
-        await (window as any).ethereum.request({ method: "eth_requestAccounts" });
-        // Refresh will happen via the useEffect above when isConnected changes
-      } catch (error) {
-        console.error("Failed to connect wallet:", error);
-      }
+    if (hasWallet) {
+      await connect();
+    } else if (isMobileDevice()) {
+      window.location.href = getMetaMaskDeepLink();
+    } else {
+      window.open("https://metamask.io/download/", "_blank");
     }
-  }, []);
+  }, [hasWallet, connect]);
 
-  // Render logic - all hooks have been called above this point
-  if (!hasWallet) {
-    return (
-      <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-            <Wallet className="h-5 w-5" />
-            FUN Money On-Chain
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Cài đặt MetaMask hoặc ví Web3 để mint FUN Money về ví của bạn.
-          </p>
-          <Button 
-            onClick={() => window.open("https://metamask.io/download/", "_blank")}
-            className="w-full bg-gradient-to-r from-amber-500 to-orange-500"
-          >
-            <Wallet className="mr-2 h-4 w-4" />
-            Cài đặt MetaMask
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // Not connected - single view for both "no wallet" and "wallet not connected"
   if (!isConnected) {
     return (
       <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
@@ -87,19 +69,30 @@ export function FUNMoneyBalanceCard() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Kết nối ví để xem số dư FUN Money và claim reward về ví.
+            {hasWallet 
+              ? "Kết nối ví để xem số dư FUN Money và claim reward về ví."
+              : isMobileDevice()
+                ? "Mở trong MetaMask Browser để kết nối ví và quản lý FUN Money."
+                : "Cài đặt MetaMask hoặc ví Web3 để mint FUN Money về ví của bạn."
+            }
           </p>
           <Button 
             onClick={handleConnect}
             className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
           >
             <Wallet className="mr-2 h-4 w-4" />
-            Kết nối ví BSC Testnet
+            {hasWallet 
+              ? "Kết nối ví BSC Testnet" 
+              : isMobileDevice()
+                ? "Mở trong MetaMask"
+                : "Cài đặt MetaMask"
+            }
           </Button>
         </CardContent>
       </Card>
     );
   }
+
 
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
 
