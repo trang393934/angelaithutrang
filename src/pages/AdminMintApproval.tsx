@@ -24,7 +24,9 @@ import {
   Send,
   FileCheck,
   Zap,
+  CheckSquare,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "sonner";
@@ -86,6 +88,9 @@ export default function AdminMintApproval() {
   const [activeTab, setActiveTab] = useState("pending");
   const [isRetryingAll, setIsRetryingAll] = useState(false);
   const [retryProgress, setRetryProgress] = useState({ done: 0, total: 0 });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 });
 
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
@@ -284,6 +289,96 @@ export default function AdminMintApproval() {
     rejected: requests.filter((r) => r.status === "rejected" || r.status === "expired").length,
   };
 
+  const allSelected = filteredRequests.length > 0 && filteredRequests.every((r) => selectedIds.has(r.id));
+  const someSelected = selectedIds.size > 0;
+  const selectedTotal = filteredRequests.filter((r) => selectedIds.has(r.id)).reduce((sum, r) => sum + r.amount, 0);
+
+  // Clear selection when tab changes
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    setSelectedIds(new Set());
+  }, []);
+
+  // Toggle single selection
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Select/deselect all in current tab
+  const toggleSelectAll = useCallback(() => {
+    const currentIds = filteredRequests.map((r) => r.id);
+    const allCurrentSelected = currentIds.length > 0 && currentIds.every((id) => selectedIds.has(id));
+    if (allCurrentSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(currentIds));
+    }
+  }, [filteredRequests, selectedIds]);
+
+  // Batch approve selected
+  const handleBatchApprove = useCallback(async () => {
+    const selected = filteredRequests.filter((r) => selectedIds.has(r.id) && r.status === "pending");
+    if (selected.length === 0) return;
+
+    const confirmed = window.confirm(`Approve & Sign ${selected.length} yêu cầu? Tiếp tục?`);
+    if (!confirmed) return;
+
+    setIsBatchProcessing(true);
+    setBatchProgress({ done: 0, total: selected.length });
+
+    let success = 0, fail = 0;
+    for (let i = 0; i < selected.length; i++) {
+      try {
+        const { data, error } = await supabase.functions.invoke("pplp-authorize-mint", {
+          body: { action_id: selected[i].action_id, wallet_address: selected[i].recipient_address },
+        });
+        if (error) throw error;
+        if (data?.tx_hash || data?.success) success++;
+        else fail++;
+      } catch { fail++; }
+      setBatchProgress({ done: i + 1, total: selected.length });
+    }
+
+    toast.success(`✅ Batch: ${success} thành công, ${fail} thất bại`);
+    setIsBatchProcessing(false);
+    setSelectedIds(new Set());
+    await fetchRequests();
+  }, [filteredRequests, selectedIds, fetchRequests]);
+
+  // Batch reject selected
+  const handleBatchReject = useCallback(async () => {
+    const selected = filteredRequests.filter((r) => selectedIds.has(r.id) && r.status === "pending");
+    if (selected.length === 0) return;
+
+    const confirmed = window.confirm(`Từ chối ${selected.length} yêu cầu? Tiếp tục?`);
+    if (!confirmed) return;
+
+    setIsBatchProcessing(true);
+    setBatchProgress({ done: 0, total: selected.length });
+
+    let success = 0;
+    for (let i = 0; i < selected.length; i++) {
+      try {
+        const { error } = await supabase
+          .from("pplp_mint_requests")
+          .update({ status: "rejected", updated_at: new Date().toISOString() })
+          .eq("id", selected[i].id);
+        if (!error) success++;
+      } catch {}
+      setBatchProgress({ done: i + 1, total: selected.length });
+    }
+
+    toast.success(`❌ Đã từ chối ${success} yêu cầu`);
+    setIsBatchProcessing(false);
+    setSelectedIds(new Set());
+    await fetchRequests();
+  }, [filteredRequests, selectedIds, fetchRequests]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -343,16 +438,17 @@ export default function AdminMintApproval() {
             </AlertDescription>
           </Alert>
 
-          {/* Retry All Progress */}
-          {isRetryingAll && (
+          {/* Batch/Retry Progress */}
+          {(isRetryingAll || isBatchProcessing) && (
             <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
               <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
               <AlertDescription className="text-blue-700 dark:text-blue-300 text-sm">
-                <strong>Đang retry on-chain...</strong> {retryProgress.done}/{retryProgress.total} giao dịch
+                <strong>{isRetryingAll ? "Đang retry on-chain..." : "Đang xử lý batch..."}</strong>{" "}
+                {(isRetryingAll ? retryProgress : batchProgress).done}/{(isRetryingAll ? retryProgress : batchProgress).total} giao dịch
                 <div className="mt-2 w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(retryProgress.done / retryProgress.total) * 100}%` }}
+                    style={{ width: `${((isRetryingAll ? retryProgress : batchProgress).done / (isRetryingAll ? retryProgress : batchProgress).total) * 100}%` }}
                   />
                 </div>
               </AlertDescription>
@@ -363,7 +459,7 @@ export default function AdminMintApproval() {
           <OnChainErrorSummary requests={requests} />
 
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="pending" className="gap-1">
                 <Clock className="h-3.5 w-3.5" />
@@ -383,7 +479,57 @@ export default function AdminMintApproval() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value={activeTab} className="mt-4">
+            <TabsContent value={activeTab} className="mt-4 space-y-3">
+              {/* Select All Bar */}
+              {!isLoading && filteredRequests.length > 0 && (
+                <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Chọn tất cả"
+                    />
+                    <span className="text-sm font-medium">
+                      {someSelected
+                        ? `Đã chọn ${selectedIds.size} / ${filteredRequests.length}`
+                        : "Chọn tất cả"}
+                    </span>
+                    {someSelected && (
+                      <Badge variant="secondary" className="text-xs">
+                        💰 {selectedTotal.toLocaleString("vi-VN")} FUN
+                      </Badge>
+                    )}
+                  </div>
+                  {someSelected && activeTab === "pending" && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleBatchApprove}
+                        disabled={isBatchProcessing}
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                      >
+                        {isBatchProcessing ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : (
+                          <CheckSquare className="h-4 w-4 mr-1" />
+                        )}
+                        Duyệt ({selectedIds.size})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleBatchReject}
+                        disabled={isBatchProcessing}
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        <XCircle className="h-4 w-4 mr-1" />
+                        Từ chối ({selectedIds.size})
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
@@ -402,6 +548,8 @@ export default function AdminMintApproval() {
                       key={req.id}
                       request={req}
                       isProcessing={processingIds.has(req.id)}
+                      isSelected={selectedIds.has(req.id)}
+                      onToggleSelect={() => toggleSelect(req.id)}
                       onApprove={() => handleApproveAndSign(req)}
                       onReject={() => handleReject(req)}
                     />
@@ -422,11 +570,15 @@ export default function AdminMintApproval() {
 function MintRequestCard({
   request,
   isProcessing,
+  isSelected,
+  onToggleSelect,
   onApprove,
   onReject,
 }: {
   request: MintRequestRow;
   isProcessing: boolean;
+  isSelected: boolean;
+  onToggleSelect: () => void;
   onApprove: () => void;
   onReject: () => void;
 }) {
@@ -435,9 +587,16 @@ function MintRequestCard({
   const statusInfo = STATUS_CONFIG[request.status] || STATUS_CONFIG.pending;
 
   return (
-    <Card className="transition-all hover:shadow-sm">
+    <Card className={`transition-all hover:shadow-sm ${isSelected ? "ring-2 ring-primary/50 bg-primary/5" : ""}`}>
       <CardContent className="p-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          {/* Checkbox */}
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onToggleSelect}
+            aria-label={`Chọn yêu cầu ${request.id}`}
+            className="shrink-0"
+          />
           {/* Left: Info */}
           <div className="flex-1 min-w-0 space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
