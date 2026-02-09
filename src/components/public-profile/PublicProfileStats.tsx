@@ -7,6 +7,7 @@ import funMoneyLogo from "@/assets/fun-money-logo.png";
 
 interface PublicProfileStatsProps {
   stats: StatsType;
+  showStats?: boolean;
 }
 
 const statItems = [
@@ -20,8 +21,10 @@ const statItems = [
   { key: "funMoneyTotal", icon: Coins, labelKey: "publicProfile.statFUN" },
 ] as const;
 
-export function PublicProfileStats({ stats }: PublicProfileStatsProps) {
+export function PublicProfileStats({ stats, showStats = true }: PublicProfileStatsProps) {
   const { t } = useLanguage();
+
+  if (!showStats) return null;
 
   const values: Record<string, string> = {
     friends: stats.friends.toLocaleString(),

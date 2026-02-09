@@ -1,4 +1,4 @@
-import { UserPlus, MessageCircle, Gift, UserCheck, Clock, Loader2 } from "lucide-react";
+import { UserPlus, MessageCircle, Gift, UserCheck, Clock, Loader2, Lock, Heart } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,15 @@ import { useFriendship } from "@/hooks/useFriendship";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useState } from "react";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
+import type { PublicSettings } from "@/hooks/usePublicProfile";
 
 interface PublicProfileActionsProps {
   userId: string;
   displayName: string | null;
+  publicSettings?: PublicSettings;
 }
 
-export function PublicProfileActions({ userId, displayName }: PublicProfileActionsProps) {
+export function PublicProfileActions({ userId, displayName, publicSettings }: PublicProfileActionsProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -28,6 +30,7 @@ export function PublicProfileActions({ userId, displayName }: PublicProfileActio
   } = useFriendship(userId);
 
   const isOwnProfile = user?.id === userId;
+  const isFriend = friendshipStatus?.status === "accepted";
 
   if (isOwnProfile) {
     return (
@@ -46,6 +49,10 @@ export function PublicProfileActions({ userId, displayName }: PublicProfileActio
     );
   }
 
+  const canMessage = publicSettings?.allow_public_message !== false || isFriend;
+  const canTransfer = publicSettings?.allow_public_transfer !== false || isFriend;
+  const showDonate = publicSettings?.show_donation_button === true;
+
   const renderFriendButton = () => {
     if (friendshipLoading) {
       return (
@@ -56,6 +63,14 @@ export function PublicProfileActions({ userId, displayName }: PublicProfileActio
     }
 
     if (!friendshipStatus) {
+      if (publicSettings?.allow_public_follow === false) {
+        return (
+          <Button variant="secondary" size="lg" disabled>
+            <Lock className="w-4 h-4 mr-2" />
+            {t("publicProfile.friendsOnly") || "Chỉ bạn bè"}
+          </Button>
+        );
+      }
       return (
         <AuthActionGuard>
           <Button size="lg" onClick={() => sendFriendRequest(userId)}>
@@ -69,21 +84,14 @@ export function PublicProfileActions({ userId, displayName }: PublicProfileActio
     if (friendshipStatus.status === "pending") {
       if (friendshipStatus.requester_id === user?.id) {
         return (
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={() => cancelFriendRequest(friendshipStatus.id)}
-          >
+          <Button variant="secondary" size="lg" onClick={() => cancelFriendRequest(friendshipStatus.id)}>
             <Clock className="w-4 h-4 mr-2" />
             {t("publicProfile.requestSent") || "Đã gửi lời mời"}
           </Button>
         );
       }
       return (
-        <Button
-          size="lg"
-          onClick={() => acceptFriendRequest(friendshipStatus.id)}
-        >
+        <Button size="lg" onClick={() => acceptFriendRequest(friendshipStatus.id)}>
           <UserCheck className="w-4 h-4 mr-2" />
           {t("publicProfile.acceptRequest") || "Chấp nhận"}
         </Button>
@@ -110,36 +118,59 @@ export function PublicProfileActions({ userId, displayName }: PublicProfileActio
         transition={{ delay: 0.3 }}
         className="flex flex-wrap justify-center gap-3 mt-6"
       >
-        {/* Friend/Follow button */}
         {renderFriendButton()}
 
         {/* Message button */}
-        <AuthActionGuard>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate(`/messages/${userId}`)}
-          >
-            <MessageCircle className="w-4 h-4 mr-2" />
-            {t("publicProfile.message") || "Nhắn tin"}
+        {canMessage ? (
+          <AuthActionGuard>
+            <Button variant="outline" size="lg" onClick={() => navigate(`/messages/${userId}`)}>
+              <MessageCircle className="w-4 h-4 mr-2" />
+              {t("publicProfile.message") || "Nhắn tin"}
+            </Button>
+          </AuthActionGuard>
+        ) : (
+          <Button variant="outline" size="lg" disabled>
+            <Lock className="w-4 h-4 mr-2" />
+            {t("publicProfile.friendsOnly") || "Chỉ bạn bè"}
           </Button>
-        </AuthActionGuard>
+        )}
 
         {/* Gift/Send Coins button */}
-        <AuthActionGuard>
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={() => setGiftDialogOpen(true)}
-            className="bg-gradient-to-r from-primary-pale to-accent hover:from-primary-light hover:to-accent-gold/30 text-primary-deep border border-primary/20"
-          >
-            <Gift className="w-4 h-4 mr-2" />
-            {t("publicProfile.sendGift") || "Tặng quà"}
+        {canTransfer ? (
+          <AuthActionGuard>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => setGiftDialogOpen(true)}
+              className="bg-gradient-to-r from-primary-pale to-accent hover:from-primary-light hover:to-accent-gold/30 text-primary-deep border border-primary/20"
+            >
+              <Gift className="w-4 h-4 mr-2" />
+              {t("publicProfile.sendGift") || "Tặng quà"}
+            </Button>
+          </AuthActionGuard>
+        ) : (
+          <Button variant="secondary" size="lg" disabled>
+            <Lock className="w-4 h-4 mr-2" />
+            {t("publicProfile.friendsOnly") || "Chỉ bạn bè"}
           </Button>
-        </AuthActionGuard>
+        )}
+
+        {/* Donation button */}
+        {showDonate && (
+          <AuthActionGuard>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setGiftDialogOpen(true)}
+              className="border-pink-300 text-pink-600 hover:bg-pink-50"
+            >
+              <Heart className="w-4 h-4 mr-2" />
+              Donate
+            </Button>
+          </AuthActionGuard>
+        )}
       </motion.div>
 
-      {/* Gift Dialog */}
       {user && (
         <GiftCoinDialog
           open={giftDialogOpen}

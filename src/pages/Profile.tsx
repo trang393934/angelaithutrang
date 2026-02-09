@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon, MessageCircle, Move, Maximize2 } from "lucide-react";
 import { ApiKeysSection } from "@/components/profile/ApiKeysSection";
+import { PublicProfileSettingsSection } from "@/components/public-profile/PublicProfileSettingsSection";
 import { HandleSelector } from "@/components/profile/HandleSelector";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { CoverPositionEditor } from "@/components/profile/CoverPositionEditor";
@@ -1415,6 +1416,9 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Public Profile Settings */}
+          <PublicProfileSettingsSection />
 
           {/* API Keys Section */}
           <ApiKeysSection />

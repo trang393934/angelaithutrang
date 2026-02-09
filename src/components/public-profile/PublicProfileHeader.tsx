@@ -2,15 +2,18 @@ import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PoPLBadge } from "@/components/profile/PoPLBadge";
 import { WalletAddressDisplay } from "@/components/profile/WalletAddressDisplay";
+import { ProfileBadge } from "@/components/public-profile/ProfileBadge";
 import angelAvatar from "@/assets/angel-avatar.png";
 import type { PublicProfileData, PublicProfileStats } from "@/hooks/usePublicProfile";
 
 interface PublicProfileHeaderProps {
   profile: PublicProfileData;
   stats: PublicProfileStats;
+  tagline?: string | null;
+  badgeType?: string | null;
 }
 
-export function PublicProfileHeader({ profile, stats }: PublicProfileHeaderProps) {
+export function PublicProfileHeader({ profile, stats, tagline, badgeType }: PublicProfileHeaderProps) {
   return (
     <div className="relative">
       {/* Cover Photo */}
@@ -24,11 +27,10 @@ export function PublicProfileHeader({ profile, stats }: PublicProfileHeaderProps
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/20 via-primary-pale to-accent-gold/30" />
         )}
-        {/* Overlay gradient for text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
       </div>
 
-      {/* Profile Info - Overlapping cover */}
+      {/* Profile Info */}
       <div className="max-w-3xl mx-auto px-4 -mt-20 sm:-mt-24 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -47,7 +49,6 @@ export function PublicProfileHeader({ profile, stats }: PublicProfileHeaderProps
                 {profile.display_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
-            {/* PoPL Badge */}
             <div className="absolute -bottom-1 -right-1">
               <PoPLBadge
                 isVerified={stats.poplScore >= 20}
@@ -57,10 +58,13 @@ export function PublicProfileHeader({ profile, stats }: PublicProfileHeaderProps
             </div>
           </div>
 
-          {/* Name */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
-            {profile.display_name || "FUN Member"}
-          </h1>
+          {/* Name + Badge */}
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
+              {profile.display_name || "FUN Member"}
+            </h1>
+            <ProfileBadge badgeType={badgeType ?? null} />
+          </div>
 
           {/* Handle */}
           {profile.handle && (
@@ -73,6 +77,13 @@ export function PublicProfileHeader({ profile, stats }: PublicProfileHeaderProps
           {profile.bio && (
             <p className="text-muted-foreground mt-3 max-w-md leading-relaxed text-sm sm:text-base">
               {profile.bio}
+            </p>
+          )}
+
+          {/* Tagline */}
+          {tagline && (
+            <p className="text-xs text-primary/80 mt-1.5 font-medium italic max-w-sm">
+              ✨ {tagline}
             </p>
           )}
 

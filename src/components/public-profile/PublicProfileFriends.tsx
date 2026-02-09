@@ -9,12 +9,14 @@ interface PublicProfileFriendsProps {
   friends: PublicFriend[];
   totalFriends: number;
   userId: string;
+  showFriendsCount?: boolean;
 }
 
 export function PublicProfileFriends({
   friends,
   totalFriends,
   userId,
+  showFriendsCount = true,
 }: PublicProfileFriendsProps) {
   const { t } = useLanguage();
 
@@ -28,10 +30,12 @@ export function PublicProfileFriends({
       className="mt-8 max-w-2xl mx-auto"
     >
       <h2 className="text-lg font-bold text-foreground mb-4 text-center">
-        {t("publicProfile.friendsTitle") || "👥 Bạn bè"}{" "}
-        <span className="text-sm font-normal text-muted-foreground">
-          ({totalFriends})
-        </span>
+        {t("publicProfile.friendsTitle") || "👥 Bạn bè"}
+        {showFriendsCount && (
+          <span className="text-sm font-normal text-muted-foreground ml-1">
+            ({totalFriends})
+          </span>
+        )}
       </h2>
 
       <div className="flex justify-center gap-3 flex-wrap">

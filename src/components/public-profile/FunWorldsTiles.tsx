@@ -72,8 +72,35 @@ const funWorlds = [
   },
 ];
 
-export function FunWorldsTiles() {
+interface FunWorldsTilesProps {
+  enabledModules?: string[];
+  showModules?: boolean;
+}
+
+// Map module IDs to funWorlds entries
+const MODULE_ID_MAP: Record<string, string> = {
+  fun_play: "FUN Play",
+  fun_academy: "FUN Academy",
+  fun_farm: "FUN Farm",
+  fun_charity: "FUN Charity",
+  fun_invest: "FUN Treasury",
+  fun_life: "FUN Planet",
+  fun_market: "FUN Wallet",
+};
+
+export function FunWorldsTiles({ enabledModules, showModules = true }: FunWorldsTilesProps) {
   const { t } = useLanguage();
+
+  if (!showModules) return null;
+
+  const filteredWorlds = enabledModules
+    ? funWorlds.filter((w) => {
+        // Check if any enabled module maps to this world
+        return enabledModules.some((m) => MODULE_ID_MAP[m] === w.name) ||
+          // Also include worlds not in the map (like Green Earth)
+          !Object.values(MODULE_ID_MAP).includes(w.name);
+      })
+    : funWorlds;
 
   return (
     <motion.section
@@ -87,7 +114,7 @@ export function FunWorldsTiles() {
       </h2>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {funWorlds.map((world, index) => (
+        {filteredWorlds.map((world, index) => (
           <motion.a
             key={world.name}
             href={world.url}
