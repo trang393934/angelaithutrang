@@ -58,8 +58,7 @@ export function FUNMoneyStatsBanner({ userId }: FUNMoneyStatsBannerProps) {
           <Button
             asChild
             size="sm"
-            variant="secondary"
-            className="bg-white/20 hover:bg-white/30 text-white border-0"
+            className="btn-golden-3d !text-black font-bold border-0"
           >
             <Link to="/mint">
               {t("earn.funMoney.viewDetails")}
