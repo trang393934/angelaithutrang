@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,13 +12,20 @@ import {
   RefreshCw,
   Wallet,
   AlertCircle,
+  Repeat,
 } from "lucide-react";
 import { useFUNMoneyContract } from "@/hooks/useFUNMoneyContract";
 import { useWalletMismatch } from "@/hooks/useWalletMismatch";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { WalletMismatchAlert } from "./WalletMismatchAlert";
 import { ethers } from "ethers";
 import { toast } from "sonner";
+import { FUN_MONEY_ABI, FUN_MONEY_ADDRESSES } from "@/lib/funMoneyABI";
+
+interface MismatchAlloc {
+  locked: number;
+  activated: number;
+  balance: number;
+}
 
 export function TokenLifecyclePanel() {
   const { t } = useLanguage();
@@ -27,6 +34,7 @@ export function TokenLifecyclePanel() {
     connect,
     address,
     hasWallet,
+    chainId,
     contractInfo,
     fetchContractInfo,
     activateTokens,
@@ -41,6 +49,8 @@ export function TokenLifecyclePanel() {
   const [isActivating, setIsActivating] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [mismatchAlloc, setMismatchAlloc] = useState<MismatchAlloc | null>(null);
 
   const locked = parseFloat(contractInfo?.locked || "0");
   const activated = parseFloat(contractInfo?.activated || "0");
@@ -50,6 +60,37 @@ export function TokenLifecyclePanel() {
 
   const { mismatch } = useWalletMismatch(address, allocationIsZero);
 
+  // Fetch allocation from mismatch address (read-only)
+  const fetchMismatchAlloc = useCallback(async () => {
+    if (!mismatch || !chainId) {
+      setMismatchAlloc(null);
+      return;
+    }
+
+    try {
+      const contractAddress = FUN_MONEY_ADDRESSES[chainId];
+      if (!contractAddress || typeof window === "undefined" || !(window as any).ethereum) return;
+
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const readContract = new ethers.Contract(contractAddress, FUN_MONEY_ABI, provider);
+      
+      const [alloc, bal] = await Promise.all([
+        readContract.alloc(mismatch.recipientAddress),
+        readContract.balanceOf(mismatch.recipientAddress),
+      ]);
+
+      const decimals = 18;
+      setMismatchAlloc({
+        locked: parseFloat(ethers.formatUnits(alloc.locked, decimals)),
+        activated: parseFloat(ethers.formatUnits(alloc.activated, decimals)),
+        balance: parseFloat(ethers.formatUnits(bal, decimals)),
+      });
+    } catch (e) {
+      console.warn("[TokenLifecycle] Could not fetch mismatch alloc:", e);
+      setMismatchAlloc(null);
+    }
+  }, [mismatch, chainId]);
+
   // Fetch contract info when connected
   useEffect(() => {
     if (isConnected && address) {
@@ -57,9 +98,15 @@ export function TokenLifecyclePanel() {
     }
   }, [isConnected, address, fetchContractInfo]);
 
+  // Fetch mismatch data when detected
+  useEffect(() => {
+    fetchMismatchAlloc();
+  }, [fetchMismatchAlloc]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchContractInfo();
+    await fetchMismatchAlloc();
     setIsRefreshing(false);
   };
 
@@ -89,8 +136,40 @@ export function TokenLifecyclePanel() {
     setIsClaiming(false);
   };
 
+  // Prompt MetaMask to switch account
+  const handleSwitchWallet = async () => {
+    if (typeof window === "undefined" || !(window as any).ethereum) return;
+    setIsSwitching(true);
+    try {
+      await (window as any).ethereum.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }],
+      });
+      // After user selects a different account, the wallet context will auto-update
+      toast.success("Đã chuyển ví! Đang tải lại dữ liệu...");
+      setTimeout(() => {
+        fetchContractInfo();
+        fetchMismatchAlloc();
+      }, 1000);
+    } catch (e: any) {
+      if (!e?.message?.includes("rejected")) {
+        toast.error("Không thể chuyển ví. Vui lòng đổi ví thủ công trong MetaMask.");
+      }
+    } finally {
+      setIsSwitching(false);
+    }
+  };
+
   const hasNetworkIssue = networkDiagnostics && !networkDiagnostics.isValidChain;
   const hasContractIssue = contractDiagnostics && !contractDiagnostics.isContractValid;
+
+  // Determine display data: if mismatch exists & current is empty, show mismatch data
+  const showMismatchData = mismatch && allocationIsZero && mismatchAlloc;
+  const displayLocked = showMismatchData ? mismatchAlloc.locked : locked;
+  const displayActivated = showMismatchData ? mismatchAlloc.activated : activated;
+  const displayBalance = showMismatchData ? mismatchAlloc.balance : balance;
+  const displayTotal = displayLocked + displayActivated + displayBalance;
+  const displayAddress = showMismatchData ? mismatch.recipientAddress : address;
 
   // Not connected state
   if (!isConnected) {
@@ -156,13 +235,18 @@ export function TokenLifecyclePanel() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Address */}
+        {/* Address display */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Wallet className="h-3 w-3" />
-          <span>{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-          {address && (
+          <span>{displayAddress?.slice(0, 6)}...{displayAddress?.slice(-4)}</span>
+          {showMismatchData && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-300 text-amber-600">
+              Ví mint
+            </Badge>
+          )}
+          {displayAddress && (
             <a
-              href={`https://testnet.bscscan.com/address/${address}`}
+              href={`https://testnet.bscscan.com/address/${displayAddress}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
@@ -172,13 +256,37 @@ export function TokenLifecyclePanel() {
           )}
         </div>
 
+        {/* Switch wallet notice when mismatch */}
+        {showMismatchData && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-2">
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              FUN Money đang ở ví <strong>{mismatch.recipientAddress.slice(0, 6)}...{mismatch.recipientAddress.slice(-4)}</strong>. 
+              Chuyển sang ví này để Activate & Claim.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full border-amber-300 text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+              onClick={handleSwitchWallet}
+              disabled={isSwitching}
+            >
+              {isSwitching ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+              ) : (
+                <Repeat className="h-3.5 w-3.5 mr-1" />
+              )}
+              Chuyển ví trong MetaMask
+            </Button>
+          </div>
+        )}
+
         {/* 3-Stage Pipeline */}
         <div className="grid grid-cols-3 gap-2">
           <div className="text-center p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
             <Lock className="h-4 w-4 mx-auto text-orange-600 mb-1" />
             <div className="text-xs text-muted-foreground">{t("mint.tokenLifecycle.locked")}</div>
             <div className="text-lg font-bold text-orange-600">
-              {locked.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}
+              {displayLocked.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}
             </div>
           </div>
 
@@ -186,7 +294,7 @@ export function TokenLifecyclePanel() {
             <Zap className="h-4 w-4 mx-auto text-blue-600 mb-1" />
             <div className="text-xs text-muted-foreground">{t("mint.tokenLifecycle.activated")}</div>
             <div className="text-lg font-bold text-blue-600">
-              {activated.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}
+              {displayActivated.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}
             </div>
           </div>
 
@@ -194,38 +302,35 @@ export function TokenLifecyclePanel() {
             <Coins className="h-4 w-4 mx-auto text-green-600 mb-1" />
             <div className="text-xs text-muted-foreground">{t("mint.tokenLifecycle.flowing")}</div>
             <div className="text-lg font-bold text-green-600">
-              {balance.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}
+              {displayBalance.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}
             </div>
           </div>
         </div>
 
-        {/* Wallet mismatch warning */}
-        {mismatch && <WalletMismatchAlert mismatch={mismatch} />}
-
         {/* Progress bar */}
-        {total > 0 && (
+        {displayTotal > 0 && (
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{t("mint.tokenLifecycle.pipelineProgress")}</span>
-              <span>{t("mint.tokenLifecycle.flowingPercent").replace("{percent}", ((balance / total) * 100).toFixed(0))}</span>
+              <span>{t("mint.tokenLifecycle.flowingPercent").replace("{percent}", ((displayBalance / displayTotal) * 100).toFixed(0))}</span>
             </div>
             <div className="h-2 rounded-full bg-muted overflow-hidden flex">
-              {locked > 0 && (
+              {displayLocked > 0 && (
                 <div
                   className="h-full bg-orange-500"
-                  style={{ width: `${(locked / total) * 100}%` }}
+                  style={{ width: `${(displayLocked / displayTotal) * 100}%` }}
                 />
               )}
-              {activated > 0 && (
+              {displayActivated > 0 && (
                 <div
                   className="h-full bg-blue-500"
-                  style={{ width: `${(activated / total) * 100}%` }}
+                  style={{ width: `${(displayActivated / displayTotal) * 100}%` }}
                 />
               )}
-              {balance > 0 && (
+              {displayBalance > 0 && (
                 <div
                   className="h-full bg-green-500"
-                  style={{ width: `${(balance / total) * 100}%` }}
+                  style={{ width: `${(displayBalance / displayTotal) * 100}%` }}
                 />
               )}
             </div>
@@ -239,7 +344,7 @@ export function TokenLifecyclePanel() {
             variant="outline"
             className="flex-1"
             onClick={handleActivateAll}
-            disabled={isActivating || locked <= 0}
+            disabled={isActivating || locked <= 0 || !!showMismatchData}
           >
             {isActivating ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
@@ -253,7 +358,7 @@ export function TokenLifecyclePanel() {
             size="sm"
             className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500"
             onClick={handleClaimAll}
-            disabled={isClaiming || activated <= 0}
+            disabled={isClaiming || activated <= 0 || !!showMismatchData}
           >
             {isClaiming ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
