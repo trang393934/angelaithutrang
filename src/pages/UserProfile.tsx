@@ -35,6 +35,7 @@ import { vi } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { WalletAddressDisplay } from "@/components/profile/WalletAddressDisplay";
+import { SocialLinksDisplay } from "@/components/public-profile/SocialLinksDisplay";
 
 interface UserProfileData {
   user_id: string;
@@ -44,6 +45,7 @@ interface UserProfileData {
   cover_photo_url: string | null;
   handle: string | null;
   created_at: string;
+  social_links: Record<string, string> | null;
 }
 
 interface FriendData {
@@ -323,7 +325,12 @@ const UserProfile = () => {
           .maybeSingle();
 
         if (profileData) {
-          setProfile(profileData);
+          setProfile({
+            ...profileData,
+            social_links: (profileData.social_links && typeof profileData.social_links === "object" && !Array.isArray(profileData.social_links))
+              ? profileData.social_links as Record<string, string>
+              : null,
+          });
         } else {
           setProfile({
             user_id: userId,
@@ -333,6 +340,7 @@ const UserProfile = () => {
             cover_photo_url: null,
             handle: null,
             created_at: new Date().toISOString(),
+            social_links: null,
           });
         }
 
@@ -732,6 +740,9 @@ const UserProfile = () => {
                 {profile?.bio && (
                   <p className="text-[15px] text-gray-700 text-center">{profile.bio}</p>
                 )}
+
+                {/* Social Links */}
+                <SocialLinksDisplay socialLinks={profile?.social_links ?? null} avatarUrl={profile?.avatar_url} />
                 
                 {!profile?.bio && isOwnProfile && (
                   <Link to="/profile">
