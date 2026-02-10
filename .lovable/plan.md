@@ -1,71 +1,92 @@
 
 
-## Sửa Lỗi Cloudflare BYOK: Truyền Google API Key Trực Tiếp
+## Sửa Cloudflare AI Gateway: Chuyển sang Unified `/compat` Endpoint
 
-### Vấn Đề
+### Vấn Đề Hiện Tại
 
-Cloudflare AI Gateway BYOK cho provider `google-ai-studio` có bug đã biết: không inject stored API key đúng cách vì Google dùng header `x-goog-api-key` thay vì `Authorization`. Đây là lỗi phía Cloudflare, không phải code của chúng ta.
+Từ screenshot dashboard và code example của Cloudflare, ta thấy rõ:
+- Dashboard hiển thị **10 requests, 10 errors** -- tất cả request tới Cloudflare đều lỗi
+- Code example chính thức dùng **Unified API** (`/compat`) với model format `google-ai-studio/gemini-2.5-flash`
+- Code hiện tại dùng sai endpoint (`/google-ai-studio/v1beta/openai/...`) và sai header (`cf-aig-authorization` + `Authorization` riêng)
+
+### Nguyên Nhân
+
+Khi dùng **Stored Key (BYOK)**, Cloudflare Unified endpoint (`/compat`) tự inject Google API Key. Chỉ cần truyền `CF_API_TOKEN` qua `Authorization` header. Không cần truyền `GOOGLE_AI_API_KEY` riêng.
 
 ### Giải Pháp
 
-Thay vì dựa vào BYOK, ta sẽ lưu Google AI API Key vào Supabase Secrets và truyền trực tiếp qua header khi gọi Cloudflare Gateway.
+Thay đổi trong **10 Edge Functions**:
 
-### Các Bước Thực Hiện
+**1. URL**: Chuyển sang unified endpoint
+```
+// CU:
+.../angel-ai/google-ai-studio/v1beta/openai/chat/completions
 
-**Bước 1: Thêm Secret `GOOGLE_AI_API_KEY`**
+// MOI:
+.../angel-ai/compat
+```
 
-Con cần cung cấp Google AI Studio API Key để lưu vào Secrets.
+**2. Model format**: Thêm prefix provider
+```
+// CU: cfModel strip prefix -> "gemini-2.5-flash"
+// MOI: "google-ai-studio/gemini-2.5-flash" (giu nguyen prefix)
+```
 
-**Bước 2: Cập nhật logic header trong 10 Edge Functions**
+**3. Headers**: Don gian hoa -- chi can Authorization
+```
+// CU:
+aiHeaders["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN}`;
+aiHeaders["Authorization"] = `Bearer ${GOOGLE_AI_KEY}`;
 
-Thay đổi từ:
+// MOI:
+aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
+```
+
+### Chi Tiet Ky Thuat
+
+Block config moi cho moi function:
 
 ```text
+const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat";
+const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
+const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
+const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
+const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
 if (CF_API_TOKEN) {
-  aiHeaders["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN}`;
+  aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
 } else {
   aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
 }
 ```
 
-Sang:
+Thay doi chinh:
+- `cfModel`: thay `replace("google/", "")` bang `replace("google/", "google-ai-studio/")` de model thanh `google-ai-studio/gemini-2.5-flash`
+- Headers: chi can 1 `Authorization` header voi `CF_API_TOKEN`, BYOK tu inject Google key
+- Bo `GOOGLE_AI_API_KEY` -- khong can nua
 
-```text
-const GOOGLE_AI_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
-if (CF_API_TOKEN && GOOGLE_AI_KEY) {
-  // Dùng Cloudflare Gateway + truyền Google key trực tiếp
-  aiHeaders["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN}`;
-  aiHeaders["Authorization"] = `Bearer ${GOOGLE_AI_KEY}`;
-} else {
-  // Fallback: dùng Lovable Gateway
-  aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
-}
-```
+### 10 Files Can Sua
 
-Khi gửi tới Cloudflare, cả `cf-aig-authorization` (xác thực gateway) và `Authorization` (xác thực Google) đều được truyền. Cloudflare sẽ forward `Authorization` tới Google.
+| # | File | Thay doi |
+|---|---|---|
+| 1 | `supabase/functions/angel-chat/index.ts` | 2 block config (demo + main) |
+| 2 | `supabase/functions/analyze-image/index.ts` | 1 block config |
+| 3 | `supabase/functions/generate-content/index.ts` | 1 block config |
+| 4 | `supabase/functions/global-search/index.ts` | 1 block config |
+| 5 | `supabase/functions/check-user-energy/index.ts` | 1 block config |
+| 6 | `supabase/functions/send-healing-message/index.ts` | 1 block config |
+| 7 | `supabase/functions/analyze-reward-journal/index.ts` | 1 block config |
+| 8 | `supabase/functions/analyze-reward-question/index.ts` | 1 block config |
+| 9 | `supabase/functions/analyze-onboarding/index.ts` | 1 block config |
+| 10 | `supabase/functions/verify-avatar-for-withdrawal/index.ts` | 1 block config |
 
-**Bước 3: Deploy lại 10 Edge Functions**
+### Fallback
 
-- angel-chat
-- analyze-image
-- generate-content
-- global-search
-- check-user-energy
-- send-healing-message
-- analyze-reward-journal
-- analyze-reward-question
-- analyze-onboarding
-- verify-avatar-for-withdrawal
-
-### Danh Sach Cac Files Can Sua
-
-| File | Thay doi |
-|---|---|
-| 10 Edge Functions (liệt kê ở trên) | Thêm `GOOGLE_AI_API_KEY`, cập nhật logic header |
+Van giu co che fallback: neu Cloudflare tra loi khong thanh cong (va khong phai 429), tu dong thu lai qua Lovable Gateway voi model `google/gemini-2.5-flash`.
 
 ### Luu Y
 
-- Fallback về Lovable Gateway vẫn hoạt động nếu thiếu `CF_API_TOKEN` hoặc `GOOGLE_AI_API_KEY`
-- Không thay đổi model, system prompt, cache, hay bất kỳ logic nào khác
-- Hiện tại fallback đang hoạt động tốt (chat vẫn dùng được qua Lovable Gateway)
+- `GOOGLE_AI_API_KEY` secret van giu lai trong Secrets (khong xoa), phong truong hop can dung sau
+- Khong thay doi model, system prompt, cache, hay logic nao khac
+- Chi thay doi cach goi API va xac thuc
 
