@@ -502,8 +502,10 @@ serve(async (req) => {
         const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
         const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "").replace("google-ai-studio/", "") : m;
         const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
-        if (CF_API_TOKEN) {
+        const GOOGLE_AI_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
+        if (CF_API_TOKEN && GOOGLE_AI_KEY) {
           aiHeaders["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN}`;
+          aiHeaders["Authorization"] = `Bearer ${GOOGLE_AI_KEY}`;
         } else {
           aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
         }
