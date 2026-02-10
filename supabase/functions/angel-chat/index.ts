@@ -991,6 +991,7 @@ You embody pure love and wisdom from Father Universe. Guide with compassion.`;
       const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
       const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
       const AI_API_KEY = CF_API_TOKEN || LOVABLE_API_KEY;
+      const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
       // --- End AI Gateway Config ---
 
       const response = await fetch(AI_GATEWAY_URL, {
@@ -1000,7 +1001,7 @@ You embody pure love and wisdom from Father Universe. Guide with compassion.`;
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: cfModel("google/gemini-2.5-flash"),
           messages: [
             { role: "system", content: demoSystemPrompt },
             ...messages,
@@ -1345,6 +1346,7 @@ HƯỚNG DẪN XỬ LÝ:
     const CF_API_TOKEN_MAIN = Deno.env.get("CF_API_TOKEN");
     const AI_GATEWAY_URL_MAIN = CF_API_TOKEN_MAIN ? CF_GATEWAY_URL_MAIN : LOVABLE_GATEWAY_URL_MAIN;
     const AI_API_KEY_MAIN = CF_API_TOKEN_MAIN || LOVABLE_API_KEY;
+    const cfModelMain = (m: string) => CF_API_TOKEN_MAIN ? m.replace("google/", "google-ai-studio/") : m;
     // --- End AI Gateway Config ---
 
     console.log(`Calling AI Gateway: ${CF_API_TOKEN_MAIN ? 'Cloudflare' : 'Lovable (fallback)'}...`);
@@ -1356,7 +1358,7 @@ HƯỚNG DẪN XỬ LÝ:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: cfModelMain("google/gemini-2.5-flash"),
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
