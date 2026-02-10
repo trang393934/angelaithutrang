@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   LogIn, LogOut, User, MessageCircle, Search,
@@ -41,7 +42,7 @@ export const Header = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut, isLoading } = useAuth();
+  const { user, signOut, isLoading, isAdmin } = useAuth();
   const { balance } = useCamlyCoin();
   const { unreadCount } = useDirectMessages();
   const { t } = useLanguage();
@@ -245,6 +246,18 @@ export const Header = () => {
                           </Link>
                         </DropdownMenuItem>
                         
+                        {isAdmin && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild className="cursor-pointer">
+                              <Link to="/admin/dashboard" className="flex items-center gap-2">
+                                <Shield className="w-4 h-4 text-purple-600" />
+                                <span className="font-medium">Admin Dashboard</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        
                         <DropdownMenuSeparator />
                         
                         {/* Logout */}
@@ -423,6 +436,25 @@ export const Header = () => {
                         <ChevronRight className="w-5 h-5 text-muted-foreground" />
                       </Link>
                       
+                      {/* Admin Dashboard - Only for admins */}
+                      {isAdmin && (
+                        <Link 
+                          to="/admin/dashboard"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="mx-4 flex items-center justify-between p-4 rounded-xl 
+                            bg-gradient-to-r from-purple-100 to-violet-100 dark:from-purple-950/40 dark:to-violet-950/40
+                            border border-purple-300/50 dark:border-purple-700/50 transition-all hover:shadow-md"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-purple-200 dark:bg-purple-900/50 flex items-center justify-center">
+                              <Shield className="w-5 h-5 text-purple-700 dark:text-purple-400" />
+                            </div>
+                            <span className="font-semibold text-foreground">Admin Dashboard</span>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        </Link>
+                      )}
+
                       {/* Sign Out Button */}
                       <button
                         onClick={() => {
