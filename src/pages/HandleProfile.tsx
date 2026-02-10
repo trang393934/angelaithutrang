@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -45,10 +45,15 @@ const updateMetaTags = (profile: { display_name: string | null; bio: string | nu
 };
 
 const HandleProfile = () => {
-  const { handle } = useParams<{ handle: string }>();
+  const { handle: paramHandle } = useParams<{ handle: string }>();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { t } = useLanguage();
   const [showGiftDialog, setShowGiftDialog] = useState(false);
+
+  // Support both /@:handle route param and catch-all /@handle path extraction
+  const handle = paramHandle || location.pathname.match(/^\/@(.+)$/)?.[1];
+
   const { profile, stats, recentPosts, friends, publicSettings, isLoading, notFound } =
     usePublicProfile(handle);
 
