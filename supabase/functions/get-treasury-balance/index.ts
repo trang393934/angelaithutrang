@@ -30,18 +30,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create Supabase client
+    // Create Supabase client with service role for admin checks
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } }
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
     });
 
     // Verify user is authenticated
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
     
     if (userError || !user) {
+      console.error('Auth error:', userError?.message);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -50,8 +51,8 @@ Deno.serve(async (req) => {
 
     const userId = user.id;
 
-    // Check if user is admin
-    const { data: roleData, error: roleError } = await supabase
+    // Check if user is admin using service role client (bypasses RLS)
+    const { data: roleData, error: roleError } = await adminClient
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
