@@ -87,7 +87,7 @@ const HandleProfile = () => {
           <p className="text-muted-foreground text-sm">
             {t("publicProfile.notFoundDesc") || "Link"}{" "}
             <span className="font-mono font-medium text-primary">
-              fun.rich/{handle}
+              angel.fun.rich/{handle}
             </span>{" "}
             {t("publicProfile.notFoundSuffix") || "chưa có ai sử dụng."}
           </p>

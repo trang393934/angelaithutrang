@@ -34,7 +34,7 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
     if (success) {
       toast({
         title: "✨ Link đã được đặt!",
-        description: `fun.rich/${handle} là của bạn rồi!`,
+        description: `angel.fun.rich/${handle} là của bạn rồi!`,
       });
       onClaimed?.(handle);
     } else if (!checkResult?.available) {
@@ -66,14 +66,14 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
 
       {source === "signup" && (
         <p className="text-xs text-muted-foreground">
-          Đây là link hồ sơ công khai của bạn, giống LinkedIn. Ví dụ: <span className="font-medium text-divine-gold">fun.rich/camly_duong</span>
+          Đây là link hồ sơ công khai của bạn, giống LinkedIn. Ví dụ: <span className="font-medium text-divine-gold">angel.fun.rich/camly_duong</span>
         </p>
       )}
 
       <div className="flex gap-2">
         <div className="relative flex-1">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none select-none">
-            fun.rich/
+            angel.fun.rich/
           </div>
           <Input
             value={handle}
@@ -145,7 +145,7 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
                     className="cursor-pointer hover:bg-divine-gold/10 hover:border-divine-gold/30 transition-colors text-xs"
                     onClick={() => handleSuggestionClick(suggestion)}
                   >
-                    fun.rich/{suggestion}
+                    angel.fun.rich/{suggestion}
                   </Badge>
                 ))}
               </div>
@@ -157,7 +157,7 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
       {/* Current handle info */}
       {currentHandle && isChanged && (
         <p className="text-xs text-muted-foreground">
-          Link hiện tại: <span className="font-medium">fun.rich/{currentHandle}</span>
+          Link hiện tại: <span className="font-medium">angel.fun.rich/{currentHandle}</span>
         </p>
       )}
 

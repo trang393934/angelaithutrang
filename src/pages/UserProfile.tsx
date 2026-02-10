@@ -655,7 +655,7 @@ const UserProfile = () => {
                 </h1>
               {profile?.handle && (
                   <p className="text-sm text-divine-gold font-medium mt-0.5">
-                    fun.rich/{profile.handle}
+                    angel.fun.rich/{profile.handle}
                   </p>
                 )}
                 <p className="text-[15px] text-gray-500 font-medium mt-1">
