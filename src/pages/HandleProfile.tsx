@@ -19,6 +19,7 @@ import { Link } from "react-router-dom";
 import { Gift } from "lucide-react";
 import angelLogo from "@/assets/angel-ai-golden-logo.png";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
+import { ProfileMoreMenu } from "@/components/public-profile/ProfileMoreMenu";
 import { useState } from "react";
 
 const updateMetaTags = (profile: { display_name: string | null; bio: string | null; avatar_url: string | null; handle: string | null }) => {
@@ -117,8 +118,13 @@ const HandleProfile = () => {
         socialLinks={profile.social_links}
       />
 
-      {/* Ask Angel Button + TẶNG THƯỞNG CTA */}
+      {/* More Menu + Ask Angel Button + TẶNG THƯỞNG CTA */}
       <div className="flex items-center justify-center gap-3 mt-2 px-4 flex-wrap">
+        <ProfileMoreMenu
+          userId={profile.user_id}
+          displayName={profile.display_name}
+          handle={profile.handle}
+        />
         <AskAngelButton
           displayName={profile.display_name}
           userId={profile.user_id}
