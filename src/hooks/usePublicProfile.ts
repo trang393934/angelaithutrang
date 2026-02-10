@@ -28,6 +28,7 @@ export interface PublicFriend {
   user_id: string;
   display_name: string | null;
   avatar_url: string | null;
+  handle: string | null;
 }
 
 export interface PublicPost {
@@ -191,7 +192,7 @@ export function usePublicProfile(handle?: string) {
           );
           const { data: friendProfiles } = await supabase
             .from("profiles")
-            .select("user_id, display_name, avatar_url")
+            .select("user_id, display_name, avatar_url, handle")
             .in("user_id", friendIds);
           setFriends(friendProfiles || []);
         }

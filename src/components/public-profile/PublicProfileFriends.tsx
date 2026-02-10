@@ -47,7 +47,7 @@ export function PublicProfileFriends({
             transition={{ delay: 0.5 + index * 0.05 }}
           >
             <Link
-              to={`/user/${friend.user_id}`}
+              to={friend.handle ? `/@${friend.handle}` : `/user/${friend.user_id}`}
               className="group flex flex-col items-center gap-1.5 p-2"
             >
               <Avatar className="w-14 h-14 border-2 border-border-light group-hover:border-primary/30 shadow-sm group-hover:shadow-glow transition-all duration-300">

@@ -17,6 +17,28 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import angelLogo from "@/assets/angel-ai-golden-logo.png";
 
+const updateMetaTags = (profile: { display_name: string | null; bio: string | null; avatar_url: string | null; handle: string | null }) => {
+  document.title = `${profile.display_name || "FUN Member"} | FUN Profile`;
+
+  const setMeta = (property: string, content: string) => {
+    let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement | null;
+    if (!el) {
+      el = document.createElement("meta");
+      el.setAttribute("property", property);
+      document.head.appendChild(el);
+    }
+    el.setAttribute("content", content);
+  };
+
+  const desc = profile.bio || `${profile.display_name || "FUN Member"} trên FUN Ecosystem`;
+  const url = `${window.location.origin}/@${profile.handle}`;
+  setMeta("og:title", `${profile.display_name || "FUN Member"} | FUN Profile`);
+  setMeta("og:description", desc);
+  setMeta("og:url", url);
+  if (profile.avatar_url) setMeta("og:image", profile.avatar_url);
+  setMeta("og:type", "profile");
+};
+
 const HandleProfile = () => {
   const { handle } = useParams<{ handle: string }>();
   const [searchParams] = useSearchParams();
@@ -32,11 +54,12 @@ const HandleProfile = () => {
     }
   }, [searchParams]);
 
-  // Track profile view
+  // Track profile view + set meta tags
   useEffect(() => {
     if (profile?.user_id) {
       const ref = searchParams.get("ref") || localStorage.getItem("fun_referrer") || undefined;
       trackProfileEvent(profile.user_id, "view", undefined, ref);
+      updateMetaTags(profile);
     }
   }, [profile?.user_id]);
 
@@ -108,7 +131,7 @@ const HandleProfile = () => {
 
       {/* Social Proof Stats (privacy-aware) */}
       <div className="px-4">
-        <PublicProfileStats stats={stats} showStats={publicSettings.show_stats} />
+        <PublicProfileStats stats={stats} showStats={publicSettings.show_stats} activeModulesCount={publicSettings.enabled_modules?.length || 0} />
       </div>
 
       {/* Friends Preview (privacy-aware) */}
