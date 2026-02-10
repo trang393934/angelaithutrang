@@ -41,6 +41,14 @@ export function StoryViewer({
   const currentGroup = groupedStories[currentGroupIndex];
   const currentStory = currentGroup?.stories[currentStoryIndex];
 
+  // Lock body scroll when viewer is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   // Mark story as viewed
   useEffect(() => {
     if (currentStory && !viewedStoryIds.has(currentStory.id)) {
