@@ -60,10 +60,20 @@ serve(async (req) => {
       }
     ];
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
+    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+    const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
+    const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
+    const AI_API_KEY = CF_API_TOKEN || LOVABLE_API_KEY;
+    // --- End AI Gateway Config ---
+
+    console.log(`Analyzing image via ${CF_API_TOKEN ? 'Cloudflare' : 'Lovable'} Gateway`);
+
+    const response = await fetch(AI_GATEWAY_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
