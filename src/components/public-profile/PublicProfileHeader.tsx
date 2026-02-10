@@ -68,11 +68,8 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType }: Publ
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent" />
       </div>
 
-      {/* Spacer to prevent name from being hidden behind cover */}
-      <div className="h-16 sm:h-20" />
-
       {/* Profile Info */}
-      <div className="max-w-3xl mx-auto px-4 -mt-36 sm:-mt-44 relative z-10">
+      <div className="max-w-3xl mx-auto px-4 -mt-20 sm:-mt-24 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
