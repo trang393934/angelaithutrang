@@ -7,6 +7,7 @@ import { PublicProfileHeader } from "@/components/public-profile/PublicProfileHe
 import { PublicProfileActions } from "@/components/public-profile/PublicProfileActions";
 import { PublicProfileStats } from "@/components/public-profile/PublicProfileStats";
 import { PublicProfileFriends } from "@/components/public-profile/PublicProfileFriends";
+import { GiftStatsBadges } from "@/components/public-profile/GiftStatsBadges";
 import { FunWorldsTiles } from "@/components/public-profile/FunWorldsTiles";
 import { PublicProfilePosts } from "@/components/public-profile/PublicProfilePosts";
 import { PublicProfileJoinCTA } from "@/components/public-profile/PublicProfileJoinCTA";
@@ -155,6 +156,15 @@ const HandleProfile = () => {
       {/* Social Proof Stats (privacy-aware) */}
       <div className="px-4">
         <PublicProfileStats stats={stats} showStats={publicSettings.show_stats} activeModulesCount={publicSettings.enabled_modules?.length || 0} />
+      </div>
+
+      {/* Gift Stats & Badges */}
+      <div className="px-4">
+        <GiftStatsBadges
+          userId={profile.user_id}
+          poplScore={stats.poplScore}
+          lightPoints={stats.poplScore * 10}
+        />
       </div>
 
       {/* Friends Preview (privacy-aware) */}
