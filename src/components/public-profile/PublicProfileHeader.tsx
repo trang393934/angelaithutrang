@@ -1,8 +1,13 @@
 import { motion } from "framer-motion";
+import { Copy, Check, Share2, Calendar } from "lucide-react";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PoPLBadge } from "@/components/profile/PoPLBadge";
 import { WalletAddressDisplay } from "@/components/profile/WalletAddressDisplay";
 import { ProfileBadge } from "@/components/public-profile/ProfileBadge";
+import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { toast } from "sonner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import type { PublicProfileData, PublicProfileStats } from "@/hooks/usePublicProfile";
 
@@ -14,6 +19,39 @@ interface PublicProfileHeaderProps {
 }
 
 export function PublicProfileHeader({ profile, stats, tagline, badgeType }: PublicProfileHeaderProps) {
+  const { t } = useLanguage();
+  const [copied, setCopied] = useState(false);
+
+  const profileUrl = `${window.location.origin}/@${profile.handle}`;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(profileUrl);
+      setCopied(true);
+      toast.success(t("publicProfile.linkCopied") || "Đã sao chép link!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Không thể sao chép");
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: profile.display_name || "FUN Profile",
+          text: tagline || profile.bio || "",
+          url: profileUrl,
+        });
+      } catch {}
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const joinedDate = new Date(profile.created_at);
+  const joinedLabel = `${t("publicProfile.memberSince") || "Thành viên từ"} ${String(joinedDate.getMonth() + 1).padStart(2, "0")}/${joinedDate.getFullYear()}`;
+
   return (
     <div className="relative">
       {/* Cover Photo */}
@@ -66,11 +104,29 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType }: Publ
             <ProfileBadge badgeType={badgeType ?? null} />
           </div>
 
-          {/* Handle */}
+          {/* Handle + Copy/Share */}
           {profile.handle && (
-            <p className="text-sm font-medium text-primary mt-1">
-              fun.rich/{profile.handle}
-            </p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <p className="text-sm font-medium text-primary">
+                fun.rich/{profile.handle}
+              </p>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-primary"
+                onClick={handleCopyLink}
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-primary"
+                onClick={handleShare}
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           )}
 
           {/* Bio */}
@@ -86,6 +142,12 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType }: Publ
               ✨ {tagline}
             </p>
           )}
+
+          {/* Member Since */}
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>{joinedLabel}</span>
+          </div>
 
           {/* Wallet Address */}
           <div className="mt-3">

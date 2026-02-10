@@ -8,6 +8,7 @@ import funMoneyLogo from "@/assets/fun-money-logo.png";
 interface PublicProfileStatsProps {
   stats: StatsType;
   showStats?: boolean;
+  activeModulesCount?: number;
 }
 
 const statItems = [
@@ -19,9 +20,10 @@ const statItems = [
   { key: "lixiReward", icon: Gift, labelKey: "publicProfile.statLixi" },
   { key: "poplScore", icon: Star, labelKey: "publicProfile.statPoPL" },
   { key: "funMoneyTotal", icon: Coins, labelKey: "publicProfile.statFUN" },
+  { key: "activeModules", icon: Star, labelKey: "publicProfile.statWorlds" },
 ] as const;
 
-export function PublicProfileStats({ stats, showStats = true }: PublicProfileStatsProps) {
+export function PublicProfileStats({ stats, showStats = true, activeModulesCount = 0 }: PublicProfileStatsProps) {
   const { t } = useLanguage();
 
   if (!showStats) return null;
@@ -35,6 +37,7 @@ export function PublicProfileStats({ stats, showStats = true }: PublicProfileSta
     lixiReward: stats.lixiReward > 0 ? Math.floor(stats.lixiReward).toLocaleString() : "0",
     poplScore: `${stats.poplScore}/100`,
     funMoneyTotal: stats.funMoneyTotal.toLocaleString(),
+    activeModules: activeModulesCount.toString(),
   };
 
   const getIcon = (key: string, Icon: any) => {
@@ -46,6 +49,9 @@ export function PublicProfileStats({ stats, showStats = true }: PublicProfileSta
     }
     if (key === "funMoneyTotal") {
       return <img src={funMoneyLogo} alt="FUN" className="w-5 h-5" />;
+    }
+    if (key === "activeModules") {
+      return <span className="text-lg">🌍</span>;
     }
     return <Icon className="w-4 h-4 text-primary mb-1 group-hover:scale-110 transition-transform" />;
   };
@@ -62,6 +68,7 @@ export function PublicProfileStats({ stats, showStats = true }: PublicProfileSta
       case "lixiReward": return "Lì xì Tết";
       case "poplScore": return "PoPL";
       case "funMoneyTotal": return "FUN Money";
+      case "activeModules": return "FUN Worlds";
       default: return key;
     }
   };
