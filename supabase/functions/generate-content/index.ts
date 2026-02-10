@@ -59,11 +59,11 @@ serve(async (req) => {
     console.log(`Prompt: ${prompt.substring(0, 100)}...`);
 
     // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
-    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/google-ai-studio/v1beta/openai/chat/completions";
     const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
     const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
     const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
-    const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
+    const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "").replace("google-ai-studio/", "") : m;
     const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
     if (CF_API_TOKEN) {
       aiHeaders["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN}`;
@@ -72,19 +72,30 @@ serve(async (req) => {
     }
     // --- End AI Gateway Config ---
 
-    const response = await fetch(AI_GATEWAY_URL, {
+    const reqBody = {
+      model: cfModel("google/gemini-2.5-flash"),
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: prompt },
+      ],
+      max_tokens: 2000,
+      temperature: 0.7,
+    };
+
+    let response = await fetch(AI_GATEWAY_URL, {
       method: "POST",
       headers: aiHeaders,
-      body: JSON.stringify({
-        model: cfModel("google/gemini-2.5-flash"),
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: prompt },
-        ],
-        max_tokens: 2000,
-        temperature: 0.7,
-      }),
+      body: JSON.stringify(reqBody),
     });
+
+    if (!response.ok && CF_API_TOKEN && response.status !== 429 && response.status !== 402) {
+      console.error("Cloudflare failed:", response.status, "- falling back to Lovable");
+      response = await fetch(LOVABLE_GATEWAY_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...reqBody, model: "google/gemini-2.5-flash" }),
+      });
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
