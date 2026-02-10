@@ -2651,6 +2651,7 @@ export type Database = {
           popl_verified: boolean | null
           popl_verified_at: string | null
           response_style: string | null
+          social_links: Json | null
           soul_tags: string[] | null
           updated_at: string
           user_id: string
@@ -2668,6 +2669,7 @@ export type Database = {
           popl_verified?: boolean | null
           popl_verified_at?: string | null
           response_style?: string | null
+          social_links?: Json | null
           soul_tags?: string[] | null
           updated_at?: string
           user_id: string
@@ -2685,6 +2687,7 @@ export type Database = {
           popl_verified?: boolean | null
           popl_verified_at?: string | null
           response_style?: string | null
+          social_links?: Json | null
           soul_tags?: string[] | null
           updated_at?: string
           user_id?: string

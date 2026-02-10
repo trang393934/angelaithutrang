@@ -10,6 +10,7 @@ export interface PublicProfileData {
   cover_photo_url: string | null;
   handle: string | null;
   created_at: string;
+  social_links: Record<string, string> | null;
 }
 
 export interface PublicProfileStats {
@@ -99,7 +100,7 @@ export function usePublicProfile(handle?: string) {
         // 1. Resolve handle to profile
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
-          .select("user_id, display_name, avatar_url, bio, cover_photo_url, handle, created_at")
+          .select("user_id, display_name, avatar_url, bio, cover_photo_url, handle, created_at, social_links")
           .ilike("handle", handle)
           .maybeSingle();
 
@@ -136,7 +137,12 @@ export function usePublicProfile(handle?: string) {
         }
 
         setPublicSettings(settings);
-        setProfile(profileData);
+        setProfile({
+          ...profileData,
+          social_links: (profileData.social_links && typeof profileData.social_links === "object" && !Array.isArray(profileData.social_links))
+            ? profileData.social_links as Record<string, string>
+            : null,
+        });
 
         // 3. Fetch all stats in parallel
         const [

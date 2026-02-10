@@ -10,15 +10,17 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import type { PublicProfileData, PublicProfileStats } from "@/hooks/usePublicProfile";
+import { SocialLinksDisplay } from "@/components/public-profile/SocialLinksDisplay";
 
 interface PublicProfileHeaderProps {
   profile: PublicProfileData;
   stats: PublicProfileStats;
   tagline?: string | null;
   badgeType?: string | null;
+  socialLinks?: Record<string, string> | null;
 }
 
-export function PublicProfileHeader({ profile, stats, tagline, badgeType }: PublicProfileHeaderProps) {
+export function PublicProfileHeader({ profile, stats, tagline, badgeType, socialLinks }: PublicProfileHeaderProps) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
@@ -150,6 +152,9 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType }: Publ
               <Calendar className="w-3.5 h-3.5" />
               <span>{joinedLabel}</span>
             </div>
+
+            {/* Social Links - mini avatars */}
+            <SocialLinksDisplay socialLinks={socialLinks} avatarUrl={profile.avatar_url} />
 
             <div className="mt-3">
               <WalletAddressDisplay userId={profile.user_id} />

@@ -114,6 +114,7 @@ const HandleProfile = () => {
         stats={stats}
         tagline={publicSettings.tagline}
         badgeType={publicSettings.badge_type}
+        socialLinks={profile.social_links}
       />
 
       {/* Ask Angel Button + TẶNG THƯỞNG CTA */}
