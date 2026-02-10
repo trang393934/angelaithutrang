@@ -54,10 +54,16 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
     isTransferring,
     camlyCoinBalance,
     funMoneyBalance,
+    usdtBalance,
+    usdcBalance,
     fetchCamlyBalance,
     fetchFunMoneyBalance,
+    fetchUsdtBalance,
+    fetchUsdcBalance,
     transferCamly,
     transferFunMoney,
+    transferUsdt,
+    transferUsdc,
     isConnected,
     address,
     hasWallet,
@@ -65,7 +71,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
   } = useWeb3Transfer();
 
   const [selfGiftWarning, setSelfGiftWarning] = useState(false);
-  const [activeTab, setActiveTab] = useState<"internal" | "camly_web3" | "fun_money">("internal");
+  const [activeTab, setActiveTab] = useState<"internal" | "camly_web3" | "fun_money" | "usdt" | "usdc">("internal");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -152,6 +158,23 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
       const result = await sendGift(selectedUser.user_id, numAmount, message, contextType, contextId);
 
       if (result.success) {
+        // Update Light Score / PoPL for sender
+        try {
+          await supabase.rpc("update_popl_score", {
+            _user_id: user!.id,
+            _action_type: "donate",
+            _is_positive: true,
+          });
+          await supabase.rpc("add_light_points", {
+            _user_id: user!.id,
+            _points: 5,
+            _reason: `Tặng ${numAmount.toLocaleString()} Camly Coin`,
+            _source_type: "internal_gift",
+          });
+        } catch (e) {
+          console.warn("[GiftCoin] PoPL/Light update failed:", e);
+        }
+
         setCelebrationData({
           receipt_public_id: result.data?.receipt_public_id || "",
           sender_id: user?.id || "",
@@ -201,8 +224,37 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
     }
 
     // Determine tokenType from symbol
-    const resolvedTokenType = tokenSymbol === "FUN" ? "fun_money" : "camly_web3";
+    const tokenTypeMap: Record<string, string> = {
+      CAMLY: "camly_web3",
+      FUN: "fun_money",
+      USDT: "usdt",
+      USDC: "usdc",
+    };
+    const resolvedTokenType = tokenTypeMap[tokenSymbol] || "camly_web3";
     const resolvedExplorer = tokenSymbol === "FUN" ? "https://testnet.bscscan.com" : "https://bscscan.com";
+
+    // Update Light Score / PoPL for sender (donate action is positive)
+    try {
+      await supabase.rpc("update_popl_score", {
+        _user_id: user!.id,
+        _action_type: "donate",
+        _is_positive: true,
+      });
+    } catch (e) {
+      console.warn("[Web3 Gift] PoPL score update failed:", e);
+    }
+
+    // Add Light Points for the sender
+    try {
+      await supabase.rpc("add_light_points", {
+        _user_id: user!.id,
+        _points: 10,
+        _reason: `Tặng thưởng ${transferAmount} ${tokenSymbol} on-chain`,
+        _source_type: "web3_gift",
+      });
+    } catch (e) {
+      console.warn("[Web3 Gift] Light points update failed:", e);
+    }
 
     setCelebrationData({
       receipt_public_id: "",
@@ -215,7 +267,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
       amount: transferAmount,
       message: cryptoMessage || null,
       tx_hash: result.txHash || null,
-      tokenType: resolvedTokenType,
+      tokenType: resolvedTokenType as any,
       explorerUrl: resolvedExplorer,
     });
     onOpenChange(false);
@@ -234,21 +286,26 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-auto">
-              <TabsTrigger value="internal" className="flex items-center gap-1 text-xs px-2 py-2">
-                <img src={camlyCoinLogo} alt="" className="w-4 h-4 rounded-full" />
-                <span className="hidden sm:inline">Camly</span>
-                <span className="sm:hidden">Camly</span>
+            <TabsList className="grid w-full grid-cols-5 h-auto">
+              <TabsTrigger value="internal" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 py-2">
+                <img src={camlyCoinLogo} alt="" className="w-3.5 h-3.5 rounded-full" />
+                <span>Camly</span>
               </TabsTrigger>
-              <TabsTrigger value="camly_web3" className="flex items-center gap-1 text-xs px-2 py-2">
-                <Wallet className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">CAMLY Web3</span>
-                <span className="sm:hidden">Web3</span>
+              <TabsTrigger value="camly_web3" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 py-2">
+                <Wallet className="w-3 h-3" />
+                <span>CAMLY</span>
               </TabsTrigger>
-              <TabsTrigger value="fun_money" className="flex items-center gap-1 text-xs px-2 py-2">
-                <img src={funMoneyLogo} alt="" className="w-4 h-4" />
-                <span className="hidden sm:inline">FUN Money</span>
-                <span className="sm:hidden">FUN</span>
+              <TabsTrigger value="fun_money" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 py-2">
+                <img src={funMoneyLogo} alt="" className="w-3.5 h-3.5" />
+                <span>FUN</span>
+              </TabsTrigger>
+              <TabsTrigger value="usdt" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 py-2">
+                <Coins className="w-3 h-3 text-green-600" />
+                <span>USDT</span>
+              </TabsTrigger>
+              <TabsTrigger value="usdc" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 py-2">
+                <Coins className="w-3 h-3 text-blue-600" />
+                <span>USDC</span>
               </TabsTrigger>
             </TabsList>
 
@@ -448,6 +505,48 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                 onFetchBalance={fetchFunMoneyBalance}
                 onSuccess={(result, recipientUser, targetAddress, transferAmount, msg) =>
                   handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "FUN", msg)
+                }
+              />
+            </TabsContent>
+
+            {/* USDT Transfer Tab */}
+            <TabsContent value="usdt" className="mt-4">
+              <CryptoTransferTab
+                tokenType="usdt"
+                tokenSymbol="USDT"
+                tokenBalance={usdtBalance}
+                isConnected={isConnected}
+                isTransferring={isTransferring}
+                address={address}
+                hasWallet={hasWallet}
+                explorerUrl="https://bscscan.com"
+                accentColor="orange"
+                onConnect={connect}
+                onTransfer={transferUsdt}
+                onFetchBalance={fetchUsdtBalance}
+                onSuccess={(result, recipientUser, targetAddress, transferAmount, msg) =>
+                  handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "USDT", msg)
+                }
+              />
+            </TabsContent>
+
+            {/* USDC Transfer Tab */}
+            <TabsContent value="usdc" className="mt-4">
+              <CryptoTransferTab
+                tokenType="usdc"
+                tokenSymbol="USDC"
+                tokenBalance={usdcBalance}
+                isConnected={isConnected}
+                isTransferring={isTransferring}
+                address={address}
+                hasWallet={hasWallet}
+                explorerUrl="https://bscscan.com"
+                accentColor="violet"
+                onConnect={connect}
+                onTransfer={transferUsdc}
+                onFetchBalance={fetchUsdcBalance}
+                onSuccess={(result, recipientUser, targetAddress, transferAmount, msg) =>
+                  handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "USDC", msg)
                 }
               />
             </TabsContent>
