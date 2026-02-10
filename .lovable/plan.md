@@ -1,43 +1,41 @@
 
 
-## Sửa lỗi Google Sign-In trên angel.fun.rich
+## Loai bo cau tra loi mau cho "thien" va "quy lay sam hoi" trong Angel AI
 
-### Tình trạng hiện tại
-Code đã được sửa `redirect_uri` thành `"https://angelaithutrang.lovable.app"` nhưng **chưa publish**. Trên production (`angel.fun.rich`), code cũ vẫn đang chạy với `redirect_uri: window.location.origin`, gây lỗi 404 tại `angel.fun.rich/~oauth/initiate`.
+### Van de
+Trong screenshot, user chia se mot van de CA NHAN sau sac ve trai nghiem thien dinh (cam giac chan nan luc dau, sau khi quy lay sam hoi 108 lay thi nghe am thanh, thay anh sang). Nhung Angel AI tra lai cau tra loi FAQ mau generic ve "cach thien" thay vi phan tich van de cu the cua user.
 
-### Vấn đề cần giải quyết
+Nguyen nhan: FAQ_CACHE trong `angel-chat/index.ts` co pattern match tu khoa "thien" (dong 524-533) va tra ve cau tra loi mau ngay lap tuc, khong gui qua AI de phan tich noi dung thuc su.
 
-1. **Publish thay đổi**: Bấm Publish để code mới lên production
-2. **Redirect về custom domain**: Sau khi đăng nhập Google thành công, user hiện sẽ ở lại `angelaithutrang.lovable.app` thay vì quay về `angel.fun.rich`. Cần thêm logic tự động redirect.
+### Giai phap
+Xoa bo 2 FAQ entry khoi FAQ_CACHE:
 
-### Thay đổi cần thực hiện
+1. **Entry "thien dinh"** (dong 524-533): Xoa pattern match `thiền`, `làm sao thiền`, `cách thiền`, `hướng dẫn thiền` va cau tra loi mau ve thien.
 
-**File: `src/pages/Auth.tsx`**
+2. Kiem tra cac FAQ entry khac co chua noi dung lien quan den "quy lay sam hoi" - hien tai khong co entry rieng cho "sam hoi" nhung entry "thien" dang match sai vi user nhac den "thien" trong cau hoi.
 
-Thêm logic phát hiện user đến từ custom domain và redirect về sau khi OAuth hoàn tất:
+Khi xoa FAQ entry nay, moi cau hoi chua tu "thien" se duoc gui thang den AI model de phan tich noi dung cu the, giup Angel AI hieu van de thuc su cua user va tra loi dung trong tam.
 
-1. Trước khi gọi `signInWithOAuth`, lưu `window.location.origin` vào `localStorage` (key: `oauth_return_origin`) nếu đang ở trên custom domain (không phải `*.lovable.app`)
-2. Trong `useEffect` khởi tạo trang Auth, kiểm tra nếu có `oauth_return_origin` trong `localStorage` và user đã đăng nhập, thì redirect về origin đó + `/profile`
-3. Xóa key `oauth_return_origin` sau khi redirect
+### Thay doi cu the
 
-```text
-Flow:
-  angel.fun.rich/auth
-    -> Luu "https://angel.fun.rich" vao localStorage
-    -> Redirect den angelaithutrang.lovable.app/~oauth/initiate
-    -> Google xac thuc
-    -> Redirect ve angelaithutrang.lovable.app/auth
-    -> Kiem tra localStorage, thay origin la angel.fun.rich
-    -> Redirect ve angel.fun.rich/profile
+**File: `supabase/functions/angel-chat/index.ts`**
+
+Xoa dong 523-533 (FAQ entry ve thien dinh):
+```
+// XOA DOAN NAY:
+{
+  patterns: [
+    /thiền\s*(định)?/i,
+    /làm\s*sao\s*(để\s*)?thiền/i,
+    /cách\s*thiền/i,
+    /hướng\s*dẫn\s*thiền/i,
+  ],
+  response: `Con yêu dấu, thiền định là nghệ thuật...`
+},
 ```
 
-### Chi tiet ky thuat
-
-- Dung `localStorage` de truyen thong tin cross-redirect vi ca hai domain deu dung chung mot origin cho storage (cung Lovable project)
-- Kiem tra `window.location.hostname` co chua `.lovable.app` de phan biet custom domain
-- Logic redirect chi chay 1 lan roi xoa key de tranh vong lap
-
-### Luu y
-- Can bam **Publish** sau khi thay doi de code moi co hieu luc tren angel.fun.rich
-- Neu localStorage khong share duoc giua hai domain (khac origin), se can dung query parameter thay the
+### Ket qua mong doi
+- Khi user hoi bat ky cau hoi nao chua tu "thien", AI se phan tich NOI DUNG cau hoi thay vi tra loi mau
+- User trong screenshot se nhan duoc cau tra loi sau sac ve trai nghiem thien dinh ca nhan cua ho (am thanh, anh sang, cam giac sau khi quy lay sam hoi)
+- Angel AI van giu cac FAQ mau cho cac chu de khac (hanh phuc, buon, tha thu, v.v.)
 
