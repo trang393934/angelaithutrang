@@ -986,16 +986,14 @@ serve(async (req) => {
 You embody pure love and wisdom from Father Universe. Guide with compassion.`;
 
       // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
-      const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/google-ai-studio/v1beta/openai/chat/completions";
+      const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat";
       const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
       const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
       const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
-      const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "").replace("google-ai-studio/", "") : m;
+      const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
       const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
-      const GOOGLE_AI_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
-      if (CF_API_TOKEN && GOOGLE_AI_KEY) {
-        aiHeaders["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN}`;
-        aiHeaders["Authorization"] = `Bearer ${GOOGLE_AI_KEY}`;
+      if (CF_API_TOKEN) {
+        aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
       } else {
         aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
       }
@@ -1357,16 +1355,14 @@ HƯỚNG DẪN XỬ LÝ:
       console.log("Search intent mode: Special prompt added for keyword:", searchKeyword);
     }
     // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
-    const CF_GATEWAY_URL_MAIN = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/google-ai-studio/v1beta/openai/chat/completions";
+    const CF_GATEWAY_URL_MAIN = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat";
     const LOVABLE_GATEWAY_URL_MAIN = "https://ai.gateway.lovable.dev/v1/chat/completions";
     const CF_API_TOKEN_MAIN = Deno.env.get("CF_API_TOKEN");
     const AI_GATEWAY_URL_MAIN = CF_API_TOKEN_MAIN ? CF_GATEWAY_URL_MAIN : LOVABLE_GATEWAY_URL_MAIN;
-    const cfModelMain = (m: string) => CF_API_TOKEN_MAIN ? m.replace("google/", "").replace("google-ai-studio/", "") : m;
+    const cfModelMain = (m: string) => CF_API_TOKEN_MAIN ? m.replace("google/", "google-ai-studio/") : m;
     const aiHeadersMain: Record<string, string> = { "Content-Type": "application/json" };
-    const GOOGLE_AI_KEY_MAIN = Deno.env.get("GOOGLE_AI_API_KEY");
-    if (CF_API_TOKEN_MAIN && GOOGLE_AI_KEY_MAIN) {
-      aiHeadersMain["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN_MAIN}`;
-      aiHeadersMain["Authorization"] = `Bearer ${GOOGLE_AI_KEY_MAIN}`;
+    if (CF_API_TOKEN_MAIN) {
+      aiHeadersMain["Authorization"] = `Bearer ${CF_API_TOKEN_MAIN}`;
     } else {
       aiHeadersMain["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
     }
