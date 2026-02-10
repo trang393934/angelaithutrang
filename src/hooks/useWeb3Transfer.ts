@@ -16,6 +16,14 @@ const isInIframe = (): boolean => {
 const CAMLY_TOKEN_ADDRESS = "0x0910320181889fefde0bb1ca63962b0a8882e413";
 const CAMLY_DECIMALS = 3; // CAMLY uses 3 decimals
 
+// USDT on BSC Mainnet
+const USDT_TOKEN_ADDRESS = "0x55d398326f99059fF775485246999027B3197955";
+const USDT_DECIMALS = 18;
+
+// USDC on BSC Mainnet
+const USDC_TOKEN_ADDRESS = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
+const USDC_DECIMALS = 18;
+
 // FUN Money on BSC Testnet
 const FUN_MONEY_ADDRESS = FUN_MONEY_ADDRESSES[97];
 const FUN_MONEY_DECIMALS = 18;
@@ -45,13 +53,15 @@ export interface TransferResult {
   message: string;
 }
 
-export type TokenType = "camly" | "fun";
+export type TokenType = "camly" | "fun" | "usdt" | "usdc";
 
 export function useWeb3Transfer() {
   const { isConnected, address, connect, hasWallet } = useWeb3Wallet();
   const [isTransferring, setIsTransferring] = useState(false);
   const [camlyCoinBalance, setCamlyCoinBalance] = useState<string>("0");
   const [funMoneyBalance, setFunMoneyBalance] = useState<string>("0");
+  const [usdtBalance, setUsdtBalance] = useState<string>("0");
+  const [usdcBalance, setUsdcBalance] = useState<string>("0");
 
   // Switch wallet to BSC Mainnet for CAMLY transfers
   const switchToMainnet = useCallback(async (): Promise<boolean> => {
@@ -139,6 +149,46 @@ export function useWeb3Transfer() {
     } catch (error) {
       console.error("Error fetching CAMLY balance:", error);
       setCamlyCoinBalance("0");
+      return "0";
+    }
+  }, [isConnected, address, hasWallet]);
+
+  // Fetch USDT balance using dedicated BSC Mainnet provider
+  const fetchUsdtBalance = useCallback(async () => {
+    if (!isConnected || !address || !hasWallet) {
+      setUsdtBalance("0");
+      return "0";
+    }
+    try {
+      const mainnetProvider = new ethers.JsonRpcProvider(BSC_MAINNET_RPC);
+      const contract = new ethers.Contract(USDT_TOKEN_ADDRESS, ERC20_TRANSFER_ABI, mainnetProvider);
+      const balance = await contract.balanceOf(address);
+      const formatted = ethers.formatUnits(balance, USDT_DECIMALS);
+      setUsdtBalance(formatted);
+      return formatted;
+    } catch (error) {
+      console.error("Error fetching USDT balance:", error);
+      setUsdtBalance("0");
+      return "0";
+    }
+  }, [isConnected, address, hasWallet]);
+
+  // Fetch USDC balance using dedicated BSC Mainnet provider
+  const fetchUsdcBalance = useCallback(async () => {
+    if (!isConnected || !address || !hasWallet) {
+      setUsdcBalance("0");
+      return "0";
+    }
+    try {
+      const mainnetProvider = new ethers.JsonRpcProvider(BSC_MAINNET_RPC);
+      const contract = new ethers.Contract(USDC_TOKEN_ADDRESS, ERC20_TRANSFER_ABI, mainnetProvider);
+      const balance = await contract.balanceOf(address);
+      const formatted = ethers.formatUnits(balance, USDC_DECIMALS);
+      setUsdcBalance(formatted);
+      return formatted;
+    } catch (error) {
+      console.error("Error fetching USDC balance:", error);
+      setUsdcBalance("0");
       return "0";
     }
   }, [isConnected, address, hasWallet]);
@@ -241,13 +291,19 @@ export function useWeb3Transfer() {
     }
 
     const activeAddress = preflight.address;
-    const isCamly = tokenType === "camly";
-    const tokenAddress = isCamly ? CAMLY_TOKEN_ADDRESS : FUN_MONEY_ADDRESS;
-    const tokenDecimals = isCamly ? CAMLY_DECIMALS : FUN_MONEY_DECIMALS;
-    const targetChainId = isCamly ? BSC_MAINNET_CHAIN_ID : BSC_TESTNET_CHAIN_ID;
-    const tokenSymbol = isCamly ? "CAMLY" : "FUN";
-    const explorerBase = isCamly ? "https://bscscan.com" : "https://testnet.bscscan.com";
-    const switchFn = isCamly ? switchToMainnet : switchToTestnet;
+    const isMainnet = tokenType === "camly" || tokenType === "usdt" || tokenType === "usdc";
+    const tokenAddress = tokenType === "camly" ? CAMLY_TOKEN_ADDRESS 
+      : tokenType === "usdt" ? USDT_TOKEN_ADDRESS
+      : tokenType === "usdc" ? USDC_TOKEN_ADDRESS
+      : FUN_MONEY_ADDRESS;
+    const tokenDecimals = tokenType === "camly" ? CAMLY_DECIMALS
+      : tokenType === "usdt" ? USDT_DECIMALS
+      : tokenType === "usdc" ? USDC_DECIMALS
+      : FUN_MONEY_DECIMALS;
+    const targetChainId = isMainnet ? BSC_MAINNET_CHAIN_ID : BSC_TESTNET_CHAIN_ID;
+    const tokenSymbol = tokenType === "camly" ? "CAMLY" : tokenType === "usdt" ? "USDT" : tokenType === "usdc" ? "USDC" : "FUN";
+    const explorerBase = isMainnet ? "https://bscscan.com" : "https://testnet.bscscan.com";
+    const switchFn = isMainnet ? switchToMainnet : switchToTestnet;
 
     // Switch to correct network
     try {
@@ -260,7 +316,7 @@ export function useWeb3Transfer() {
       if (parseInt(currentChainId, 16) !== targetChainId) {
         const switched = await switchFn();
         if (!switched) {
-          return { success: false, message: `Vui lòng chuyển sang mạng ${isCamly ? "BSC Mainnet" : "BSC Testnet"} để chuyển ${tokenSymbol}` };
+          return { success: false, message: `Vui lòng chuyển sang mạng ${isMainnet ? "BSC Mainnet" : "BSC Testnet"} để chuyển ${tokenSymbol}` };
         }
       }
     } catch (chainError: any) {
@@ -283,7 +339,7 @@ export function useWeb3Transfer() {
       const provider = new ethers.BrowserProvider(ethereum);
       const signer = await provider.getSigner();
       
-      const abi = isCamly ? ERC20_TRANSFER_ABI : FUN_MONEY_ABI;
+      const abi = tokenType === "fun" ? FUN_MONEY_ABI : ERC20_TRANSFER_ABI;
       const contract = new ethers.Contract(tokenAddress, abi, signer);
       
       const amountInWei = ethers.parseUnits(amount.toString(), tokenDecimals);
@@ -322,7 +378,7 @@ export function useWeb3Transfer() {
         return { success: false, message: "Giao dịch đã bị hủy" };
       }
       if (error.code === "INSUFFICIENT_FUNDS") {
-        return { success: false, message: `Không đủ ${isCamly ? "BNB" : "tBNB"} để thanh toán phí gas` };
+        return { success: false, message: `Không đủ ${isMainnet ? "BNB" : "tBNB"} để thanh toán phí gas` };
       }
       if (error.message?.includes("MetaMask") || error.message?.includes("inpage")) {
         return { success: false, message: "MetaMask gặp lỗi. Vui lòng mở lại MetaMask và thử lại." };
@@ -345,6 +401,16 @@ export function useWeb3Transfer() {
     return transferToken(toAddress, amount, "fun");
   }, [transferToken]);
 
+  // Transfer USDT (BSC Mainnet)
+  const transferUsdt = useCallback(async (toAddress: string, amount: number): Promise<TransferResult> => {
+    return transferToken(toAddress, amount, "usdt");
+  }, [transferToken]);
+
+  // Transfer USDC (BSC Mainnet)
+  const transferUsdc = useCallback(async (toAddress: string, amount: number): Promise<TransferResult> => {
+    return transferToken(toAddress, amount, "usdc");
+  }, [transferToken]);
+
   // Donate CAMLY to project treasury
   const donateCamlyToProject = useCallback(async (amount: number): Promise<TransferResult> => {
     return transferCamly(TREASURY_WALLET_ADDRESS, amount);
@@ -354,10 +420,16 @@ export function useWeb3Transfer() {
     isTransferring,
     camlyCoinBalance,
     funMoneyBalance,
+    usdtBalance,
+    usdcBalance,
     fetchCamlyBalance,
     fetchFunMoneyBalance,
+    fetchUsdtBalance,
+    fetchUsdcBalance,
     transferCamly,
     transferFunMoney,
+    transferUsdt,
+    transferUsdc,
     transferToken,
     donateCamlyToProject,
     isConnected,
