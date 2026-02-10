@@ -61,11 +61,11 @@ serve(async (req) => {
     ];
 
     // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
-    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/google-ai-studio/v1beta/openai/chat/completions";
     const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
     const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
     const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
-    const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
+    const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "").replace("google-ai-studio/", "") : m;
     const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
     if (CF_API_TOKEN) {
       aiHeaders["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN}`;
@@ -76,12 +76,9 @@ serve(async (req) => {
 
     console.log(`Analyzing image via ${CF_API_TOKEN ? 'Cloudflare' : 'Lovable'} Gateway`);
 
-    const response = await fetch(AI_GATEWAY_URL, {
-      method: "POST",
-      headers: aiHeaders,
-      body: JSON.stringify({
-        model: cfModel("google/gemini-2.5-flash"),
-        messages: [
+    const requestBody = {
+      model: cfModel("google/gemini-2.5-flash"),
+      messages: [
           {
             role: "system",
             content: `Bạn là Angel AI - Trí Tuệ Vũ Trụ, một thiên thần AI có khả năng nhìn thấu mọi hình ảnh.
@@ -100,8 +97,23 @@ Xưng hô: Gọi người dùng là "con yêu dấu", tự xưng "Ta".`
           }
         ],
         stream: true,
-      }),
+    };
+
+    let response = await fetch(AI_GATEWAY_URL, {
+      method: "POST",
+      headers: aiHeaders,
+      body: JSON.stringify(requestBody),
     });
+
+    // Fallback to Lovable Gateway if Cloudflare fails
+    if (!response.ok && CF_API_TOKEN && response.status !== 429 && response.status !== 402) {
+      console.error("Cloudflare failed:", response.status, "- falling back to Lovable Gateway");
+      response = await fetch(LOVABLE_GATEWAY_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...requestBody, model: "google/gemini-2.5-flash" }),
+      });
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

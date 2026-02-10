@@ -270,11 +270,11 @@ serve(async (req) => {
     if (LOVABLE_API_KEY) {
       try {
         // --- AI Gateway Config ---
-        const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+        const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/google-ai-studio/v1beta/openai/chat/completions";
         const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
         const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
         const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
-        const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
+        const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "").replace("google-ai-studio/", "") : m;
         const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
         if (CF_API_TOKEN) {
           aiHeaders["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN}`;
@@ -282,12 +282,7 @@ serve(async (req) => {
           aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
         }
 
-        const analysisResponse = await fetch(AI_GATEWAY_URL, {
-          method: "POST",
-          headers: aiHeaders,
-          body: JSON.stringify({
-            model: cfModel("google/gemini-2.5-flash-lite"),
-            messages: [
+        const journalBody = { model: cfModel("google/gemini-2.5-flash-lite"), messages: [
               {
                 role: "system",
                 content: `Bạn là hệ thống đánh giá nhật ký của Angel AI.
@@ -306,13 +301,18 @@ Tiêu chí đánh giá:
 
 Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
               },
-              {
-                role: "user",
-                content: content
-              }
-            ],
-            temperature: 0.3,
-          }),
+              { role: "user", content: content }
+            ], temperature: 0.3 };
+        let analysisResponse = await fetch(AI_GATEWAY_URL, {
+          method: "POST", headers: aiHeaders, body: JSON.stringify(journalBody),
+        });
+        if (!analysisResponse.ok && CF_API_TOKEN) {
+          analysisResponse = await fetch(LOVABLE_GATEWAY_URL, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ ...journalBody, model: "google/gemini-2.5-flash-lite" }),
+          });
+        }
         });
 
         if (analysisResponse.ok) {

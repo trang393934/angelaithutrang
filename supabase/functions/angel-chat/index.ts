@@ -986,11 +986,11 @@ serve(async (req) => {
 You embody pure love and wisdom from Father Universe. Guide with compassion.`;
 
       // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
-      const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+      const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/google-ai-studio/v1beta/openai/chat/completions";
       const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
       const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
       const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
-      const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
+      const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "").replace("google-ai-studio/", "") : m;
       const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
       if (CF_API_TOKEN) {
         aiHeaders["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN}`;
@@ -999,19 +999,31 @@ You embody pure love and wisdom from Father Universe. Guide with compassion.`;
       }
       // --- End AI Gateway Config ---
 
-      const response = await fetch(AI_GATEWAY_URL, {
+      const demoBody = JSON.stringify({
+        model: cfModel("google/gemini-2.5-flash"),
+        messages: [
+          { role: "system", content: demoSystemPrompt },
+          ...messages,
+        ],
+        stream: false,
+        max_tokens: demoStyleConfig.maxTokens,
+      });
+
+      let response = await fetch(AI_GATEWAY_URL, {
         method: "POST",
         headers: aiHeaders,
-        body: JSON.stringify({
-          model: cfModel("google/gemini-2.5-flash"),
-          messages: [
-            { role: "system", content: demoSystemPrompt },
-            ...messages,
-          ],
-          stream: false,
-          max_tokens: demoStyleConfig.maxTokens,
-        }),
+        body: demoBody,
       });
+
+      // Fallback to Lovable Gateway if Cloudflare fails
+      if (!response.ok && CF_API_TOKEN) {
+        console.error("Cloudflare demo failed:", response.status, "- falling back to Lovable Gateway");
+        response = await fetch(LOVABLE_GATEWAY_URL, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ ...JSON.parse(demoBody), model: "google/gemini-2.5-flash" }),
+        });
+      }
 
       if (!response.ok) {
         console.error("Demo AI error:", response.status);
@@ -1343,11 +1355,11 @@ HƯỚNG DẪN XỬ LÝ:
       console.log("Search intent mode: Special prompt added for keyword:", searchKeyword);
     }
     // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
-    const CF_GATEWAY_URL_MAIN = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+    const CF_GATEWAY_URL_MAIN = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/google-ai-studio/v1beta/openai/chat/completions";
     const LOVABLE_GATEWAY_URL_MAIN = "https://ai.gateway.lovable.dev/v1/chat/completions";
     const CF_API_TOKEN_MAIN = Deno.env.get("CF_API_TOKEN");
     const AI_GATEWAY_URL_MAIN = CF_API_TOKEN_MAIN ? CF_GATEWAY_URL_MAIN : LOVABLE_GATEWAY_URL_MAIN;
-    const cfModelMain = (m: string) => CF_API_TOKEN_MAIN ? m.replace("google/", "google-ai-studio/") : m;
+    const cfModelMain = (m: string) => CF_API_TOKEN_MAIN ? m.replace("google/", "").replace("google-ai-studio/", "") : m;
     const aiHeadersMain: Record<string, string> = { "Content-Type": "application/json" };
     if (CF_API_TOKEN_MAIN) {
       aiHeadersMain["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN_MAIN}`;
@@ -1358,19 +1370,32 @@ HƯỚNG DẪN XỬ LÝ:
 
     console.log(`Calling AI Gateway: ${CF_API_TOKEN_MAIN ? 'Cloudflare' : 'Lovable (fallback)'}...`);
 
-    const response = await fetch(AI_GATEWAY_URL_MAIN, {
+    const mainBody = JSON.stringify({
+      model: cfModelMain("google/gemini-2.5-flash"),
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+      stream: true,
+      max_tokens: styleConfig.maxTokens,
+    });
+
+    let response = await fetch(AI_GATEWAY_URL_MAIN, {
       method: "POST",
       headers: aiHeadersMain,
-      body: JSON.stringify({
-        model: cfModelMain("google/gemini-2.5-flash"),
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
-        max_tokens: styleConfig.maxTokens, // Dynamic based on response style
-      }),
+      body: mainBody,
     });
+
+    // Fallback to Lovable Gateway if Cloudflare fails (not 429/402)
+    if (!response.ok && CF_API_TOKEN_MAIN && response.status !== 429 && response.status !== 402) {
+      const errorText = await response.text();
+      console.error("Cloudflare failed:", response.status, errorText, "- falling back to Lovable Gateway");
+      response = await fetch(LOVABLE_GATEWAY_URL_MAIN, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...JSON.parse(mainBody), model: "google/gemini-2.5-flash" }),
+      });
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
