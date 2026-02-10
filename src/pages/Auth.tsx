@@ -351,7 +351,7 @@ const Auth = () => {
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: "https://angelaithutrang.lovable.app",
       });
       if (result.redirected) return;
       if (result.error) {
