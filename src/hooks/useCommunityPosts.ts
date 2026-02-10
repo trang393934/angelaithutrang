@@ -52,6 +52,8 @@ export function useCommunityPosts() {
   
   // Track pending actions to skip realtime updates for posts being interacted with
   const pendingActionsRef = useRef<Set<string>>(new Set());
+  // Track whether initial fetch has completed to avoid showing loading spinner on realtime refetches
+  const initialFetchDoneRef = useRef(false);
 
   const fetchDailyLimits = useCallback(async () => {
     if (!user) return;
@@ -86,8 +88,9 @@ export function useCommunityPosts() {
     }
   }, [user]);
 
-  const fetchPosts = useCallback(async () => {
-    setIsLoading(true);
+  const fetchPosts = useCallback(async (showLoading = true) => {
+    // Only show loading spinner on initial fetch, not on realtime-triggered refetches
+    if (showLoading && !initialFetchDoneRef.current) setIsLoading(true);
     try {
       let query = supabase
         .from("community_posts")
@@ -156,6 +159,7 @@ export function useCommunityPosts() {
       console.error("Error fetching posts:", error);
     } finally {
       setIsLoading(false);
+      initialFetchDoneRef.current = true;
     }
   }, [user, sortBy]);
 
@@ -455,7 +459,7 @@ export function useCommunityPosts() {
 
           // Handle INSERT - refetch to get complete data with profiles
           if (payload.eventType === "INSERT") {
-            fetchPosts();
+            fetchPosts(false);
             return;
           }
 
