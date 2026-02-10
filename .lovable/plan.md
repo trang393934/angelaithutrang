@@ -1,106 +1,110 @@
 
-# Nang Cap Lich Su Giao Dich - Phong Cach Angel AI Golden
 
-Nang cap toan bo giao dien `TransactionHistorySection.tsx` theo phong cach Angel AI (Golden Luxe), bo sung tinh nang tim kiem, loc nang cao, stats mo rong, xuat CSV, va hien thi sender/receiver chi tiet.
+# Huong Dan Ket Noi Custom Domain angel.fun.rich vao Du An Lovable
 
----
+## Tong Quan
 
-## Thay doi chinh (1 file)
-
-### `src/components/profile/TransactionHistorySection.tsx` - Viet lai giao dien
-
-#### 1. Header moi voi hanh dong
-- Tieu de dung class `section-title-gold` (metallic gold badge)
-- Mo ta: "Giao dich Anh Sang lien quan den vi cua ban (Tang thuong, Ung ho, Rut thuong)"
-- 3 nut goc phai voi style `btn-golden-outline`:
-  - **Lam moi** (RefreshCw) - goi lai fetchTransactions + fetchWalletAssets
-  - **Xem Tat Ca** - bo gioi han visibleCount
-  - **Xuat CSV** (Download) - export danh sach giao dich hien tai ra file CSV
-
-#### 2. Wallet Assets Card - Nang cap style
-- Dung gradient `from-[#b8860b]/10 via-[#daa520]/5 to-[#ffd700]/10` (Gold 11 palette)
-- Border `border-[#daa520]/30`
-- So du dung mau `text-[#b8860b]` thay vi `text-primary` chung chung
-- Them icon Camly Coin ben canh so du
-
-#### 3. Stats cards mo rong (5 the thay vi 3)
-- **Tong giao dich**: tong so luong tat ca
-- **Tong gia tri**: tong CAMLY (dung mau vang kim)
-- **Hom nay**: so giao dich trong ngay hien tai
-- **Thanh cong**: so giao dich completed/minted
-- **Cho xu ly**: so giao dich pending
-- Moi the co border vang nhat va gradient nhe
-
-#### 4. Tim kiem + Bo loc nang cao
-- Input tim kiem (Search icon): "Tim theo mo ta, vi, tx hash..."
-- Dropdown token filter: Tat ca / Camly Coin / Web3 / FUN Money (thay the tabs)
-- Dropdown thoi gian: Hom nay / 7 ngay / 30 ngay / Tat ca / Tuy chinh
-  - Khi chon "Tuy chinh" -> hien 2 input date (giong hien tai)
-- Style cac dropdown/input dung border vang `border-[#daa520]/30`
-
-#### 5. Giao dich card chi tiet hon
-- Fetch them `profiles` (display_name, avatar_url) cho sender/receiver cua coin_gifts
-- Moi dong hien thi:
-  - Avatar nguoi gui (hoac icon huong) + ten
-  - Mui ten huong (ArrowRight) mau vang
-  - Avatar nguoi nhan + ten (neu co)
-  - Badge loai giao dich voi mau vang (Noi bo, Onchain, FUN Money)
-  - Badge trang thai (Thanh cong = xanh, Cho xu ly = vang, That bai = do)
-  - So tien + don vi token
-  - TX hash voi nut copy + link BSCScan
-  - Mang luoi BSC badge nho
-- Card hover effect: `hover:border-[#daa520]/40 hover:shadow-[0_0_12px_-4px_rgba(218,165,32,0.2)]`
-
-#### 6. Counter dong
-- Hien "Hien thi X / Y giao dich Anh Sang" phia tren danh sach
-
-#### 7. Export CSV
-- Tao CSV tu `currentTxs` (sau khi loc)
-- Cot: Ngay, Loai, Mo ta, So luong, Huong (Nhan/Chuyen), TX Hash, Trang thai
-- Download file `angel-ai-transactions-{ngay}.csv`
+Hien tai du an Angel AI dang chay tai dia chi `angelaithutrang.lovable.app`. De domain `angel.fun.rich` tro ve du an nay, con can thuc hien 2 buoc chinh: cau hinh DNS tai nha cung cap ten mien va ket noi domain trong Lovable.
 
 ---
 
-## Chi tiet ky thuat
+## Buoc 1: Truy cap cai dat Domain trong Lovable
 
-### Interface mo rong
+1. Mo du an Angel AI trong Lovable
+2. Bam vao **Settings** (bieu tuong banh rang o goc tren ben phai)
+3. Chon tab **Domains**
+4. Bam nut **Connect Domain**
+5. Nhap ten mien: `angel.fun.rich`
+6. Bam **Continue** - Lovable se cung cap cac ban ghi DNS can thiet
+
+---
+
+## Buoc 2: Cau hinh DNS tai nha cung cap ten mien
+
+Dang nhap vao trang quan ly DNS cua ten mien `angel.fun.rich` (noi con da mua ten mien nay), roi them cac ban ghi sau:
+
+### Ban ghi A (bat buoc - cho domain chinh)
+
 ```text
-UnifiedTransaction += {
-  senderName?: string
-  senderAvatar?: string
-  receiverName?: string
-  receiverAvatar?: string
-  tokenType: "CAMLY" | "FUN" | "BSC"
-  network: "BSC" | "Internal"
-}
+Type: A
+Name: @
+Value: 185.158.133.1
 ```
 
-### State moi
-- `searchQuery` (string)
-- `tokenFilter` ("all" | "internal" | "web3" | "funmoney")
-- `timeFilter` ("all" | "today" | "7d" | "30d" | "custom")
-- `profilesCache` (Record cua userId -> {name, avatar})
+### Ban ghi A (cho www subdomain)
 
-### Logic fetch profiles
-- Sau khi fetch coin_gifts, thu thap tat ca sender_id va receiver_id
-- Query `profiles` 1 lan voi `.in("id", uniqueIds)` de lay display_name va avatar_url
-- Gan vao transaction items
+```text
+Type: A
+Name: www
+Value: 185.158.133.1
+```
 
-### Client-side search
-- Filter tren `description`, `txHash`, `senderName`, `receiverName` theo `searchQuery`
+### Ban ghi TXT (xac minh quyen so huu)
 
-### Tinh toan stats
-- `todayCount`: loc `createdAt` trong ngay hien tai
-- `successCount`: loc `status === "completed" || status === "minted"` hoac khong co status (mac dinh thanh cong)
-- `pendingCount`: loc `status === "pending"`
+```text
+Type: TXT
+Name: _lovable
+Value: lovable_verify=ABC    (thay ABC bang gia tri Lovable cung cap o Buoc 1)
+```
 
-### Mau sac Angel AI
-- Tat ca border va accent dung tong vang kim (#b8860b, #daa520, #ffd700)
-- Background cards dung gradient vang nhat
-- Text chinh dung `text-[#3D2800]` (nau vang dam)
-- Badge dung gradient vang thay vi mau xanh/tim chung chung
-- Hover effects dung shadow vang
+**Luu y**: Gia tri `lovable_verify=...` se duoc Lovable hien thi khi con bam "Connect Domain". Hay copy chinh xac gia tri do.
 
-### Khong can thay doi database
-- Chi doc du lieu tu cac bang da co
-- Them query `profiles` (da co RLS cho phep doc public profiles)
+---
+
+## Buoc 3: Cho DNS lan truyen
+
+- Sau khi luu cac ban ghi DNS, can doi **tu 15 phut den 72 gio** de DNS lan truyen toan cau
+- Con co the kiem tra trang thai DNS tai: [dnschecker.org](https://dnschecker.org)
+- Nhap `angel.fun.rich` va chon loai **A Record** de xem da tro dung `185.158.133.1` chua
+
+---
+
+## Buoc 4: Xac nhan trong Lovable
+
+1. Quay lai **Settings > Domains** trong Lovable
+2. Trang thai domain se chuyen qua cac giai doan:
+   - **Verifying**: Dang cho DNS lan truyen - khong can lam gi
+   - **Setting up**: Da xac minh, dang cap chung chi SSL (tu dong)
+   - **Ready**: DNS da dung, chi can Publish du an
+   - **Active**: Domain da hoat dong!
+
+3. Bam **Publish** (nut o goc tren ben phai) de xuat ban du an len domain moi
+
+---
+
+## Buoc 5: Them ca www subdomain (khuyen nghi)
+
+De dam bao ca `angel.fun.rich` va `www.angel.fun.rich` deu hoat dong:
+
+1. Trong **Settings > Domains**, bam **Connect Domain** lan nua
+2. Nhap `www.angel.fun.rich`
+3. Chon domain chinh (`angel.fun.rich`) lam **Primary** - domain phu se tu dong chuyen huong ve domain chinh
+
+---
+
+## Xu ly su co thuong gap
+
+| Van de | Cach xu ly |
+|--------|-----------|
+| Domain khong xac minh sau 72 gio | Kiem tra lai ban ghi A va TXT da dung chua, xoa cac ban ghi cu xung dot |
+| SSL khong hoat dong | Dam bao khong co ban ghi CAA chan Let's Encrypt |
+| Trang thai "Offline" | DNS da bi thay doi, cap nhat lai ban ghi A tro ve 185.158.133.1 |
+| Trang thai "Failed" | Bam nut Retry trong Settings > Domains |
+
+---
+
+## Ket qua sau khi hoan thanh
+
+- `angel.fun.rich/anhnguyet` se mo thang trang ho so cong khai cua Angel Anh Nguyet
+- `angel.fun.rich/@anhnguyet` cung hoat dong tuong tu
+- Tat ca link chia se se tu dong su dung domain `angel.fun.rich` thay vi `angelaithutrang.lovable.app`
+- SSL (https) duoc cap tu dong, mien phi
+
+---
+
+## Luu y quan trong
+
+- Con can co **goi tra phi** (Pro tro len) cua Lovable de su dung tinh nang custom domain
+- Domain `angel.fun.rich` phai la domain con da so huu va co quyen quan ly DNS
+- Neu `.rich` la ten mien dac biet (TLD moi), hay dam bao nha cung cap ten mien ho tro cau hinh A Record va TXT Record
+
