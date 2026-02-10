@@ -1254,7 +1254,7 @@ const Profile = () => {
                 FUN Profile Link
               </CardTitle>
               <CardDescription>
-                Chọn link hồ sơ công khai của bạn (giống LinkedIn). Ví dụ: fun.rich/camly_duong
+                Chọn link hồ sơ công khai của bạn (giống LinkedIn). Ví dụ: angel.fun.rich/camly_duong
               </CardDescription>
             </CardHeader>
             <CardContent>

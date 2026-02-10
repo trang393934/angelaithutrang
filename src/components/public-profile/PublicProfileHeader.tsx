@@ -108,7 +108,7 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType }: Publ
           {profile.handle && (
             <div className="flex items-center gap-1.5 mt-1">
               <p className="text-sm font-medium text-primary">
-                fun.rich/{profile.handle}
+                angel.fun.rich/{profile.handle}
               </p>
               <Button
                 variant="ghost"
