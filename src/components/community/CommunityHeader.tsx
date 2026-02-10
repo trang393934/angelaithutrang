@@ -19,6 +19,7 @@ import { StoryViewer } from "./StoryViewer";
 import { CreateStoryModal } from "./CreateStoryModal";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
+import { FriendSearchModal } from "@/components/community/FriendSearchModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
@@ -37,6 +38,7 @@ export function CommunityHeader() {
   const [showStoryViewer, setShowStoryViewer] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
   const [showCreateStory, setShowCreateStory] = useState(false);
+  const [showFriendSearch, setShowFriendSearch] = useState(false);
 
   const { 
     groupedStories, 
@@ -49,10 +51,10 @@ export function CommunityHeader() {
 
   // Navigation items similar to Fun.rich
   const navItems = [
-    { icon: Home, href: "/community", label: t("community.navHome") },
-    { icon: Users, href: "/community?search=1", label: t("community.navFindFriends") || "Tìm bạn bè" },
-    { icon: MessageCircle, href: "/messages", label: t("community.navMessages") },
-    { icon: ShoppingBag, href: "/earn", label: t("community.navEarn") },
+    { icon: Home, href: "/community", label: t("community.navHome"), action: null },
+    { icon: Users, href: "/community?search=1", label: t("community.navFindFriends") || "Tìm bạn bè", action: () => setShowFriendSearch(true), mobileOnly: true },
+    { icon: MessageCircle, href: "/messages", label: t("community.navMessages"), action: null },
+    { icon: ShoppingBag, href: "/earn", label: t("community.navEarn"), action: null },
   ];
 
   const isActive = (href: string) => {
@@ -153,10 +155,20 @@ export function CommunityHeader() {
               {navItems.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
+                  const isMobileAction = item.mobileOnly && item.action;
+                  
+                  const handleClick = (e: React.MouseEvent) => {
+                    if (isMobileAction && window.innerWidth < 640) {
+                      e.preventDefault();
+                      item.action!();
+                    }
+                  };
+                  
                   return (
                     <Link
                       key={item.href}
                       to={item.href}
+                      onClick={handleClick}
                       className={`relative flex items-center justify-center w-10 h-9 sm:w-20 sm:h-12 rounded-lg transition-all ${
                         active 
                           ? "bg-white shadow-[0_2px_10px_rgba(139,105,20,0.4)] ring-2 ring-yellow-300/60" 
@@ -379,6 +391,12 @@ export function CommunityHeader() {
         isOpen={showCreateStory}
         onClose={() => setShowCreateStory(false)}
         onSubmit={createStory}
+      />
+
+      {/* Friend Search Modal (mobile) */}
+      <FriendSearchModal
+        open={showFriendSearch}
+        onClose={() => setShowFriendSearch(false)}
       />
     </>
   );

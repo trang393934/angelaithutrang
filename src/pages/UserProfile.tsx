@@ -36,6 +36,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { WalletAddressDisplay } from "@/components/profile/WalletAddressDisplay";
 import { SocialLinksDisplay } from "@/components/public-profile/SocialLinksDisplay";
+import { ProfileMoreMenu } from "@/components/public-profile/ProfileMoreMenu";
 
 interface UserProfileData {
   user_id: string;
@@ -612,6 +613,16 @@ const UserProfile = () => {
             >
               <ArrowLeft className="w-5 h-5 text-white" />
             </button>
+
+            {/* More menu button */}
+            <div className="absolute top-4 right-4 z-10">
+              <ProfileMoreMenu
+                userId={userId || ""}
+                displayName={profile?.display_name ?? null}
+                handle={profile?.handle ?? null}
+                isOwnProfile={isOwnProfile}
+              />
+            </div>
 
             {isOwnProfile && (
               <Link 
