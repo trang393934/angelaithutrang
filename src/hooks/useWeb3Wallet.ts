@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ethers } from "ethers";
+import { getActiveProvider, hasAnyWallet, setActiveProvider } from "@/lib/walletProviders";
 
 // Detect if running inside an iframe (e.g. Lovable preview)
 const isInIframe = (): boolean => {
@@ -144,8 +145,8 @@ const getMetaMaskDeepLink = (): string => {
    // Prevent parallel connection attempts
    const connectingRef = useRef(false);
  
-   // Check if MetaMask or compatible wallet is available
-   const hasWallet = typeof window !== "undefined" && typeof (window as any).ethereum !== "undefined";
+    // Check if any Web3 wallet is available (MetaMask, Trust, OKX, etc.)
+    const hasWallet = typeof window !== "undefined" && hasAnyWallet();
  
    // Get short address format
    const getShortAddress = (address: string) => {
@@ -202,11 +203,12 @@ const getMetaMaskDeepLink = (): string => {
    }, []);
  
    // Switch to BSC network
-   const switchToBSC = useCallback(async () => {
-     if (!hasWallet) return false;
- 
-     const ethereum = (window as any).ethereum;
-     try {
+    const switchToBSC = useCallback(async () => {
+      if (!hasWallet) return false;
+
+      const ethereum = getActiveProvider();
+      if (!ethereum) return false;
+      try {
        // First try to add/update the chain with proper RPC list
        try {
          await ethereum.request({
@@ -245,11 +247,12 @@ const getMetaMaskDeepLink = (): string => {
    }, [hasWallet]);
  
    // Force reset BSC Testnet network in wallet
-   const resetBSCNetwork = useCallback(async () => {
-     if (!hasWallet) return false;
- 
-     const ethereum = (window as any).ethereum;
-     try {
+    const resetBSCNetwork = useCallback(async () => {
+      if (!hasWallet) return false;
+
+      const ethereum = getActiveProvider();
+      if (!ethereum) return false;
+      try {
        // Add fresh network config with multiple RPCs
        await ethereum.request({
          method: "wallet_addEthereumChain",
@@ -270,12 +273,13 @@ const getMetaMaskDeepLink = (): string => {
  
    // Fetch token balances
    const fetchBalances = useCallback(
-     async (address: string) => {
-       if (!hasWallet) return [];
- 
-       const ethereum = (window as any).ethereum;
-       const provider = new ethers.BrowserProvider(ethereum);
-       const balances: TokenBalance[] = [];
+      async (address: string) => {
+        if (!hasWallet) return [];
+
+        const ethereum = getActiveProvider();
+        if (!ethereum) return [];
+        const provider = new ethers.BrowserProvider(ethereum);
+        const balances: TokenBalance[] = [];
  
        for (const token of BSC_TOKENS) {
          try {
@@ -333,7 +337,7 @@ const getMetaMaskDeepLink = (): string => {
            connectingRef.current = false;
            return;
          }
-         setState((prev) => ({ ...prev, error: "Vui lòng cài đặt MetaMask hoặc ví Web3 tương thích" }));
+         setState((prev) => ({ ...prev, error: "Vui lòng cài đặt ví Web3 (MetaMask, Trust Wallet, hoặc OKX)" }));
          window.open("https://metamask.io/download/", "_blank");
          return;
        }
@@ -348,7 +352,8 @@ const getMetaMaskDeepLink = (): string => {
      setState((prev) => ({ ...prev, isConnecting: true, error: null, networkDiagnostics: null }));
  
      try {
-       const ethereum = (window as any).ethereum;
+        const ethereum = getActiveProvider();
+        if (!ethereum) throw new Error("Không tìm thấy ví Web3");
  
        // First check if we already have accounts (user previously authorized)
        let accounts: string[] = [];
@@ -503,9 +508,9 @@ const getMetaMaskDeepLink = (): string => {
  
     // Listen for account and chain changes
     useEffect(() => {
-      if (!hasWallet) return;
+       if (!hasWallet) return;
 
-      const ethereum = (window as any).ethereum;
+       const ethereum = getActiveProvider();
 
       // Guard: ensure ethereum provider has .on / .removeListener
       if (typeof ethereum?.on !== "function" || typeof ethereum?.removeListener !== "function") {
@@ -593,7 +598,7 @@ const getMetaMaskDeepLink = (): string => {
          if (state.isConnected || state.isConnecting || connectingRef.current) return;
 
          try {
-           const ethereum = (window as any).ethereum;
+            const ethereum = getActiveProvider();
 
            // Check if ethereum provider is ready
            if (!ethereum || typeof ethereum.request !== "function") {
@@ -680,14 +685,20 @@ const getMetaMaskDeepLink = (): string => {
        };
      }, [hasWallet, state.isConnected]);
  
-   return {
-     ...state,
-     hasWallet,
-     connect,
-     disconnect,
-     switchToBSC,
-     resetBSCNetwork,
-     refreshBalances,
-     verifyBSCTestnet,
-   };
-  }
+    // Allow setting provider from wallet selector
+    const selectProvider = useCallback((provider: any) => {
+      setActiveProvider(provider);
+    }, []);
+
+    return {
+      ...state,
+      hasWallet,
+      connect,
+      disconnect,
+      switchToBSC,
+      resetBSCNetwork,
+      refreshBalances,
+      verifyBSCTestnet,
+      selectProvider,
+    };
+   }

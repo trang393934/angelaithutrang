@@ -11,6 +11,7 @@ interface Web3WalletContextValue extends WalletState {
   resetBSCNetwork: () => Promise<boolean>;
   refreshBalances: () => Promise<void>;
   verifyBSCTestnet: (provider: ethers.BrowserProvider) => Promise<NetworkDiagnostics>;
+  selectProvider: (provider: any) => void;
 }
 
 const Web3WalletContext = createContext<Web3WalletContextValue | null>(null);
