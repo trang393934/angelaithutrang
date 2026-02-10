@@ -313,7 +313,8 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
             body: JSON.stringify({ ...journalBody, model: "google/gemini-2.5-flash-lite" }),
           });
         }
-        });
+
+
 
         if (analysisResponse.ok) {
           const analysisData = await analysisResponse.json();
