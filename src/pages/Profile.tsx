@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon, MessageCircle, Move, Maximize2 } from "lucide-react";
 import { ApiKeysSection } from "@/components/profile/ApiKeysSection";
+import { TransactionHistorySection } from "@/components/profile/TransactionHistorySection";
 import { PublicProfileSettingsSection } from "@/components/public-profile/PublicProfileSettingsSection";
 import { HandleSelector } from "@/components/profile/HandleSelector";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
@@ -989,6 +990,9 @@ const Profile = () => {
               </CardContent>
             </Link>
           </Card>
+
+          {/* Transaction History & Wallet Assets */}
+          {user && <TransactionHistorySection userId={user.id} />}
 
           {/* Camly Coin & Light Points Section */}
           <div className="grid gap-6 md:grid-cols-2">
