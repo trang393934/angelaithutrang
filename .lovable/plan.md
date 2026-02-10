@@ -1,70 +1,106 @@
 
+# Nang Cap Lich Su Giao Dich - Phong Cach Angel AI Golden
 
-# Tạo mục Lịch Sử Giao Dịch & Thông Tin Tài Sản Ví trong Trang Cá Nhân
-
-Thêm một component mới hiển thị toàn bộ lịch sử giao dịch cá nhân (chỉ user đó thấy) với 4 tab, thông tin tài sản ví, bộ lọc ngày, và tổng hợp thống kê.
+Nang cap toan bo giao dien `TransactionHistorySection.tsx` theo phong cach Angel AI (Golden Luxe), bo sung tinh nang tim kiem, loc nang cao, stats mo rong, xuat CSV, va hien thi sender/receiver chi tiet.
 
 ---
 
-## Giao diện
+## Thay doi chinh (1 file)
 
-### Phần 1: Thông Tin Tài Sản Ví (chỉ cá nhân thấy)
-- So du Camly Coin hien tai
-- So du FUN Money (on-chain, neu co)
-- Dia chi vi BSC (rut gon)
-- Tong da kiem duoc (lifetime_earned)
-- Tong da rut
+### `src/components/profile/TransactionHistorySection.tsx` - Viet lai giao dien
 
-### Phan 2: Lich Su Giao Dich voi 4 Tab
-- **Tat ca**: Gop tat ca giao dich tu 3 nguon
-- **Noi bo**: Giao dich Camly Coin (camly_coin_transactions) - thuong, chat, bai viet, admin_adjustment...
-- **Web3**: Giao dich on-chain co tx_hash (coin_gifts + project_donations co tx_hash)
-- **FUN Money**: Hanh dong PPLP va mint requests (pplp_actions + pplp_scores)
+#### 1. Header moi voi hanh dong
+- Tieu de dung class `section-title-gold` (metallic gold badge)
+- Mo ta: "Giao dich Anh Sang lien quan den vi cua ban (Tang thuong, Ung ho, Rut thuong)"
+- 3 nut goc phai voi style `btn-golden-outline`:
+  - **Lam moi** (RefreshCw) - goi lai fetchTransactions + fetchWalletAssets
+  - **Xem Tat Ca** - bo gioi han visibleCount
+  - **Xuat CSV** (Download) - export danh sach giao dich hien tai ra file CSV
 
-### Phan 3: Thong ke tong hop
-- Tong luot chuyen (sent)
-- Tong luot nhan (received)
-- Tong so luong token
-- Bo loc ngay (tu ngay - den ngay)
+#### 2. Wallet Assets Card - Nang cap style
+- Dung gradient `from-[#b8860b]/10 via-[#daa520]/5 to-[#ffd700]/10` (Gold 11 palette)
+- Border `border-[#daa520]/30`
+- So du dung mau `text-[#b8860b]` thay vi `text-primary` chung chung
+- Them icon Camly Coin ben canh so du
+
+#### 3. Stats cards mo rong (5 the thay vi 3)
+- **Tong giao dich**: tong so luong tat ca
+- **Tong gia tri**: tong CAMLY (dung mau vang kim)
+- **Hom nay**: so giao dich trong ngay hien tai
+- **Thanh cong**: so giao dich completed/minted
+- **Cho xu ly**: so giao dich pending
+- Moi the co border vang nhat va gradient nhe
+
+#### 4. Tim kiem + Bo loc nang cao
+- Input tim kiem (Search icon): "Tim theo mo ta, vi, tx hash..."
+- Dropdown token filter: Tat ca / Camly Coin / Web3 / FUN Money (thay the tabs)
+- Dropdown thoi gian: Hom nay / 7 ngay / 30 ngay / Tat ca / Tuy chinh
+  - Khi chon "Tuy chinh" -> hien 2 input date (giong hien tai)
+- Style cac dropdown/input dung border vang `border-[#daa520]/30`
+
+#### 5. Giao dich card chi tiet hon
+- Fetch them `profiles` (display_name, avatar_url) cho sender/receiver cua coin_gifts
+- Moi dong hien thi:
+  - Avatar nguoi gui (hoac icon huong) + ten
+  - Mui ten huong (ArrowRight) mau vang
+  - Avatar nguoi nhan + ten (neu co)
+  - Badge loai giao dich voi mau vang (Noi bo, Onchain, FUN Money)
+  - Badge trang thai (Thanh cong = xanh, Cho xu ly = vang, That bai = do)
+  - So tien + don vi token
+  - TX hash voi nut copy + link BSCScan
+  - Mang luoi BSC badge nho
+- Card hover effect: `hover:border-[#daa520]/40 hover:shadow-[0_0_12px_-4px_rgba(218,165,32,0.2)]`
+
+#### 6. Counter dong
+- Hien "Hien thi X / Y giao dich Anh Sang" phia tren danh sach
+
+#### 7. Export CSV
+- Tao CSV tu `currentTxs` (sau khi loc)
+- Cot: Ngay, Loai, Mo ta, So luong, Huong (Nhan/Chuyen), TX Hash, Trang thai
+- Download file `angel-ai-transactions-{ngay}.csv`
 
 ---
 
 ## Chi tiet ky thuat
 
-### File moi: `src/components/profile/TransactionHistorySection.tsx`
-Component chinh chua toan bo logic, bao gom:
+### Interface mo rong
+```text
+UnifiedTransaction += {
+  senderName?: string
+  senderAvatar?: string
+  receiverName?: string
+  receiverAvatar?: string
+  tokenType: "CAMLY" | "FUN" | "BSC"
+  network: "BSC" | "Internal"
+}
+```
 
-1. **useEffect** fetch du lieu tu 4 bang:
-   - `camly_coin_transactions` (loc theo user_id) - giao dich noi bo
-   - `coin_gifts` (loc theo sender_id HOAC receiver_id = user) - thuong/tang
-   - `coin_withdrawals` (loc theo user_id) - rut tien
-   - `pplp_actions` + `pplp_scores` (loc theo actor_id) - FUN Money
+### State moi
+- `searchQuery` (string)
+- `tokenFilter` ("all" | "internal" | "web3" | "funmoney")
+- `timeFilter` ("all" | "today" | "7d" | "30d" | "custom")
+- `profilesCache` (Record cua userId -> {name, avatar})
 
-2. **Wallet Asset Card** (chi hien khi la profile cua minh):
-   - Lay tu `camly_coin_balances` (balance, lifetime_earned)
-   - Lay tu `user_wallet_addresses` (wallet_address)
-   - Lay tu `coin_withdrawals` tong da rut thanh cong
+### Logic fetch profiles
+- Sau khi fetch coin_gifts, thu thap tat ca sender_id va receiver_id
+- Query `profiles` 1 lan voi `.in("id", uniqueIds)` de lay display_name va avatar_url
+- Gan vao transaction items
 
-3. **Bo loc ngay**: 2 input date (tu ngay, den ngay) + nut "Loc"
+### Client-side search
+- Filter tren `description`, `txHash`, `senderName`, `receiverName` theo `searchQuery`
 
-4. **Tabs**: Dung Radix Tabs voi 4 tab: Tat ca / Noi bo / Web3 / FUN Money
+### Tinh toan stats
+- `todayCount`: loc `createdAt` trong ngay hien tai
+- `successCount`: loc `status === "completed" || status === "minted"` hoac khong co status (mac dinh thanh cong)
+- `pendingCount`: loc `status === "pending"`
 
-5. **Thong ke**: Tong luot chuyen, nhan, tong so luong cho tung tab
-
-6. **ScrollArea** de hien danh sach giao dich voi phan trang (hien 20 ban ghi, nut "Xem them")
-
-### File sua: `src/pages/Profile.tsx`
-- Import va render `TransactionHistorySection` sau card "Lich Su Hoat Dong" (dong 991)
-- Truyen `userId={user.id}` de component biet fetch du lieu cua ai
-- Component chi render khi user dang xem profile cua chinh minh (da dam bao vi trang Profile yeu cau dang nhap)
-
-### Bao mat
-- Component chi hien trong trang `/profile` (yeu cau dang nhap)
-- Query chi loc theo `user_id` cua nguoi dang dang nhap
-- RLS da co san tren cac bang (camly_coin_transactions, coin_gifts, etc.)
-- Khong can thay doi database
+### Mau sac Angel AI
+- Tat ca border va accent dung tong vang kim (#b8860b, #daa520, #ffd700)
+- Background cards dung gradient vang nhat
+- Text chinh dung `text-[#3D2800]` (nau vang dam)
+- Badge dung gradient vang thay vi mau xanh/tim chung chung
+- Hover effects dung shadow vang
 
 ### Khong can thay doi database
-- Tat ca cac bang da co san va co RLS
-- Chi doc du lieu, khong ghi
-
+- Chi doc du lieu tu cac bang da co
+- Them query `profiles` (da co RLS cho phep doc public profiles)
