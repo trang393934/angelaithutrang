@@ -291,6 +291,36 @@ const Auth = () => {
     });
   };
 
+  const LOVABLE_ORIGIN = "https://angelaithutrang.lovable.app";
+  const isOnLovableDomain = window.location.hostname.endsWith(".lovable.app");
+
+  // Helper: redirect to custom domain origin if stored
+  const redirectToReturnOrigin = (path: string) => {
+    const returnOrigin = localStorage.getItem("oauth_return_origin");
+    if (returnOrigin && isOnLovableDomain) {
+      localStorage.removeItem("oauth_return_origin");
+      window.location.href = `${returnOrigin}${path}`;
+      return true;
+    }
+    return false;
+  };
+
+  // On lovable.app, check for start_oauth query param (redirected from custom domain)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const startOAuth = params.get("start_oauth");
+    const returnOrigin = params.get("return_origin");
+
+    if (startOAuth === "google" && returnOrigin && isOnLovableDomain) {
+      // Store return origin in localStorage (same origin now)
+      localStorage.setItem("oauth_return_origin", returnOrigin);
+      // Clean URL params
+      window.history.replaceState({}, "", window.location.pathname);
+      // Auto-trigger Google OAuth
+      handleGoogleSignInDirect();
+    }
+  }, []);
+
   // Check agreement status when user logs in
   useEffect(() => {
     if (user && !authLoading) {
@@ -306,8 +336,10 @@ const Auth = () => {
       .maybeSingle();
     
     if (data) {
-      // Already agreed - redirect to profile
-      navigate("/profile");
+      // Already agreed - redirect to return origin or profile
+      if (!redirectToReturnOrigin("/profile")) {
+        navigate("/profile");
+      }
     } else {
       // User hasn't agreed yet - show post-login agreement dialog
       setPendingUserId(userId);
@@ -329,7 +361,9 @@ const Auth = () => {
       });
       
       setShowPostLoginAgreement(false);
-      navigate("/profile");
+      if (!redirectToReturnOrigin("/profile")) {
+        navigate("/profile");
+      }
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -339,19 +373,12 @@ const Auth = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    if (isSignUp && !agreedToLightLaw) {
-      toast({
-        title: "Vui lòng đọc và đồng ý Luật Ánh Sáng",
-        description: "Bạn cần đọc Luật Ánh Sáng và đánh dấu đồng ý để đăng ký.",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Direct OAuth call (used on lovable.app domain)
+  const handleGoogleSignInDirect = async () => {
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: "https://angelaithutrang.lovable.app",
+        redirect_uri: LOVABLE_ORIGIN,
       });
       if (result.redirected) return;
       if (result.error) {
@@ -367,6 +394,27 @@ const Auth = () => {
     } finally {
       setIsGoogleLoading(false);
     }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (isSignUp && !agreedToLightLaw) {
+      toast({
+        title: "Vui lòng đọc và đồng ý Luật Ánh Sáng",
+        description: "Bạn cần đọc Luật Ánh Sáng và đánh dấu đồng ý để đăng ký.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If on custom domain, redirect to lovable.app first with query params
+    if (!isOnLovableDomain) {
+      const returnOrigin = window.location.origin;
+      window.location.href = `${LOVABLE_ORIGIN}/auth?start_oauth=google&return_origin=${encodeURIComponent(returnOrigin)}`;
+      return;
+    }
+
+    // Already on lovable.app, call OAuth directly
+    handleGoogleSignInDirect();
   };
 
 
