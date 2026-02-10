@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+import { WalletSelectorModal } from "@/components/wallet/WalletSelectorModal";
 
 interface Web3WalletButtonProps {
   compact?: boolean;
@@ -32,9 +33,11 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
     disconnect,
     switchToBSC,
     refreshBalances,
+    selectProvider,
   } = useWeb3Wallet();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showWalletSelector, setShowWalletSelector] = useState(false);
 
   // Auto-save wallet address to database when connected
   useEffect(() => {
@@ -110,7 +113,6 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
   })();
 
   const handleConnect = async () => {
-    // Show guidance when running inside iframe (e.g. Lovable preview)
     if (isInIframe) {
       toast.info(
         <div className="space-y-2">
@@ -130,29 +132,13 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
       return;
     }
 
-    if (!hasWallet) {
-      // On mobile, use MetaMask deep link to open in MetaMask browser
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      if (isMobile) {
-        const currentUrl = window.location.href.replace(/^https?:\/\//, "");
-        window.location.href = `https://metamask.app.link/dapp/${currentUrl}`;
-        return;
-      }
-      
-      toast.info(
-        <div className="space-y-2">
-          <p className="font-medium">Chưa có ví Web3</p>
-          <p className="text-sm text-muted-foreground">
-            Con cần cài đặt MetaMask để kết nối ví. Đang mở trang tải...
-          </p>
-        </div>,
-        { duration: 5000 }
-      );
-      setTimeout(() => {
-        window.open("https://metamask.io/download/", "_blank");
-      }, 1000);
-      return;
-    }
+    // Show wallet selector modal instead of connecting directly
+    setShowWalletSelector(true);
+  };
+
+  const handleWalletSelected = async (provider: any) => {
+    selectProvider(provider);
+    setShowWalletSelector(false);
     try {
       await connect();
     } catch (err) {
@@ -162,32 +148,39 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
 
   if (!isConnected) {
     return (
-      <button
-        onClick={handleConnect}
-        disabled={isConnecting}
-        className={`flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 ${
-          compact 
-            ? "px-1.5 lg:px-2 xl:px-2.5 py-1 lg:py-1.5 text-[10px] lg:text-xs xl:text-sm" 
-            : "px-2.5 xl:px-3 py-1.5 text-xs xl:text-sm"
-        }`}
-      >
-        {isConnecting ? (
-          <>
-            <RefreshCw className={compact ? "w-3 h-3" : "w-3.5 h-3.5 animate-spin"} />
-            {!compact && <span className="hidden sm:inline">Kết nối...</span>}
-          </>
-        ) : (
-          <>
-            <Wallet className={compact ? "w-3 h-3 lg:w-3.5 lg:h-3.5" : "w-3.5 h-3.5"} />
-            {/* Hide text on lg when compact, show icon only */}
-            {compact ? (
-              <span className="hidden xl:inline">Ví</span>
-            ) : (
-              <span className="hidden sm:inline">Kết nối ví</span>
-            )}
-          </>
-        )}
-      </button>
+      <>
+        <button
+          onClick={handleConnect}
+          disabled={isConnecting}
+          className={`flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 ${
+            compact 
+              ? "px-1.5 lg:px-2 xl:px-2.5 py-1 lg:py-1.5 text-[10px] lg:text-xs xl:text-sm" 
+              : "px-2.5 xl:px-3 py-1.5 text-xs xl:text-sm"
+          }`}
+        >
+          {isConnecting ? (
+            <>
+              <RefreshCw className={compact ? "w-3 h-3" : "w-3.5 h-3.5 animate-spin"} />
+              {!compact && <span className="hidden sm:inline">Kết nối...</span>}
+            </>
+          ) : (
+            <>
+              <Wallet className={compact ? "w-3 h-3 lg:w-3.5 lg:h-3.5" : "w-3.5 h-3.5"} />
+              {compact ? (
+                <span className="hidden xl:inline">Ví</span>
+              ) : (
+                <span className="hidden sm:inline">Kết nối ví</span>
+              )}
+            </>
+          )}
+        </button>
+        <WalletSelectorModal
+          open={showWalletSelector}
+          onOpenChange={setShowWalletSelector}
+          onSelect={handleWalletSelected}
+          isConnecting={isConnecting}
+        />
+      </>
     );
   }
 

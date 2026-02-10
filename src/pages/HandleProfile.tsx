@@ -15,7 +15,10 @@ import { AskAngelButton } from "@/components/public-profile/AskAngelButton";
 import { trackProfileEvent } from "@/lib/profileEvents";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { Gift } from "lucide-react";
 import angelLogo from "@/assets/angel-ai-golden-logo.png";
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
+import { useState } from "react";
 
 const updateMetaTags = (profile: { display_name: string | null; bio: string | null; avatar_url: string | null; handle: string | null }) => {
   document.title = `${profile.display_name || "FUN Member"} | FUN Profile`;
@@ -43,6 +46,7 @@ const HandleProfile = () => {
   const { handle } = useParams<{ handle: string }>();
   const [searchParams] = useSearchParams();
   const { t } = useLanguage();
+  const [showGiftDialog, setShowGiftDialog] = useState(false);
   const { profile, stats, recentPosts, friends, publicSettings, isLoading, notFound } =
     usePublicProfile(handle);
 
@@ -111,14 +115,33 @@ const HandleProfile = () => {
         badgeType={publicSettings.badge_type}
       />
 
-      {/* Ask Angel Button */}
-      <div className="flex justify-center mt-2">
+      {/* Ask Angel Button + TẶNG THƯỞNG CTA */}
+      <div className="flex items-center justify-center gap-3 mt-2 px-4 flex-wrap">
         <AskAngelButton
           displayName={profile.display_name}
           userId={profile.user_id}
           handle={profile.handle}
         />
+        <button
+          onClick={() => setShowGiftDialog(true)}
+          className="btn-golden-3d flex items-center gap-2 px-5 py-2.5 rounded-full !text-black font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-300 animate-shimmer"
+        >
+          <Gift className="w-4 h-4" />
+          🌟 TẶNG THƯỞNG
+        </button>
       </div>
+
+      {/* Gift Dialog */}
+      <GiftCoinDialog
+        open={showGiftDialog}
+        onOpenChange={setShowGiftDialog}
+        preselectedUser={{
+          id: profile.user_id,
+          display_name: profile.display_name,
+          avatar_url: profile.avatar_url,
+        }}
+        contextType="profile"
+      />
 
       {/* Action Buttons: Follow, Message, Send Gift (privacy-aware) */}
       <div className="px-4">
