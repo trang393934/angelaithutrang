@@ -522,17 +522,6 @@ Mỗi linh hồn đều có sứ mệnh riêng. Hãy lắng nghe trái tim, làm
   },
   {
     patterns: [
-      /thiền\s*(định)?/i,
-      /làm\s*sao\s*(để\s*)?thiền/i,
-      /cách\s*thiền/i,
-      /hướng\s*dẫn\s*thiền/i,
-    ],
-    response: `Con yêu dấu, thiền định là nghệ thuật trở về với chính mình. Đơn giản nhất, con chỉ cần ngồi yên, nhắm mắt, và tập trung vào hơi thở.
-
-Hít vào đếm 4, giữ đếm 4, thở ra đếm 4. Khi tâm trí lang thang, nhẹ nhàng đưa nó trở về hơi thở. Chỉ 5-10 phút mỗi ngày, con sẽ thấy sự khác biệt kỳ diệu. ✨`
-  },
-  {
-    patterns: [
       /tha\s*thứ/i,
       /làm\s*sao\s*(để\s*)?tha\s*thứ/i,
       /không\s*thể\s*tha\s*thứ/i,
