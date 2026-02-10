@@ -154,6 +154,7 @@ serve(async (req) => {
         const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
         const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
         const AI_API_KEY = CF_API_TOKEN || LOVABLE_API_KEY;
+        const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
 
         const analysisResponse = await fetch(AI_GATEWAY_URL, {
           method: "POST",
@@ -162,7 +163,7 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash-lite",
+            model: cfModel("google/gemini-2.5-flash-lite"),
             messages: [
               {
                 role: "system",
