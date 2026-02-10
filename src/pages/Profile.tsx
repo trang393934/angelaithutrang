@@ -22,6 +22,7 @@ import { CoverPositionEditor } from "@/components/profile/CoverPositionEditor";
 import { PoPLScoreCard } from "@/components/profile/PoPLScoreCard";
 import { PoPLBadge } from "@/components/profile/PoPLBadge";
 import { SoulTagsEditor } from "@/components/profile/SoulTagsEditor";
+import { SocialLinksEditor } from "@/components/profile/SocialLinksEditor";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import angelAvatar from "@/assets/angel-avatar.png";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
@@ -1420,6 +1421,9 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Social Links Editor */}
+          <SocialLinksEditor />
 
           {/* Public Profile Settings */}
           <PublicProfileSettingsSection />
