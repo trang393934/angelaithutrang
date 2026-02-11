@@ -1,35 +1,59 @@
 
-# Nâng Cấp Flow "Tặng & Thưởng" Trên Angel AI
 
-## Tiến độ
+# Kế Hoạch Thiết Kế Lại Trang Lịch Sử Giao Dịch
 
-### ✅ Phần 1: Chuẩn Bị Tài Nguyên
-- [x] Copy 3 file nhạc Rich vào `public/audio/`
-- [x] Download logo Bitcoin vào `src/assets/bitcoin-logo.png`
-- [x] Cập nhật TokenSelector: giữ nguyên giao diện, thêm Bitcoin, giữ BNB
-- [x] Sửa GiftCoinDialog để tương thích với token mới
+## Tổng Quan
 
-### ✅ Phần 2: Bước 1+2 - SendGiftModal (Flow 2 bước cho Internal Camly)
-- [x] Step 1: Người gửi (avatar+tên+ví), Người nhận (tìm kiếm), mức nhanh (10/50/100/500), lời nhắn 200 ký tự
-- [x] Step 2: Bảng xác nhận đầy đủ (người gửi/nhận, số lượng, lời nhắn, cảnh báo) + nút Quay lại/Xác nhận & Tặng
-- [x] Web3 tabs (CAMLY Web3, FUN, BNB, USDT, Bitcoin) vẫn dùng CryptoTransferTab như cũ
-- [x] Cập nhật TipCelebrationReceipt hỗ trợ token Bitcoin
+Thay thế toàn bộ nội dung trang `/activity-history` (hiện đang hiển thị lịch sử chat) thành trang **Lịch Sử Giao Dịch** công khai theo phong cách Angel AI Gold, tương tự giao diện trong hình tham khảo.
 
-### 🔲 Phần 3: GiftCelebrationModal (Celebration Card)
-- [ ] Tạo CelebrationThemeSelector (6 chủ đề, 3 background/chủ đề, upload ảnh)
-- [ ] Tạo CelebrationAudioPlayer (3 bản Rich, nghe thử)
-- [ ] Tạo GiftCelebrationModal (card đầy đủ + theme + nhạc + hiệu ứng)
-- [ ] Hiệu ứng pháo hoa + coin bay
-- [ ] Nút: lưu ảnh, chia sẻ, copy tx, đăng profile, gửi tin nhắn
+## Nội Dung Trang Mới
 
-### 🔲 Phần 4: Hành Vi Tự Động
-- [ ] Auto post lên Profile (community_posts) với Celebration Card
-- [ ] Auto gửi tin nhắn (direct_messages) cho người nhận
-- [ ] Thêm "Xem Card Chúc Mừng" trong lịch sử giao dịch
+### 1. Header trang
+- Biểu tượng globe + tiêu đề "Lịch Sử Giao Dịch"
+- Phụ đề: "Minh bạch - Truy vết Blockchain - Chuẩn Web3"
+- Nút "Làm mới" và "Xuất dữ liệu" góc phải
+- Màu sắc chuẩn Gold 11 (#b8860b, #daa520, #ffd700)
 
-### 🔲 Phần 5: Database Migration
-- [ ] Thêm cột celebration_theme, celebration_background vào coin_gifts
+### 2. Dải thống kê (5 thẻ)
+- Tổng giao dịch | Tổng giá trị | Hôm nay | Thành công | Chờ xử lý
+- Mỗi thẻ có icon riêng + viền gold nhẹ
 
-### 🔲 Phần 6: Dọn Dẹp
-- [ ] Xóa toàn bộ GIF ngẫu nhiên
-- [ ] Đảm bảo mọi text tiếng Việt có dấu
+### 3. Bộ lọc và Tìm kiếm
+- Thanh tìm kiếm: "Tìm theo tên, địa chỉ ví, mã giao dịch (tx hash)..."
+- 4 dropdown: Tất cả token | Tất cả loại | Tất cả thời gian | Tất cả trạng thái
+- Toggle: "Chỉ onchain"
+
+### 4. Danh sách giao dịch
+- Lấy dữ liệu từ `coin_gifts` và `project_donations` (công khai, ai cũng xem được)
+- Mỗi dòng hiển thị: Avatar + tên người gửi -> Avatar + tên người nhận
+- Ví rút gọn + nút COPY + nút mở explorer
+- Badge loại (Tặng thưởng / Donate) + Badge Onchain
+- Thời gian + Chain (BSC) + TX Hash
+- Nút "Xem Card" cho giao dịch có celebration data
+- Số lượng + token (USDT, CAMLY, BNB...)
+
+## Chi Tiết Kỹ Thuật
+
+### File cần sửa:
+1. **`src/pages/ActivityHistory.tsx`** - Viết lại toàn bộ thành trang Lịch Sử Giao Dịch công khai. Tái sử dụng logic fetch từ `GiftTransactionHistory.tsx` và style từ `TransactionHistorySection.tsx`, nhưng thiết kế lại theo layout hình tham khảo với:
+   - Header có gradient gold
+   - 5 stat cards ngang
+   - Filter bar với dropdown và toggle
+   - Transaction list với avatar, wallet, badges, tx hash
+
+### Dữ liệu:
+- Query `coin_gifts` (gifts) và `project_donations` (donations) - giống `GiftTransactionHistory`
+- Lookup profiles để hiển thị avatar và tên
+- Thêm bộ lọc: token type, loại giao dịch, thời gian, trạng thái, chỉ onchain
+- Xuất CSV với tất cả dữ liệu đã lọc
+
+### Màu sắc Angel AI Gold:
+- Viền và accent: `#daa520`, `#b8860b`
+- Background nhẹ: `from-[#ffd700]/5`
+- Text đậm: `text-[#3D2800]`, `text-[#b8860b]`
+- Badge: gradient gold cho onchain, rose cho donate
+
+### Responsive:
+- Desktop: stat cards 5 cột, filter bar ngang
+- Mobile: stat cards 2-3 cột, filter xếp dọc
+
