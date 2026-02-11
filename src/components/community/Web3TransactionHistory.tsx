@@ -20,19 +20,12 @@ const TOKEN_INFO: Record<string, { symbol: string; logo: string }> = {
   FUN: { symbol: "FUN", logo: "" }, // will use camlyCoinLogo as fallback
 };
 
-function getTokenFromGiftType(giftType: string, message?: string | null): { symbol: string; logo: string } {
+function getTokenFromGiftType(giftType: string): { symbol: string; logo: string } {
   if (giftType?.startsWith("web3_")) {
     const symbol = giftType.replace("web3_", "").toUpperCase();
     return TOKEN_INFO[symbol] || { symbol, logo: "" };
   }
-  // Fallback: try to detect from message for old records
-  if (message) {
-    const msgUpper = message.toUpperCase();
-    if (msgUpper.includes("USDT")) return TOKEN_INFO.USDT;
-    if (msgUpper.includes("USDC")) return TOKEN_INFO.USDC;
-    if (msgUpper.includes("BNB")) return TOKEN_INFO.BNB;
-    if (msgUpper.includes("FUN MONEY") || msgUpper.includes("FUN ")) return TOKEN_INFO.FUN;
-  }
+  // Old records without explicit token info default to CAMLY
   return TOKEN_INFO.CAMLY;
 }
 
@@ -84,7 +77,7 @@ function CopyButton({ text }: { text: string }) {
 function Web3TxRow({ tx }: { tx: Web3Transaction }) {
   const { currentLanguage } = useLanguage();
   const locale = currentLanguage === "vi" ? vi : enUS;
-  const tokenInfo = getTokenFromGiftType(tx.gift_type, tx.message);
+  const tokenInfo = getTokenFromGiftType(tx.gift_type);
   const tokenLogo = tokenInfo.logo || camlyCoinLogo;
   const tokenSymbol = tokenInfo.symbol;
   const timeAgo = formatDistanceToNow(new Date(tx.created_at), { addSuffix: true, locale });
