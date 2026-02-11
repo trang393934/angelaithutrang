@@ -377,7 +377,15 @@ export function useFUNMoneyContract() {
           body: { action_id: actionId, wallet_address: address },
         });
 
-        if (error) throw error;
+        if (error) {
+          const errMsg = typeof error === 'object' ? JSON.stringify(error) : String(error);
+          if (errMsg.includes('already minted')) {
+            toast.info("ℹ️ Action này đã được mint on-chain trước đó.", { id: "pplp-lock" });
+            setMintStatus({ isLoading: false, txHash: null, error: null });
+            return null;
+          }
+          throw error;
+        }
         if (!data.success) throw new Error(data.error || "Authorization failed");
 
         // Backend đã thực hiện lockWithPPLP rồi, trả về tx_hash
