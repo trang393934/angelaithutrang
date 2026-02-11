@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Lock,
   Zap,
@@ -99,12 +100,42 @@ export function TokenLifecyclePanel() {
     }
   }, [mismatch, chainId]);
 
-  // Fetch contract info when connected
+  const [isLoadingOnChain, setIsLoadingOnChain] = useState(false);
+  const retryCountRef = useRef(0);
+
+  // Fetch contract info when connected, with retry logic
   useEffect(() => {
-    if (isConnected && address) {
-      fetchContractInfo();
-    }
+    if (!isConnected || !address) return;
+
+    let cancelled = false;
+    const fetchWithRetry = async () => {
+      setIsLoadingOnChain(true);
+      retryCountRef.current = 0;
+
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (cancelled) return;
+        retryCountRef.current = attempt + 1;
+        const result = await fetchContractInfo();
+        if (result || cancelled) break;
+        // Wait 2s before retry
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      if (!cancelled) setIsLoadingOnChain(false);
+    };
+
+    fetchWithRetry();
+    return () => { cancelled = true; };
   }, [isConnected, address, fetchContractInfo]);
+
+  // Auto-refresh polling every 30s
+  useEffect(() => {
+    if (!isConnected || !address) return;
+    const interval = setInterval(() => {
+      fetchContractInfo();
+      fetchMismatchAlloc();
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [isConnected, address, fetchContractInfo, fetchMismatchAlloc]);
 
   // Fetch mismatch data when detected
   useEffect(() => {
@@ -224,6 +255,35 @@ export function TokenLifecyclePanel() {
             <RefreshCw className="mr-1 h-3 w-3" />
             {t("mint.tokenLifecycle.resetBSC")}
           </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Loading on-chain data (skeleton state)
+  if (isConnected && isLoadingOnChain && !contractInfo) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Coins className="h-5 w-5 text-amber-600" />
+            {t("mint.tokenLifecycle.title")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Đang tải dữ liệu on-chain... (lần {retryCountRef.current}/3)</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="text-center p-3 rounded-lg bg-muted/30">
+                <Skeleton className="h-4 w-4 mx-auto mb-1 rounded-full" />
+                <Skeleton className="h-3 w-12 mx-auto mb-1" />
+                <Skeleton className="h-6 w-16 mx-auto" />
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     );

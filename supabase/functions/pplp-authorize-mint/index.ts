@@ -542,11 +542,19 @@ serve(async (req) => {
         console.log(`[PPLP Lock] ⏳ Transaction sent: ${tx.hash}`);
         
         const receipt = await tx.wait(1);
-        txHash = receipt.hash;
-        onChainError = null;
-        onChainErrorDetails = null;
         
-        console.log(`[PPLP Lock] ✓ Transaction confirmed: ${txHash} in block ${receipt.blockNumber}`);
+        // CRITICAL: Verify receipt status (1 = success, 0 = reverted)
+        if (receipt.status === 0) {
+          onChainError = "CONTRACT_REVERT";
+          onChainErrorDetails = `Transaction ${receipt.hash} was reverted on-chain (status=0). Gas was consumed but state was not changed.`;
+          console.error(`[PPLP Lock] ✗ Transaction REVERTED: ${receipt.hash} in block ${receipt.blockNumber}`);
+          // Do NOT set txHash — treat as failed
+        } else {
+          txHash = receipt.hash;
+          onChainError = null;
+          onChainErrorDetails = null;
+          console.log(`[PPLP Lock] ✓ Transaction confirmed: ${txHash} in block ${receipt.blockNumber}`);
+        }
       } catch (txError: any) {
         const errMsg = txError?.message || String(txError);
         console.error(`[PPLP Lock] On-chain transaction failed:`, errMsg);
