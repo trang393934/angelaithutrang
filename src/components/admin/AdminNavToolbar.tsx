@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   TrendingUp,
   Users,
+  UserCog,
   Wallet,
   Heart,
   Sparkles,
@@ -36,6 +37,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/admin/statistics", icon: TrendingUp, label: "Thống kê" },
       { to: "/admin/early-adopters", icon: Users, label: "Early Adopters" },
+      { to: "/admin/user-management", icon: UserCog, label: "Quản lý User" },
     ],
   },
   {

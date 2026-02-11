@@ -3545,6 +3545,35 @@ export type Database = {
           week_coins: number
         }[]
       }
+      get_admin_user_management_data: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          camly_balance: number
+          camly_lifetime_earned: number
+          camly_lifetime_spent: number
+          comment_count: number
+          display_name: string
+          fun_money_received: number
+          gift_internal_received: number
+          gift_internal_sent: number
+          gift_web3_received: number
+          gift_web3_sent: number
+          handle: string
+          joined_at: string
+          light_score: number
+          negative_actions: number
+          popl_score: number
+          positive_actions: number
+          post_count: number
+          pplp_action_count: number
+          pplp_minted_count: number
+          total_withdrawn: number
+          user_id: string
+          wallet_address: string
+          withdrawal_count: number
+        }[]
+      }
       get_daily_ai_usage: {
         Args: { _user_id: string }
         Returns: {
