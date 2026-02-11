@@ -19,12 +19,11 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart } from "lucide-react";
-import { TipCelebrationReceipt } from "./TipCelebrationReceipt";
+import { GiftCelebrationModal, type CelebrationData } from "./GiftCelebrationModal";
 import { CryptoTransferTab } from "./CryptoTransferTab";
 import { TokenSelector, type SelectedToken } from "./TokenSelector";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
-import type { TipReceiptData } from "./TipCelebrationReceipt";
 import { Link } from "react-router-dom";
 
 interface GiftCoinDialogProps {
@@ -85,7 +84,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
   const [message, setMessage] = useState("");
   const [showConfetti, setShowConfetti] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [celebrationData, setCelebrationData] = useState<TipReceiptData | null>(null);
+  const [celebrationData, setCelebrationData] = useState<CelebrationData | null>(null);
 
   // Step flow for internal Camly Coin: 1 = input, 2 = confirm
   const [internalStep, setInternalStep] = useState<1 | 2>(1);
@@ -709,8 +708,8 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
         </DialogContent>
       </Dialog>
 
-      {/* Celebration Receipt Overlay */}
-      <TipCelebrationReceipt
+      {/* Celebration Modal */}
+      <GiftCelebrationModal
         open={showCelebration}
         onOpenChange={setShowCelebration}
         data={celebrationData}
