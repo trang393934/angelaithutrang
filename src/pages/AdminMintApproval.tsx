@@ -154,7 +154,23 @@ export default function AdminMintApproval() {
           },
         });
 
-        if (error) throw error;
+        // Handle 409 "already minted" gracefully
+        if (error) {
+          // Supabase client puts non-2xx response body in error.context or error itself
+          const errBody = typeof error === 'object' && error !== null 
+            ? (error as any)?.context?.body || (error as any)?.message || JSON.stringify(error)
+            : String(error);
+          
+          if (typeof errBody === 'string' && errBody.includes('already minted')) {
+            toast.info("ℹ️ Action này đã được mint on-chain trước đó rồi.", {
+              id: `approve-${request.id}`,
+              duration: 5000,
+            });
+            await fetchRequests();
+            return;
+          }
+          throw error;
+        }
 
         if (data?.tx_hash) {
           toast.success(`✅ Đã mint on-chain! TX: ${data.tx_hash.slice(0, 10)}...`, {
@@ -251,7 +267,11 @@ export default function AdminMintApproval() {
           },
         });
 
-        if (error) throw error;
+        if (error) {
+          const errMsg = typeof error === 'object' ? JSON.stringify(error) : String(error);
+          if (errMsg.includes('already minted')) { successCount++; continue; }
+          throw error;
+        }
 
         if (data?.tx_hash) {
           successCount++;
@@ -337,7 +357,11 @@ export default function AdminMintApproval() {
         const { data, error } = await supabase.functions.invoke("pplp-authorize-mint", {
           body: { action_id: selected[i].action_id, wallet_address: selected[i].recipient_address },
         });
-        if (error) throw error;
+        if (error) {
+          const errMsg = typeof error === 'object' ? JSON.stringify(error) : String(error);
+          if (errMsg.includes('already minted')) { success++; continue; }
+          throw error;
+        }
         if (data?.tx_hash || data?.success) success++;
         else fail++;
       } catch { fail++; }
