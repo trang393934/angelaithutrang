@@ -1,36 +1,34 @@
 
+# Nâng Cấp Flow "Tặng & Thưởng" Trên Angel AI
 
-# Thêm Bảng Dữ Liệu Thời Gian Thực vào Trang Lì xì Tết
+## Tiến độ
 
-## Mô tả
-Thêm một bảng mới vào trang `/admin/tet-reward` hiển thị dữ liệu FUN Money **tính đến thời điểm hiện tại** (real-time từ database), thay vì snapshot cố định ngày 07/02/2026. Sử dụng cùng công thức **1 FUN = 1.000 Camly Coin**.
+### ✅ Phần 1: Chuẩn Bị Tài Nguyên
+- [x] Copy 3 file nhạc Rich vào `public/audio/`
+- [x] Download logo Bitcoin vào `src/assets/bitcoin-logo.png`
+- [x] Cập nhật TokenSelector: bỏ USDC/BNB, thêm Bitcoin (giữ nguyên giao diện cũ)
+- [x] Sửa GiftCoinDialog để tương thích với token mới
 
-## Cách thực hiện
+### 🔲 Phần 2: Bước 1 - SendGiftModal (Refactor GiftCoinDialog thành flow 3 bước)
+- [ ] Refactor UI step 1: người gửi/nhận info, quick amounts, bỏ slider
+- [ ] Step 2: bảng xác nhận đầy đủ trước ký MetaMask
+- [ ] Step 3: chuyển sang GiftCelebrationModal
 
-### Chỉnh sửa tệp: `src/pages/AdminTetReward.tsx`
+### 🔲 Phần 3: GiftCelebrationModal (Celebration Card)
+- [ ] Tạo CelebrationThemeSelector (6 chủ đề, 3 background/chủ đề, upload ảnh)
+- [ ] Tạo CelebrationAudioPlayer (3 bản Rich, nghe thử)
+- [ ] Tạo GiftCelebrationModal (card đầy đủ + theme + nhạc + hiệu ứng)
+- [ ] Hiệu ứng pháo hoa + coin bay
+- [ ] Nút: lưu ảnh, chia sẻ, copy tx, đăng profile, gửi tin nhắn
 
-1. **Thêm truy vấn dữ liệu real-time**: Gọi RPC `get_admin_user_management_data` (đã có sẵn) để lấy dữ liệu `fun_money_received` hiện tại của tất cả user, kèm `camly_balance`, `camly_lifetime_earned`, `total_withdrawn`, `light_score`.
+### 🔲 Phần 4: Hành Vi Tự Động
+- [ ] Auto post lên Profile (community_posts) với Celebration Card
+- [ ] Auto gửi tin nhắn (direct_messages) cho người nhận
+- [ ] Thêm "Xem Card Chúc Mừng" trong lịch sử giao dịch
 
-2. **Thêm phần "Dữ liệu hiện tại" phía dưới bảng snapshot**: Bao gồm:
-   - **Banner tiêu đề**: "Dữ liệu tính đến hiện tại" với thời gian cập nhật
-   - **4 thẻ thống kê tổng**:
-     - Tổng FUN Money (hiện tại)
-     - Tổng Camly Coin quy đổi (FUN x 1.000)
-     - Số user đủ điều kiện (FUN > 0)
-     - Avg Light Score
-   - **Bảng chi tiết user**: Giống bảng snapshot nhưng với cột:
-     - Thứ hạng, Tên user, FUN Money nhận được, Camly quy đổi, Camly đang có, Camly đã rút, Light Score
-   - **Nút Refresh** để cập nhật lại dữ liệu
-   - **Tìm kiếm** riêng cho bảng real-time
+### 🔲 Phần 5: Database Migration
+- [ ] Thêm cột celebration_theme, celebration_background vào coin_gifts
 
-3. **Bố cục**: Dùng Tabs để chia thành 2 tab:
-   - Tab 1: "Snapshot 07/02/2026" (bảng hiện tại, giữ nguyên)
-   - Tab 2: "Dữ liệu hiện tại" (bảng mới, real-time)
-
-### Chi tiết kỹ thuật
-- Chỉ chỉnh sửa 1 tệp: `src/pages/AdminTetReward.tsx`
-- Tái sử dụng RPC `get_admin_user_management_data` đã có
-- Thêm import `Tabs, TabsContent, TabsList, TabsTrigger` từ UI components
-- Thêm state cho dữ liệu real-time, search, sort riêng biệt
-- Hỗ trợ xuất Excel cho cả 2 tab
-
+### 🔲 Phần 6: Dọn Dẹp
+- [ ] Xóa toàn bộ GIF ngẫu nhiên
+- [ ] Đảm bảo mọi text tiếng Việt có dấu

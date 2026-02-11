@@ -297,9 +297,8 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                 activeTab === "internal" ? `Số dư: ${balance.toLocaleString()} CAMLY`
                 : activeTab === "camly_web3" ? `Số dư: ${Number(camlyCoinBalance).toLocaleString()} CAMLY`
                 : activeTab === "fun_money" ? `Số dư: ${Number(funMoneyBalance).toLocaleString()} FUN`
-                : activeTab === "bnb" ? `Số dư: ${Number(bnbBalance).toLocaleString()} BNB`
                 : activeTab === "usdt" ? `Số dư: ${Number(usdtBalance).toLocaleString()} USDT`
-                : activeTab === "usdc" ? `Số dư: ${Number(usdcBalance).toLocaleString()} USDC`
+                : activeTab === "bitcoin" ? `Số dư: BTC`
                 : undefined
               }
             />
@@ -447,18 +446,6 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
               />
             )}
 
-            {/* BNB */}
-            {activeTab === "bnb" && (
-              <CryptoTransferTab
-                tokenType="bnb" tokenSymbol="BNB" tokenBalance={bnbBalance}
-                isConnected={isConnected} isTransferring={isTransferring} address={address}
-                hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="orange"
-                preselectedUser={preselectedUser ? { user_id: preselectedUser.id, display_name: preselectedUser.display_name, avatar_url: preselectedUser.avatar_url } : null}
-                onConnect={connect} onTransfer={transferBnb} onFetchBalance={fetchBnbBalance}
-                onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "BNB", msg)}
-              />
-            )}
-
             {/* USDT */}
             {activeTab === "usdt" && (
               <CryptoTransferTab
@@ -471,15 +458,15 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
               />
             )}
 
-            {/* USDC */}
-            {activeTab === "usdc" && (
+            {/* Bitcoin */}
+            {activeTab === "bitcoin" && (
               <CryptoTransferTab
-                tokenType="usdc" tokenSymbol="USDC" tokenBalance={usdcBalance}
+                tokenType="bnb" tokenSymbol="BTC" tokenBalance={bnbBalance}
                 isConnected={isConnected} isTransferring={isTransferring} address={address}
-                hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="violet"
+                hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="orange"
                 preselectedUser={preselectedUser ? { user_id: preselectedUser.id, display_name: preselectedUser.display_name, avatar_url: preselectedUser.avatar_url } : null}
-                onConnect={connect} onTransfer={transferUsdc} onFetchBalance={fetchUsdcBalance}
-                onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "USDC", msg)}
+                onConnect={connect} onTransfer={transferBnb} onFetchBalance={fetchBnbBalance}
+                onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "BTC", msg)}
               />
             )}
           </div>
