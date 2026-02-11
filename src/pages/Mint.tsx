@@ -5,16 +5,18 @@ import { FUNMoneyBalanceCard } from "@/components/mint/FUNMoneyBalanceCard";
 import { MintActionsList } from "@/components/mint/MintActionsList";
 import { TokenLifecyclePanel } from "@/components/mint/TokenLifecyclePanel";
 import { useAuth } from "@/hooks/useAuth";
+import { useUnmintedCount } from "@/hooks/useUnmintedCount";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, Coins, Sparkles, Shield, Zap, ExternalLink, Info, Lock, ChevronDown, Wallet, CheckCircle2, Download } from "lucide-react";
+import { ArrowRight, Coins, Sparkles, Shield, Zap, ExternalLink, Info, Lock, ChevronDown, Wallet, CheckCircle2, Download, AlertTriangle } from "lucide-react";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function Mint() {
   const { user } = useAuth();
+  const { unmintedCount } = useUnmintedCount(user?.id);
   const [guideOpen, setGuideOpen] = useState(true);
  
     return (
@@ -55,7 +57,21 @@ export default function Mint() {
                </AlertDescription>
               </Alert>
 
-              {/* Hướng dẫn Activate & Claim - Collapsible Stepper */}
+              {/* Unminted Actions Banner */}
+              {unmintedCount > 0 && (
+                <Alert className="border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30">
+                  <AlertTriangle className="h-4 w-4 text-orange-600" />
+                  <AlertTitle className="text-orange-700 dark:text-orange-400">
+                    ⚡ {unmintedCount} Light Actions chưa gửi yêu cầu mint!
+                  </AlertTitle>
+                  <AlertDescription className="text-orange-600 dark:text-orange-300">
+                    Bạn có {unmintedCount} hành động đã đạt điểm nhưng chưa gửi yêu cầu mint FUN Money.
+                    Cuộn xuống và nhấn <strong>"Gửi tất cả yêu cầu mint"</strong> để Admin duyệt nhé!
+                  </AlertDescription>
+                </Alert>
+              )}
+
+               {/* Hướng dẫn Activate & Claim - Collapsible Stepper */}
               <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
                 <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
                   <CollapsibleTrigger asChild>

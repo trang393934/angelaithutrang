@@ -129,6 +129,29 @@ export function MintActionsList() {
 
   return (
     <div className="space-y-6">
+      {/* Thống kê tổng quan */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-lg border bg-card p-3 text-center">
+          <p className="text-2xl font-bold text-orange-600">{unmintedActions.length}</p>
+          <p className="text-xs text-muted-foreground">Chưa gửi</p>
+        </div>
+        <div className="rounded-lg border bg-card p-3 text-center">
+          <p className="text-2xl font-bold text-blue-600">
+            {claimableActions.filter((a: any) => {
+              const mr = resolveMintRequest(a);
+              return mr && mr.status === "pending";
+            }).length}
+          </p>
+          <p className="text-xs text-muted-foreground">Đang chờ duyệt</p>
+        </div>
+        <div className="rounded-lg border bg-card p-3 text-center">
+          <p className="text-2xl font-bold text-green-600">
+            {actions?.filter((a: any) => a.status === "minted").length || 0}
+          </p>
+          <p className="text-xs text-muted-foreground">Đã mint</p>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
