@@ -1,92 +1,81 @@
 
 
-## Sửa Cloudflare AI Gateway: Chuyển sang Unified `/compat` Endpoint
+## Mo Cong Tat Ca Cac Trang Cho Khach Xem Tu Do
 
-### Vấn Đề Hiện Tại
+### Tong Quan
 
-Từ screenshot dashboard và code example của Cloudflare, ta thấy rõ:
-- Dashboard hiển thị **10 requests, 10 errors** -- tất cả request tới Cloudflare đều lỗi
-- Code example chính thức dùng **Unified API** (`/compat`) với model format `google-ai-studio/gemini-2.5-flash`
-- Code hiện tại dùng sai endpoint (`/google-ai-studio/v1beta/openai/...`) và sai header (`cf-aig-authorization` + `Authorization` riêng)
+Hien tai nhieu trang (Earn, Vision, Mint, Ideas, Bounty, Chat, Messages) dang chan khach bang man hinh "Dang nhap ngay" khi chua dang nhap. Thay doi nay se:
 
-### Nguyên Nhân
-
-Khi dùng **Stored Key (BYOK)**, Cloudflare Unified endpoint (`/compat`) tự inject Google API Key. Chỉ cần truyền `CF_API_TOKEN` qua `Authorization` header. Không cần truyền `GOOGLE_AI_API_KEY` riêng.
-
-### Giải Pháp
-
-Thay đổi trong **10 Edge Functions**:
-
-**1. URL**: Chuyển sang unified endpoint
-```
-// CU:
-.../angel-ai/google-ai-studio/v1beta/openai/chat/completions
-
-// MOI:
-.../angel-ai/compat
-```
-
-**2. Model format**: Thêm prefix provider
-```
-// CU: cfModel strip prefix -> "gemini-2.5-flash"
-// MOI: "google-ai-studio/gemini-2.5-flash" (giu nguyen prefix)
-```
-
-**3. Headers**: Don gian hoa -- chi can Authorization
-```
-// CU:
-aiHeaders["cf-aig-authorization"] = `Bearer ${CF_API_TOKEN}`;
-aiHeaders["Authorization"] = `Bearer ${GOOGLE_AI_KEY}`;
-
-// MOI:
-aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
-```
+1. **Mo tat ca trang cho khach doc tu do** -- khong con man hinh chan
+2. **Chi yeu cau dang ky khi tuong tac** (dang bai, binh luan, like, gui tin, tao board...)
+3. **Chat**: cho phep 5 luot chat, sau do hien popup dac biet
+4. **Popup dang ky** voi thong diep: "VUI LONG DANG KY DE DUOC CHOI, DUOC HOC, DUOC VOC, DUOC LI XI 🧧"
 
 ### Chi Tiet Ky Thuat
 
-Block config moi cho moi function:
+#### Buoc 1: Tao component `SignupPromptDialog`
 
-```text
-const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat";
-const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
-const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
-const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
-const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
-if (CF_API_TOKEN) {
-  aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
-} else {
-  aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
-}
-```
+Tao file `src/components/SignupPromptDialog.tsx` -- dialog popup chinh giua voi thong diep:
 
-Thay doi chinh:
-- `cfModel`: thay `replace("google/", "")` bang `replace("google/", "google-ai-studio/")` de model thanh `google-ai-studio/gemini-2.5-flash`
-- Headers: chi can 1 `Authorization` header voi `CF_API_TOKEN`, BYOK tu inject Google key
-- Bo `GOOGLE_AI_API_KEY` -- khong can nua
+"VUI LONG DANG KY DE DUOC CHOI, DUOC HOC, DUOC VOC, DUOC LI XI 🧧"
 
-### 10 Files Can Sua
+Su dung Dialog cua Radix UI, hien thi khi khach co gang tuong tac hoac sau 5 tin nhan chat.
 
-| # | File | Thay doi |
+#### Buoc 2: Xoa man hinh chan khach tai 7 trang
+
+Cac trang sau dang co block `if (!user) { return <...login wall...> }` can xoa:
+
+| Trang | Thay doi |
+|---|---|
+| `src/pages/Earn.tsx` (dong 65-89) | Xoa block `if (!user)`, cho khach xem toan bo noi dung. Boc cac nut tuong tac bang `AuthActionGuard` |
+| `src/pages/Vision.tsx` (dong 53-81) | Xoa block `if (!user)`, boc nut "Tao Vision Board" bang `AuthActionGuard` |
+| `src/pages/Mint.tsx` (dong 19-43) | Xoa block `if (!user)`, boc nut mint bang `AuthActionGuard` |
+| `src/pages/Ideas.tsx` (dong 156-188) | Xoa block `if (!user)`, boc form gop y bang `AuthActionGuard` |
+| `src/pages/Bounty.tsx` (dong 184-208) | Xoa block `if (!user)`, boc nut submit bang `AuthActionGuard` |
+| `src/pages/ContentWriter.tsx` | Thay toast error thanh `SignupPromptDialog` khi generate |
+| `src/pages/Chat.tsx` (dong 744-754) | Cho khach chat 5 luot (dung localStorage nhu ChatDemoWidget), sau do hien `SignupPromptDialog` |
+
+#### Buoc 3: Cap nhat Chat.tsx cho khach chat 5 luot
+
+- Them state dem so tin nhan cua khach (localStorage key `angel_ai_guest_chat_count`)
+- Trong `handleSubmit`: neu `!user`, dem so luot. Neu < 5, cho gui binh thuong. Neu >= 5, hien `SignupPromptDialog`
+- Khach van xem duoc lich su chat hien tai, chi bi chan khi gui tin nhan thu 6
+
+#### Buoc 4: Cap nhat Messages va ActivityHistory
+
+| Trang | Thay doi |
+|---|---|
+| `src/pages/Messages.tsx` | Xoa `LightGate`, cho khach vao xem giao dien nhung boc cac hanh dong nhan tin bang `AuthActionGuard` |
+| `src/App.tsx` | Xoa `ProfileCompletionGate` boc `Messages` va `ActivityHistory` -- de khach vao xem |
+
+#### Buoc 5: Cap nhat AuthActionGuard
+
+Thay doi noi dung popup mac dinh cua `AuthActionGuard` thanh thong diep moi:
+
+"VUI LONG DANG KY DE DUOC CHOI, DUOC HOC, DUOC VOC, DUOC LI XI 🧧"
+
+Thay doi trong `DialogTitle` va `DialogDescription` de su dung thong diep nay.
+
+### Danh Sach Cac File Can Sua
+
+| # | File | Mo ta |
 |---|---|---|
-| 1 | `supabase/functions/angel-chat/index.ts` | 2 block config (demo + main) |
-| 2 | `supabase/functions/analyze-image/index.ts` | 1 block config |
-| 3 | `supabase/functions/generate-content/index.ts` | 1 block config |
-| 4 | `supabase/functions/global-search/index.ts` | 1 block config |
-| 5 | `supabase/functions/check-user-energy/index.ts` | 1 block config |
-| 6 | `supabase/functions/send-healing-message/index.ts` | 1 block config |
-| 7 | `supabase/functions/analyze-reward-journal/index.ts` | 1 block config |
-| 8 | `supabase/functions/analyze-reward-question/index.ts` | 1 block config |
-| 9 | `supabase/functions/analyze-onboarding/index.ts` | 1 block config |
-| 10 | `supabase/functions/verify-avatar-for-withdrawal/index.ts` | 1 block config |
-
-### Fallback
-
-Van giu co che fallback: neu Cloudflare tra loi khong thanh cong (va khong phai 429), tu dong thu lai qua Lovable Gateway voi model `google/gemini-2.5-flash`.
+| 1 | `src/components/SignupPromptDialog.tsx` | **Tao moi** -- popup dang ky chinh giua |
+| 2 | `src/components/AuthActionGuard.tsx` | Cap nhat thong diep mac dinh |
+| 3 | `src/pages/Earn.tsx` | Xoa login wall, boc tuong tac AuthActionGuard |
+| 4 | `src/pages/Vision.tsx` | Xoa login wall, boc tuong tac AuthActionGuard |
+| 5 | `src/pages/Mint.tsx` | Xoa login wall, boc tuong tac AuthActionGuard |
+| 6 | `src/pages/Ideas.tsx` | Xoa login wall, boc tuong tac AuthActionGuard |
+| 7 | `src/pages/Bounty.tsx` | Xoa login wall, boc tuong tac AuthActionGuard |
+| 8 | `src/pages/ContentWriter.tsx` | Thay toast thanh popup |
+| 9 | `src/pages/Chat.tsx` | Them logic 5 luot chat cho khach |
+| 10 | `src/pages/Messages.tsx` | Xoa LightGate |
+| 11 | `src/App.tsx` | Xoa ProfileCompletionGate boc Messages/ActivityHistory |
 
 ### Luu Y
 
-- `GOOGLE_AI_API_KEY` secret van giu lai trong Secrets (khong xoa), phong truong hop can dung sau
-- Khong thay doi model, system prompt, cache, hay logic nao khac
-- Chi thay doi cach goi API va xac thuc
+- Cac trang Admin van giu nguyen bao mat (redirect ve /admin/login)
+- Cac trang docs, community, knowledge, profile cong khai da san sang -- khong can thay doi
+- Fallback: neu khach co gang thuc hien hanh dong yeu cau auth, popup se hien ngay lap tuc
+- Khong thay doi RLS hay database -- chi thay doi UI/UX
 
