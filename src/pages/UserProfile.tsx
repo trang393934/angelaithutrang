@@ -637,19 +637,18 @@ const UserProfile = () => {
             )}
           </div>
 
-          {/* Profile Info Section — Facebook-style */}
-          <div className="px-4 pb-4">
-            {/* Avatar + Name row */}
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-[75px] sm:-mt-[85px]">
-              {/* Avatar */}
-              <div className="relative group shrink-0">
+          {/* Profile Info Section — Facebook-style, below cover */}
+          <div className="px-4 pb-4 relative z-10">
+            {/* Avatar row — overlaps cover */}
+            <div className="-mt-[70px] sm:-mt-[84px] mb-3">
+              <div className="relative group shrink-0 inline-block">
                 <div 
                   className="cursor-pointer"
                   onClick={() => profile?.avatar_url && setAvatarLightboxOpen(true)}
                 >
-                  <Avatar className="w-[140px] h-[140px] sm:w-[168px] sm:h-[168px] border-[5px] border-white shadow-xl transition-transform duration-300 group-hover:scale-[1.02]">
+                  <Avatar className="w-[140px] h-[140px] sm:w-[168px] sm:h-[168px] border-[5px] border-background shadow-xl transition-transform duration-300 group-hover:scale-[1.02]">
                     <AvatarImage src={profile?.avatar_url || angelAvatar} alt={profile?.display_name || "User"} className="object-cover" />
-                    <AvatarFallback className="text-5xl bg-gradient-to-br from-primary to-primary/70 text-white">
+                    <AvatarFallback className="text-5xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
                       {profile?.display_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
@@ -662,56 +661,52 @@ const UserProfile = () => {
                 {isOwnProfile && (
                   <Link 
                     to="/profile"
-                    className="absolute bottom-2 right-2 p-2 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors z-10"
+                    className="absolute bottom-2 right-2 p-2 bg-muted hover:bg-muted/80 rounded-full transition-colors z-10"
                   >
-                    <Camera className="w-5 h-5 text-gray-700" />
+                    <Camera className="w-5 h-5 text-foreground" />
                   </Link>
                 )}
               </div>
+            </div>
 
-              {/* Name + Handle + Stats + Action buttons */}
-              <div className="flex-1 min-w-0 pb-2 sm:pb-3">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  {/* Left: Name, handle, friend count */}
-                  <div className="min-w-0">
-                    <h1 className="text-[28px] sm:text-[32px] font-bold text-foreground leading-tight truncate">
-                      {profile?.display_name || "Người dùng ẩn danh"}
-                    </h1>
-                    {profile?.handle && (
-                      <p className="text-sm sm:text-base font-semibold text-primary mt-0.5">
-                        @{profile.handle}
-                        <span className="text-xs text-muted-foreground font-normal ml-2">
-                          angel.fun.rich/{profile.handle}
-                        </span>
-                      </p>
-                    )}
-                    <p className="text-[15px] text-muted-foreground font-medium mt-1">
-                      {stats.friends} {t("userProfile.friends") || "bạn bè"}
-                    </p>
+            {/* Name + Info + Action buttons — fully below cover, on white bg */}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              {/* Left: Name, handle, friend count */}
+              <div className="min-w-0">
+                <h1 className="text-[28px] sm:text-[32px] font-extrabold text-foreground leading-tight">
+                  {profile?.display_name || "Người dùng ẩn danh"}
+                </h1>
+                {profile?.handle && (
+                  <p className="text-sm sm:text-base font-semibold text-primary mt-0.5">
+                    @{profile.handle}
+                    <span className="text-xs text-muted-foreground font-normal ml-2">
+                      angel.fun.rich/{profile.handle}
+                    </span>
+                  </p>
+                )}
+                <p className="text-[15px] text-muted-foreground font-medium mt-1">
+                  {stats.friends} {t("userProfile.friends") || "bạn bè"}
+                </p>
 
-                    {/* Wallet address */}
-                    {userId && <WalletAddressDisplay userId={userId} className="mt-1.5" />}
+                {userId && <WalletAddressDisplay userId={userId} className="mt-1.5" />}
 
-                    {/* Mini friend avatars */}
-                    {friends.length > 0 && (
-                      <div className="flex -space-x-2 mt-2">
-                        {friends.slice(0, 8).map((friend) => (
-                          <Link key={friend.user_id} to={`/user/${friend.user_id}`}>
-                            <Avatar className="w-8 h-8 border-2 border-white hover:z-10 transition-transform hover:scale-110">
-                              <AvatarImage src={friend.avatar_url || angelAvatar} className="object-cover" />
-                              <AvatarFallback className="text-xs">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
-                            </Avatar>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+                {friends.length > 0 && (
+                  <div className="flex -space-x-2 mt-2">
+                    {friends.slice(0, 8).map((friend) => (
+                      <Link key={friend.user_id} to={`/user/${friend.user_id}`}>
+                        <Avatar className="w-8 h-8 border-2 border-background hover:z-10 transition-transform hover:scale-110">
+                          <AvatarImage src={friend.avatar_url || angelAvatar} className="object-cover" />
+                          <AvatarFallback className="text-xs">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
+                        </Avatar>
+                      </Link>
+                    ))}
                   </div>
+                )}
+              </div>
 
-                  {/* Right: Action buttons */}
-                  <div className="shrink-0">
-                    {renderActionButtons()}
-                  </div>
-                </div>
+              {/* Right: Action buttons */}
+              <div className="shrink-0 pt-1">
+                {renderActionButtons()}
               </div>
             </div>
 
@@ -724,7 +719,7 @@ const UserProfile = () => {
 
             <Separator className="my-4" />
 
-            {/* Navigation Tabs — Facebook style */}
+            {/* Navigation Tabs */}
             <div className="flex gap-1 overflow-x-auto pb-1 -mb-[1px]">
               {[
                 { id: "posts", label: "Bài viết" },
