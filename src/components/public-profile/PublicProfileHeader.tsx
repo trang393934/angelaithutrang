@@ -57,7 +57,7 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
   return (
     <div className="relative">
       {/* Cover Photo */}
-      <div className="h-[200px] sm:h-[280px] md:h-[320px] relative overflow-hidden">
+      <div className="h-[200px] sm:h-[280px] md:h-[320px] relative overflow-hidden rounded-b-xl">
         {profile.cover_photo_url ? (
           <img
             src={profile.cover_photo_url}
@@ -67,96 +67,108 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/20 via-primary-pale to-accent-gold/30" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
       </div>
 
-      {/* Profile Info */}
+      {/* Facebook-style: Avatar left + Info right */}
       <div className="max-w-3xl mx-auto px-4 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          {/* Avatar - overlapping cover */}
-          <div className="-mt-[85px] sm:-mt-[100px]">
-            <div className="relative shrink-0 inline-block">
-              <Avatar className="w-32 h-32 sm:w-40 sm:h-40 border-4 border-background shadow-divine ring-4 ring-primary-pale/50">
-                <AvatarImage
-                  src={profile.avatar_url || angelAvatar}
-                  alt={profile.display_name || "User"}
-                />
-                <AvatarFallback className="text-4xl bg-gradient-to-br from-primary to-primary-deep text-primary-foreground">
-                  {profile.display_name?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="absolute -bottom-1 -right-1">
-                <PoPLBadge
-                  isVerified={stats.poplScore >= 20}
-                  badgeLevel={stats.badgeLevel}
-                  size="lg"
-                />
-              </div>
+        <div className="flex items-end gap-4 -mt-[60px] sm:-mt-[75px]">
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            <Avatar className="w-[120px] h-[120px] sm:w-[150px] sm:h-[150px] border-[5px] border-background shadow-xl ring-2 ring-primary/30">
+              <AvatarImage
+                src={profile.avatar_url || angelAvatar}
+                alt={profile.display_name || "User"}
+              />
+              <AvatarFallback className="text-4xl bg-gradient-to-br from-primary to-primary-deep text-primary-foreground">
+                {profile.display_name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-1 -right-1">
+              <PoPLBadge
+                isVerified={stats.poplScore >= 20}
+                badgeLevel={stats.badgeLevel}
+                size="lg"
+              />
             </div>
           </div>
 
-          {/* Name + Info — starts at ~1/5 from bottom of avatar */}
-          <div className="-mt-[26px] sm:-mt-[32px]">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
-                {profile.display_name || "FUN Member"}
-              </h1>
-              <ProfileBadge badgeType={badgeType ?? null} />
-            </div>
+          {/* Name + Stats + Actions row */}
+          <div className="flex-1 min-w-0 pb-2">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="flex items-start justify-between gap-2 flex-wrap">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight truncate">
+                      {profile.display_name || "FUN Member"}
+                    </h1>
+                    <ProfileBadge badgeType={badgeType ?? null} />
+                  </div>
 
-            {profile.handle && (
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <p className="text-base font-semibold text-primary truncate">
-                  @{profile.handle}
-                </p>
-                <span className="text-xs text-muted-foreground truncate">
-                  • angel.fun.rich/{profile.handle}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
-                  onClick={handleCopyLink}
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
-                  onClick={handleShare}
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                </Button>
+                  {profile.handle && (
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-sm sm:text-base font-semibold text-primary truncate">
+                        @{profile.handle}
+                      </p>
+                      <span className="text-xs text-muted-foreground truncate hidden sm:inline">
+                        • angel.fun.rich/{profile.handle}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
+                        onClick={handleCopyLink}
+                      >
+                        {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
+                        onClick={handleShare}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            </motion.div>
+          </div>
+        </div>
 
-            {profile.bio && (
-              <p className="text-muted-foreground max-w-md leading-relaxed text-sm sm:text-base mt-2">
-                {profile.bio}
-              </p>
-            )}
+        {/* Bio + Tagline + Meta — below the avatar row, full width */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mt-3 space-y-1.5"
+        >
+          {profile.bio && (
+            <p className="text-muted-foreground max-w-lg leading-relaxed text-sm sm:text-base">
+              {profile.bio}
+            </p>
+          )}
 
-            {tagline && (
-              <p className="text-xs text-primary/80 mt-1.5 font-medium italic max-w-sm">
-                ✨ {tagline}
-              </p>
-            )}
+          {tagline && (
+            <p className="text-xs text-primary/80 font-medium italic max-w-sm">
+              ✨ {tagline}
+            </p>
+          )}
 
-            <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>{joinedLabel}</span>
-            </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>{joinedLabel}</span>
+          </div>
 
-            <SocialLinksDisplay socialLinks={socialLinks} avatarUrl={profile.avatar_url} />
+          <SocialLinksDisplay socialLinks={socialLinks} avatarUrl={profile.avatar_url} />
 
-            <div className="mt-3">
-              <WalletAddressDisplay userId={profile.user_id} />
-            </div>
+          <div className="mt-2">
+            <WalletAddressDisplay userId={profile.user_id} />
           </div>
         </motion.div>
       </div>
