@@ -88,17 +88,27 @@ function TransactionItem({ tx }: { tx: Transaction }) {
         <div className="flex-1 min-w-0">
           {/* Sender -> Receiver */}
           <div className="flex items-center gap-1.5 flex-wrap mb-1">
-            <Link to={`/user/${tx.sender_id}`} className="flex items-center gap-1.5 hover:opacity-80">
-              <Avatar className="w-5 h-5">
-                <AvatarImage src={tx.sender_avatar || ""} />
-                <AvatarFallback className="text-[8px] bg-[#ffd700]/20 text-[#b8860b]">
-                  {(tx.sender_name || "?")[0]}
-                </AvatarFallback>
-              </Avatar>
-              <span className="font-semibold text-sm text-[#3D2800] truncate max-w-[100px]">
-                {tx.sender_name || "Ẩn danh"}
-              </span>
-            </Link>
+            <div className="flex flex-col">
+              <Link to={`/user/${tx.sender_id}`} className="flex items-center gap-1.5 hover:opacity-80">
+                <Avatar className="w-5 h-5">
+                  <AvatarImage src={tx.sender_avatar || ""} />
+                  <AvatarFallback className="text-[8px] bg-[#ffd700]/20 text-[#b8860b]">
+                    {(tx.sender_name || "?")[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="font-semibold text-sm text-[#3D2800] truncate max-w-[100px]">
+                  {tx.sender_name || "Ẩn danh"}
+                </span>
+              </Link>
+              {tx.sender_wallet && (
+                <div className="flex items-center gap-1 text-[10px] text-[#8B7355] ml-6.5 mt-0.5">
+                  <span className="font-mono">{truncateWallet(tx.sender_wallet)}</span>
+                  <button onClick={() => copyWallet(tx.sender_wallet!)} className="hover:text-[#b8860b]">
+                    {copiedWallet === tx.sender_wallet ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
+                  </button>
+                </div>
+              )}
+            </div>
 
             {isGift ? (
               <ArrowUpRight className="w-3.5 h-3.5 text-[#daa520] flex-shrink-0" />
@@ -107,41 +117,31 @@ function TransactionItem({ tx }: { tx: Transaction }) {
             )}
 
             {isGift && tx.receiver_id ? (
-              <Link to={`/user/${tx.receiver_id}`} className="flex items-center gap-1.5 hover:opacity-80">
-                <Avatar className="w-5 h-5">
-                  <AvatarImage src={tx.receiver_avatar || ""} />
-                  <AvatarFallback className="text-[8px] bg-[#ffd700]/20 text-[#b8860b]">
-                    {(tx.receiver_name || "?")[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="font-semibold text-sm text-[#3D2800] truncate max-w-[100px]">
-                  {tx.receiver_name || "Ẩn danh"}
-                </span>
-              </Link>
+              <div className="flex flex-col">
+                <Link to={`/user/${tx.receiver_id}`} className="flex items-center gap-1.5 hover:opacity-80">
+                  <Avatar className="w-5 h-5">
+                    <AvatarImage src={tx.receiver_avatar || ""} />
+                    <AvatarFallback className="text-[8px] bg-[#ffd700]/20 text-[#b8860b]">
+                      {(tx.receiver_name || "?")[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-semibold text-sm text-[#3D2800] truncate max-w-[100px]">
+                    {tx.receiver_name || "Ẩn danh"}
+                  </span>
+                </Link>
+                {tx.receiver_wallet && (
+                  <div className="flex items-center gap-1 text-[10px] text-[#8B7355] ml-6.5 mt-0.5">
+                    <span className="font-mono">{truncateWallet(tx.receiver_wallet)}</span>
+                    <button onClick={() => copyWallet(tx.receiver_wallet!)} className="hover:text-[#b8860b]">
+                      {copiedWallet === tx.receiver_wallet ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <span className="font-semibold text-sm text-rose-600">Angel AI</span>
             )}
           </div>
-
-          {/* Wallet addresses */}
-          {tx.sender_wallet && (
-            <div className="flex items-center gap-1 text-[11px] text-[#8B7355] mb-0.5">
-              <span className="text-[10px] text-[#b8860b]">Gửi:</span>
-              <span className="font-mono">{truncateWallet(tx.sender_wallet)}</span>
-              <button onClick={() => copyWallet(tx.sender_wallet!)} className="hover:text-[#b8860b]">
-                {copiedWallet === tx.sender_wallet ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-              </button>
-            </div>
-          )}
-          {tx.receiver_wallet && (
-            <div className="flex items-center gap-1 text-[11px] text-[#8B7355] mb-0.5">
-              <span className="text-[10px] text-rose-500">Nhận:</span>
-              <span className="font-mono">{truncateWallet(tx.receiver_wallet)}</span>
-              <button onClick={() => copyWallet(tx.receiver_wallet!)} className="hover:text-[#b8860b]">
-                {copiedWallet === tx.receiver_wallet ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-              </button>
-            </div>
-          )}
 
           {/* Badges row */}
           <div className="flex items-center gap-1.5 flex-wrap mt-1">
