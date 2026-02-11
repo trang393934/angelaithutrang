@@ -26,6 +26,7 @@ import {
   Zap,
   CheckSquare,
 } from "lucide-react";
+import { MintExportButton } from "@/components/admin/MintExportButton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -447,7 +448,8 @@ export default function AdminMintApproval() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <MintExportButton />
               {counts.signed > 0 && (
                 <Button
                   variant="outline"
