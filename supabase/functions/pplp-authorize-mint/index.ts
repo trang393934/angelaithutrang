@@ -293,7 +293,7 @@ serve(async (req) => {
     }
 
     // ============================================
-    // PREPARE PPLP LOCK DATA
+    // PREPARE PPLP LOCK DATA + CASCADING DISTRIBUTION
     // ============================================
 
     const rewardAmount = score.final_reward;
@@ -304,8 +304,54 @@ serve(async (req) => {
       );
     }
 
-    // Amount in wei (18 decimals)
-    const amountWei = BigInt(rewardAmount) * BigInt(10 ** 18);
+    // ── 4-Tier Cascading Distribution Formula ──
+    // Tier 1: Genesis Community Fund keeps 1%
+    // Tier 2: FUN Platform keeps 0.99% of remainder
+    // Tier 3: FUN Partners keeps 0.98% of remainder
+    // Tier 4: User receives the rest (~97.03%)
+    // Forward rate through each tier = (1 - retention_rate)
+
+    // Fetch active pool config from DB
+    const { data: poolConfig } = await supabase
+      .from("fun_pool_config")
+      .select("*")
+      .eq("is_active", true)
+      .order("tier_order", { ascending: true });
+
+    const tiers = poolConfig || [
+      { pool_name: "genesis_community", retention_rate: 0.01, tier_order: 1 },
+      { pool_name: "fun_platform", retention_rate: 0.0099, tier_order: 2 },
+      { pool_name: "fun_partners", retention_rate: 0.0098, tier_order: 3 },
+    ];
+
+    // Calculate cascading amounts (integer math to avoid rounding issues)
+    const totalAmountRaw = BigInt(rewardAmount);
+    let remainingAmount = totalAmountRaw;
+    const distribution: Record<string, bigint> = {};
+
+    for (const tier of tiers) {
+      // Use integer math: amount = remaining * rate_numerator / rate_denominator
+      // retention_rate is stored as decimal (0.01 = 1%)
+      // Multiply by 10000 to get integer numerator
+      const rateNumerator = BigInt(Math.round(Number(tier.retention_rate) * 10000));
+      const tierAmount = (remainingAmount * rateNumerator) / 10000n;
+      distribution[tier.pool_name] = tierAmount;
+      remainingAmount -= tierAmount;
+    }
+
+    const userAmount = remainingAmount; // User gets the rest
+    const genesisAmount = distribution["genesis_community"] || 0n;
+    const platformAmount = distribution["fun_platform"] || 0n;
+    const partnersAmount = distribution["fun_partners"] || 0n;
+
+    console.log(`[PPLP Lock] Cascading Distribution for ${rewardAmount} FUN:`);
+    console.log(`  Genesis:  ${genesisAmount} (${Number(genesisAmount * 10000n / totalAmountRaw) / 100}%)`);
+    console.log(`  Platform: ${platformAmount} (${Number(platformAmount * 10000n / totalAmountRaw) / 100}%)`);
+    console.log(`  Partners: ${partnersAmount} (${Number(partnersAmount * 10000n / totalAmountRaw) / 100}%)`);
+    console.log(`  User:     ${userAmount} (${Number(userAmount * 10000n / totalAmountRaw) / 100}%)`);
+
+    // User's portion in wei (18 decimals) - only user portion goes on-chain
+    const amountWei = userAmount * BigInt(10 ** 18);
     
     // Action name for contract (e.g., "QUESTION_ASK")
     const actionName = action.action_type;
@@ -377,7 +423,7 @@ serve(async (req) => {
         action_id: action.id,
         actor_id: action.actor_id,
         recipient_address: wallet_address,
-        amount: rewardAmount,
+        amount: Number(userAmount), // User portion only (after cascade deduction)
         action_hash: actionHash,
         evidence_hash: evidenceHash,
         policy_version: 1,
@@ -402,7 +448,27 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[PPLP Lock] ✓ Mint request stored early for action ${action.id}`);
+    // Log cascading distribution for audit
+    try {
+      await supabase.from("fun_distribution_logs").insert({
+        action_id: action.id,
+        actor_id: action.actor_id,
+        total_reward: rewardAmount,
+        user_amount: Number(userAmount),
+        genesis_amount: Number(genesisAmount),
+        platform_amount: Number(platformAmount),
+        partners_amount: Number(partnersAmount),
+        user_percentage: Number(userAmount * 10000n / totalAmountRaw) / 10000,
+        genesis_percentage: Number(genesisAmount * 10000n / totalAmountRaw) / 10000,
+        platform_percentage: Number(platformAmount * 10000n / totalAmountRaw) / 10000,
+        partners_percentage: Number(partnersAmount * 10000n / totalAmountRaw) / 10000,
+        fund_processing_status: "pending",
+      });
+    } catch (distLogErr) {
+      console.warn("[PPLP Lock] Failed to log distribution (non-fatal):", distLogErr);
+    }
+
+    console.log(`[PPLP Lock] ✓ Mint request stored early for action ${action.id} (user: ${userAmount}/${rewardAmount} FUN)`);
 
     // ============================================
     // CHECK & REGISTER ACTION IF NEEDED + ON-CHAIN TX
@@ -552,12 +618,12 @@ serve(async (req) => {
         _is_positive: true,
       });
 
-      console.log(`[PPLP Lock] ✓ Action ${action.id} minted on-chain: ${rewardAmount} FUN Money`);
+      console.log(`[PPLP Lock] ✓ Action ${action.id} minted on-chain: ${userAmount}/${rewardAmount} FUN Money (user/total)`);
     } else {
       console.log(`[PPLP Lock] Action ${action.id}: Off-chain signature stored, on-chain pending`);
     }
 
-    console.log(`[PPLP Lock] Action ${action.id}: Authorized ${rewardAmount} FUN Money to ${wallet_address}`);
+    console.log(`[PPLP Lock] Action ${action.id}: Authorized ${userAmount}/${rewardAmount} FUN Money to ${wallet_address} (cascade applied)`);
 
     // ============================================
     // RESPONSE
@@ -569,7 +635,15 @@ serve(async (req) => {
         action_id: action.id,
         actor_id: action.actor_id,
         reward_amount: rewardAmount,
+        user_amount: Number(userAmount),
         reward_unit: "FUN",
+        cascade_distribution: {
+          total: rewardAmount,
+          user: Number(userAmount),
+          genesis_community: Number(genesisAmount),
+          fun_platform: Number(platformAmount),
+          fun_partners: Number(partnersAmount),
+        },
         light_score: score.light_score,
         pillars: {
           S: score.pillar_s,
@@ -593,11 +667,11 @@ serve(async (req) => {
         on_chain_error: onChainError,
         on_chain_error_details: onChainErrorDetails,
         message: txHash
-          ? `✓ ${rewardAmount} FUN Money đã được lock on-chain thành công! TX: ${txHash}`
+          ? `✓ ${userAmount}/${rewardAmount} FUN đã lock on-chain (cascade 4 tầng). TX: ${txHash}`
           : (onChainError
             ? `⚠️ Ký thành công nhưng on-chain thất bại: ${onChainError}`
             : (signature
-              ? `Signature đã ký. On-chain lock đang chờ xử lý (${rewardAmount} FUN).`
+              ? `Signature đã ký. On-chain lock đang chờ xử lý (${userAmount}/${rewardAmount} FUN).`
               : "Chưa có TREASURY_PRIVATE_KEY để ký on-chain.")),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

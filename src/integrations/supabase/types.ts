@@ -1255,6 +1255,113 @@ export type Database = {
         }
         Relationships: []
       }
+      fun_distribution_logs: {
+        Row: {
+          action_id: string
+          actor_id: string
+          created_at: string
+          fund_processed_at: string | null
+          fund_processing_status: string
+          fund_tx_hashes: Json | null
+          genesis_amount: number
+          genesis_percentage: number
+          id: string
+          mint_request_id: string | null
+          partners_amount: number
+          partners_percentage: number
+          platform_amount: number
+          platform_percentage: number
+          total_reward: number
+          user_amount: number
+          user_percentage: number
+        }
+        Insert: {
+          action_id: string
+          actor_id: string
+          created_at?: string
+          fund_processed_at?: string | null
+          fund_processing_status?: string
+          fund_tx_hashes?: Json | null
+          genesis_amount?: number
+          genesis_percentage?: number
+          id?: string
+          mint_request_id?: string | null
+          partners_amount?: number
+          partners_percentage?: number
+          platform_amount?: number
+          platform_percentage?: number
+          total_reward: number
+          user_amount: number
+          user_percentage: number
+        }
+        Update: {
+          action_id?: string
+          actor_id?: string
+          created_at?: string
+          fund_processed_at?: string | null
+          fund_processing_status?: string
+          fund_tx_hashes?: Json | null
+          genesis_amount?: number
+          genesis_percentage?: number
+          id?: string
+          mint_request_id?: string | null
+          partners_amount?: number
+          partners_percentage?: number
+          platform_amount?: number
+          platform_percentage?: number
+          total_reward?: number
+          user_amount?: number
+          user_percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fun_distribution_logs_mint_request_id_fkey"
+            columns: ["mint_request_id"]
+            isOneToOne: false
+            referencedRelation: "pplp_mint_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fun_pool_config: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          pool_label: string
+          pool_name: string
+          retention_rate: number
+          tier_order: number
+          updated_at: string
+          wallet_address: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          pool_label: string
+          pool_name: string
+          retention_rate?: number
+          tier_order?: number
+          updated_at?: string
+          wallet_address?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          pool_label?: string
+          pool_name?: string
+          retention_rate?: number
+          tier_order?: number
+          updated_at?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
       gratitude_journal: {
         Row: {
           content: string
