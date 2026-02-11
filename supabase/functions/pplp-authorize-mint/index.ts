@@ -226,12 +226,13 @@ serve(async (req) => {
 
     const { data: action, error: actionError } = await supabase
       .from("pplp_actions")
-      .select("*")
+      .select("*, pplp_scores(*)")
       .eq("id", action_id)
-      .single();
+      .maybeSingle();
 
     if (actionError || !action) {
-      return new Response(JSON.stringify({ error: "Action not found" }), {
+      console.error(`[PPLP Lock] Action not found: ${action_id}`, actionError);
+      return new Response(JSON.stringify({ error: "Action not found", action_id }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -247,18 +248,16 @@ serve(async (req) => {
       );
     }
 
-    // Fetch score
-    const { data: score } = await supabase
-      .from("pplp_scores")
-      .select("*")
-      .eq("action_id", action_id)
-      .single();
+    // Extract score from joined data (one-to-one relation returns object or array)
+    const scoreData = action.pplp_scores;
+    const score = Array.isArray(scoreData) ? scoreData[0] : scoreData;
 
     if (!score) {
-      return new Response(JSON.stringify({ error: "Score record not found for action" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error(`[PPLP Lock] Score not found for action: ${action_id}, status: ${action.status}`);
+      return new Response(
+        JSON.stringify({ error: "Score record not found for action", action_id, status: action.status }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     if (score.decision !== "pass") {
