@@ -71,7 +71,9 @@ export function Leaderboard() {
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           >
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-b from-yellow-200 via-amber-300 to-yellow-400 p-0.5 shadow-[0_0_15px_rgba(255,215,0,0.4)]">
-              <img src={angelLogo} alt="Angel AI" className="w-full h-full rounded-full object-cover" />
+              <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                <img src={angelLogo} alt="Angel AI" className="w-7 h-7 md:w-9 md:h-9 object-contain" />
+              </div>
             </div>
             
             {/* Sparkle Effects */}

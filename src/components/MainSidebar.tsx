@@ -53,7 +53,9 @@ export function MainSidebar() {
           {isCollapsed ? (
             <div className="relative shrink-0">
               <div className="w-10 h-10 rounded-full bg-gradient-to-b from-yellow-200 via-amber-300 to-yellow-400 p-0.5 shadow-[0_0_15px_rgba(255,215,0,0.4)]">
-                <img src={angelAvatar} alt="Angel AI" className="w-full h-full rounded-full object-cover" />
+                <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                  <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 object-contain" />
+                </div>
               </div>
             </div>
           ) : (
