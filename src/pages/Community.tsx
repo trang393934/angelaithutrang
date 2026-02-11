@@ -25,6 +25,7 @@ import { DonateProjectDialog } from "@/components/gifts/DonateProjectDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { AuthActionGuard } from "@/components/AuthActionGuard";
+import { SignupPromptDialog } from "@/components/SignupPromptDialog";
 import { BackToTopButton } from "@/components/BackToTopButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -53,6 +54,7 @@ const Community = () => {
   const [showMobileLeaderboard, setShowMobileLeaderboard] = useState(false);
   const [showGiftDialog, setShowGiftDialog] = useState(false);
   const [showDonateDialog, setShowDonateDialog] = useState(false);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const rightSidebarRef = useRef<HTMLElement | null>(null);
   const communityHeaderRef = useRef<HTMLDivElement>(null);
@@ -105,7 +107,7 @@ const Community = () => {
 
   const handleLike = async (postId: string) => {
     if (!user) {
-      toast.error(t("community.loginToLike"));
+      setShowSignupPrompt(true);
       return { success: false };
     }
     const result = await toggleLike(postId);
@@ -117,7 +119,7 @@ const Community = () => {
 
   const handleShare = async (postId: string) => {
     if (!user) {
-      toast.error(t("community.loginToShare"));
+      setShowSignupPrompt(true);
       return { success: false };
     }
     const result = await sharePost(postId);
@@ -131,7 +133,7 @@ const Community = () => {
 
   const handleComment = async (postId: string, content: string) => {
     if (!user) {
-      toast.error(t("community.loginToComment"));
+      setShowSignupPrompt(true);
       return { success: false };
     }
     const result = await addComment(postId, content);
@@ -383,6 +385,7 @@ const Community = () => {
           open={showDonateDialog} 
           onOpenChange={setShowDonateDialog} 
         />
+        <SignupPromptDialog open={showSignupPrompt} onOpenChange={setShowSignupPrompt} />
       </div>
   );
 };

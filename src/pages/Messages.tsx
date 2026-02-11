@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { MessageCircle, Users, Search, ArrowLeft } from "lucide-react";
+import { MessageCircle, Users, Search, ArrowLeft, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
@@ -30,6 +31,7 @@ const Messages = () => {
   const { userId: conversationUserId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [isSending, setIsSending] = useState(false);
   const [partnerProfile, setPartnerProfile] = useState<{
     display_name: string;
@@ -89,6 +91,27 @@ const Messages = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isPartnerTyping]);
+
+  // Guest view - show login prompt
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex items-center justify-center">
+        <Card className="p-8 text-center bg-background-pure max-w-md mx-4">
+          <MessageCircle className="w-16 h-16 text-primary/30 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground/70 mb-2">
+            {t("signup.messagesGuest")}
+          </h3>
+          <p className="text-sm text-foreground-muted mb-4">
+            {t("signup.messagesGuestDesc")}
+          </p>
+          <Button onClick={() => navigate("/auth")} className="gap-2">
+            <LogIn className="w-4 h-4" />
+            {t("signup.loginButton")}
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   const handleSendMessage = async (content: string, imageUrl?: string) => {
     if (!conversationUserId) return;

@@ -34,6 +34,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { SignupPromptDialog } from "@/components/SignupPromptDialog";
 import { WalletAddressDisplay } from "@/components/profile/WalletAddressDisplay";
 import { SocialLinksDisplay } from "@/components/public-profile/SocialLinksDisplay";
 import { ProfileMoreMenu } from "@/components/public-profile/ProfileMoreMenu";
@@ -86,6 +87,7 @@ const UserProfile = () => {
   
   // Gift dialog state
   const [giftDialogOpen, setGiftDialogOpen] = useState(false);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
 
   const { friendshipStatus, isLoading: friendshipLoading, sendFriendRequest, acceptFriendRequest, cancelFriendRequest, unfriend } = useFriendship(userId);
   const { toggleLike, sharePost, addComment, fetchComments, editPost, deletePost } = useCommunityPosts();
@@ -95,7 +97,7 @@ const UserProfile = () => {
   // Wrapper functions to update local userPosts state after interactions
   const handleLike = async (postId: string) => {
     if (!user) {
-      toast.error("Vui lòng đăng nhập để thích bài viết");
+      setShowSignupPrompt(true);
       return { success: false };
     }
     
@@ -160,7 +162,7 @@ const UserProfile = () => {
 
   const handleShare = async (postId: string) => {
     if (!user) {
-      toast.error("Vui lòng đăng nhập để chia sẻ");
+      setShowSignupPrompt(true);
       return { success: false };
     }
     const result = await sharePost(postId);
@@ -186,7 +188,7 @@ const UserProfile = () => {
 
   const handleComment = async (postId: string, content: string) => {
     if (!user) {
-      toast.error("Vui lòng đăng nhập để bình luận");
+      setShowSignupPrompt(true);
       return { success: false };
     }
     const result = await addComment(postId, content);
@@ -1358,6 +1360,8 @@ const UserProfile = () => {
           }}
         />
       )}
+
+      <SignupPromptDialog open={showSignupPrompt} onOpenChange={setShowSignupPrompt} />
     </div>
   );
 };
