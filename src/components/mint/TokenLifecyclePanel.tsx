@@ -13,9 +13,14 @@ import {
   Wallet,
   AlertCircle,
   Repeat,
+  Globe,
+  Database,
 } from "lucide-react";
 import { useFUNMoneyContract } from "@/hooks/useFUNMoneyContract";
 import { useWalletMismatch } from "@/hooks/useWalletMismatch";
+import { useFUNMoneyStats } from "@/hooks/useFUNMoneyStats";
+import { useAuth } from "@/hooks/useAuth";
+import { useWeb3WalletContext } from "@/contexts/Web3WalletContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ethers } from "ethers";
 import { toast } from "sonner";
@@ -29,6 +34,9 @@ interface MismatchAlloc {
 
 export function TokenLifecyclePanel() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { switchToBSC } = useWeb3WalletContext();
+  const dbStats = useFUNMoneyStats(user?.id);
   const {
     isConnected,
     connect,
@@ -216,6 +224,72 @@ export function TokenLifecyclePanel() {
             <RefreshCw className="mr-1 h-3 w-3" />
             {t("mint.tokenLifecycle.resetBSC")}
           </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Contract not available (wrong network, contract null)
+  const contractNotAvailable = isConnected && !contractInfo && !hasNetworkIssue && !hasContractIssue;
+  if (contractNotAvailable) {
+    return (
+      <Card className="border-amber-300 dark:border-amber-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Coins className="h-5 w-5 text-amber-600" />
+            {t("mint.tokenLifecycle.title")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Warning banner */}
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+              <Globe className="h-4 w-4" />
+              <span className="font-medium text-sm">Không thể đọc dữ liệu on-chain</span>
+            </div>
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Ví đang kết nối mạng <strong>chainId: {chainId || "N/A"}</strong>. 
+              FUN Money contract chỉ có trên <strong>BSC Testnet (chainId: 97)</strong>. 
+              Vui lòng chuyển mạng để xem và claim token.
+            </p>
+            <Button
+              size="sm"
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+              onClick={async () => {
+                const ok = await switchToBSC();
+                if (ok) {
+                  setTimeout(() => fetchContractInfo(), 1500);
+                }
+              }}
+            >
+              <Globe className="h-3.5 w-3.5 mr-1" />
+              Chuyển sang BSC Testnet
+            </Button>
+          </div>
+
+          {/* DB fallback stats */}
+          {!dbStats.isLoading && (dbStats.totalMinted > 0 || dbStats.totalScored > 0) && (
+            <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Database className="h-3 w-3" />
+                <span>Dữ liệu từ hệ thống (chưa phải on-chain)</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-center p-2 rounded bg-green-50 dark:bg-green-900/20">
+                  <div className="text-xs text-muted-foreground">Đã mint on-chain</div>
+                  <div className="text-sm font-bold text-green-600">
+                    {dbStats.totalMinted.toLocaleString("vi-VN")} FUN
+                  </div>
+                </div>
+                <div className="text-center p-2 rounded bg-blue-50 dark:bg-blue-900/20">
+                  <div className="text-xs text-muted-foreground">Sẵn sàng claim</div>
+                  <div className="text-sm font-bold text-blue-600">
+                    {dbStats.totalScored.toLocaleString("vi-VN")} FUN
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
