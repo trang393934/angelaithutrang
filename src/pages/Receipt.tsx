@@ -11,8 +11,8 @@ import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 interface ReceiptData {
   id: string;
   receipt_public_id: string;
-  sender: { user_id: string; display_name: string | null; avatar_url: string | null };
-  receiver: { user_id: string; display_name: string | null; avatar_url: string | null };
+  sender: { user_id: string; display_name: string | null; avatar_url: string | null; wallet_address?: string | null };
+  receiver: { user_id: string; display_name: string | null; avatar_url: string | null; wallet_address?: string | null };
   amount: number;
   message: string | null;
   gift_type: string;
@@ -58,6 +58,13 @@ export default function Receipt() {
     navigator.clipboard.writeText(window.location.href);
     toast.success("Đã sao chép link biên nhận!");
   };
+
+  const handleCopyWallet = (addr: string) => {
+    navigator.clipboard.writeText(addr);
+    toast.success("Đã sao chép địa chỉ ví!");
+  };
+
+  const truncateWallet = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
   const formatAmount = (amount: number) => new Intl.NumberFormat("vi-VN").format(amount);
 
@@ -120,6 +127,12 @@ export default function Receipt() {
                 <div className="text-center">
                   <p className="text-xs text-amber-600">Người tặng</p>
                   <p className="font-semibold text-sm text-gray-800 truncate max-w-[120px]">{receipt.sender.display_name || "Ẩn danh"}</p>
+                  {receipt.sender.wallet_address && (
+                    <button onClick={() => handleCopyWallet(receipt.sender.wallet_address!)} className="flex items-center gap-0.5 text-[10px] text-gray-400 hover:text-amber-600 mx-auto mt-0.5">
+                      <span className="font-mono">{truncateWallet(receipt.sender.wallet_address)}</span>
+                      <Copy className="w-2.5 h-2.5" />
+                    </button>
+                  )}
                 </div>
               </Link>
 
@@ -136,6 +149,12 @@ export default function Receipt() {
                 <div className="text-center">
                   <p className="text-xs text-rose-500">Người nhận</p>
                   <p className="font-semibold text-sm text-gray-800 truncate max-w-[120px]">{receipt.receiver.display_name || "Ẩn danh"}</p>
+                  {receipt.receiver.wallet_address && (
+                    <button onClick={() => handleCopyWallet(receipt.receiver.wallet_address!)} className="flex items-center gap-0.5 text-[10px] text-gray-400 hover:text-rose-500 mx-auto mt-0.5">
+                      <span className="font-mono">{truncateWallet(receipt.receiver.wallet_address)}</span>
+                      <Copy className="w-2.5 h-2.5" />
+                    </button>
+                  )}
                 </div>
               </Link>
             </div>

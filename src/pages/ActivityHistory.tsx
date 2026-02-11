@@ -126,9 +126,19 @@ function TransactionItem({ tx }: { tx: Transaction }) {
           {/* Wallet addresses */}
           {tx.sender_wallet && (
             <div className="flex items-center gap-1 text-[11px] text-[#8B7355] mb-0.5">
+              <span className="text-[10px] text-[#b8860b]">Gửi:</span>
               <span className="font-mono">{truncateWallet(tx.sender_wallet)}</span>
               <button onClick={() => copyWallet(tx.sender_wallet!)} className="hover:text-[#b8860b]">
                 {copiedWallet === tx.sender_wallet ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+              </button>
+            </div>
+          )}
+          {tx.receiver_wallet && (
+            <div className="flex items-center gap-1 text-[11px] text-[#8B7355] mb-0.5">
+              <span className="text-[10px] text-rose-500">Nhận:</span>
+              <span className="font-mono">{truncateWallet(tx.receiver_wallet)}</span>
+              <button onClick={() => copyWallet(tx.receiver_wallet!)} className="hover:text-[#b8860b]">
+                {copiedWallet === tx.receiver_wallet ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
               </button>
             </div>
           )}
@@ -234,12 +244,15 @@ const ActivityHistory = () => {
       gifts?.forEach(g => { userIds.add(g.sender_id); userIds.add(g.receiver_id); });
       donations?.forEach(d => userIds.add(d.donor_id));
 
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, avatar_url")
-        .in("user_id", Array.from(userIds));
+      const userIdArr = Array.from(userIds);
+
+      const [{ data: profiles }, { data: wallets }] = await Promise.all([
+        supabase.from("profiles").select("user_id, display_name, avatar_url").in("user_id", userIdArr),
+        supabase.from("user_wallet_addresses").select("user_id, wallet_address").in("user_id", userIdArr),
+      ]);
 
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      const walletMap = new Map(wallets?.map((w: any) => [w.user_id, w.wallet_address]) || []);
 
       const allTx: Transaction[] = [];
 
@@ -249,9 +262,9 @@ const ActivityHistory = () => {
         allTx.push({
           id: g.id, type: "gift",
           sender_id: g.sender_id, sender_name: sender?.display_name || null,
-          sender_avatar: sender?.avatar_url || null, sender_wallet: null,
+          sender_avatar: sender?.avatar_url || null, sender_wallet: walletMap.get(g.sender_id) || null,
           receiver_id: g.receiver_id, receiver_name: receiver?.display_name || null,
-          receiver_avatar: receiver?.avatar_url || null, receiver_wallet: null,
+          receiver_avatar: receiver?.avatar_url || null, receiver_wallet: walletMap.get(g.receiver_id) || null,
           amount: g.amount, message: g.message, created_at: g.created_at,
           tx_hash: g.tx_hash || null, gift_type: g.gift_type || null,
           donation_type: null, receipt_public_id: g.receipt_public_id || null,
@@ -263,7 +276,7 @@ const ActivityHistory = () => {
         allTx.push({
           id: d.id, type: "donation",
           sender_id: d.donor_id, sender_name: donor?.display_name || null,
-          sender_avatar: donor?.avatar_url || null, sender_wallet: null,
+          sender_avatar: donor?.avatar_url || null, sender_wallet: walletMap.get(d.donor_id) || null,
           receiver_id: null, receiver_name: "Angel AI", receiver_avatar: null, receiver_wallet: null,
           amount: d.amount, message: d.message, created_at: d.created_at,
           tx_hash: d.tx_hash, gift_type: null, donation_type: d.donation_type,
