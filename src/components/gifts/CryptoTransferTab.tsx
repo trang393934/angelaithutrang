@@ -253,7 +253,7 @@ export function CryptoTransferTab({
           amount: numAmount,
           message: giftMessage || `[Web3] ${tokenSymbol} transfer to ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
           tx_hash: result.txHash || null,
-          gift_type: "web3",
+          gift_type: `web3_${tokenSymbol}`,
         };
 
         const { error: dbError } = await supabase.from("coin_gifts").insert(giftRecord);

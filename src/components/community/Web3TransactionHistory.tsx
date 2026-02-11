@@ -12,6 +12,30 @@ import { vi, enUS } from "date-fns/locale";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import { toast } from "sonner";
 
+const TOKEN_INFO: Record<string, { symbol: string; logo: string }> = {
+  CAMLY: { symbol: "CAMLY", logo: "" }, // will use camlyCoinLogo
+  USDT: { symbol: "USDT", logo: "https://assets.coingecko.com/coins/images/325/small/Tether.png" },
+  USDC: { symbol: "USDC", logo: "https://assets.coingecko.com/coins/images/6319/small/usdc.png" },
+  BNB: { symbol: "BNB", logo: "https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png" },
+  FUN: { symbol: "FUN", logo: "" }, // will use camlyCoinLogo as fallback
+};
+
+function getTokenFromGiftType(giftType: string, message?: string | null): { symbol: string; logo: string } {
+  if (giftType?.startsWith("web3_")) {
+    const symbol = giftType.replace("web3_", "").toUpperCase();
+    return TOKEN_INFO[symbol] || { symbol, logo: "" };
+  }
+  // Fallback: try to detect from message for old records
+  if (message) {
+    const msgUpper = message.toUpperCase();
+    if (msgUpper.includes("USDT")) return TOKEN_INFO.USDT;
+    if (msgUpper.includes("USDC")) return TOKEN_INFO.USDC;
+    if (msgUpper.includes("BNB")) return TOKEN_INFO.BNB;
+    if (msgUpper.includes("FUN MONEY") || msgUpper.includes("FUN ")) return TOKEN_INFO.FUN;
+  }
+  return TOKEN_INFO.CAMLY;
+}
+
 interface Web3Transaction {
   id: string;
   source: "gift" | "donation";
@@ -24,6 +48,7 @@ interface Web3Transaction {
   message: string | null;
   tx_hash: string;
   created_at: string;
+  gift_type: string;
 }
 
 function shortenHash(hash: string): string {
@@ -59,6 +84,9 @@ function CopyButton({ text }: { text: string }) {
 function Web3TxRow({ tx }: { tx: Web3Transaction }) {
   const { currentLanguage } = useLanguage();
   const locale = currentLanguage === "vi" ? vi : enUS;
+  const tokenInfo = getTokenFromGiftType(tx.gift_type, tx.message);
+  const tokenLogo = tokenInfo.logo || camlyCoinLogo;
+  const tokenSymbol = tokenInfo.symbol;
   const timeAgo = formatDistanceToNow(new Date(tx.created_at), { addSuffix: true, locale });
 
   return (
@@ -100,12 +128,12 @@ function Web3TxRow({ tx }: { tx: Web3Transaction }) {
 
       {/* Row 2: Amount + Coin type */}
       <div className="flex items-center gap-2 mt-2">
-        <img src={camlyCoinLogo} alt="CAMLY" className="w-4 h-4 rounded-full" />
+        <img src={tokenLogo} alt={tokenSymbol} className="w-4 h-4 rounded-full" />
         <span className="font-bold text-blue-700 text-base">
           {tx.amount.toLocaleString()}
         </span>
         <span className="text-xs font-medium text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
-          CAMLY
+          {tokenSymbol}
         </span>
         <span className="text-[10px] text-muted-foreground ml-auto">{timeAgo}</span>
       </div>
@@ -214,6 +242,7 @@ export function Web3TransactionHistory() {
           message: g.message,
           tx_hash: txHash,
           created_at: g.created_at,
+          gift_type: g.gift_type || "web3",
         });
       });
 
@@ -232,6 +261,7 @@ export function Web3TransactionHistory() {
           message: d.message,
           tx_hash: d.tx_hash,
           created_at: d.created_at,
+          gift_type: (d as any).donation_type || "web3",
         });
       });
 
@@ -314,9 +344,9 @@ export function Web3TransactionHistory() {
                   <div>
                     <p className="text-[10px] text-blue-600 font-medium">Tổng giao dịch Web3</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <img src={camlyCoinLogo} alt="CAMLY" className="w-4 h-4 rounded-full" />
+                      <img src={camlyCoinLogo} alt="Token" className="w-4 h-4 rounded-full" />
                       <span className="text-sm font-bold text-blue-700">{totalAmount.toLocaleString()}</span>
-                      <span className="text-[10px] text-blue-500 font-medium">CAMLY</span>
+                      <span className="text-[10px] text-blue-500 font-medium">tokens</span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -372,9 +402,9 @@ export function Web3TransactionHistory() {
             </DialogTitle>
             <div className="flex gap-4 mt-1">
               <div className="flex items-center gap-1">
-                <img src={camlyCoinLogo} alt="CAMLY" className="w-3.5 h-3.5 rounded-full" />
+                <img src={camlyCoinLogo} alt="Token" className="w-3.5 h-3.5 rounded-full" />
                 <span className="text-xs text-white/90 font-medium">
-                  Tổng: {totalAmount.toLocaleString()} CAMLY
+                  Tổng: {totalAmount.toLocaleString()} tokens
                 </span>
               </div>
               <div className="flex items-center gap-1">
