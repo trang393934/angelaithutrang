@@ -43,7 +43,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
+import { SignupPromptDialog } from "@/components/SignupPromptDialog";
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -142,6 +142,7 @@ const Chat = () => {
   const [imageStyle, setImageStyle] = useState<"spiritual" | "realistic" | "artistic">("spiritual");
   const [showImageActionDialog, setShowImageActionDialog] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -744,13 +745,14 @@ const Chat = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast.error(t("loginRequired") || "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!", {
-        action: {
-          label: t("login") || "Đăng nhập",
-          onClick: () => navigate("/auth"),
-        },
-      });
-      return;
+      // Guest chat: allow 5 messages, then show signup prompt
+      const GUEST_KEY = "angel_ai_guest_chat_count";
+      const count = parseInt(localStorage.getItem(GUEST_KEY) || "0", 10);
+      if (count >= 5) {
+        setShowSignupPrompt(true);
+        return;
+      }
+      localStorage.setItem(GUEST_KEY, String(count + 1));
     }
     if (!input.trim() || isLoading || isGenerating || isAnalyzing) return;
 
@@ -815,6 +817,7 @@ const Chat = () => {
   }
 
   return (
+    <>
     <div className="h-[100dvh] flex bg-gradient-to-b from-primary-pale via-background to-background overflow-hidden">
       <ChatRewardNotification 
         reward={currentReward} 
@@ -1319,6 +1322,9 @@ const Chat = () => {
         </DialogContent>
       </Dialog>
     </div>
+
+    <SignupPromptDialog open={showSignupPrompt} onOpenChange={setShowSignupPrompt} />
+    </>
   );
 };
 

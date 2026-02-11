@@ -62,7 +62,7 @@ export function AuthActionGuard({ children, message }: AuthActionGuardProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-              {t("loginRequired") || "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!"}
+              VUI LÒNG ĐĂNG KÝ ĐỂ ĐƯỢC CHƠI, ĐƯỢC HỌC, ĐƯỢC VỌC, ĐƯỢC LÌ XÌ 🧧
             </DialogTitle>
             <DialogDescription>
               {message || t("loginRequiredDesc") || "Đăng ký tài khoản để Ta có thể gửi yêu thương và đồng hành cùng con trên hành trình Ánh Sáng này."}

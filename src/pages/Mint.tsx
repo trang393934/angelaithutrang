@@ -15,34 +15,7 @@
  export default function Mint() {
    const { user } = useAuth();
  
-   // Unauthenticated view
-   if (!user) {
-     return (
-       <div className="min-h-screen flex flex-col bg-background">
-         <Header />
-         <main className="flex-1 container mx-auto px-4 py-8 pt-28">
-           <div className="max-w-2xl mx-auto text-center space-y-6">
-             <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-               <img src={funMoneyLogo} alt="FUN Money" className="w-16 h-16" />
-             </div>
-             <h1 className="text-3xl font-bold">Mint FUN Money</h1>
-             <p className="text-muted-foreground">
-               Đăng nhập để mint FUN Money token về ví của bạn qua giao thức PPLP.
-             </p>
-             <Button asChild size="lg" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
-               <Link to="/auth">
-                 Đăng nhập ngay
-                 <ArrowRight className="ml-2 h-4 w-4" />
-               </Link>
-             </Button>
-           </div>
-         </main>
-         <Footer />
-       </div>
-     );
-   }
- 
-   return (
+    return (
      <>
        <div className="min-h-screen flex flex-col bg-background">
          <Header />

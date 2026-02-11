@@ -89,7 +89,7 @@ const App = () => (
               <Route path="/content-writer" element={<ContentWriter />} />
               <Route path="/swap" element={<Swap />} />
               <Route path="/knowledge" element={<Knowledge />} />
-              <Route path="/activity-history" element={<ProfileCompletionGate><ActivityHistory /></ProfileCompletionGate>} />
+              <Route path="/activity-history" element={<ActivityHistory />} />
               <Route path="/mint" element={<Mint />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/knowledge" element={<AdminKnowledge />} />
@@ -113,8 +113,8 @@ const App = () => (
               <Route path="/community" element={<Community />} />
               <Route path="/user/:userId" element={<UserProfile />} />
               <Route path="/@:handle" element={<HandleProfile />} />
-              <Route path="/messages" element={<ProfileCompletionGate><Messages /></ProfileCompletionGate>} />
-              <Route path="/messages/:userId" element={<ProfileCompletionGate><Messages /></ProfileCompletionGate>} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/messages/:userId" element={<Messages />} />
               <Route path="/docs/platform" element={<PlatformDocs />} />
               <Route path="/docs/light-constitution" element={<LightConstitution />} />
               <Route path="/docs/core-prompt" element={<CorePrompt />} />
