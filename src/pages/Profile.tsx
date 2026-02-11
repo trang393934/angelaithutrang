@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -12,11 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon, MessageCircle, Move, Maximize2 } from "lucide-react";
+import { ArrowLeft, Camera, Check, Sparkles, User, Mail, Calendar, Shield, Loader2, Lock, Eye, EyeOff, Key, Wallet, History, AlertCircle, PartyPopper, ImageIcon, MessageCircle, Move, Maximize2, Copy, AtSign } from "lucide-react";
 import { ApiKeysSection } from "@/components/profile/ApiKeysSection";
 import { TransactionHistorySection } from "@/components/profile/TransactionHistorySection";
 import { PublicProfileSettingsSection } from "@/components/public-profile/PublicProfileSettingsSection";
 import { HandleSelector } from "@/components/profile/HandleSelector";
+import { useHandle } from "@/hooks/useHandle";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { CoverPositionEditor } from "@/components/profile/CoverPositionEditor";
 import { PoPLScoreCard } from "@/components/profile/PoPLScoreCard";
@@ -73,6 +74,42 @@ const RESPONSE_STYLES = [
     isDefault: false,
   },
 ];
+
+// Username display sub-component (Telegram-style)
+function UsernameDisplay() {
+  const { currentHandle } = useHandle();
+  const [copied, setCopied] = useState(false);
+
+  if (!currentHandle) {
+    return (
+      <Link to="#handle-section" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+        Chưa có @username — <span className="text-primary underline">Tạo ngay</span>
+      </Link>
+    );
+  }
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(`@${currentHandle}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors group"
+    >
+      <span className="font-medium">@{currentHandle}</span>
+      {copied ? (
+        <Check className="w-3.5 h-3.5 text-green-500" />
+      ) : (
+        <Copy className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+      )}
+    </button>
+  );
+}
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -1143,7 +1180,7 @@ const Profile = () => {
             </CardContent>
           </Card>
 
-          {/* Avatar Card */}
+          {/* Avatar & Username Card */}
           <Card className="border-divine-gold/30 shadow-divine bg-gradient-to-b from-background to-divine-deep/10">
             <CardContent className="pt-6">
               <div className="w-full flex flex-col items-center gap-4">
@@ -1183,7 +1220,16 @@ const Profile = () => {
                     <Camera className="w-5 h-5" />
                   </button>
                 </div>
-                <p className="text-divine-gold font-medium">
+
+                {/* Display name + @username like Telegram */}
+                <div className="text-center space-y-1">
+                  <h2 className="text-xl font-bold text-foreground">
+                    {displayName || t("profile.displayNamePlaceholder")}
+                  </h2>
+                  <UsernameDisplay />
+                </div>
+
+                <p className="text-divine-gold font-medium text-sm">
                   {t("profile.avatarHint")}
                 </p>
                 <input
@@ -1251,15 +1297,15 @@ const Profile = () => {
             </CardContent>
           </Card>
 
-          {/* FUN Profile Link / Handle */}
-          <Card className="border-divine-gold/20 shadow-soft">
+          {/* Username / FUN Profile Link */}
+          <Card id="handle-section" className="border-divine-gold/20 shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Sparkles className="w-5 h-5 text-divine-gold" />
-                FUN Profile Link
+                <AtSign className="w-5 h-5 text-divine-gold" />
+                Username
               </CardTitle>
               <CardDescription>
-                Chọn link hồ sơ công khai của bạn (giống LinkedIn). Ví dụ: angel.fun.rich/camly_duong
+                Chọn @username duy nhất của bạn (giống Telegram). Link hồ sơ: angel.fun.rich/username
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -110,9 +110,12 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
 
               {profile.handle && (
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <p className="text-sm font-medium text-primary truncate">
-                    angel.fun.rich/{profile.handle}
+                  <p className="text-base font-semibold text-primary truncate">
+                    @{profile.handle}
                   </p>
+                  <span className="text-xs text-muted-foreground truncate">
+                    • angel.fun.rich/{profile.handle}
+                  </span>
                   <Button
                     variant="ghost"
                     size="icon"
