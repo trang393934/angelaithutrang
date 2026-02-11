@@ -65,7 +65,7 @@ const AdminReport = () => {
   return (
     <div className="min-h-screen bg-background">
       <AdminNavToolbar />
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="container mx-auto px-4 pt-16 pb-6 max-w-7xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
