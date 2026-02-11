@@ -1,19 +1,21 @@
-  import { Header } from "@/components/Header";
-  import { Footer } from "@/components/Footer";
-  import { FUNMoneyBalanceCard } from "@/components/mint/FUNMoneyBalanceCard";
-  import { MintActionsList } from "@/components/mint/MintActionsList";
-  import { TokenLifecyclePanel } from "@/components/mint/TokenLifecyclePanel";
-  import { useAuth } from "@/hooks/useAuth";
-  import { Button } from "@/components/ui/button";
-  import { Card, CardContent } from "@/components/ui/card";
-  import { Link } from "react-router-dom";
-  import { ArrowRight, Coins, Sparkles, Shield, Zap, ExternalLink, Info, Lock } from "lucide-react";
-  import funMoneyLogo from "@/assets/fun-money-logo.png";
-  
-  import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
- 
- export default function Mint() {
-   const { user } = useAuth();
+import { useState } from "react";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { FUNMoneyBalanceCard } from "@/components/mint/FUNMoneyBalanceCard";
+import { MintActionsList } from "@/components/mint/MintActionsList";
+import { TokenLifecyclePanel } from "@/components/mint/TokenLifecyclePanel";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Link } from "react-router-dom";
+import { ArrowRight, Coins, Sparkles, Shield, Zap, ExternalLink, Info, Lock, ChevronDown, Wallet, CheckCircle2, Download } from "lucide-react";
+import funMoneyLogo from "@/assets/fun-money-logo.png";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+export default function Mint() {
+  const { user } = useAuth();
+  const [guideOpen, setGuideOpen] = useState(true);
  
     return (
      <>
@@ -51,8 +53,82 @@
                    Lấy tBNB miễn phí <ExternalLink className="h-3 w-3 ml-1" />
                  </Button>
                </AlertDescription>
-             </Alert>
- 
+              </Alert>
+
+              {/* Hướng dẫn Activate & Claim - Collapsible Stepper */}
+              <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
+                <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+                  <CollapsibleTrigger asChild>
+                    <button className="w-full flex items-center justify-between p-4 text-left hover:bg-blue-100/50 dark:hover:bg-blue-900/20 transition-colors rounded-t-lg">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                        <h3 className="font-semibold text-blue-800 dark:text-blue-300">Hướng dẫn Activate & Claim FUN Money</h3>
+                      </div>
+                      <ChevronDown className={`h-4 w-4 text-blue-600 transition-transform ${guideOpen ? "rotate-180" : ""}`} />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="px-4 pb-4 space-y-3">
+                      {/* Step 1 */}
+                      <div className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold shrink-0">1</div>
+                          <div className="w-0.5 flex-1 bg-blue-200 dark:bg-blue-800 mt-1" />
+                        </div>
+                        <div className="pb-4">
+                          <p className="font-medium text-sm">Kết nối ví MetaMask vào BSC Testnet (Chain ID: 97)</p>
+                          <p className="text-xs text-muted-foreground mt-1">Mở MetaMask → Thêm mạng → BSC Testnet hoặc nhấn nút "Chuyển sang BSC Testnet" trên trang này.</p>
+                        </div>
+                      </div>
+
+                      {/* Step 2 */}
+                      <div className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold shrink-0">2</div>
+                          <div className="w-0.5 flex-1 bg-blue-200 dark:bg-blue-800 mt-1" />
+                        </div>
+                        <div className="pb-4">
+                          <p className="font-medium text-sm">Kiểm tra mục "Token Lifecycle" bên trái</p>
+                          <p className="text-xs text-muted-foreground mt-1">Số <strong>Locked</strong> hiển thị FUN đã được admin duyệt và khóa on-chain cho bạn.</p>
+                        </div>
+                      </div>
+
+                      {/* Step 3 */}
+                      <div className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-bold shrink-0">3</div>
+                          <div className="w-0.5 flex-1 bg-blue-200 dark:bg-blue-800 mt-1" />
+                        </div>
+                        <div className="pb-4">
+                          <p className="font-medium text-sm">Nhấn "Activate All" — chuyển Locked → Activated</p>
+                          <p className="text-xs text-muted-foreground mt-1">Cần tBNB để trả phí gas. Nếu chưa có:</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-1.5 text-xs border-amber-300 text-amber-700 hover:bg-amber-50 dark:text-amber-300"
+                            onClick={() => window.open("https://testnet.bnbchain.org/faucet-smart", "_blank")}
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Lấy tBNB miễn phí
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Step 4 */}
+                      <div className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold shrink-0">4</div>
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Nhấn "Claim All" — FUN chuyển về ví của bạn ✨</p>
+                          <p className="text-xs text-muted-foreground mt-1">Trạng thái chuyển từ Activated → <strong>Flowing</strong>. FUN Money giờ thuộc về bạn hoàn toàn!</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+
               {/* Main Layout */}
               <div className="grid gap-6 lg:grid-cols-3">
                 {/* Balance Card + Lifecycle - Sticky on desktop */}

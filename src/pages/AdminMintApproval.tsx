@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import AdminNavToolbar from "@/components/admin/AdminNavToolbar";
@@ -25,12 +25,16 @@ import {
   FileCheck,
   Zap,
   CheckSquare,
+  TrendingUp,
+  Coins,
+  BarChart3,
 } from "lucide-react";
 import { MintExportButton } from "@/components/admin/MintExportButton";
 import { Checkbox } from "@/components/ui/checkbox";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format, subDays } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "sonner";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 interface MintRequestRow {
   id: string;
@@ -92,6 +96,8 @@ export default function AdminMintApproval() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 });
+  const [globalCounts, setGlobalCounts] = useState<{ pending: number; signed: number; minted: number; pendingFun: number; signedFun: number; mintedFun: number } | null>(null);
+  const [visibleCount, setVisibleCount] = useState(50);
 
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
@@ -103,7 +109,7 @@ export default function AdminMintApproval() {
           pplp_actions!inner(action_type, platform_id, metadata)
         `)
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(1000);
 
       if (error) throw error;
 
@@ -136,9 +142,31 @@ export default function AdminMintApproval() {
     }
   }, []);
 
+  // Fetch global counts from DB (not limited by the 1000 record fetch)
+  const fetchGlobalCounts = useCallback(async () => {
+    try {
+      const [pending, signed, minted] = await Promise.all([
+        supabase.from("pplp_mint_requests").select("amount", { count: "exact", head: false }).eq("status", "pending"),
+        supabase.from("pplp_mint_requests").select("amount", { count: "exact", head: false }).eq("status", "signed"),
+        supabase.from("pplp_mint_requests").select("amount", { count: "exact", head: false }).eq("status", "minted"),
+      ]);
+      setGlobalCounts({
+        pending: pending.count || 0,
+        signed: signed.count || 0,
+        minted: minted.count || 0,
+        pendingFun: (pending.data || []).reduce((s, r) => s + (r.amount || 0), 0),
+        signedFun: (signed.data || []).reduce((s, r) => s + (r.amount || 0), 0),
+        mintedFun: (minted.data || []).reduce((s, r) => s + (r.amount || 0), 0),
+      });
+    } catch (e) {
+      console.error("Error fetching global counts:", e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchRequests();
-  }, [fetchRequests]);
+    fetchGlobalCounts();
+  }, [fetchRequests, fetchGlobalCounts]);
 
   // Approve & sign a mint request (triggers backend to sign + execute on-chain)
   const handleApproveAndSign = useCallback(
@@ -334,14 +362,34 @@ export default function AdminMintApproval() {
     rejected: requests.filter((r) => r.status === "rejected" || r.status === "expired").length,
   };
 
+  // Mini chart data: mints per day (last 7 days)
+  const chartData = useMemo(() => {
+    const days: { date: string; count: number; amount: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = subDays(new Date(), i);
+      const dateStr = format(d, "yyyy-MM-dd");
+      const label = format(d, "dd/MM");
+      const dayMints = requests.filter(
+        (r) => r.status === "minted" && r.minted_at && r.minted_at.startsWith(dateStr)
+      );
+      days.push({ date: label, count: dayMints.length, amount: dayMints.reduce((s, r) => s + r.amount, 0) });
+    }
+    return days;
+  }, [requests]);
+
+  // Pagination: only show visibleCount items
+  const paginatedRequests = filteredRequests.slice(0, visibleCount);
+  const hasMore = filteredRequests.length > visibleCount;
+
   const allSelected = filteredRequests.length > 0 && filteredRequests.every((r) => selectedIds.has(r.id));
   const someSelected = selectedIds.size > 0;
   const selectedTotal = filteredRequests.filter((r) => selectedIds.has(r.id)).reduce((sum, r) => sum + r.amount, 0);
 
-  // Clear selection when tab changes
+  // Clear selection + reset pagination when tab changes
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
     setSelectedIds(new Set());
+    setVisibleCount(50);
   }, []);
 
   // Toggle single selection
@@ -508,6 +556,78 @@ export default function AdminMintApproval() {
           {/* On-chain Error Summary */}
           <OnChainErrorSummary requests={requests} />
 
+          {/* Dashboard Stats Cards */}
+          {globalCounts && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="h-4 w-4 text-amber-600" />
+                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Pending</span>
+                  </div>
+                  <p className="text-2xl font-bold">{globalCounts.pending.toLocaleString("vi-VN")}</p>
+                  <p className="text-xs text-muted-foreground">{globalCounts.pendingFun.toLocaleString("vi-VN")} FUN</p>
+                </CardContent>
+              </Card>
+              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileCheck className="h-4 w-4 text-blue-600" />
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Signed</span>
+                  </div>
+                  <p className="text-2xl font-bold">{globalCounts.signed.toLocaleString("vi-VN")}</p>
+                  <p className="text-xs text-muted-foreground">{globalCounts.signedFun.toLocaleString("vi-VN")} FUN</p>
+                </CardContent>
+              </Card>
+              <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-medium text-green-700 dark:text-green-400">Minted</span>
+                  </div>
+                  <p className="text-2xl font-bold">{globalCounts.minted.toLocaleString("vi-VN")}</p>
+                  <p className="text-xs text-muted-foreground">{globalCounts.mintedFun.toLocaleString("vi-VN")} FUN</p>
+                </CardContent>
+              </Card>
+              <Card className="border-purple-200 bg-purple-50/50 dark:bg-purple-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Coins className="h-4 w-4 text-purple-600" />
+                    <span className="text-xs font-medium text-purple-700 dark:text-purple-400">Tổng phân phối</span>
+                  </div>
+                  <p className="text-2xl font-bold">
+                    {(globalCounts.pendingFun + globalCounts.signedFun + globalCounts.mintedFun).toLocaleString("vi-VN")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">FUN Money (all time)</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Mini Chart: Mints per day (7 days) */}
+          {chartData.some(d => d.count > 0) && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Mint theo ngày (7 ngày gần nhất)</span>
+                </div>
+                <ResponsiveContainer width="100%" height={120}>
+                  <BarChart data={chartData}>
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} width={30} />
+                    <Tooltip
+                      formatter={(value: number, name: string) =>
+                        name === "count" ? [`${value} lệnh`, "Số lệnh"] : [`${value.toLocaleString()} FUN`, "Tổng FUN"]
+                      }
+                    />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="grid w-full grid-cols-4">
@@ -593,7 +713,7 @@ export default function AdminMintApproval() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {filteredRequests.map((req) => (
+                  {paginatedRequests.map((req) => (
                     <MintRequestCard
                       key={req.id}
                       request={req}
@@ -604,6 +724,17 @@ export default function AdminMintApproval() {
                       onReject={() => handleReject(req)}
                     />
                   ))}
+                  {hasMore && (
+                    <div className="text-center pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setVisibleCount((v) => v + 50)}
+                      >
+                        Hiện thêm ({filteredRequests.length - visibleCount} còn lại)
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>
