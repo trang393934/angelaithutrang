@@ -1,149 +1,105 @@
 
 
-## Kiểm tra toàn diện quy trình Mint FUN Money -- Phát hiện & Kế hoạch khắc phục
+# Trang Quản Lý User Toàn Diện (Admin User Management)
 
-### Tổng quan quy trình hiện tại
+## Tổng quan
 
-```text
-User Action (Chat/Post/Journal/...)
-  |
-  v
-Edge Function (analyze-reward-question, process-community-post, ...)
-  |--- Camly Coin reward (off-chain)
-  |--- submitAndScorePPLPAction() --> pplp_actions [status: scored]
-  |
-  v
-User vào /mint --> thấy Light Actions --> nhấn "Request Mint"
-  |
-  v
-useMintRequest.requestMint() --> upsert pplp_mint_requests [status: pending]
-  |
-  v
-Admin vào /admin/mint-approval --> Approve --> pplp-authorize-mint
-  |--- EIP-712 Sign
-  |--- lockWithPPLP() on-chain
-  |--- pplp_mint_requests [status: minted]
-  |
-  v
-User kết nối ví MetaMask --> TokenLifecyclePanel
-  |--- activate() on-chain
-  |--- claim() on-chain --> FUN về ví
-```
+Tạo trang admin mới tại đường dẫn `/admin/user-management` hiển thị danh sách tất cả người dùng với đầy đủ thông tin hoạt động, điểm số, tài chính, lịch sử giao dịch -- hỗ trợ lọc nâng cao và xuất file Excel/CSV về máy.
 
 ---
 
-### Phát hiện quan trọng
+## Cấu trúc trang
 
-#### 1. NGHIEM TRONG: 2,036 actions "scored + pass" KHONG CO mint request
+### 1. Cơ sở dữ liệu: Tạo hàm RPC mới
 
-**Van de**: Co 8,431 actions da scored nhung chi co 4,918 mint requests (3,358 pending + 88 signed + 1,470 minted + 2 expired). Nghia la **2,036 actions da dat diem nhung user chua bao gio nhan "Request Mint"** tren trang /mint.
+Tạo một hàm database `get_admin_user_management_data` để tổng hợp dữ liệu từ nhiều bảng trong 1 truy vấn duy nhất, tránh giới hạn 1000 dòng và giảm số lượng request:
 
-**Nguyen nhan goc**: User phai thu cong vao /mint, ket noi vi, va nhan "Request Mint FUN" cho **tung action mot**. Voi 6,000+ QUESTION_ASK actions, day la trai nghiem rat kho chiu.
+- `profiles` -- tên, ảnh đại diện, handle
+- `camly_coin_balances` -- số dư, tổng đã kiếm, tổng đã tiêu
+- `user_light_totals` -- điểm ánh sáng, điểm PoPL, hành động tích cực/tiêu cực
+- `camly_coin_transactions` -- tổng thưởng theo từng loại (chat, nhật ký, đăng nhập hàng ngày...)
+- `community_posts` -- số bài đăng
+- `community_comments` -- số bình luận
+- `coin_gifts` -- số lần tặng/nhận, tổng số lượng
+- `coin_withdrawals` -- tổng đã rút, số yêu cầu
+- `pplp_actions` -- số hành động, số đã đúc tiền
+- `fun_distribution_logs` -- tổng FUN Money đã nhận
+- `user_light_agreements` -- ngày tham gia
 
-**De xuat**: Tu dong tao mint request khi action duoc scored + pass, hoac them nut "Request Mint All" de gui tat ca cung luc.
+### 2. Giao diện: Trang AdminUserManagement
 
-#### 2. NGHIEM TRONG: Journal actions chi submit, khong tu dong score
+**Tệp mới:** `src/pages/AdminUserManagement.tsx`
 
-**Van de**: `analyze-reward-journal` goi `submitPPLPAction()` (chi submit) thay vi `submitAndScorePPLPAction()` (submit + score). Ket qua la journal actions co the bi ket o trang thai "pending" va khong bao gio duoc cham diem.
+Bao gồm các thành phần sau:
 
-**Bang chung**: Chi co 15 JOURNAL_WRITE va 1,240 GRATITUDE_PRACTICE trong database, nhung co 1 action van o status "pending".
+#### Thẻ thống kê tổng quan (Stats Cards)
+- Tổng số người dùng
+- Tổng Camly Coin đã phát
+- Tổng FUN Money đã đúc
+- Tổng giao dịch nội bộ
+- Tổng giao dịch Web3
 
-**De xuat**: Doi sang `submitAndScorePPLPAction()` trong `analyze-reward-journal`.
+#### Bộ lọc nâng cao
+- Tìm theo tên hoặc handle
+- Lọc theo khoảng thời gian tham gia
+- Lọc theo mức điểm ánh sáng (cao / trung bình / thấp)
+- Lọc theo trạng thái (có FUN Money hay không, có rút tiền hay không)
 
-#### 3. THIEU: DAILY_LOGIN va VISION_CREATE khong co tich hop PPLP
+#### Bảng dữ liệu chính
 
-**Van de**: Hai loai hanh dong nay duoc dinh nghia trong `pplp-types.ts` (BASE_REWARDS: DAILY_LOGIN = 100, VISION_CREATE khong co) nhung **khong co edge function nao goi submitPPLPAction** cho chung.
+| Cột | Nguồn dữ liệu |
+|-----|----------------|
+| Ảnh đại diện + Tên + Handle | profiles |
+| Ngày tham gia | user_light_agreements |
+| Số bài đăng / Bình luận | community_posts, community_comments |
+| Điểm Ánh sáng (Light Score) | user_light_totals.total_points |
+| Điểm PoPL | user_light_totals.popl_score |
+| Số dư Camly Coin | camly_coin_balances.balance |
+| Tổng thưởng Camly (trọn đời) | camly_coin_balances.lifetime_earned |
+| FUN Money đã nhận | fun_distribution_logs (tổng) |
+| Tổng tặng nội bộ (gửi đi) | coin_gifts (người gửi, nội bộ) |
+| Tổng tặng nội bộ (nhận về) | coin_gifts (người nhận, nội bộ) |
+| Tổng tặng Web3 (gửi đi) | coin_gifts (người gửi, Web3) |
+| Tổng tặng Web3 (nhận về) | coin_gifts (người nhận, Web3) |
+| Tổng đã rút | coin_withdrawals (hoàn thành) |
+| Địa chỉ ví BSC | profiles hoặc coin_withdrawals |
 
-**De xuat**: Them PPLP integration vao `process-daily-login` (hoac hook `useDailyLogin`) va `process-vision-reward`.
+#### Chức năng xuất file
+- Tái sử dụng mẫu thiết kế từ `TransactionExportButton` và `ExportDateRangeDialog`
+- Hỗ trợ xuất Excel (.xlsx) với nhiều sheet:
+  - Sheet 1: Toàn bộ người dùng
+  - Sheet 2: Chi tiết thưởng Camly Coin
+  - Sheet 3: Giao dịch nội bộ và Web3
+- Hỗ trợ xuất CSV
 
-#### 4. UX: User phai nhan "Request Mint" tung action mot
+#### Hộp thoại chi tiết người dùng
+Nhấp vào một dòng trong bảng sẽ mở hộp thoại hiển thị:
+- Thông tin cá nhân đầy đủ
+- Bảng phân tích thưởng theo từng loại (trò chuyện, nhật ký, bài đăng, đăng nhập hàng ngày, chia sẻ...)
+- Lịch sử giao dịch gần nhất (tặng / nhận / rút)
+- Điểm số chi tiết theo 5 trụ cột PPLP (nếu có)
 
-**Van de**: Trang /mint hien thi danh sach FUNMoneyMintCard, moi card co nut "Request Mint FUN". Voi hang ngan actions, user phai nhan tung cai mot --> khong thuc te.
+### 3. Thêm vào thanh điều hướng Admin
 
-**De xuat**: Them nut "Request Mint All" de gui tat ca scored+pass actions chua co mint request cung luc.
+Thêm mục "Quản lý User" vào nhóm "Người dùng" trong `AdminNavToolbar.tsx`, sử dụng biểu tượng `UserCog`.
 
-#### 5. HIEU SUAT: usePPLPActions chi load 50 actions
+### 4. Thêm đường dẫn trong App.tsx
 
-**Van de**: `fetchActions(limit = 50)` mac dinh chi lay 50 actions gan nhat. User co 6,000+ actions se khong thay nhung cai cu hon.
-
-**De xuat**: Them pagination hoac tang limit, hoac chi hien cac actions chua mint.
-
-#### 6. THIEU: Khong co PPLP tu dong khi user thuc hien hanh dong
-
-**Van de**: `submitAction` tu `usePPLPActions` duoc export nhung **khong bao gio duoc goi tu bat ky component UI nao**. Moi tich hop PPLP deu chay phia server (edge functions). Day la thiet ke dung, nhung can dam bao moi edge function deu goi PPLP.
-
-#### 7. CANH BAO: Nonce on-chain co the xung dot khi batch mint
-
-**Van de**: Khi admin approve nhieu mint requests dong thoi, moi request doc `nonces(address)` tu contract. Nhung neu 2 transactions cung su dung cung nonce, mot trong hai se bi revert.
-
-**Hien trang**: Admin da gap loi "already minted" (409) --> da xu ly bang cach bat exception. Nhung day la trieu chung cua van de nonce management.
+Thêm route `/admin/user-management` trỏ đến trang mới.
 
 ---
 
-### Ke hoach trien khai (theo thu tu uu tien)
+## Chi tiết kỹ thuật
 
-#### Buoc 1: Sua loi Journal khong tu dong score
-- **File**: `supabase/functions/analyze-reward-journal/index.ts`
-- Doi `submitPPLPAction` thanh `submitAndScorePPLPAction` trong import va loi goi
-- Dam bao GRATITUDE_PRACTICE va JOURNAL_WRITE duoc cham diem ngay
+### Các tệp sẽ tạo mới
+1. `src/pages/AdminUserManagement.tsx` -- Trang chính (khoảng 600-800 dòng)
+2. `src/components/admin/UserManagementExportButton.tsx` -- Nút xuất file
+3. `src/components/admin/UserDetailDialog.tsx` -- Hộp thoại chi tiết người dùng
 
-#### Buoc 2: Them nut "Request Mint All" tren trang /mint
-- **File**: `src/components/mint/MintActionsList.tsx`
-- Them nut "Gui tat ca yeu cau mint" o dau danh sach
-- Goi `requestMint()` cho tung scored+pass action chua co mint request
-- Hien thi progress bar (VD: "15/200 da gui...")
-- **File**: `src/hooks/useMintRequest.ts`
-- Them ham `requestMintBatch(actions[], walletAddress)` de xu ly hang loat
+### Các tệp sẽ chỉnh sửa
+1. `src/components/admin/AdminNavToolbar.tsx` -- Thêm mục điều hướng mới
+2. `src/App.tsx` -- Thêm route mới
 
-#### Buoc 3: Tang so luong actions hien thi tren /mint
-- **File**: `src/hooks/usePPLPActions.ts`
-- Them bo loc `status` de chi lay actions can thiet (scored + pass + chua mint)
-- Tang limit hoac them pagination
-- Them option `fetchUnmintedOnly()` de chi lay actions chua co mint request
-
-#### Buoc 4: Them PPLP cho DAILY_LOGIN
-- **File**: `supabase/functions/process-vision-reward/index.ts` (kiem tra va them PPLP)
-- Tao logic tich hop PPLP trong quy trinh daily login (co the qua edge function moi hoac bo sung vao process co san)
-
-#### Buoc 5: Cai thien UX trang /mint
-- **File**: `src/pages/Mint.tsx`
-- Them tab tong quan: "X actions san sang mint | Y dang cho duyet | Z da mint"
-- Them thong bao khi user co actions chua gui mint request
-- **File**: `src/components/mint/FUNMoneyMintCard.tsx`
-- Them checkbox de chon nhieu actions cung luc
-
----
-
-### Tong hop file can sua
-1. `supabase/functions/analyze-reward-journal/index.ts` -- Sua loi scoring
-2. `src/components/mint/MintActionsList.tsx` -- Them "Mint All" + pagination
-3. `src/hooks/useMintRequest.ts` -- Them batch mint function
-4. `src/hooks/usePPLPActions.ts` -- Them bo loc va tang limit
-5. `src/pages/Mint.tsx` -- Cai thien UX tong quan
-6. `supabase/functions/process-vision-reward/index.ts` -- Them PPLP (kiem tra)
-
-### Phan ky thuat chi tiet
-
-**Batch Mint Request Logic:**
-```text
-requestMintBatch(scoredActions[]) {
-  for each action in scoredActions:
-    - Skip if already has mint_request
-    - Create mint_request with status "pending"
-    - Show progress: "X/Y da gui"
-  Refresh list when done
-}
-```
-
-**Filtered fetch:**
-```text
-fetchUnmintedActions() {
-  SELECT * FROM pplp_actions
-  WHERE actor_id = userId
-    AND status = 'scored'
-    AND id NOT IN (SELECT action_id FROM pplp_mint_requests)
-  JOIN pplp_scores ON decision = 'pass'
-  ORDER BY created_at DESC
-}
-```
+### Thay đổi cơ sở dữ liệu
+Tạo hàm RPC `get_admin_user_management_data` để tổng hợp dữ liệu hiệu quả từ nhiều bảng, trả về một bảng kết quả gọn gàng cho giao diện.
 
