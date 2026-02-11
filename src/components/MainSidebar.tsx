@@ -2,7 +2,7 @@ import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import { 
   Home, Info, BookOpen, MessageCircle, Users, 
-  PenLine, ArrowRightLeft, Star, PanelLeft, Gift
+  PenLine, ArrowRightLeft, Star, PanelLeft, Gift, History
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { NavLink } from "@/components/NavLink";
@@ -106,6 +106,25 @@ export function MainSidebar() {
                     {!isCollapsed && <span>🎁 Tặng thưởng</span>}
                   </button>
                 </AuthActionGuard>
+              </SidebarMenuItem>
+
+              {/* Transaction History */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={location.pathname === "/activity-history"}
+                  tooltip="Lịch sử giao dịch"
+                  className={`transition-all duration-200 ${
+                    location.pathname === "/activity-history"
+                      ? 'bg-gradient-to-r from-primary to-primary-deep text-white shadow-md'
+                      : 'hover:bg-amber-100/70 text-foreground'
+                  }`}
+                >
+                  <NavLink to="/activity-history">
+                    <History className={`w-5 h-5 ${location.pathname === "/activity-history" ? 'text-white' : 'text-primary'}`} />
+                    <span className={`font-medium ${location.pathname === "/activity-history" ? 'text-white' : ''}`}>Lịch sử giao dịch</span>
+                  </NavLink>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
