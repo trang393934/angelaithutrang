@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
+import { ExportDateRangeDialog, type DateRange } from "./ExportDateRangeDialog";
 
 interface TransactionRow {
   thoi_gian: string;
@@ -27,16 +28,39 @@ interface TransactionRow {
 
 export function TransactionExportButton() {
   const [isExporting, setIsExporting] = useState(false);
+  const [showDateDialog, setShowDateDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"excel" | "csv">("excel");
 
-  const fetchAllTransactions = async (): Promise<TransactionRow[]> => {
+  const handleExportClick = (format: "excel" | "csv") => {
+    setExportFormat(format);
+    setShowDateDialog(true);
+  };
+
+  const handleDateConfirm = async (range: DateRange) => {
+    if (exportFormat === "excel") {
+      await exportToExcel(range);
+    } else {
+      await exportToCSV(range);
+    }
+  };
+
+  const fetchAllTransactions = async (range: DateRange): Promise<TransactionRow[]> => {
     const rows: TransactionRow[] = [];
 
-    // 1. Fetch coin_gifts (internal + web3 gifts/tips)
-    const { data: gifts, error: giftsError } = await supabase
+    // Build date filters
+    const dateFrom = range.from?.toISOString();
+    const dateTo = range.to ? (() => { const d = new Date(range.to); d.setHours(23, 59, 59, 999); return d.toISOString(); })() : undefined;
+
+    // 1. Fetch coin_gifts
+    let giftsQuery = supabase
       .from("coin_gifts")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(5000);
+    if (dateFrom) giftsQuery = giftsQuery.gte("created_at", dateFrom);
+    if (dateTo) giftsQuery = giftsQuery.lte("created_at", dateTo);
+
+    const { data: gifts, error: giftsError } = await giftsQuery;
 
     if (giftsError) {
       console.error("Error fetching gifts:", giftsError);
@@ -45,11 +69,15 @@ export function TransactionExportButton() {
     }
 
     // 2. Fetch coin_withdrawals
-    const { data: withdrawals, error: wdError } = await supabase
+    let wdQuery = supabase
       .from("coin_withdrawals")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(5000);
+    if (dateFrom) wdQuery = wdQuery.gte("created_at", dateFrom);
+    if (dateTo) wdQuery = wdQuery.lte("created_at", dateTo);
+
+    const { data: withdrawals, error: wdError } = await wdQuery;
 
     if (wdError) {
       console.error("Error fetching withdrawals:", wdError);
@@ -127,10 +155,23 @@ export function TransactionExportButton() {
     return rows;
   };
 
-  const exportToExcel = async () => {
+  const COLUMNS = [
+    { header: "Thời gian", key: "thoi_gian", width: 20 },
+    { header: "Loại giao dịch", key: "loai_giao_dich", width: 15 },
+    { header: "Người gửi", key: "nguoi_gui", width: 20 },
+    { header: "Người nhận / Ví", key: "nguoi_nhan", width: 25 },
+    { header: "Số lượng", key: "so_luong", width: 15 },
+    { header: "Loại", key: "loai", width: 12 },
+    { header: "Trạng thái", key: "trang_thai", width: 15 },
+    { header: "TX Hash", key: "tx_hash", width: 30 },
+    { header: "Lời nhắn", key: "loi_nhan", width: 30 },
+    { header: "Receipt ID", key: "receipt_id", width: 20 },
+  ];
+
+  const exportToExcel = async (range: DateRange) => {
     setIsExporting(true);
     try {
-      const rows = await fetchAllTransactions();
+      const rows = await fetchAllTransactions(range);
       if (rows.length === 0) {
         toast.info("Không có dữ liệu để xuất");
         return;
@@ -140,21 +181,8 @@ export function TransactionExportButton() {
 
       // Sheet 1: All transactions
       const wsAll = wb.addWorksheet("Tất cả giao dịch");
-      wsAll.columns = [
-        { header: "Thời gian", key: "thoi_gian", width: 20 },
-        { header: "Loại giao dịch", key: "loai_giao_dich", width: 15 },
-        { header: "Người gửi", key: "nguoi_gui", width: 20 },
-        { header: "Người nhận / Ví", key: "nguoi_nhan", width: 25 },
-        { header: "Số lượng", key: "so_luong", width: 15 },
-        { header: "Loại", key: "loai", width: 12 },
-        { header: "Trạng thái", key: "trang_thai", width: 15 },
-        { header: "TX Hash", key: "tx_hash", width: 30 },
-        { header: "Lời nhắn", key: "loi_nhan", width: 30 },
-        { header: "Receipt ID", key: "receipt_id", width: 20 },
-      ];
+      wsAll.columns = COLUMNS.map((c) => ({ ...c }));
       rows.forEach((row) => wsAll.addRow(row));
-
-      // Style header row
       wsAll.getRow(1).font = { bold: true };
       wsAll.getRow(1).fill = {
         type: "pattern",
@@ -166,7 +194,7 @@ export function TransactionExportButton() {
       const internalRows = rows.filter((r) => r.loai === "Nội bộ");
       if (internalRows.length > 0) {
         const wsInternal = wb.addWorksheet("Giao dịch nội bộ");
-        wsInternal.columns = wsAll.columns.map((c) => ({ ...c }));
+        wsInternal.columns = COLUMNS.map((c) => ({ ...c }));
         internalRows.forEach((row) => wsInternal.addRow(row));
         wsInternal.getRow(1).font = { bold: true };
       }
@@ -175,7 +203,7 @@ export function TransactionExportButton() {
       const web3Rows = rows.filter((r) => r.loai !== "Nội bộ");
       if (web3Rows.length > 0) {
         const wsWeb3 = wb.addWorksheet("Giao dịch Web3");
-        wsWeb3.columns = wsAll.columns.map((c) => ({ ...c }));
+        wsWeb3.columns = COLUMNS.map((c) => ({ ...c }));
         web3Rows.forEach((row) => wsWeb3.addRow(row));
         wsWeb3.getRow(1).font = { bold: true };
       }
@@ -202,28 +230,16 @@ export function TransactionExportButton() {
     }
   };
 
-  const exportToCSV = async () => {
+  const exportToCSV = async (range: DateRange) => {
     setIsExporting(true);
     try {
-      const rows = await fetchAllTransactions();
+      const rows = await fetchAllTransactions(range);
       if (rows.length === 0) {
         toast.info("Không có dữ liệu để xuất");
         return;
       }
 
-      const headers = [
-        "Thời gian",
-        "Loại giao dịch",
-        "Người gửi",
-        "Người nhận / Ví",
-        "Số lượng",
-        "Loại",
-        "Trạng thái",
-        "TX Hash",
-        "Lời nhắn",
-        "Receipt ID",
-      ];
-
+      const headers = COLUMNS.map((c) => c.header);
       const csvRows = [headers.join(",")];
       rows.forEach((row) => {
         const values = [
@@ -249,7 +265,7 @@ export function TransactionExportButton() {
         );
       });
 
-      const csv = "\uFEFF" + csvRows.join("\n"); // BOM for Vietnamese chars
+      const csv = "\uFEFF" + csvRows.join("\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -268,28 +284,37 @@ export function TransactionExportButton() {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={isExporting} className="gap-2">
-          {isExporting ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Download className="w-4 h-4" />
-          )}
-          Xuất file
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={exportToExcel} className="gap-2 cursor-pointer">
-          <FileSpreadsheet className="w-4 h-4 text-green-600" />
-          Xuất Excel (.xlsx)
-          <span className="text-xs text-muted-foreground ml-auto">3 sheet</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={exportToCSV} className="gap-2 cursor-pointer">
-          <Download className="w-4 h-4 text-blue-600" />
-          Xuất CSV
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" disabled={isExporting} className="gap-2">
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            Xuất file
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => handleExportClick("excel")} className="gap-2 cursor-pointer">
+            <FileSpreadsheet className="w-4 h-4 text-green-600" />
+            Xuất Excel (.xlsx)
+            <span className="text-xs text-muted-foreground ml-auto">3 sheet</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleExportClick("csv")} className="gap-2 cursor-pointer">
+            <Download className="w-4 h-4 text-blue-600" />
+            Xuất CSV
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ExportDateRangeDialog
+        open={showDateDialog}
+        onOpenChange={setShowDateDialog}
+        onConfirm={handleDateConfirm}
+        title="Chọn thời gian xuất Giao dịch"
+      />
+    </>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
+import { ExportDateRangeDialog, type DateRange } from "./ExportDateRangeDialog";
 
 const ACTION_LABELS: Record<string, string> = {
   QUESTION_ASK: "Hỏi AI",
@@ -43,12 +44,23 @@ interface MintRow {
   minted_at: string;
 }
 
-async function fetchMintData(): Promise<MintRow[]> {
-  const { data, error } = await supabase
+async function fetchMintData(range: DateRange): Promise<MintRow[]> {
+  let query = supabase
     .from("pplp_mint_requests")
     .select("*, pplp_actions!inner(action_type)")
     .order("created_at", { ascending: false })
     .limit(5000);
+
+  if (range.from) {
+    query = query.gte("created_at", range.from.toISOString());
+  }
+  if (range.to) {
+    const endOfDay = new Date(range.to);
+    endOfDay.setHours(23, 59, 59, 999);
+    query = query.lte("created_at", endOfDay.toISOString());
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     toast.error("Lỗi tải dữ liệu mint");
@@ -85,11 +97,26 @@ async function fetchMintData(): Promise<MintRow[]> {
 
 export function MintExportButton() {
   const [isExporting, setIsExporting] = useState(false);
+  const [showDateDialog, setShowDateDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"excel" | "csv">("excel");
 
-  const exportToExcel = async () => {
+  const handleExportClick = (format: "excel" | "csv") => {
+    setExportFormat(format);
+    setShowDateDialog(true);
+  };
+
+  const handleDateConfirm = async (range: DateRange) => {
+    if (exportFormat === "excel") {
+      await exportToExcel(range);
+    } else {
+      await exportToCSV(range);
+    }
+  };
+
+  const exportToExcel = async (range: DateRange) => {
     setIsExporting(true);
     try {
-      const rows = await fetchMintData();
+      const rows = await fetchMintData(range);
       if (rows.length === 0) {
         toast.info("Không có dữ liệu để xuất");
         return;
@@ -132,10 +159,10 @@ export function MintExportButton() {
     }
   };
 
-  const exportToCSV = async () => {
+  const exportToCSV = async (range: DateRange) => {
     setIsExporting(true);
     try {
-      const rows = await fetchMintData();
+      const rows = await fetchMintData(range);
       if (rows.length === 0) {
         toast.info("Không có dữ liệu để xuất");
         return;
@@ -167,23 +194,32 @@ export function MintExportButton() {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={isExporting} className="gap-2">
-          {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-          Xuất file
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={exportToExcel} className="gap-2 cursor-pointer">
-          <FileSpreadsheet className="w-4 h-4 text-green-600" />
-          Xuất Excel (.xlsx)
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={exportToCSV} className="gap-2 cursor-pointer">
-          <Download className="w-4 h-4 text-blue-600" />
-          Xuất CSV
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" disabled={isExporting} className="gap-2">
+            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Xuất file
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => handleExportClick("excel")} className="gap-2 cursor-pointer">
+            <FileSpreadsheet className="w-4 h-4 text-green-600" />
+            Xuất Excel (.xlsx)
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleExportClick("csv")} className="gap-2 cursor-pointer">
+            <Download className="w-4 h-4 text-blue-600" />
+            Xuất CSV
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ExportDateRangeDialog
+        open={showDateDialog}
+        onOpenChange={setShowDateDialog}
+        onConfirm={handleDateConfirm}
+        title="Chọn thời gian xuất Mint Requests"
+      />
+    </>
   );
 }
