@@ -183,6 +183,37 @@ export function useFUNMoneyContract() {
 
         const contractInstance = new ethers.Contract(contractAddress, FUN_MONEY_ABI, walletSigner);
         setContract(contractInstance);
+
+        // Auto-fetch contract info immediately after init
+        try {
+          const [name, symbol, decimals, totalSupply, bal, alloc, epochMintCap, epochDuration, pauseT, userNonce] =
+            await Promise.all([
+              contractInstance.name(),
+              contractInstance.symbol(),
+              contractInstance.decimals(),
+              contractInstance.totalSupply(),
+              contractInstance.balanceOf(address),
+              contractInstance.alloc(address),
+              contractInstance.epochMintCap(),
+              contractInstance.epochDuration(),
+              contractInstance.pauseTransitions(),
+              contractInstance.nonces(address),
+            ]);
+          setContractInfo({
+            name, symbol, decimals,
+            totalSupply: ethers.formatUnits(totalSupply, decimals),
+            balance: ethers.formatUnits(bal, decimals),
+            locked: ethers.formatUnits(alloc.locked, decimals),
+            activated: ethers.formatUnits(alloc.activated, decimals),
+            epochMintCap: ethers.formatUnits(epochMintCap, decimals),
+            epochDuration: Number(epochDuration),
+            pauseTransitions: pauseT,
+            userNonce: Number(userNonce),
+          });
+          console.log("[FUNMoney] Auto-fetched contract info after init");
+        } catch (fetchErr) {
+          console.warn("[FUNMoney] Auto-fetch after init failed, will retry:", fetchErr);
+        }
       } catch (error) {
         console.error("Failed to initialize FUNMoney contract:", error);
         setContract(null);
@@ -193,7 +224,7 @@ export function useFUNMoneyContract() {
     };
 
     initContract();
-  }, [isConnected, getContractAddress, verifyContract]);
+  }, [isConnected, address, getContractAddress, verifyContract]);
 
   // Fetch contract info
   const fetchContractInfo = useCallback(async () => {
