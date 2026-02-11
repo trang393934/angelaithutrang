@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2, 
   ImagePlus, Camera, Wand2, X, Download, Loader2, MessageSquare,
-  History, FolderOpen, Plus, Volume2, Image, Menu, Pencil
+  History, FolderOpen, Plus, Volume2, Image, Menu, Pencil, ArrowDown
 } from "lucide-react";
 import { MessageFeedback } from "@/components/chat/MessageFeedback";
 import { TimeoutMessage } from "@/components/TimeoutMessage";
@@ -145,17 +145,34 @@ const Chat = () => {
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
   const { isGenerating, generateImage } = useImageGeneration();
   const { isAnalyzing, analyzeImage } = useImageAnalysis();
   const { isEditing, editImage } = useImageEdit();
   const { isLoading: ttsLoading, isPlaying: ttsPlaying, currentMessageId: ttsMessageId, playText, stopAudio } = useTextToSpeech();
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
+
+  // Track scroll position to show/hide scroll-to-bottom button
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      setShowScrollToBottom(distanceFromBottom > 200);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Helper to find the question for an assistant message
   const getQuestionForAnswer = (answerIndex: number): string => {
@@ -965,7 +982,7 @@ const Chat = () => {
         </header>
 
         {/* Messages - Scrollable area with wider container */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-4 lg:px-8 py-4 sm:py-6 relative">
           <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
             {messages.map((message, index) => (
               <div
@@ -1078,6 +1095,17 @@ const Chat = () => {
             ))}
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Scroll to bottom floating button */}
+          {showScrollToBottom && (
+            <button
+              onClick={scrollToBottom}
+              className="sticky bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all animate-fade-in text-sm"
+            >
+              <ArrowDown className="w-4 h-4" />
+              Cuối trang
+            </button>
+          )}
         </div>
 
         {/* Uploaded Image Preview */}
