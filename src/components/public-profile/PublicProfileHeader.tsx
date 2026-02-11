@@ -71,16 +71,15 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
       </div>
 
       {/* Profile Info */}
-      <div className="max-w-3xl mx-auto px-4 -mt-8 sm:-mt-10 relative z-10">
+      <div className="max-w-3xl mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Avatar + Name row */}
-          <div className="flex items-end gap-4">
-            {/* Avatar */}
-            <div className="relative shrink-0">
+          {/* Avatar - overlapping cover */}
+          <div className="-mt-[85px] sm:-mt-[100px]">
+            <div className="relative shrink-0 inline-block">
               <Avatar className="w-32 h-32 sm:w-40 sm:h-40 border-4 border-background shadow-divine ring-4 ring-primary-pale/50">
                 <AvatarImage
                   src={profile.avatar_url || angelAvatar}
@@ -98,49 +97,46 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
                 />
               </div>
             </div>
-
-            {/* Name + Handle + Badge — aligned to bottom half of avatar */}
-            <div className="pb-2 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
-                  {profile.display_name || "FUN Member"}
-                </h1>
-                <ProfileBadge badgeType={badgeType ?? null} />
-              </div>
-
-              {profile.handle && (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <p className="text-base font-semibold text-primary truncate">
-                    @{profile.handle}
-                  </p>
-                  <span className="text-xs text-muted-foreground truncate">
-                    • angel.fun.rich/{profile.handle}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
-                    onClick={handleCopyLink}
-                  >
-                    {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
-                    onClick={handleShare}
-                  >
-                    <Share2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Bio, Tagline, Member Since, Wallet — centered below */}
-          <div className="flex flex-col items-center text-center mt-4">
+          {/* Name + Info — starts at ~1/5 from bottom of avatar */}
+          <div className="-mt-[26px] sm:-mt-[32px]">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
+                {profile.display_name || "FUN Member"}
+              </h1>
+              <ProfileBadge badgeType={badgeType ?? null} />
+            </div>
+
+            {profile.handle && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-base font-semibold text-primary truncate">
+                  @{profile.handle}
+                </p>
+                <span className="text-xs text-muted-foreground truncate">
+                  • angel.fun.rich/{profile.handle}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
+                  onClick={handleCopyLink}
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
+                  onClick={handleShare}
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            )}
+
             {profile.bio && (
-              <p className="text-muted-foreground max-w-md leading-relaxed text-sm sm:text-base">
+              <p className="text-muted-foreground max-w-md leading-relaxed text-sm sm:text-base mt-2">
                 {profile.bio}
               </p>
             )}
@@ -156,7 +152,6 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
               <span>{joinedLabel}</span>
             </div>
 
-            {/* Social Links - mini avatars */}
             <SocialLinksDisplay socialLinks={socialLinks} avatarUrl={profile.avatar_url} />
 
             <div className="mt-3">
