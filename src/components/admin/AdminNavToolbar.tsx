@@ -14,6 +14,7 @@ import {
   Image,
   Gift,
   Shield,
+  FileBarChart,
 } from "lucide-react";
 
 interface NavGroup {
@@ -68,6 +69,14 @@ const navGroups: NavGroup[] = [
       { to: "/admin/activity-history", icon: History, label: "Lịch sử chat" },
       { to: "/admin/ai-usage", icon: BarChart3, label: "AI Usage" },
       { to: "/admin/image-history", icon: Image, label: "Lịch sử ảnh" },
+    ],
+  },
+  {
+    label: "Báo cáo",
+    colorClass: "text-rose-600 dark:text-rose-400",
+    activeClass: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+    items: [
+      { to: "/admin/report", icon: FileBarChart, label: "Báo cáo" },
     ],
   },
 ];

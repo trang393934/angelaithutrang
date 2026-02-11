@@ -57,6 +57,7 @@ import AdminTipReports from "./pages/AdminTipReports";
 import AdminTetReward from "./pages/AdminTetReward";
 import Notifications from "./pages/Notifications";
 import HandleProfile from "./pages/HandleProfile";
+import AdminReport from "./pages/AdminReport";
 
 // Note: Global error handling is in main.tsx (registered before React renders)
 
@@ -107,6 +108,7 @@ const App = () => (
               <Route path="/admin/mint-approval" element={<AdminMintApproval />} />
               <Route path="/admin/tip-reports" element={<AdminTipReports />} />
               <Route path="/admin/tet-reward" element={<AdminTetReward />} />
+              <Route path="/admin/report" element={<AdminReport />} />
               <Route path="/receipt/:receiptId" element={<Receipt />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/community-questions" element={<CommunityQuestions />} />
