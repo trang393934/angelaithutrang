@@ -639,9 +639,9 @@ const UserProfile = () => {
 
           {/* Profile Info Section */}
           <div className="px-4 pb-4">
-            <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-[85px] md:-mt-[40px]">
+            <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-[34px]">
               {/* Avatar */}
-              <div className="relative group">
+              <div className="relative group shrink-0">
                 <div 
                   className="cursor-pointer"
                   onClick={() => profile?.avatar_url && setAvatarLightboxOpen(true)}
@@ -669,14 +669,17 @@ const UserProfile = () => {
                 )}
               </div>
 
-              {/* Name and Stats */}
-              <div className="flex-1 md:pb-4">
+              {/* Name and Stats - aligned to bottom of avatar */}
+              <div className="flex-1 pb-1">
                 <h1 className="text-[32px] font-bold text-gray-900 leading-tight">
                   {profile?.display_name || "Người dùng ẩn danh"}
                 </h1>
-              {profile?.handle && (
-                  <p className="text-sm text-divine-gold font-medium mt-0.5">
-                    angel.fun.rich/{profile.handle}
+                {profile?.handle && (
+                  <p className="text-base font-semibold text-primary mt-0.5">
+                    @{profile.handle}
+                    <span className="text-xs text-muted-foreground font-normal ml-2">
+                      angel.fun.rich/{profile.handle}
+                    </span>
                   </p>
                 )}
                 <p className="text-[15px] text-gray-500 font-medium mt-1">
@@ -701,7 +704,7 @@ const UserProfile = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="md:pb-4">
+              <div className="pb-1">
                 {renderActionButtons()}
               </div>
             </div>
