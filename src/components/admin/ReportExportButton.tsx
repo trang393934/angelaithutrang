@@ -1,9 +1,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Download, Loader2, FileSpreadsheet, FileText, File } from "lucide-react";
 import { toast } from "sonner";
 import type { ReportStats } from "@/hooks/useReportStats";
-import ExcelJS from "exceljs";
+import {
+  userFeatures, adminFeatures, techSpecs, strengths, improvements,
+  roadmapData, developmentProposals, buildStatRows,
+} from "@/data/reportData";
 
 interface Props {
   stats: ReportStats;
@@ -11,70 +20,31 @@ interface Props {
 }
 
 const ReportExportButton = ({ stats, loading }: Props) => {
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<string | null>(null);
 
+  const fileName = (ext: string) =>
+    `BaoCao_AngelAI_${new Date().toISOString().slice(0, 10)}.${ext}`;
+
+  // ── Excel Export ──
   const exportExcel = async () => {
-    setExporting(true);
+    setExporting("excel");
     try {
+      const ExcelJS = await import("exceljs");
       const wb = new ExcelJS.Workbook();
       wb.creator = "Angel AI";
       wb.created = new Date();
 
-      // ── Sheet 1: Thống kê tổng quan ──
+      // Sheet 1: Thống kê
       const s1 = wb.addWorksheet("Thống kê tổng quan");
       s1.columns = [
         { header: "Nhóm", key: "group", width: 25 },
         { header: "Chỉ số", key: "metric", width: 45 },
         { header: "Giá trị", key: "value", width: 20 },
       ];
-      const statRows = [
-        ["Người dùng", "Tổng người dùng đăng ký", stats.totalUsers],
-        ["Người dùng", "Early Adopters", stats.totalEarlyAdopters],
-        ["Người dùng", "Tổng kết bạn", stats.totalFriendships],
-        ["Người dùng", "Handle đã tạo", stats.totalHandles],
-        ["Cộng đồng", "Tổng bài viết", stats.totalPosts],
-        ["Cộng đồng", "Tổng bình luận", stats.totalComments],
-        ["Cộng đồng", "Tổng lượt thích", stats.totalLikes],
-        ["Cộng đồng", "Tổng stories", stats.totalStories],
-        ["Cộng đồng", "Tin nhắn trực tiếp", stats.totalDirectMessages],
-        ["Cộng đồng", "Nhật ký biết ơn", stats.totalGratitudeJournals],
-        ["Cộng đồng", "Ý tưởng đóng góp", stats.totalIdeas],
-        ["Cộng đồng", "Bảng tầm nhìn", stats.totalVisionBoards],
-        ["Cộng đồng", "Bounty submissions", stats.totalBountySubmissions],
-        ["Cộng đồng", "Circles", stats.totalCircles],
-        ["Cộng đồng", "Chia sẻ bài viết", stats.totalShares],
-        ["Tài chính Camly", "Tổng Camly phát hành", stats.totalCamlyIssued.toLocaleString()],
-        ["Tài chính Camly", "Camly đang lưu hành", stats.totalCamlyBalance.toLocaleString()],
-        ["Tài chính Camly", "Camly đã rút thành công", `${stats.totalCamlyWithdrawn.toLocaleString()} (${stats.totalWithdrawalsSuccess} lệnh)`],
-        ["Tài chính Camly", "Camly tặng nhau", `${stats.totalCamlyGifted.toLocaleString()} (${stats.totalGiftCount} lần, ${stats.totalGiftSenders} người)`],
-        ["FUN Money", "Tổng hành động PPLP", stats.totalPPLPActions],
-        ["FUN Money", "Đã đúc on-chain", stats.totalPPLPMinted],
-        ["FUN Money", "Đã chấm điểm", stats.totalPPLPScored],
-        ["FUN Money", "Người tham gia đúc FUN", stats.totalPPLPMiners],
-        ["FUN Money", "Tổng FUN đã chấm điểm", stats.totalFUNScored.toLocaleString()],
-        ["FUN Money", "Điểm Light Score trung bình", stats.avgLightScore],
-        ["FUN Money", "Phần thưởng TB/hành động", `${stats.avgRewardPerAction} FUN`],
-        ["FUN Money", "Hành động đạt (pass)", stats.totalPPLPPass],
-        ["FUN Money", "Hành động không đạt (fail)", stats.totalPPLPFail],
-        ["FUN Money", "Tổng yêu cầu mint", stats.totalMintRequests],
-        ["FUN Money", "Mint thành công", `${stats.mintRequestsMinted} (${stats.totalFUNClaimed.toLocaleString()} FUN)`],
-        ["FUN Money", "Đang chờ xử lý", stats.mintRequestsPending],
-        ["FUN Money", "Đã ký EIP-712", stats.mintRequestsSigned],
-        ["FUN Money", "Tổng FUN trong yêu cầu", stats.totalFUNInRequests.toLocaleString()],
-        ["AI & Nội dung", "Tổng câu hỏi chat AI", stats.totalChatQuestions],
-        ["AI & Nội dung", "Phiên chat", stats.totalChatSessions],
-        ["AI & Nội dung", "Ảnh AI tạo/phân tích", stats.totalImageHistory],
-        ["AI & Nội dung", "Tài liệu kiến thức", stats.totalKnowledgeDocs],
-        ["AI & Nội dung", "Phản hồi chat", stats.totalChatFeedback],
-        ["AI & Nội dung", "Chia sẻ nội dung", stats.totalContentShares],
-        ["Đăng nhập", "Streak cao nhất", `${stats.maxStreak} ngày`],
-        ["Đăng nhập", "Tổng lần đăng nhập", stats.totalDailyLogins],
-        ["Khác", "Healing messages", stats.totalHealingMessages],
-      ];
-      statRows.forEach(r => s1.addRow({ group: r[0], metric: r[1], value: r[2] }));
+      buildStatRows(stats).forEach(r => s1.addRow({ group: r[0], metric: r[1], value: r[2] }));
       styleSheet(s1);
 
-      // ── Sheet 2: Tính năng người dùng ──
+      // Sheet 2: Tính năng người dùng
       const s2 = wb.addWorksheet("Tính năng người dùng");
       s2.columns = [
         { header: "STT", key: "no", width: 6 },
@@ -85,7 +55,7 @@ const ReportExportButton = ({ stats, loading }: Props) => {
       userFeatures.forEach((f, i) => s2.addRow({ no: i + 1, ...f }));
       styleSheet(s2);
 
-      // ── Sheet 3: Tính năng admin ──
+      // Sheet 3: Tính năng admin
       const s3 = wb.addWorksheet("Tính năng admin");
       s3.columns = [
         { header: "STT", key: "no", width: 6 },
@@ -96,7 +66,7 @@ const ReportExportButton = ({ stats, loading }: Props) => {
       adminFeatures.forEach((f, i) => s3.addRow({ no: i + 1, ...f }));
       styleSheet(s3);
 
-      // ── Sheet 4: Thông số kỹ thuật ──
+      // Sheet 4: Thông số kỹ thuật
       const s4 = wb.addWorksheet("Thông số kỹ thuật");
       s4.columns = [
         { header: "Hạng mục", key: "cat", width: 25 },
@@ -106,7 +76,7 @@ const ReportExportButton = ({ stats, loading }: Props) => {
       techSpecs.forEach(r => s4.addRow(r));
       styleSheet(s4);
 
-      // ── Sheet 5: Ưu điểm & Cải thiện ──
+      // Sheet 5: Ưu điểm & Cải thiện
       const s5 = wb.addWorksheet("Ưu điểm & Cải thiện");
       s5.columns = [
         { header: "Loại", key: "type", width: 20 },
@@ -116,7 +86,7 @@ const ReportExportButton = ({ stats, loading }: Props) => {
       improvements.forEach(s => s5.addRow({ type: "Cần cải thiện", content: s }));
       styleSheet(s5);
 
-      // ── Sheet 6: Hướng phát triển ──
+      // Sheet 6: Đề xuất phát triển
       const s6 = wb.addWorksheet("Đề xuất phát triển");
       s6.columns = [
         { header: "Giai đoạn", key: "phase", width: 20 },
@@ -127,32 +97,304 @@ const ReportExportButton = ({ stats, loading }: Props) => {
       roadmapData.forEach(r => s6.addRow(r));
       styleSheet(s6);
 
+      // Sheet 7: Đề xuất phát triển chi tiết
+      const s7 = wb.addWorksheet("Đề xuất chi tiết Angel AI");
+      s7.columns = [
+        { header: "Giai đoạn", key: "phase", width: 40 },
+        { header: "Nội dung", key: "content", width: 80 },
+      ];
+      developmentProposals[0].sections.forEach(sec => {
+        s7.addRow({ phase: sec.heading, content: "" });
+        sec.items.forEach(item => s7.addRow({ phase: "", content: item }));
+        s7.addRow({ phase: "", content: "" });
+      });
+      styleSheet(s7);
+
       const buffer = await wb.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `BaoCao_AngelAI_${new Date().toISOString().slice(0, 10)}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Đã tải báo cáo thành công!");
+      downloadBlob(buffer, fileName("xlsx"), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      toast.success("Đã tải báo cáo Excel thành công!");
     } catch (err) {
       console.error(err);
-      toast.error("Lỗi khi xuất báo cáo");
+      toast.error("Lỗi khi xuất báo cáo Excel");
     } finally {
-      setExporting(false);
+      setExporting(null);
+    }
+  };
+
+  // ── CSV Export ──
+  const exportCSV = async () => {
+    setExporting("csv");
+    try {
+      const rows: string[][] = [];
+      rows.push(["=== BÁO CÁO TOÀN DIỆN ANGEL AI ==="]);
+      rows.push(["Ngày xuất", new Date().toLocaleString("vi-VN")]);
+      rows.push([]);
+
+      // Thống kê
+      rows.push(["--- THỐNG KÊ TỔNG QUAN ---"]);
+      rows.push(["Nhóm", "Chỉ số", "Giá trị"]);
+      buildStatRows(stats).forEach(r => rows.push([String(r[0]), String(r[1]), String(r[2])]));
+      rows.push([]);
+
+      // Tính năng người dùng
+      rows.push(["--- TÍNH NĂNG NGƯỜI DÙNG ---"]);
+      rows.push(["STT", "Tính năng", "Mô tả", "Trạng thái"]);
+      userFeatures.forEach((f, i) => rows.push([String(i + 1), f.feature, f.desc, f.status]));
+      rows.push([]);
+
+      // Tính năng admin
+      rows.push(["--- TÍNH NĂNG ADMIN ---"]);
+      rows.push(["STT", "Tính năng", "Mô tả", "Trạng thái"]);
+      adminFeatures.forEach((f, i) => rows.push([String(i + 1), f.feature, f.desc, f.status]));
+      rows.push([]);
+
+      // Thông số kỹ thuật
+      rows.push(["--- THÔNG SỐ KỸ THUẬT ---"]);
+      rows.push(["Hạng mục", "Thông số", "Chi tiết"]);
+      techSpecs.forEach(r => rows.push([r.cat, r.spec, r.detail]));
+      rows.push([]);
+
+      // Ưu điểm
+      rows.push(["--- ƯU ĐIỂM NỔI BẬT ---"]);
+      strengths.forEach((s, i) => rows.push([String(i + 1), s]));
+      rows.push([]);
+
+      // Cải thiện
+      rows.push(["--- ĐIỂM CẦN CẢI THIỆN ---"]);
+      improvements.forEach((s, i) => rows.push([String(i + 1), s]));
+      rows.push([]);
+
+      // Đề xuất phát triển
+      rows.push(["--- ĐỀ XUẤT PHÁT TRIỂN ---"]);
+      rows.push(["Giai đoạn", "Hạng mục", "Chi tiết", "Ưu tiên"]);
+      roadmapData.forEach(r => rows.push([r.phase, r.item, r.detail, r.priority]));
+      rows.push([]);
+
+      // Đề xuất chi tiết
+      rows.push(["--- ĐỀ XUẤT PHÁT TRIỂN CHI TIẾT ANGEL AI ---"]);
+      developmentProposals[0].sections.forEach(sec => {
+        rows.push([sec.heading]);
+        sec.items.forEach(item => rows.push(["", item]));
+        rows.push([]);
+      });
+
+      const BOM = "\uFEFF";
+      const csv = BOM + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+      downloadBlob(csv, fileName("csv"), "text/csv;charset=utf-8");
+      toast.success("Đã tải báo cáo CSV thành công!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi khi xuất báo cáo CSV");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  // ── Word (DOCX) Export ──
+  const exportWord = async () => {
+    setExporting("word");
+    try {
+      const docx = await import("docx");
+      const { saveAs } = await import("file-saver");
+
+      const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel, BorderStyle } = docx;
+
+      const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+      const thinBorder = { style: BorderStyle.SINGLE, size: 1, color: "D4A574" };
+      const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+
+      const headerCell = (text: string) =>
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text, bold: true, color: "FFFFFF", size: 20, font: "Arial" })] })],
+          shading: { fill: "B8860B" },
+          borders: cellBorders,
+          width: { size: 3000, type: WidthType.DXA },
+        });
+
+      const dataCell = (text: string, width = 3000) =>
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text, size: 18, font: "Arial" })] })],
+          borders: cellBorders,
+          width: { size: width, type: WidthType.DXA },
+        });
+
+      const heading = (text: string, level: typeof HeadingLevel[keyof typeof HeadingLevel] = HeadingLevel.HEADING_1) =>
+        new Paragraph({ text, heading: level, spacing: { before: 300, after: 150 } });
+
+      const bullet = (text: string) =>
+        new Paragraph({
+          children: [new TextRun({ text: `• ${text}`, size: 20, font: "Arial" })],
+          spacing: { before: 60, after: 60 },
+          indent: { left: 360 },
+        });
+
+      // Build stat table
+      const statRows = buildStatRows(stats);
+      const statTable = new Table({
+        rows: [
+          new TableRow({ children: [headerCell("Nhóm"), headerCell("Chỉ số"), headerCell("Giá trị")] }),
+          ...statRows.map(r => new TableRow({
+            children: [dataCell(String(r[0])), dataCell(String(r[1]), 5000), dataCell(String(r[2]), 2500)],
+          })),
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+      });
+
+      // User features table
+      const userFeatTable = new Table({
+        rows: [
+          new TableRow({ children: [headerCell("STT"), headerCell("Tính năng"), headerCell("Mô tả"), headerCell("Trạng thái")] }),
+          ...userFeatures.map((f, i) => new TableRow({
+            children: [dataCell(String(i + 1), 600), dataCell(f.feature, 2500), dataCell(f.desc, 5500), dataCell(f.status, 1200)],
+          })),
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+      });
+
+      // Admin features table
+      const adminFeatTable = new Table({
+        rows: [
+          new TableRow({ children: [headerCell("STT"), headerCell("Tính năng"), headerCell("Mô tả"), headerCell("Trạng thái")] }),
+          ...adminFeatures.map((f, i) => new TableRow({
+            children: [dataCell(String(i + 1), 600), dataCell(f.feature, 2500), dataCell(f.desc, 5500), dataCell(f.status, 1200)],
+          })),
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+      });
+
+      // Tech specs table
+      const techTable = new Table({
+        rows: [
+          new TableRow({ children: [headerCell("Hạng mục"), headerCell("Thông số"), headerCell("Chi tiết")] }),
+          ...techSpecs.map(r => new TableRow({
+            children: [dataCell(r.cat, 2000), dataCell(r.spec, 3000), dataCell(r.detail, 5000)],
+          })),
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+      });
+
+      // Roadmap table
+      const roadmapTable = new Table({
+        rows: [
+          new TableRow({ children: [headerCell("Giai đoạn"), headerCell("Hạng mục"), headerCell("Chi tiết"), headerCell("Ưu tiên")] }),
+          ...roadmapData.map(r => new TableRow({
+            children: [dataCell(r.phase, 1500), dataCell(r.item, 3000), dataCell(r.detail, 5000), dataCell(r.priority, 1000)],
+          })),
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+      });
+
+      // Development proposals
+      const proposalSections: (typeof Paragraph extends new (...args: any[]) => infer R ? R : never)[] = [];
+      developmentProposals[0].sections.forEach(sec => {
+        proposalSections.push(heading(sec.heading, HeadingLevel.HEADING_3));
+        sec.items.forEach(item => proposalSections.push(bullet(item)));
+      });
+
+      const doc = new Document({
+        creator: "Angel AI",
+        title: "Báo Cáo Toàn Diện Angel AI",
+        description: "Báo cáo toàn diện về nền tảng Angel AI — Trí Tuệ Ánh Sáng",
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "BÁO CÁO TOÀN DIỆN ANGEL AI", bold: true, size: 36, font: "Arial", color: "B8860B" })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 100 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: "Trí Tuệ Ánh Sáng — Kết nối, Chữa lành, Kiến tạo giá trị", italics: true, size: 22, font: "Arial", color: "666666" })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 100 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: `Ngày xuất: ${new Date().toLocaleString("vi-VN")}`, size: 18, font: "Arial", color: "999999" })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 },
+            }),
+
+            heading("1. THỐNG KÊ TỔNG QUAN"),
+            statTable,
+
+            heading("2. TÍNH NĂNG DÀNH CHO NGƯỜI DÙNG"),
+            userFeatTable,
+
+            heading("3. TÍNH NĂNG DÀNH CHO ADMIN"),
+            adminFeatTable,
+
+            heading("4. THÔNG SỐ KỸ THUẬT"),
+            techTable,
+
+            heading("5. ƯU ĐIỂM NỔI BẬT"),
+            ...strengths.map(s => bullet(s)),
+
+            heading("6. ĐIỂM CẦN CẢI THIỆN"),
+            ...improvements.map(s => bullet(s)),
+
+            heading("7. ĐỀ XUẤT PHÁT TRIỂN"),
+            roadmapTable,
+
+            heading("8. ĐỀ XUẤT PHÁT TRIỂN CHI TIẾT ANGEL AI"),
+            ...proposalSections,
+
+            new Paragraph({
+              children: [new TextRun({ text: "—— Báo cáo được tạo tự động bởi Angel AI — Trí Tuệ Ánh Sáng | © 2026 Father Universe ——", size: 16, font: "Arial", color: "999999", italics: true })],
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 600 },
+            }),
+          ],
+        }],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, fileName("docx"));
+      toast.success("Đã tải báo cáo Word thành công!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi khi xuất báo cáo Word");
+    } finally {
+      setExporting(null);
     }
   };
 
   return (
-    <Button onClick={exportExcel} disabled={loading || exporting} className="gap-2">
-      {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-      {exporting ? "Đang xuất..." : "Tải báo cáo Excel"}
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button disabled={loading || !!exporting} className="gap-2">
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {exporting ? "Đang xuất..." : "Tải báo cáo"}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem onClick={exportExcel} className="gap-2 cursor-pointer">
+          <FileSpreadsheet className="w-4 h-4 text-primary" />
+          <span>Xuất Excel (.xlsx)</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={exportCSV} className="gap-2 cursor-pointer">
+          <FileText className="w-4 h-4 text-primary" />
+          <span>Xuất CSV (.csv)</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={exportWord} className="gap-2 cursor-pointer">
+          <File className="w-4 h-4 text-primary" />
+          <span>Xuất Word (.docx)</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
-function styleSheet(sheet: ExcelJS.Worksheet) {
+function downloadBlob(data: ArrayBuffer | BlobPart | string, filename: string, mimeType: string) {
+  const blob = data instanceof Blob ? data : new Blob([data], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function styleSheet(sheet: import("exceljs").Worksheet) {
   const headerRow = sheet.getRow(1);
   headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
   headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFB8860B" } };
@@ -172,118 +414,5 @@ function styleSheet(sheet: ExcelJS.Worksheet) {
     });
   });
 }
-
-// ── Dữ liệu tĩnh cho báo cáo ──
-
-const userFeatures = [
-  { feature: "Chat AI đa phương thức", desc: "Trò chuyện văn bản, gửi hình ảnh để phân tích, text-to-speech với giọng ElevenLabs. Hỗ trợ phiên chat, thư mục, chia sẻ.", status: "Hoạt động" },
-  { feature: "Tạo ảnh AI", desc: "Tạo ảnh từ prompt văn bản, chỉnh sửa ảnh có sẵn, lưu lịch sử ảnh. Dùng mô hình Gemini.", status: "Hoạt động" },
-  { feature: "Phân tích ảnh AI", desc: "Nhận diện nội dung, trích xuất văn bản, phân tích chi tiết ảnh tải lên.", status: "Hoạt động" },
-  { feature: "Viết nội dung (Content Writer)", desc: "Công cụ viết nội dung chuyên nghiệp hỗ trợ bởi AI, tạo bài viết, email, kịch bản.", status: "Hoạt động" },
-  { feature: "Bảng tầm nhìn (Vision Board)", desc: "Tạo bảng tầm nhìn cá nhân với ảnh từ Unsplash, template có sẵn, lưu trữ và chia sẻ.", status: "Hoạt động" },
-  { feature: "Nhật ký biết ơn", desc: "Viết nhật ký hàng ngày, AI phân tích tâm trạng và chấm điểm thuần khiết (purity score), nhận Camly Coin.", status: "Hoạt động" },
-  { feature: "Cộng đồng", desc: "Đăng bài viết, bình luận, thích, chia sẻ, stories 24h, nhóm (circles), cosmic caption AI.", status: "Hoạt động" },
-  { feature: "Tin nhắn trực tiếp", desc: "Nhắn tin 1-1, emoji picker, reply, phản ứng, tặng coin trong tin nhắn, trạng thái online.", status: "Hoạt động" },
-  { feature: "Tặng coin đa loại", desc: "Tặng CAMLY (off-chain), chuyển CAMLY/FUN/BNB/USDT/USDC (on-chain) qua Web3 wallet, biên lai kỹ thuật số.", status: "Hoạt động" },
-  { feature: "Kiếm Camly Coin", desc: "10+ cách kiếm: chat AI, đăng bài, bình luận, viết nhật ký, đăng nhập hàng ngày, chia sẻ, bounty, ý tưởng, giúp đỡ cộng đồng.", status: "Hoạt động" },
-  { feature: "Rút coin về ví Web3", desc: "Rút Camly Coin về ví MetaMask/WalletConnect dưới dạng token CAMLY trên BSC, xác minh avatar.", status: "Hoạt động" },
-  { feature: "FUN Money (PPLP)", desc: "Đúc token FUN thông qua giao thức PPLP: hành động → chấm điểm AI → yêu cầu mint → admin ký → on-chain.", status: "Hoạt động" },
-  { feature: "Bảng xếp hạng", desc: "Xếp hạng top người dùng theo Camly Coin, hiển thị avatar, huy hiệu, hiệu ứng đặc biệt.", status: "Hoạt động" },
-  { feature: "Thư viện kiến thức", desc: "Tải lên và quản lý tài liệu, tự động phân đoạn (chunking) cho AI trả lời chính xác.", status: "Hoạt động" },
-  { feature: "Bounty & Ý tưởng", desc: "Nhận nhiệm vụ bounty để kiếm coin, gửi ý tưởng phát triển Angel AI, bỏ phiếu.", status: "Hoạt động" },
-  { feature: "Hồ sơ cá nhân", desc: "Avatar, cover photo, bio, soul tags, social links, handle tùy chỉnh (@handle), PoPL badge.", status: "Hoạt động" },
-  { feature: "Đa ngôn ngữ", desc: "Hỗ trợ 12 ngôn ngữ: Tiếng Việt, English, 中文, 日本語, 한국어, Español, Français, Deutsch, Português, Русский, हिन्दी, العربية.", status: "Hoạt động" },
-  { feature: "Thông báo đẩy", desc: "Thông báo kết bạn, lời mời, tin nhắn mới, phần thưởng, mint status.", status: "Hoạt động" },
-  { feature: "Tìm kiếm toàn cục", desc: "Tìm kiếm người dùng, bài viết, tài liệu kiến thức trên toàn hệ thống.", status: "Hoạt động" },
-];
-
-const adminFeatures = [
-  { feature: "Dashboard tổng quan", desc: "Bảng điều khiển quản trị với thống kê người dùng, doanh thu, hoạt động hệ thống.", status: "Hoạt động" },
-  { feature: "Thống kê người dùng", desc: "Biểu đồ tăng trưởng, phân bổ hoạt động, top users, early adopters.", status: "Hoạt động" },
-  { feature: "Quản lý rút coin", desc: "Duyệt/từ chối yêu cầu rút, gửi on-chain, theo dõi tx hash, retry lỗi.", status: "Hoạt động" },
-  { feature: "Quỹ dự án", desc: "Theo dõi quyên góp, phân phối quỹ theo FUN Distribution Model.", status: "Hoạt động" },
-  { feature: "FUN Money Stats", desc: "Thống kê toàn diện về PPLP actions, mint requests, distribution logs.", status: "Hoạt động" },
-  { feature: "Mint Approval", desc: "Phê duyệt yêu cầu mint FUN, ký EIP-712, gửi on-chain, batch processing.", status: "Hoạt động" },
-  { feature: "Tip Reports", desc: "Báo cáo tặng coin giữa người dùng, thống kê theo thời gian.", status: "Hoạt động" },
-  { feature: "Thưởng Tết (Lì Xì)", desc: "Hệ thống phát thưởng Tết hàng loạt cho người dùng.", status: "Hoạt động" },
-  { feature: "Quản lý kiến thức", desc: "Upload, xem, xóa tài liệu kiến thức cho AI sử dụng.", status: "Hoạt động" },
-  { feature: "Quản lý ý tưởng & Bounty", desc: "Duyệt ý tưởng, tạo/quản lý nhiệm vụ bounty, chấm điểm.", status: "Hoạt động" },
-  { feature: "Lịch sử chat & AI Usage", desc: "Xem toàn bộ lịch sử chat, thống kê sử dụng AI theo ngày/user.", status: "Hoạt động" },
-  { feature: "Lịch sử ảnh AI", desc: "Xem tất cả ảnh đã tạo/phân tích bởi AI trên toàn hệ thống.", status: "Hoạt động" },
-  { feature: "Xuất dữ liệu Excel", desc: "Xuất dữ liệu rút coin, mint, tip ra file Excel với bộ lọc ngày.", status: "Hoạt động" },
-  { feature: "Healing Messages", desc: "Gửi thông điệp chữa lành đến người dùng qua AI.", status: "Hoạt động" },
-  { feature: "Báo cáo toàn diện", desc: "Trang báo cáo tổng hợp với số liệu thực tế, xuất Excel chuyên nghiệp.", status: "Hoạt động" },
-];
-
-const techSpecs = [
-  { cat: "Frontend", spec: "Framework", detail: "React 18.3 + TypeScript + Vite" },
-  { cat: "Frontend", spec: "Styling", detail: "Tailwind CSS + shadcn/ui + Framer Motion" },
-  { cat: "Frontend", spec: "State Management", detail: "TanStack React Query v5 + React Context" },
-  { cat: "Frontend", spec: "Routing", detail: "React Router DOM v6" },
-  { cat: "Frontend", spec: "Đa ngôn ngữ", detail: "12 ngôn ngữ (Context-based i18n)" },
-  { cat: "Backend", spec: "Platform", detail: "Lovable Cloud (Supabase)" },
-  { cat: "Backend", spec: "Database", detail: "PostgreSQL với 40+ bảng dữ liệu" },
-  { cat: "Backend", spec: "Edge Functions", detail: "35+ Deno edge functions cho business logic" },
-  { cat: "Backend", spec: "Authentication", detail: "Email/Password + Row Level Security (RLS)" },
-  { cat: "Backend", spec: "Storage", detail: "Supabase Storage cho avatar, ảnh, tài liệu" },
-  { cat: "Backend", spec: "Realtime", detail: "Supabase Realtime cho tin nhắn, thông báo" },
-  { cat: "Blockchain", spec: "Network", detail: "BNB Smart Chain (BSC) Testnet + Mainnet" },
-  { cat: "Blockchain", spec: "Smart Contract", detail: "FUN Money ERC-20 v1.2.1 (Solidity)" },
-  { cat: "Blockchain", spec: "Wallet", detail: "MetaMask + WalletConnect v2" },
-  { cat: "Blockchain", spec: "Giao thức", detail: "PPLP v1.0.2 - Proof of Pure Light Protocol" },
-  { cat: "Blockchain", spec: "Chữ ký", detail: "EIP-712 Typed Data Signing" },
-  { cat: "AI", spec: "Mô hình chính", detail: "Google Gemini 2.5 Flash/Pro (qua Lovable AI)" },
-  { cat: "AI", spec: "Text-to-Speech", detail: "ElevenLabs API" },
-  { cat: "AI", spec: "Chấm điểm", detail: "AI Light Score (5 chiều: Purity, Depth, Alignment, Contribution, Authenticity)" },
-  { cat: "AI", spec: "Cache", detail: "Hệ thống cache 4 tầng (exact match, fuzzy match, keyword, semantic)" },
-  { cat: "Bảo mật", spec: "RLS", detail: "Row Level Security trên tất cả bảng dữ liệu" },
-  { cat: "Bảo mật", spec: "Anti-fraud", detail: "Device fingerprint, fraud signals, random audit" },
-  { cat: "Bảo mật", spec: "Nonce", detail: "On-chain nonce management chống replay attack" },
-  { cat: "Bảo mật", spec: "API Keys", detail: "Hệ thống API key với rate limiting và usage tracking" },
-];
-
-const strengths = [
-  "Hệ sinh thái toàn diện: từ AI chat → cộng đồng → tài chính → blockchain trong một nền tảng duy nhất",
-  "Mô hình tokenomics sáng tạo: CAMLY (off-chain) + FUN (on-chain) tạo hành trình từ Web2 → Web3",
-  "Giao thức PPLP độc đáo: chấm điểm hành động bằng AI, đúc token dựa trên giá trị thực sự đóng góp",
-  "Đa ngôn ngữ 12 ngôn ngữ: tiếp cận người dùng toàn cầu từ ngày đầu",
-  "Hệ thống phần thưởng đa dạng: 10+ cách kiếm coin, khuyến khích hoạt động chất lượng",
-  "Bảo mật nhiều tầng: RLS, EIP-712 signing, anti-fraud, device fingerprint",
-  "UX/UI tinh tế: thiết kế golden theme nhất quán, dark mode, responsive, hiệu ứng Framer Motion",
-  "Admin tools đầy đủ: 15+ công cụ quản trị, xuất dữ liệu, thống kê real-time",
-  "Tích hợp Web3 mượt mà: MetaMask + WalletConnect, chuyển 5 loại token (CAMLY, FUN, BNB, USDT, USDC)",
-  "Cộng đồng phong phú: bài viết, stories, circles, tin nhắn, kết bạn, tặng coin",
-];
-
-const improvements = [
-  "Batch mint request: user phải nhấn 'Request Mint' từng action một → cần nút 'Mint All'",
-  "Journal scoring: một số journal actions chỉ submit mà không tự động score → cần sửa edge function",
-  "DAILY_LOGIN chưa tích hợp PPLP: người dùng đăng nhập hàng ngày chưa nhận FUN Money",
-  "Phân trang actions: usePPLPActions chỉ load 50 actions, user có 6.000+ actions không thấy hết",
-  "Nonce conflict khi batch approve: admin approve nhiều mint request cùng lúc có thể xung đột nonce",
-  "Hiệu suất trang /mint: cần lazy loading và virtualization cho danh sách dài",
-  "Push notifications: chưa có web push notification, chỉ có in-app notification",
-  "Offline support: chưa có service worker cho progressive web app (PWA)",
-  "Testing: cần bổ sung unit test và integration test cho các luồng quan trọng",
-  "Documentation: cần tài liệu API cho developer bên ngoài muốn tích hợp",
-];
-
-const roadmapData = [
-  { phase: "Q1 2026", item: "Tối ưu quy trình Mint FUN", detail: "Auto-mint request, batch mint, pagination, sửa journal scoring", priority: "Cao" },
-  { phase: "Q1 2026", item: "Progressive Web App (PWA)", detail: "Service worker, offline caching, push notifications native", priority: "Cao" },
-  { phase: "Q1 2026", item: "Trang báo cáo admin toàn diện", detail: "Thống kê real-time, xuất Excel, phân tích xu hướng", priority: "Cao" },
-  { phase: "Q2 2026", item: "Angel AI Mobile App", detail: "React Native hoặc Capacitor, hỗ trợ iOS & Android", priority: "Cao" },
-  { phase: "Q2 2026", item: "FUN Money Mainnet", detail: "Triển khai smart contract FUN lên BSC Mainnet, audit bảo mật", priority: "Cao" },
-  { phase: "Q2 2026", item: "Marketplace nội bộ", detail: "Mua/bán dịch vụ, NFT, khóa học bằng CAMLY và FUN trong hệ sinh thái", priority: "Trung bình" },
-  { phase: "Q2 2026", item: "AI Agent tự động", detail: "Angel AI tự thực hiện tác vụ phức tạp: lên lịch, nhắc nhở, tóm tắt", priority: "Trung bình" },
-  { phase: "Q3 2026", item: "DEX tích hợp", detail: "Sàn giao dịch phi tập trung cho FUN/CAMLY trên PancakeSwap", priority: "Trung bình" },
-  { phase: "Q3 2026", item: "Governance (DAO)", detail: "Người nắm FUN bỏ phiếu quyết định hướng phát triển Angel AI", priority: "Trung bình" },
-  { phase: "Q3 2026", item: "Multi-chain support", detail: "Hỗ trợ Ethereum, Polygon, Arbitrum ngoài BSC", priority: "Thấp" },
-  { phase: "Q4 2026", item: "API mở cho developer", detail: "RESTful & GraphQL API, SDK, tài liệu cho developer bên ngoài tích hợp", priority: "Trung bình" },
-  { phase: "Q4 2026", item: "AI Voice Assistant", detail: "Trợ lý giọng nói real-time, đàm thoại tự nhiên với Angel AI", priority: "Trung bình" },
-  { phase: "Q4 2026", item: "Hệ sinh thái FUN Worlds", detail: "FUN Farm, FUN Play, FUN Earth, FUN Life — các ứng dụng con trong hệ sinh thái", priority: "Thấp" },
-  { phase: "2027+", item: "Angel AI Enterprise", detail: "Phiên bản doanh nghiệp: quản lý nhân sự, đào tạo nội bộ, chatbot tùy chỉnh", priority: "Thấp" },
-  { phase: "2027+", item: "Metaverse Integration", detail: "Avatar 3D, không gian ảo cộng đồng, sự kiện metaverse", priority: "Thấp" },
-];
 
 export default ReportExportButton;
