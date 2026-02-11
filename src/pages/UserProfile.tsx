@@ -639,8 +639,8 @@ const UserProfile = () => {
 
           {/* Profile Info Section */}
           <div className="px-4 pb-4">
-            <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-[34px]">
-              {/* Avatar */}
+            {/* Avatar - overlapping cover */}
+            <div className="flex items-end -mt-[85px]">
               <div className="relative group shrink-0">
                 <div 
                   className="cursor-pointer"
@@ -652,7 +652,6 @@ const UserProfile = () => {
                       {profile?.display_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Avatar hover overlay */}
                   {profile?.avatar_url && (
                     <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <Maximize2 className="w-6 h-6 text-white drop-shadow-lg" />
@@ -668,44 +667,45 @@ const UserProfile = () => {
                   </Link>
                 )}
               </div>
+            </div>
 
-              {/* Name and Stats - aligned to bottom of avatar */}
-              <div className="flex-1 pb-1">
-                <h1 className="text-[32px] font-bold text-gray-900 leading-tight">
-                  {profile?.display_name || "Người dùng ẩn danh"}
-                </h1>
-                {profile?.handle && (
-                  <p className="text-base font-semibold text-primary mt-0.5">
-                    @{profile.handle}
-                    <span className="text-xs text-muted-foreground font-normal ml-2">
-                      angel.fun.rich/{profile.handle}
-                    </span>
+            {/* Name and Info - below avatar, starting at ~1/5 from bottom of avatar */}
+            <div className="-mt-[34px] pl-1">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h1 className="text-[32px] font-bold text-gray-900 leading-tight">
+                    {profile?.display_name || "Người dùng ẩn danh"}
+                  </h1>
+                  {profile?.handle && (
+                    <p className="text-base font-semibold text-primary mt-0.5">
+                      @{profile.handle}
+                      <span className="text-xs text-muted-foreground font-normal ml-2">
+                        angel.fun.rich/{profile.handle}
+                      </span>
+                    </p>
+                  )}
+                  <p className="text-[15px] text-gray-500 font-medium mt-1">
+                    {stats.friends} bạn bè
                   </p>
-                )}
-                <p className="text-[15px] text-gray-500 font-medium mt-1">
-                  {stats.friends} bạn bè
-                </p>
-                {/* Wallet Address */}
-                {userId && <WalletAddressDisplay userId={userId} className="mt-2" />}
-                
-                {/* Friend avatars preview */}
-                {friends.length > 0 && (
-                  <div className="flex -space-x-2 mt-2">
-                    {friends.slice(0, 8).map((friend, index) => (
-                      <Link key={friend.user_id} to={`/user/${friend.user_id}`}>
-                        <Avatar className="w-8 h-8 border-2 border-white hover:z-10 transition-transform hover:scale-110">
-                          <AvatarImage src={friend.avatar_url || angelAvatar} />
-                          <AvatarFallback className="text-xs">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
-                        </Avatar>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
+                  {userId && <WalletAddressDisplay userId={userId} className="mt-2" />}
+                  
+                  {friends.length > 0 && (
+                    <div className="flex -space-x-2 mt-2">
+                      {friends.slice(0, 8).map((friend) => (
+                        <Link key={friend.user_id} to={`/user/${friend.user_id}`}>
+                          <Avatar className="w-8 h-8 border-2 border-white hover:z-10 transition-transform hover:scale-110">
+                            <AvatarImage src={friend.avatar_url || angelAvatar} />
+                            <AvatarFallback className="text-xs">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
+                          </Avatar>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              {/* Action Buttons */}
-              <div className="pb-1">
-                {renderActionButtons()}
+                <div className="pt-2">
+                  {renderActionButtons()}
+                </div>
               </div>
             </div>
 
