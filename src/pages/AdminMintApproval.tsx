@@ -205,8 +205,24 @@ export default function AdminMintApproval() {
 
         await fetchRequests();
       } catch (error: any) {
-        console.error("Approve error:", error);
-        toast.error(error.message || "Lỗi khi phê duyệt", { id: `approve-${request.id}` });
+        const errMsg = String(error?.message || error || '');
+        const isAlreadyMinted = errMsg.includes('already minted') || errMsg.includes('"error":"Action already minted');
+        
+        if (isAlreadyMinted) {
+          let txInfo = '';
+          try {
+            const jsonMatch = errMsg.match(/\{.*\}/s);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              if (parsed.tx_hash) txInfo = ` TX: ${parsed.tx_hash.slice(0, 10)}...`;
+            }
+          } catch { /* ignore */ }
+          toast.info(`ℹ️ Action đã mint on-chain rồi.${txInfo}`, { id: `approve-${request.id}`, duration: 5000 });
+          await fetchRequests();
+        } else {
+          console.error("Approve error:", error);
+          toast.error(errMsg || "Lỗi khi phê duyệt", { id: `approve-${request.id}` });
+        }
       } finally {
         setProcessingIds((prev) => {
           const next = new Set(prev);
