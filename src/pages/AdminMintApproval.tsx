@@ -102,33 +102,51 @@ export default function AdminMintApproval() {
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("pplp_mint_requests")
-        .select(`
-          *,
-          pplp_actions!inner(action_type, platform_id, metadata)
-        `)
-        .order("created_at", { ascending: false })
-        .limit(1000);
+      // Paginated fetch to load ALL records (Supabase max 1000/query)
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let offset = 0;
+      let hasMore = true;
 
-      if (error) throw error;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("pplp_mint_requests")
+          .select(`
+            *,
+            pplp_actions!inner(action_type, platform_id, metadata)
+          `)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + PAGE_SIZE - 1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          allData = allData.concat(data);
+          offset += PAGE_SIZE;
+          hasMore = data.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
 
       // Fetch profiles separately for display names
-      const actorIds = [...new Set((data || []).map((r: any) => r.actor_id))];
+      const actorIds = [...new Set(allData.map((r: any) => r.actor_id))];
       let profilesMap: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
 
-      if (actorIds.length > 0) {
+      // Supabase .in() also has limits, batch in chunks of 200
+      for (let i = 0; i < actorIds.length; i += 200) {
+        const chunk = actorIds.slice(i, i + 200);
         const { data: profiles } = await supabase
           .from("profiles")
           .select("user_id, display_name, avatar_url")
-          .in("user_id", actorIds);
+          .in("user_id", chunk);
 
         (profiles || []).forEach((p: any) => {
           profilesMap[p.user_id] = { display_name: p.display_name, avatar_url: p.avatar_url };
         });
       }
 
-      const enriched = (data || []).map((r: any) => ({
+      const enriched = allData.map((r: any) => ({
         ...r,
         profiles: profilesMap[r.actor_id] || { display_name: null, avatar_url: null },
       }));
