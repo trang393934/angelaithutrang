@@ -53,7 +53,7 @@ export interface TransferResult {
   message: string;
 }
 
-export type TokenType = "camly" | "fun" | "usdt" | "usdc";
+export type TokenType = "camly" | "fun" | "usdt" | "usdc" | "bnb";
 
 export function useWeb3Transfer() {
   const { isConnected, address, connect, hasWallet } = useWeb3Wallet();
@@ -62,6 +62,7 @@ export function useWeb3Transfer() {
   const [funMoneyBalance, setFunMoneyBalance] = useState<string>("0");
   const [usdtBalance, setUsdtBalance] = useState<string>("0");
   const [usdcBalance, setUsdcBalance] = useState<string>("0");
+  const [bnbBalance, setBnbBalance] = useState<string>("0");
 
   // Switch wallet to BSC Mainnet for CAMLY transfers
   const switchToMainnet = useCallback(async (): Promise<boolean> => {
@@ -193,6 +194,25 @@ export function useWeb3Transfer() {
     }
   }, [isConnected, address, hasWallet]);
 
+  // Fetch BNB native balance on BSC Mainnet
+  const fetchBnbBalance = useCallback(async () => {
+    if (!isConnected || !address || !hasWallet) {
+      setBnbBalance("0");
+      return "0";
+    }
+    try {
+      const mainnetProvider = new ethers.JsonRpcProvider(BSC_MAINNET_RPC);
+      const balance = await mainnetProvider.getBalance(address);
+      const formatted = ethers.formatEther(balance);
+      setBnbBalance(formatted);
+      return formatted;
+    } catch (error) {
+      console.error("Error fetching BNB balance:", error);
+      setBnbBalance("0");
+      return "0";
+    }
+  }, [isConnected, address, hasWallet]);
+
   // Fetch FUN Money balance using dedicated BSC Testnet provider
   const fetchFunMoneyBalance = useCallback(async () => {
     if (!isConnected || !address || !hasWallet) {
@@ -279,12 +299,81 @@ export function useWeb3Transfer() {
     return { success: true, address: liveAddress };
   }, [hasWallet, isConnected, safeConnect]);
 
-  // Generic token transfer function
+  // Transfer native BNB (not ERC20)
+  const transferBnb = useCallback(async (toAddress: string, amount: number): Promise<TransferResult> => {
+    const preflight = await preflightCheck();
+    if (!preflight.success || !preflight.address) {
+      return { success: false, message: preflight.message || "Lỗi kết nối ví" };
+    }
+
+    if (!ethers.isAddress(toAddress)) {
+      return { success: false, message: "Địa chỉ ví không hợp lệ" };
+    }
+    if (amount <= 0) {
+      return { success: false, message: "Số lượng phải lớn hơn 0" };
+    }
+
+    // Switch to BSC Mainnet
+    try {
+      const ethereum = (window as any).ethereum;
+      const currentChainId = await ethereum.request({ method: "eth_chainId" }).catch(() => "0x0");
+      if (parseInt(currentChainId, 16) !== BSC_MAINNET_CHAIN_ID) {
+        const switched = await switchToMainnet();
+        if (!switched) {
+          return { success: false, message: "Vui lòng chuyển sang mạng BSC Mainnet để chuyển BNB" };
+        }
+      }
+    } catch {
+      return { success: false, message: "Lỗi kiểm tra mạng." };
+    }
+
+    setIsTransferring(true);
+    try {
+      const ethereum = (window as any).ethereum;
+      const provider = new ethers.BrowserProvider(ethereum);
+      const signer = await provider.getSigner();
+
+      const amountInWei = ethers.parseEther(amount.toString());
+
+      // Check balance
+      const balance = await provider.getBalance(preflight.address);
+      if (balance < amountInWei) {
+        setIsTransferring(false);
+        return { success: false, message: `Số dư BNB không đủ. Hiện có: ${ethers.formatEther(balance)} BNB` };
+      }
+
+      const tx = await signer.sendTransaction({
+        to: toAddress,
+        value: amountInWei,
+      });
+      const receipt = await tx.wait();
+
+      setIsTransferring(false);
+      return {
+        success: true,
+        txHash: receipt?.hash,
+        message: `Chuyển thành công ${amount} BNB!`,
+      };
+    } catch (error: any) {
+      console.error("BNB Transfer error:", error);
+      setIsTransferring(false);
+      if (error.code === 4001 || error.code === "ACTION_REJECTED") {
+        return { success: false, message: "Giao dịch đã bị hủy" };
+      }
+      return { success: false, message: error.reason || error.message || "Lỗi khi chuyển BNB" };
+    }
+  }, [preflightCheck, switchToMainnet]);
+
+  // Generic token transfer function (ERC20 only)
   const transferToken = useCallback(async (
     toAddress: string,
     amount: number,
     tokenType: TokenType
   ): Promise<TransferResult> => {
+    if (tokenType === "bnb") {
+      return transferBnb(toAddress, amount);
+    }
+
     const preflight = await preflightCheck();
     if (!preflight.success || !preflight.address) {
       return { success: false, message: preflight.message || "Lỗi kết nối ví" };
@@ -389,7 +478,7 @@ export function useWeb3Transfer() {
         message: error.reason || error.message || "Lỗi khi chuyển token" 
       };
     }
-  }, [preflightCheck, switchToMainnet, switchToTestnet]);
+  }, [preflightCheck, switchToMainnet, switchToTestnet, transferBnb]);
 
   // Transfer CAMLY token (BSC Mainnet)
   const transferCamly = useCallback(async (toAddress: string, amount: number): Promise<TransferResult> => {
@@ -422,14 +511,17 @@ export function useWeb3Transfer() {
     funMoneyBalance,
     usdtBalance,
     usdcBalance,
+    bnbBalance,
     fetchCamlyBalance,
     fetchFunMoneyBalance,
     fetchUsdtBalance,
     fetchUsdcBalance,
+    fetchBnbBalance,
     transferCamly,
     transferFunMoney,
     transferUsdt,
     transferUsdc,
+    transferBnb,
     transferToken,
     donateCamlyToProject,
     isConnected,

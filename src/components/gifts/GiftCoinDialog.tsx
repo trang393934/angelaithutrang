@@ -9,8 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gift, Search, Loader2, Sparkles, User, Wallet, Coins } from "lucide-react";
+import { Gift, Search, Loader2, Sparkles, User, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoinGifts } from "@/hooks/useCoinGifts";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
@@ -22,9 +21,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Heart } from "lucide-react";
 import { TipCelebrationReceipt } from "./TipCelebrationReceipt";
 import { CryptoTransferTab } from "./CryptoTransferTab";
+import { TokenSelector, type SelectedToken } from "./TokenSelector";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
-
 import type { TipReceiptData } from "./TipCelebrationReceipt";
 
 interface GiftCoinDialogProps {
@@ -56,14 +55,17 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
     funMoneyBalance,
     usdtBalance,
     usdcBalance,
+    bnbBalance,
     fetchCamlyBalance,
     fetchFunMoneyBalance,
     fetchUsdtBalance,
     fetchUsdcBalance,
+    fetchBnbBalance,
     transferCamly,
     transferFunMoney,
     transferUsdt,
     transferUsdc,
+    transferBnb,
     isConnected,
     address,
     hasWallet,
@@ -71,7 +73,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
   } = useWeb3Transfer();
 
   const [selfGiftWarning, setSelfGiftWarning] = useState(false);
-  const [activeTab, setActiveTab] = useState<"internal" | "camly_web3" | "fun_money" | "usdt" | "usdc">("internal");
+  const [activeTab, setActiveTab] = useState<SelectedToken>("internal");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -229,6 +231,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
       FUN: "fun_money",
       USDT: "usdt",
       USDC: "usdc",
+      BNB: "bnb",
     };
     const resolvedTokenType = tokenTypeMap[tokenSymbol] || "camly_web3";
     const resolvedExplorer = tokenSymbol === "FUN" ? "https://testnet.bscscan.com" : "https://bscscan.com";
@@ -285,272 +288,196 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
             </DialogTitle>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 h-auto">
-              <TabsTrigger value="internal" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 py-2">
-                <img src={camlyCoinLogo} alt="" className="w-3.5 h-3.5 rounded-full" />
-                <span>Camly</span>
-              </TabsTrigger>
-              <TabsTrigger value="camly_web3" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 py-2">
-                <Wallet className="w-3 h-3" />
-                <span>CAMLY</span>
-              </TabsTrigger>
-              <TabsTrigger value="fun_money" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 py-2">
-                <img src={funMoneyLogo} alt="" className="w-3.5 h-3.5" />
-                <span>FUN</span>
-              </TabsTrigger>
-              <TabsTrigger value="usdt" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 py-2">
-                <Coins className="w-3 h-3 text-green-600" />
-                <span>USDT</span>
-              </TabsTrigger>
-              <TabsTrigger value="usdc" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 py-2">
-                <Coins className="w-3 h-3 text-blue-600" />
-                <span>USDC</span>
-              </TabsTrigger>
-            </TabsList>
+          {/* Token Selector Dropdown */}
+          <div className="space-y-4">
+            <TokenSelector
+              selected={activeTab}
+              onSelect={setActiveTab}
+              balanceLabel={
+                activeTab === "internal" ? `Số dư: ${balance.toLocaleString()} CAMLY`
+                : activeTab === "camly_web3" ? `Số dư: ${Number(camlyCoinBalance).toLocaleString()} CAMLY`
+                : activeTab === "fun_money" ? `Số dư: ${Number(funMoneyBalance).toLocaleString()} FUN`
+                : activeTab === "bnb" ? `Số dư: ${Number(bnbBalance).toLocaleString()} BNB`
+                : activeTab === "usdt" ? `Số dư: ${Number(usdtBalance).toLocaleString()} USDT`
+                : activeTab === "usdc" ? `Số dư: ${Number(usdcBalance).toLocaleString()} USDC`
+                : undefined
+              }
+            />
 
-            {/* Internal Camly Coin Tab */}
-            <TabsContent value="internal" className="space-y-4 mt-4">
-              {/* Current Balance */}
-              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg p-3 border border-amber-200">
-                <div className="text-sm text-amber-600">{t("gift.yourBalance")}</div>
-                <div className="text-xl font-bold text-amber-700">
-                  {balance.toLocaleString()} Camly Coin
-                </div>
-              </div>
-
-              {/* User Search / Selection */}
-              {!selectedUser ? (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t("gift.searchUser")}</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder={t("gift.searchPlaceholder")}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                    {isSearching && (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" />
+            {/* Internal Camly Coin */}
+            {activeTab === "internal" && (
+              <div className="space-y-4">
+                {/* User Search / Selection */}
+                {!selectedUser ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{t("gift.searchUser")}</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder={t("gift.searchPlaceholder")}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
+                      {isSearching && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" />
+                      )}
+                    </div>
+                    {searchResults.length > 0 && (
+                      <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
+                        {searchResults.map((searchUser) => (
+                          <button
+                            key={searchUser.user_id}
+                            className="w-full p-2 flex items-center gap-3 hover:bg-accent text-left"
+                            onClick={() => {
+                              setSelfGiftWarning(false);
+                              setSelectedUser(searchUser);
+                              setSearchQuery("");
+                              setSearchResults([]);
+                            }}
+                          >
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={searchUser.avatar_url || ""} />
+                              <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{searchUser.display_name || "Người dùng"}</span>
+                            {searchUser.user_id === user?.id && (
+                              <span className="text-xs text-muted-foreground ml-auto">(Bạn)</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
-
-                  {searchResults.length > 0 && (
-                    <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
-                      {searchResults.map((searchUser) => (
-                        <button
-                          key={searchUser.user_id}
-                          className="w-full p-2 flex items-center gap-3 hover:bg-accent text-left"
-                          onClick={() => {
-                            setSelfGiftWarning(false);
-                            setSelectedUser(searchUser);
-                            setSearchQuery("");
-                            setSearchResults([]);
-                          }}
-                        >
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={searchUser.avatar_url || ""} />
-                            <AvatarFallback>
-                              <User className="w-4 h-4" />
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{searchUser.display_name || "Người dùng"}</span>
-                          {searchUser.user_id === user?.id && (
-                            <span className="text-xs text-muted-foreground ml-auto">(Bạn)</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t("gift.recipient")}</label>
-                  <div className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg">
-                    <Avatar className="h-10 w-10 ring-2 ring-amber-300">
-                      <AvatarImage src={selectedUser.avatar_url || ""} />
-                      <AvatarFallback>
-                        <User className="w-5 h-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="font-medium">{selectedUser.display_name || "Người dùng"}</div>
-                    </div>
-                    {!preselectedUser && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedUser(null)}
-                      >
-                        {t("common.change")}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Self-Gift Warning */}
-              <AnimatePresence>
-                {selfGiftWarning && selectedUser?.user_id === user?.id && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-lg p-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
-                        <Heart className="w-5 h-5 text-rose-500" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-rose-700 mb-1">
-                          Yêu thương bản thân là tuyệt vời! 💕
-                        </p>
-                        <p className="text-sm text-rose-600">
-                          Nhưng món quà sẽ ý nghĩa hơn khi chia sẻ với người khác. Hãy chọn một người bạn để lan tỏa yêu thương nhé!
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-3 w-full border-rose-200 text-rose-600 hover:bg-rose-50"
-                      onClick={() => {
-                        setSelfGiftWarning(false);
-                        setSelectedUser(null);
-                      }}
-                    >
-                      Chọn người nhận khác
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Amount Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("gift.amount")}</label>
-                <Input
-                  type="number"
-                  placeholder="100"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  min={100}
-                  max={balance}
-                />
-                <p className="text-xs text-muted-foreground">{t("gift.minAmountNote")}</p>
-              </div>
-
-              {/* Message */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("gift.message")}</label>
-                <Textarea
-                  placeholder={t("gift.messagePlaceholder")}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={2}
-                />
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                onClick={handleSendGift}
-                disabled={!selectedUser || !amount || isLoading || Number(amount) < 100}
-                className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : (
-                  <Gift className="w-4 h-4 mr-2" />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{t("gift.recipient")}</label>
+                    <div className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg">
+                      <Avatar className="h-10 w-10 ring-2 ring-amber-300">
+                        <AvatarImage src={selectedUser.avatar_url || ""} />
+                        <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="font-medium">{selectedUser.display_name || "Người dùng"}</div>
+                      </div>
+                      {!preselectedUser && (
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>
+                          {t("common.change")}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 )}
-                {t("gift.confirm")}
-              </Button>
-            </TabsContent>
 
-            {/* CAMLY Web3 Transfer Tab */}
-            <TabsContent value="camly_web3" className="mt-4">
-              <CryptoTransferTab
-                tokenType="camly"
-                tokenSymbol="CAMLY"
-                tokenBalance={camlyCoinBalance}
-                isConnected={isConnected}
-                isTransferring={isTransferring}
-                address={address}
-                hasWallet={hasWallet}
-                explorerUrl="https://bscscan.com"
-                accentColor="orange"
-                onConnect={connect}
-                onTransfer={transferCamly}
-                onFetchBalance={fetchCamlyBalance}
-                onSuccess={(result, recipientUser, targetAddress, transferAmount, msg) =>
-                  handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "CAMLY", msg)
-                }
-              />
-            </TabsContent>
+                {/* Self-Gift Warning */}
+                <AnimatePresence>
+                  {selfGiftWarning && selectedUser?.user_id === user?.id && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-lg p-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
+                          <Heart className="w-5 h-5 text-rose-500" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-rose-700 mb-1">Yêu thương bản thân là tuyệt vời! 💕</p>
+                          <p className="text-sm text-rose-600">Nhưng món quà sẽ ý nghĩa hơn khi chia sẻ với người khác.</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 w-full border-rose-200 text-rose-600 hover:bg-rose-50"
+                        onClick={() => { setSelfGiftWarning(false); setSelectedUser(null); }}
+                      >
+                        Chọn người nhận khác
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-            {/* FUN Money Transfer Tab */}
-            <TabsContent value="fun_money" className="mt-4">
-              <CryptoTransferTab
-                tokenType="fun"
-                tokenSymbol="FUN"
-                tokenBalance={funMoneyBalance}
-                isConnected={isConnected}
-                isTransferring={isTransferring}
-                address={address}
-                hasWallet={hasWallet}
-                explorerUrl="https://testnet.bscscan.com"
-                accentColor="violet"
-                onConnect={connect}
-                onTransfer={transferFunMoney}
-                onFetchBalance={fetchFunMoneyBalance}
-                onSuccess={(result, recipientUser, targetAddress, transferAmount, msg) =>
-                  handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "FUN", msg)
-                }
-              />
-            </TabsContent>
+                {/* Amount Input */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t("gift.amount")}</label>
+                  <Input type="number" placeholder="100" value={amount} onChange={(e) => setAmount(e.target.value)} min={100} max={balance} />
+                  <p className="text-xs text-muted-foreground">{t("gift.minAmountNote")}</p>
+                </div>
 
-            {/* USDT Transfer Tab */}
-            <TabsContent value="usdt" className="mt-4">
-              <CryptoTransferTab
-                tokenType="usdt"
-                tokenSymbol="USDT"
-                tokenBalance={usdtBalance}
-                isConnected={isConnected}
-                isTransferring={isTransferring}
-                address={address}
-                hasWallet={hasWallet}
-                explorerUrl="https://bscscan.com"
-                accentColor="orange"
-                onConnect={connect}
-                onTransfer={transferUsdt}
-                onFetchBalance={fetchUsdtBalance}
-                onSuccess={(result, recipientUser, targetAddress, transferAmount, msg) =>
-                  handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "USDT", msg)
-                }
-              />
-            </TabsContent>
+                {/* Message */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t("gift.message")}</label>
+                  <Textarea placeholder={t("gift.messagePlaceholder")} value={message} onChange={(e) => setMessage(e.target.value)} rows={2} />
+                </div>
 
-            {/* USDC Transfer Tab */}
-            <TabsContent value="usdc" className="mt-4">
+                <Button
+                  onClick={handleSendGift}
+                  disabled={!selectedUser || !amount || isLoading || Number(amount) < 100}
+                  className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600"
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Gift className="w-4 h-4 mr-2" />}
+                  {t("gift.confirm")}
+                </Button>
+              </div>
+            )}
+
+            {/* CAMLY Web3 */}
+            {activeTab === "camly_web3" && (
               <CryptoTransferTab
-                tokenType="usdc"
-                tokenSymbol="USDC"
-                tokenBalance={usdcBalance}
-                isConnected={isConnected}
-                isTransferring={isTransferring}
-                address={address}
-                hasWallet={hasWallet}
-                explorerUrl="https://bscscan.com"
-                accentColor="violet"
-                onConnect={connect}
-                onTransfer={transferUsdc}
-                onFetchBalance={fetchUsdcBalance}
-                onSuccess={(result, recipientUser, targetAddress, transferAmount, msg) =>
-                  handleCryptoSuccess(result, recipientUser, targetAddress, transferAmount, "USDC", msg)
-                }
+                tokenType="camly" tokenSymbol="CAMLY" tokenBalance={camlyCoinBalance}
+                isConnected={isConnected} isTransferring={isTransferring} address={address}
+                hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="orange"
+                onConnect={connect} onTransfer={transferCamly} onFetchBalance={fetchCamlyBalance}
+                onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "CAMLY", msg)}
               />
-            </TabsContent>
-          </Tabs>
+            )}
+
+            {/* FUN Money */}
+            {activeTab === "fun_money" && (
+              <CryptoTransferTab
+                tokenType="fun" tokenSymbol="FUN" tokenBalance={funMoneyBalance}
+                isConnected={isConnected} isTransferring={isTransferring} address={address}
+                hasWallet={hasWallet} explorerUrl="https://testnet.bscscan.com" accentColor="violet"
+                onConnect={connect} onTransfer={transferFunMoney} onFetchBalance={fetchFunMoneyBalance}
+                onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "FUN", msg)}
+              />
+            )}
+
+            {/* BNB */}
+            {activeTab === "bnb" && (
+              <CryptoTransferTab
+                tokenType="bnb" tokenSymbol="BNB" tokenBalance={bnbBalance}
+                isConnected={isConnected} isTransferring={isTransferring} address={address}
+                hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="orange"
+                onConnect={connect} onTransfer={transferBnb} onFetchBalance={fetchBnbBalance}
+                onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "BNB", msg)}
+              />
+            )}
+
+            {/* USDT */}
+            {activeTab === "usdt" && (
+              <CryptoTransferTab
+                tokenType="usdt" tokenSymbol="USDT" tokenBalance={usdtBalance}
+                isConnected={isConnected} isTransferring={isTransferring} address={address}
+                hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="orange"
+                onConnect={connect} onTransfer={transferUsdt} onFetchBalance={fetchUsdtBalance}
+                onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "USDT", msg)}
+              />
+            )}
+
+            {/* USDC */}
+            {activeTab === "usdc" && (
+              <CryptoTransferTab
+                tokenType="usdc" tokenSymbol="USDC" tokenBalance={usdcBalance}
+                isConnected={isConnected} isTransferring={isTransferring} address={address}
+                hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="violet"
+                onConnect={connect} onTransfer={transferUsdc} onFetchBalance={fetchUsdcBalance}
+                onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "USDC", msg)}
+              />
+            )}
+          </div>
 
           {/* Confetti Effect */}
           <AnimatePresence>
