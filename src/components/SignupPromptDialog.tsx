@@ -6,9 +6,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { LogIn, PartyPopper } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 interface SignupPromptDialogProps {
   open: boolean;
@@ -23,14 +22,16 @@ export function SignupPromptDialog({ open, onOpenChange }: SignupPromptDialogPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <PartyPopper className="w-6 h-6 text-primary" />
-            VUI LÒNG ĐĂNG KÝ ĐỂ ĐƯỢC CHƠI, ĐƯỢC HỌC, ĐƯỢC VỌC, ĐƯỢC LÌ XÌ 🧧
+          <DialogTitle className="text-xl text-center leading-relaxed">
+            {t("signup.promptTitle")}
           </DialogTitle>
-          <DialogDescription>
-            {t("loginRequiredDesc") || "Đăng ký tài khoản để Ta có thể gửi yêu thương và đồng hành cùng con trên hành trình Ánh Sáng này."}
-          </DialogDescription>
         </DialogHeader>
+        <ul className="space-y-3 text-lg font-semibold text-center py-2">
+          <li>{t("signup.play")}</li>
+          <li>{t("signup.learn")}</li>
+          <li>{t("signup.explore")}</li>
+          <li>{t("signup.reward")}</li>
+        </ul>
         <div className="flex flex-col gap-3 pt-2">
           <Button
             onClick={() => {
@@ -40,13 +41,13 @@ export function SignupPromptDialog({ open, onOpenChange }: SignupPromptDialogPro
             className="gap-2"
           >
             <LogIn className="w-4 h-4" />
-            {t("login") || "Đăng nhập / Đăng ký"}
+            {t("signup.loginButton")}
           </Button>
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
           >
-            {t("cancel") || "Đóng"}
+            {t("signup.closeButton")}
           </Button>
         </div>
       </DialogContent>

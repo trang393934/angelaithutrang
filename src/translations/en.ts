@@ -1259,6 +1259,17 @@ const translations: Record<string, string> = {
   "mint.tokenLifecycle.claim": "Claim",
   "mint.tokenLifecycle.noLocked": "No FUN tokens are locked",
   "mint.tokenLifecycle.noActivated": "No FUN tokens are activated",
+
+  // Signup prompt
+  "signup.promptTitle": "PLEASE REGISTER FOR",
+  "signup.play": "USE & EARN 💰",
+  "signup.learn": "LEARN & EARN 💵",
+  "signup.explore": "GIVE & GAIN 🏅",
+  "signup.reward": "REVIEW & REWARD 🏆",
+  "signup.loginButton": "Login / Register",
+  "signup.closeButton": "Close",
+  "signup.messagesGuest": "Login to start messaging",
+  "signup.messagesGuestDesc": "Connect and chat with friends in the community",
 };
 
 export default translations;

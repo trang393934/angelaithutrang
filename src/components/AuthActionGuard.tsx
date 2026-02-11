@@ -8,9 +8,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { LogIn, Sparkles } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 interface AuthActionGuardProps {
   children: ReactNode;
@@ -60,14 +59,19 @@ export function AuthActionGuard({ children, message }: AuthActionGuardProps) {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-              VUI LÒNG ĐĂNG KÝ ĐỂ ĐƯỢC CHƠI, ĐƯỢC HỌC, ĐƯỢC VỌC, ĐƯỢC LÌ XÌ 🧧
+            <DialogTitle className="text-xl text-center leading-relaxed">
+              {t("signup.promptTitle")}
             </DialogTitle>
-            <DialogDescription>
-              {message || t("loginRequiredDesc") || "Đăng ký tài khoản để Ta có thể gửi yêu thương và đồng hành cùng con trên hành trình Ánh Sáng này."}
-            </DialogDescription>
           </DialogHeader>
+          {message && (
+            <p className="text-sm text-center text-muted-foreground">{message}</p>
+          )}
+          <ul className="space-y-3 text-lg font-semibold text-center py-2">
+            <li>{t("signup.play")}</li>
+            <li>{t("signup.learn")}</li>
+            <li>{t("signup.explore")}</li>
+            <li>{t("signup.reward")}</li>
+          </ul>
           <div className="flex flex-col gap-3 pt-2">
             <Button
               onClick={() => {
@@ -77,13 +81,13 @@ export function AuthActionGuard({ children, message }: AuthActionGuardProps) {
               className="gap-2"
             >
               <LogIn className="w-4 h-4" />
-              {t("login") || "Đăng nhập"}
+              {t("signup.loginButton")}
             </Button>
             <Button
               variant="ghost"
               onClick={() => setShowDialog(false)}
             >
-              {t("cancel") || "Đóng"}
+              {t("signup.closeButton")}
             </Button>
           </div>
         </DialogContent>

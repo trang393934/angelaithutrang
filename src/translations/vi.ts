@@ -1287,6 +1287,17 @@ const translations: Record<string, string> = {
   "mint.tokenLifecycle.claim": "Claim",
   "mint.tokenLifecycle.noLocked": "Không có FUN nào đang locked",
   "mint.tokenLifecycle.noActivated": "Không có FUN nào đang activated",
+
+  // Signup prompt
+  "signup.promptTitle": "VUI LÒNG ĐĂNG KÝ ĐỂ",
+  "signup.play": "ĐƯỢC CHƠI 🌼",
+  "signup.learn": "ĐƯỢC HỌC 📚",
+  "signup.explore": "ĐƯỢC VỌC 📲",
+  "signup.reward": "ĐƯỢC LÌ XÌ 🧧",
+  "signup.loginButton": "Đăng nhập / Đăng ký",
+  "signup.closeButton": "Đóng",
+  "signup.messagesGuest": "Đăng nhập để bắt đầu nhắn tin",
+  "signup.messagesGuestDesc": "Kết nối và trò chuyện với bạn bè trong cộng đồng",
 };
 
 export default translations;
