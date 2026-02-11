@@ -24,7 +24,6 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
-import { LightGate } from "@/components/LightGate";
 import { Loader2 } from "lucide-react";
 
 const Messages = () => {
@@ -137,7 +136,7 @@ const Messages = () => {
   // Conversation list view (no userId selected)
   if (!conversationUserId) {
     return (
-      <LightGate>
+        <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
         <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
           <header className="sticky top-0 z-50 bg-background-pure/95 backdrop-blur-lg border-b border-primary-pale shadow-sm">
             <div className="container mx-auto px-4 py-4">
@@ -272,7 +271,7 @@ const Messages = () => {
             )}
           </div>
         </div>
-      </LightGate>
+        </div>
     );
   }
 
@@ -280,8 +279,8 @@ const Messages = () => {
   const isOnline = isUserOnline(conversationUserId);
   const lastSeen = getLastSeen(conversationUserId);
 
-  return (
-    <LightGate>
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-pale/30 via-background to-background flex flex-col">
       <div className="min-h-screen bg-gradient-to-b from-primary-pale/30 via-background to-background flex flex-col">
         <ConversationHeader
           partnerId={conversationUserId}
@@ -346,7 +345,7 @@ const Messages = () => {
           onCancelReply={() => setReplyTo(null)}
         />
       </div>
-    </LightGate>
+    </div>
   );
 };
 

@@ -62,32 +62,6 @@ export default function Earn() {
     fetchTotalWithdrawn();
   }, [user]);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8 pt-28">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-              <img src={camlyCoinLogo} alt="Camly Coin" className="w-16 h-16 rounded-full" />
-            </div>
-            <h1 className="text-3xl font-bold">{t("earn.title")}</h1>
-            <p className="text-muted-foreground">
-              {t("earn.loginRequired")}
-            </p>
-            <Button asChild size="lg" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
-              <Link to="/auth">
-                {t("earn.signInNow")}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <>
     <div className="min-h-screen flex flex-col bg-background">

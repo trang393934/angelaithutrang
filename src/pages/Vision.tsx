@@ -50,36 +50,6 @@ export default function Vision() {
   const completedGoals = boards.reduce((sum, b) => sum + b.completed_goals_count, 0);
   const completedBoards = boards.filter(b => b.completed_goals_count === b.total_goals_count && b.total_goals_count > 0).length;
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
-              <Target className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold">Vision Board</h1>
-            <p className="text-muted-foreground">
-              Tạo bảng tầm nhìn để định hình mục tiêu và theo dõi tiến độ của bạn
-            </p>
-            <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400">
-              <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6 rounded-full" />
-              <span className="font-medium">Nhận 1000 Camly Coin khi tạo Vision Board đầu tiên!</span>
-            </div>
-            <Button asChild size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
-              <Link to="/auth">
-                Đăng nhập ngay
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />

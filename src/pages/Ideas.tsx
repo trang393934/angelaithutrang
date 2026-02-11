@@ -153,40 +153,6 @@ export default function Ideas() {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8 pt-28">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-              <Lightbulb className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold">Góp Ý Tưởng</h1>
-            <p className="text-muted-foreground">
-              Chia sẻ ý tưởng để cùng xây dựng Angel AI tốt hơn
-            </p>
-            <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400">
-              <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6 rounded-full" />
-              <span className="font-medium">Nhận 1000 Camly Coin khi ý tưởng được duyệt!</span>
-            </div>
-            <Button
-              asChild
-              size="lg"
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
-            >
-              <Link to="/auth">
-                Đăng nhập ngay
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="min-h-screen flex flex-col bg-background">
