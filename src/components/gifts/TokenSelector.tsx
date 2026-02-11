@@ -6,8 +6,9 @@ import funMoneyLogo from "@/assets/fun-money-logo.png";
 import bitcoinLogo from "@/assets/bitcoin-logo.png";
 
 const USDT_LOGO = "https://cryptologos.cc/logos/tether-usdt-logo.png?v=040";
+const BNB_LOGO = "https://cryptologos.cc/logos/bnb-bnb-logo.png?v=040";
 
-export type SelectedToken = "internal" | "camly_web3" | "fun_money" | "usdt" | "bitcoin";
+export type SelectedToken = "internal" | "camly_web3" | "fun_money" | "usdt" | "bnb" | "bitcoin";
 
 export interface TokenOption {
   id: SelectedToken;
@@ -22,6 +23,7 @@ export const TOKEN_OPTIONS: TokenOption[] = [
   { id: "internal", name: "Camly Coin", symbol: "CAMLY", logo: camlyCoinLogo, badge: "Nội bộ", badgeColor: "bg-amber-100 text-amber-700 border-amber-300" },
   { id: "camly_web3", name: "Camly Coin", symbol: "CAMLY", logo: camlyCoinLogo, badge: "Web3", badgeColor: "bg-orange-100 text-orange-700 border-orange-300" },
   { id: "fun_money", name: "FUN Money", symbol: "FUN", logo: funMoneyLogo, badge: "Testnet", badgeColor: "bg-violet-100 text-violet-700 border-violet-300" },
+  { id: "bnb", name: "Binance Coin", symbol: "BNB", logo: BNB_LOGO },
   { id: "usdt", name: "Tether USD", symbol: "USDT", logo: USDT_LOGO },
   { id: "bitcoin", name: "Bitcoin", symbol: "BTC", logo: bitcoinLogo },
 ];
