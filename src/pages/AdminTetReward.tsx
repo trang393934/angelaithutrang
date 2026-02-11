@@ -62,7 +62,7 @@ const AdminTetReward = () => {
   const [rtData, setRtData] = useState<any[]>([]);
   const [rtLoading, setRtLoading] = useState(false);
   const [rtSearch, setRtSearch] = useState("");
-  const [rtSortKey, setRtSortKey] = useState<"fun_money_received" | "camly_balance" | "total_withdrawn" | "light_score" | "display_name">("fun_money_received");
+  const [rtSortKey, setRtSortKey] = useState<"total_fun_scored" | "camly_balance" | "total_withdrawn" | "light_score" | "display_name">("total_fun_scored");
   const [rtSortAsc, setRtSortAsc] = useState(false);
   const [rtLastUpdated, setRtLastUpdated] = useState<Date | null>(null);
 
@@ -175,13 +175,46 @@ const AdminTetReward = () => {
     };
   }, []);
 
-  // ─── Real-time data fetching ────────────────────────────────
+  // ─── Real-time data fetching (total FUN = sum of scored+pass from pplp) ────
   const fetchRealTimeData = useCallback(async () => {
     setRtLoading(true);
     try {
-      const { data, error } = await supabase.rpc("get_admin_user_management_data");
-      if (error) throw error;
-      setRtData(data || []);
+      // 1. Fetch all pplp_actions with scores (decision=pass) to get real total FUN per user
+      let allActions: any[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("pplp_actions")
+          .select("actor_id, pplp_scores(final_reward, decision)")
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allActions = allActions.concat(data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+
+      // Aggregate total FUN per user (only decision=pass)
+      const funByUser = new Map<string, number>();
+      allActions.forEach((a: any) => {
+        const score = a.pplp_scores as { final_reward: number; decision: string } | null;
+        if (!score || score.decision !== "pass") return;
+        const prev = funByUser.get(a.actor_id) || 0;
+        funByUser.set(a.actor_id, prev + (score.final_reward || 0));
+      });
+
+      // 2. Fetch profile + camly data from RPC
+      const { data: mgmtData, error: mgmtError } = await supabase.rpc("get_admin_user_management_data");
+      if (mgmtError) throw mgmtError;
+
+      // 3. Merge: override fun_money_received with actual scored total
+      const merged = (mgmtData || []).map((u: any) => ({
+        ...u,
+        total_fun_scored: funByUser.get(u.user_id) || 0,
+      }));
+
+      setRtData(merged);
       setRtLastUpdated(new Date());
     } catch (err) {
       console.error("Lỗi tải dữ liệu real-time:", err);
@@ -198,8 +231,8 @@ const AdminTetReward = () => {
   }, [activeTab, fetchRealTimeData, rtData.length]);
 
   const rtOverview = useMemo(() => {
-    const eligible = rtData.filter((u: any) => Number(u.fun_money_received) > 0);
-    const totalFun = rtData.reduce((s: number, u: any) => s + Number(u.fun_money_received), 0);
+    const eligible = rtData.filter((u: any) => Number(u.total_fun_scored) > 0);
+    const totalFun = rtData.reduce((s: number, u: any) => s + Number(u.total_fun_scored), 0);
     const totalCamlyBalance = rtData.reduce((s: number, u: any) => s + Number(u.camly_balance), 0);
     const totalWithdrawn = rtData.reduce((s: number, u: any) => s + Number(u.total_withdrawn), 0);
     const avgLS = eligible.length > 0
@@ -214,7 +247,7 @@ const AdminTetReward = () => {
   };
 
   const rtFilteredRows = useMemo(() => {
-    let result = rtData.filter((u: any) => Number(u.fun_money_received) > 0);
+    let result = rtData.filter((u: any) => Number(u.total_fun_scored) > 0);
     if (rtSearch) {
       const q = rtSearch.toLowerCase();
       result = result.filter((u: any) => (u.display_name || "").toLowerCase().includes(q) || (u.handle || "").toLowerCase().includes(q));
@@ -249,8 +282,8 @@ const AdminTetReward = () => {
       rank: i + 1,
       name: u.display_name || "Ẩn danh",
       handle: u.handle || "",
-      fun: Number(u.fun_money_received),
-      camly: Number(u.fun_money_received) * CAMLY_MULTIPLIER,
+      fun: Number(u.total_fun_scored),
+      camly: Number(u.total_fun_scored) * CAMLY_MULTIPLIER,
       balance: Number(u.camly_balance),
       withdrawn: Number(u.total_withdrawn),
       ls: Number(u.light_score),
@@ -1140,12 +1173,12 @@ const AdminTetReward = () => {
                           </th>
                           <th
                             className="px-2 py-2 text-center font-semibold cursor-pointer hover:text-primary transition-colors"
-                            onClick={() => rtToggleSort("fun_money_received")}
+                            onClick={() => rtToggleSort("total_fun_scored")}
                           >
                             <span className="flex flex-col items-center gap-0.5 leading-tight">
                               <span className="text-base">💰</span>
                               <span className="text-[10px] leading-none">FUN</span>
-                              <ArrowUpDown className={`w-2 h-2 flex-shrink-0 ${rtSortKey === "fun_money_received" ? "text-primary" : "text-muted-foreground/30"}`} />
+                              <ArrowUpDown className={`w-2 h-2 flex-shrink-0 ${rtSortKey === "total_fun_scored" ? "text-primary" : "text-muted-foreground/30"}`} />
                             </span>
                           </th>
                           <th className="px-2 py-2 text-center font-semibold">
@@ -1195,7 +1228,7 @@ const AdminTetReward = () => {
                           </tr>
                         ) : (
                           rtFilteredRows.map((row: any, idx: number) => {
-                            const fun = Number(row.fun_money_received);
+                            const fun = Number(row.total_fun_scored);
                             const camlyConverted = fun * CAMLY_MULTIPLIER;
                             const balance = Number(row.camly_balance);
                             const withdrawn = Number(row.total_withdrawn);
