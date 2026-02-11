@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Loader2, User, Wallet, Sparkles, ExternalLink, MessageCircle } from "lucide-react";
+import { Search, Loader2, User, Wallet, Sparkles, ExternalLink, MessageCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -69,6 +69,67 @@ export function CryptoTransferTab({
   const [cryptoSearchResults, setCryptoSearchResults] = useState<UserSearchResult[]>([]);
   const [isCryptoSearching, setIsCryptoSearching] = useState(false);
   const [walletLookupError, setWalletLookupError] = useState<string | null>(null);
+
+  // Wallet address → user lookup
+  const [walletOwner, setWalletOwner] = useState<UserSearchResult | null>(null);
+  const [isLookingUpWallet, setIsLookingUpWallet] = useState(false);
+
+  // Look up wallet owner when address is pasted/typed (address mode only)
+  useEffect(() => {
+    if (cryptoRecipient !== "address") {
+      setWalletOwner(null);
+      return;
+    }
+    const addr = walletAddress.trim();
+    if (!addr || addr.length !== 42 || !addr.startsWith("0x")) {
+      setWalletOwner(null);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setIsLookingUpWallet(true);
+      setWalletOwner(null);
+      try {
+        const { data } = await supabase
+          .from("user_wallet_addresses")
+          .select("user_id")
+          .eq("wallet_address", addr)
+          .maybeSingle();
+
+        if (data?.user_id) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id, display_name, avatar_url")
+            .eq("user_id", data.user_id)
+            .maybeSingle();
+          if (profile) {
+            setWalletOwner(profile);
+          }
+        } else {
+          // Fallback: check coin_withdrawals
+          const { data: wd } = await supabase
+            .from("coin_withdrawals")
+            .select("user_id")
+            .eq("wallet_address", addr)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (wd?.user_id) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("user_id, display_name, avatar_url")
+              .eq("user_id", wd.user_id)
+              .maybeSingle();
+            if (profile) setWalletOwner(profile);
+          }
+        }
+      } catch (err) {
+        console.error("Wallet owner lookup error:", err);
+      } finally {
+        setIsLookingUpWallet(false);
+      }
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [walletAddress, cryptoRecipient]);
 
   useEffect(() => {
     if (isConnected) {
@@ -184,7 +245,8 @@ export function CryptoTransferTab({
         toast.success(result.message);
         onFetchBalance();
 
-        const receiverUserId = cryptoSelectedUser?.user_id || null;
+        const receiverUser = cryptoSelectedUser || walletOwner;
+        const receiverUserId = receiverUser?.user_id || null;
         const giftRecord = {
           sender_id: user!.id,
           receiver_id: receiverUserId || user!.id,
@@ -205,7 +267,7 @@ export function CryptoTransferTab({
           }, 2000);
         }
 
-        onSuccess(result, cryptoSelectedUser, walletAddress, numAmount, giftMessage || undefined);
+        onSuccess(result, receiverUser, walletAddress, numAmount, giftMessage || undefined);
       } else {
         toast.error(result.message);
       }
@@ -322,6 +384,26 @@ export function CryptoTransferTab({
             value={walletAddress}
             onChange={(e) => setWalletAddress(e.target.value)}
           />
+          {/* Wallet owner lookup result */}
+          {isLookingUpWallet && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground py-1.5">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Đang tìm chủ ví...
+            </div>
+          )}
+          {walletOwner && !isLookingUpWallet && (
+            <div className="flex items-center gap-3 p-2.5 bg-accent/60 rounded-lg border border-border/50">
+              <Avatar className="h-9 w-9 ring-2 ring-primary/30">
+                <AvatarImage src={walletOwner.avatar_url || ""} className="object-cover" />
+                <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm truncate">{walletOwner.display_name || "Người dùng"}</div>
+                <div className="text-xs text-muted-foreground">Chủ sở hữu ví này</div>
+              </div>
+              <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
