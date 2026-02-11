@@ -21,7 +21,7 @@ export interface TipReceiptData {
   message?: string | null;
   tx_hash?: string | null;
   created_at?: string;
-  tokenType?: "internal" | "camly_web3" | "fun_money";
+  tokenType?: "internal" | "camly_web3" | "fun_money" | "usdt" | "usdc";
   tokenSymbol?: string;
   explorerUrl?: string;
 }
@@ -32,12 +32,19 @@ interface TipCelebrationReceiptProps {
   data: TipReceiptData | null;
 }
 
+const USDT_LOGO = "https://cryptologos.cc/logos/tether-usdt-logo.png?v=040";
+const USDC_LOGO = "https://cryptologos.cc/logos/usd-coin-usdc-logo.png?v=040";
+
 function getTokenDisplay(tokenType?: string) {
   switch (tokenType) {
     case "fun_money":
       return { logo: funMoneyLogo, label: "FUN Money", explorer: "https://testnet.bscscan.com" };
     case "camly_web3":
       return { logo: camlyCoinLogo, label: "CAMLY", explorer: "https://bscscan.com" };
+    case "usdt":
+      return { logo: USDT_LOGO, label: "USDT", explorer: "https://bscscan.com" };
+    case "usdc":
+      return { logo: USDC_LOGO, label: "USDC", explorer: "https://bscscan.com" };
     default:
       return { logo: camlyCoinLogo, label: "Camly Coin", explorer: "" };
   }
