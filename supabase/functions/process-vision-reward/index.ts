@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
 
     // ============= PPLP Integration =============
     const pplpResult = await submitAndScorePPLPAction(supabaseAdmin, {
-      action_type: PPLP_ACTION_TYPES.DAILY_LOGIN, // Reuse closest type; VISION_CREATE not in types
+      action_type: PPLP_ACTION_TYPES.VISION_CREATE,
       actor_id: userId,
       target_id: visionBoardId,
       metadata: {
