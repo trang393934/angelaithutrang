@@ -1,59 +1,39 @@
 
 
-# Kế Hoạch Thiết Kế Lại Trang Lịch Sử Giao Dịch
+# Cập Nhật Logo Angel AI Toàn Hệ Thống
 
 ## Tổng Quan
+Thay thế logo Angel AI cũ bằng logo mới (hình thiên thần vàng kim) ở **tất cả** các vị trí hiển thị, đồng thời loại bỏ nền trắng để logo tràn viền.
 
-Thay thế toàn bộ nội dung trang `/activity-history` (hiện đang hiển thị lịch sử chat) thành trang **Lịch Sử Giao Dịch** công khai theo phong cách Angel AI Gold, tương tự giao diện trong hình tham khảo.
+## Thay Đổi
 
-## Nội Dung Trang Mới
+### 1. Thay thế file ảnh
+- Copy file `user-uploads://photo_2026-01-20_09-24-47.jpg` vào `src/assets/angel-avatar.png` (ghi đè)
+- Copy cùng file vào `src/assets/angel-ai-logo.png` (ghi đè)
+- Copy cùng file vào `src/assets/angel-ai-golden-logo.png` (ghi đè)
 
-### 1. Header trang
-- Biểu tượng globe + tiêu đề "Lịch Sử Giao Dịch"
-- Phụ đề: "Minh bạch - Truy vết Blockchain - Chuẩn Web3"
-- Nút "Làm mới" và "Xuất dữ liệu" góc phải
-- Màu sắc chuẩn Gold 11 (#b8860b, #daa520, #ffd700)
+Vì tất cả 54+ file đều import từ 3 file asset này, việc ghi đè sẽ tự động cập nhật logo ở mọi nơi mà không cần sửa import.
 
-### 2. Dải thống kê (5 thẻ)
-- Tổng giao dịch | Tổng giá trị | Hôm nay | Thành công | Chờ xử lý
-- Mỗi thẻ có icon riêng + viền gold nhẹ
+### 2. Xóa nền trắng ở các container logo
+Hai vị trí có wrapper `bg-white` cần sửa:
 
-### 3. Bộ lọc và Tìm kiếm
-- Thanh tìm kiếm: "Tìm theo tên, địa chỉ ví, mã giao dịch (tx hash)..."
-- 4 dropdown: Tất cả token | Tất cả loại | Tất cả thời gian | Tất cả trạng thái
-- Toggle: "Chỉ onchain"
+- **MainSidebar.tsx** (dòng 55-58): Xóa div `bg-white`, cho logo `object-cover` tràn viền trong vòng tròn gradient vàng
+- **Leaderboard.tsx** (dòng 73-76): Tương tự, xóa div `bg-white`, logo tràn viền
 
-### 4. Danh sách giao dịch
-- Lấy dữ liệu từ `coin_gifts` và `project_donations` (công khai, ai cũng xem được)
-- Mỗi dòng hiển thị: Avatar + tên người gửi -> Avatar + tên người nhận
-- Ví rút gọn + nút COPY + nút mở explorer
-- Badge loại (Tặng thưởng / Donate) + Badge Onchain
-- Thời gian + Chain (BSC) + TX Hash
-- Nút "Xem Card" cho giao dịch có celebration data
-- Số lượng + token (USDT, CAMLY, BNB...)
+### 3. Đảm bảo `object-cover` thay vì `object-contain`
+Các vị trí đang dùng `object-contain` sẽ đổi sang `object-cover` để logo tràn đầy khung tròn, không bị co lại:
+- MainSidebar.tsx
+- Leaderboard.tsx
 
 ## Chi Tiết Kỹ Thuật
 
-### File cần sửa:
-1. **`src/pages/ActivityHistory.tsx`** - Viết lại toàn bộ thành trang Lịch Sử Giao Dịch công khai. Tái sử dụng logic fetch từ `GiftTransactionHistory.tsx` và style từ `TransactionHistorySection.tsx`, nhưng thiết kế lại theo layout hình tham khảo với:
-   - Header có gradient gold
-   - 5 stat cards ngang
-   - Filter bar với dropdown và toggle
-   - Transaction list với avatar, wallet, badges, tx hash
+### Files cần sửa (code):
+1. `src/components/MainSidebar.tsx` - Xóa wrapper bg-white, đổi object-contain -> object-cover, tăng kích thước ảnh để tràn viền
+2. `src/components/Leaderboard.tsx` - Tương tự, xóa wrapper bg-white, đổi object-contain -> object-cover
 
-### Dữ liệu:
-- Query `coin_gifts` (gifts) và `project_donations` (donations) - giống `GiftTransactionHistory`
-- Lookup profiles để hiển thị avatar và tên
-- Thêm bộ lọc: token type, loại giao dịch, thời gian, trạng thái, chỉ onchain
-- Xuất CSV với tất cả dữ liệu đã lọc
+### Files chỉ cần ghi đè ảnh (không sửa code):
+- `src/assets/angel-avatar.png` -- dùng bởi ~26 files
+- `src/assets/angel-ai-logo.png` -- dùng bởi ~2 files  
+- `src/assets/angel-ai-golden-logo.png` -- dùng bởi ~5 files
 
-### Màu sắc Angel AI Gold:
-- Viền và accent: `#daa520`, `#b8860b`
-- Background nhẹ: `from-[#ffd700]/5`
-- Text đậm: `text-[#3D2800]`, `text-[#b8860b]`
-- Badge: gradient gold cho onchain, rose cho donate
-
-### Responsive:
-- Desktop: stat cards 5 cột, filter bar ngang
-- Mobile: stat cards 2-3 cột, filter xếp dọc
-
+Tổng cộng: 3 file ảnh ghi đè + 2 file code sửa nhỏ. Tất cả 54+ vị trí hiển thị logo sẽ được cập nhật tự động.
