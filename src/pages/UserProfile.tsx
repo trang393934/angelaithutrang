@@ -637,17 +637,18 @@ const UserProfile = () => {
             )}
           </div>
 
-          {/* Profile Info Section */}
+          {/* Profile Info Section — Facebook-style */}
           <div className="px-4 pb-4">
-            {/* Avatar - overlapping cover */}
-            <div className="flex items-end -mt-[85px]">
+            {/* Avatar + Name row */}
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-[75px] sm:-mt-[85px]">
+              {/* Avatar */}
               <div className="relative group shrink-0">
                 <div 
                   className="cursor-pointer"
                   onClick={() => profile?.avatar_url && setAvatarLightboxOpen(true)}
                 >
-                  <Avatar className="w-[168px] h-[168px] border-4 border-white shadow-xl ring-4 ring-white transition-transform duration-300 group-hover:scale-[1.02]">
-                    <AvatarImage src={profile?.avatar_url || angelAvatar} alt={profile?.display_name || "User"} />
+                  <Avatar className="w-[140px] h-[140px] sm:w-[168px] sm:h-[168px] border-[5px] border-white shadow-xl transition-transform duration-300 group-hover:scale-[1.02]">
+                    <AvatarImage src={profile?.avatar_url || angelAvatar} alt={profile?.display_name || "User"} className="object-cover" />
                     <AvatarFallback className="text-5xl bg-gradient-to-br from-primary to-primary/70 text-white">
                       {profile?.display_name?.charAt(0) || "U"}
                     </AvatarFallback>
@@ -667,58 +668,63 @@ const UserProfile = () => {
                   </Link>
                 )}
               </div>
-            </div>
 
-            {/* Name and Info - below avatar, starting at ~1/5 from bottom of avatar */}
-            <div className="-mt-[34px] pl-1">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h1 className="text-[32px] font-bold text-gray-900 leading-tight">
-                    {profile?.display_name || "Người dùng ẩn danh"}
-                  </h1>
-                  {profile?.handle && (
-                    <p className="text-base font-semibold text-primary mt-0.5">
-                      @{profile.handle}
-                      <span className="text-xs text-muted-foreground font-normal ml-2">
-                        angel.fun.rich/{profile.handle}
-                      </span>
+              {/* Name + Handle + Stats + Action buttons */}
+              <div className="flex-1 min-w-0 pb-2 sm:pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  {/* Left: Name, handle, friend count */}
+                  <div className="min-w-0">
+                    <h1 className="text-[28px] sm:text-[32px] font-bold text-foreground leading-tight truncate">
+                      {profile?.display_name || "Người dùng ẩn danh"}
+                    </h1>
+                    {profile?.handle && (
+                      <p className="text-sm sm:text-base font-semibold text-primary mt-0.5">
+                        @{profile.handle}
+                        <span className="text-xs text-muted-foreground font-normal ml-2">
+                          angel.fun.rich/{profile.handle}
+                        </span>
+                      </p>
+                    )}
+                    <p className="text-[15px] text-muted-foreground font-medium mt-1">
+                      {stats.friends} {t("userProfile.friends") || "bạn bè"}
                     </p>
-                  )}
-                  <p className="text-[15px] text-gray-500 font-medium mt-1">
-                    {stats.friends} bạn bè
-                  </p>
-                  {userId && <WalletAddressDisplay userId={userId} className="mt-2" />}
-                  
-                  {friends.length > 0 && (
-                    <div className="flex -space-x-2 mt-2">
-                      {friends.slice(0, 8).map((friend) => (
-                        <Link key={friend.user_id} to={`/user/${friend.user_id}`}>
-                          <Avatar className="w-8 h-8 border-2 border-white hover:z-10 transition-transform hover:scale-110">
-                            <AvatarImage src={friend.avatar_url || angelAvatar} />
-                            <AvatarFallback className="text-xs">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
-                          </Avatar>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
 
-                <div className="pt-2">
-                  {renderActionButtons()}
+                    {/* Wallet address */}
+                    {userId && <WalletAddressDisplay userId={userId} className="mt-1.5" />}
+
+                    {/* Mini friend avatars */}
+                    {friends.length > 0 && (
+                      <div className="flex -space-x-2 mt-2">
+                        {friends.slice(0, 8).map((friend) => (
+                          <Link key={friend.user_id} to={`/user/${friend.user_id}`}>
+                            <Avatar className="w-8 h-8 border-2 border-white hover:z-10 transition-transform hover:scale-110">
+                              <AvatarImage src={friend.avatar_url || angelAvatar} className="object-cover" />
+                              <AvatarFallback className="text-xs">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
+                            </Avatar>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: Action buttons */}
+                  <div className="shrink-0">
+                    {renderActionButtons()}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Admin ID display */}
+            {/* Admin ID */}
             {isAdmin && (
-              <p className="text-xs text-gray-400 mt-2 font-mono">
+              <p className="text-xs text-muted-foreground mt-2 font-mono">
                 User ID: {userId}
               </p>
             )}
 
             <Separator className="my-4" />
 
-            {/* Navigation Tabs */}
+            {/* Navigation Tabs — Facebook style */}
             <div className="flex gap-1 overflow-x-auto pb-1 -mb-[1px]">
               {[
                 { id: "posts", label: "Bài viết" },
@@ -731,7 +737,7 @@ const UserProfile = () => {
                   className={`px-4 py-4 text-[15px] font-semibold rounded-lg transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? "text-primary border-b-[3px] border-primary bg-transparent rounded-b-none"
-                      : "text-gray-600 hover:bg-gray-100"
+                      : "text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   {tab.label}
