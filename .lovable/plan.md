@@ -1,27 +1,42 @@
 
 
-# Sửa lỗi và mở rộng toàn màn hình Hộp thoại Chi tiết User
+# Bổ sung Số Liệu Tổng Quan Dự Án vào Trang Quản Lý User
 
 ## Vấn đề hiện tại
-Từ ảnh chụp màn hình, hộp thoại chi tiết user đang gặp các lỗi:
-1. **Kích thước quá nhỏ** -- nội dung bị cắt ngang, các thẻ thống kê chỉ hiển thị 1-2 cột, không thấy hết thông tin.
-2. **Giá trị bị thiếu** -- các dòng PoPL Score, FUN Money, Tặng nội bộ không hiển thị số liệu bên phải.
-3. **Tab "Phân tích thưởng" và "Lịch sử giao dịch"** bị trộn lẫn -- nội dung lịch sử giao dịch đang hiển thị ngay dưới mà không nằm trong tab riêng.
+Hiện tại trang Quản lý User chỉ có 5 thẻ thống kê:
+1. Tổng users
+2. Camly đã phát
+3. FUN Money
+4. Tặng nội bộ
+5. Tặng Web3
+
+Thiếu nhiều số liệu tổng quan quan trọng để quản lý toàn diện dự án.
 
 ## Giải pháp
 
-### Chỉnh sửa tệp: `src/components/admin/UserDetailDialog.tsx`
+### Chỉnh sửa tệp: `src/pages/AdminUserManagement.tsx`
 
-1. **Mở rộng toàn màn hình**: Thay đổi `DialogContent` từ `max-w-2xl` sang kích thước gần toàn màn hình (`max-w-[95vw] w-full h-[90vh]`), để tất cả nội dung hiển thị rõ ràng trên màn hình lớn.
+**Mở rộng phần tính toán `stats`** để bổ sung thêm các con số tổng:
 
-2. **Sửa bố cục thẻ thống kê**: Đảm bảo 4 thẻ (Số dư, Tổng kiếm, Điểm Ánh sáng, Đã rút) hiển thị đều trên 1 hàng ngang với kích thước phù hợp.
+| Số liệu mới | Cách tính | Mô tả |
+|---|---|---|
+| Tổng Camly còn lại | Tổng `camly_balance` tất cả user | Số Camly Coin đang tồn tại trong tài khoản |
+| Tổng Camly đã tiêu | Tổng `camly_lifetime_spent` | Bao gồm rút + tặng + chi tiêu |
+| Tổng đã rút | Tổng `total_withdrawn` | Camly đã rút ra ví ngoài |
+| Tổng tặng nội bộ (nhận) | Tổng `gift_internal_received` | Camly nhận được từ tặng nội bộ |
+| Tổng tặng Web3 (nhận) | Tổng `gift_web3_received` | Nhận được từ Web3 |
+| Tổng bài đăng | Tổng `post_count` | Tổng bài viết cộng đồng |
+| Tổng bình luận | Tổng `comment_count` | Tổng bình luận |
 
-3. **Sửa các dòng thông tin bị thiếu giá trị**: Kiểm tra lại cách hiển thị PoPL Score, FUN Money, Tặng nội bộ/Web3 -- đảm bảo giá trị số nằm bên phải mỗi dòng.
+**Thay đổi bố cục thẻ thống kê:**
+- Chia thành 2 hàng thẻ thống kê:
+  - Hàng 1 (5 thẻ): Tổng users, Camly còn lại, Camly đã phát, Camly đã tiêu, Tổng đã rút
+  - Hàng 2 (5 thẻ): FUN Money, Tặng nội bộ (gửi), Tặng nội bộ (nhận), Tặng Web3 (gửi), Tặng Web3 (nhận)
+  - Hàng 3 (3 thẻ, nhỏ hơn): Tổng bài đăng, Tổng bình luận, Tổng yêu cầu rút
 
-4. **Tăng chiều cao vùng cuộn (ScrollArea)**: Mở rộng `ScrollArea` để tận dụng toàn bộ chiều cao hộp thoại, tránh nội dung bị ẩn.
-
-5. **Đảm bảo tab hoạt động đúng**: Hai tab "Phân tích thưởng" và "Lịch sử giao dịch" phải tách biệt rõ ràng, không hiển thị chồng chéo.
-
-### Tệp cần chỉnh sửa
-- `src/components/admin/UserDetailDialog.tsx` -- điều chỉnh kích thước, bố cục, và sửa hiển thị dữ liệu.
+### Chi tiết kỹ thuật
+- Chỉ chỉnh sửa 1 tệp: `src/pages/AdminUserManagement.tsx`
+- Thêm các phép tính `reduce` mới vào `useMemo` của `stats`
+- Thêm thêm icon từ `lucide-react` (ví dụ: `TrendingDown`, `ArrowDownToLine`, `MessageSquare`, `FileText`)
+- Mở rộng grid từ 1 hàng thành 2-3 hàng thẻ thống kê
 
