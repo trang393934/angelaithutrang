@@ -156,12 +156,21 @@ export default function AdminMintApproval() {
 
         // Handle 409 "already minted" gracefully
         if (error) {
-          // Supabase client puts non-2xx response body in error.context or error itself
-          const errBody = typeof error === 'object' && error !== null 
-            ? (error as any)?.context?.body || (error as any)?.message || JSON.stringify(error)
-            : String(error);
+          let errBody = '';
+          try {
+            // FunctionsHttpError: context is a Response object
+            const ctx = (error as any)?.context;
+            if (ctx && typeof ctx.json === 'function') {
+              const responseJson = await ctx.json();
+              errBody = JSON.stringify(responseJson || '');
+            } else {
+              errBody = (error as any)?.message || JSON.stringify(error);
+            }
+          } catch {
+            errBody = (error as any)?.message || String(error);
+          }
           
-          if (typeof errBody === 'string' && errBody.includes('already minted')) {
+          if (errBody.includes('already minted')) {
             toast.info("ℹ️ Action này đã được mint on-chain trước đó rồi.", {
               id: `approve-${request.id}`,
               duration: 5000,
