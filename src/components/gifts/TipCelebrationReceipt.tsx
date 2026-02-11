@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
+import bitcoinLogo from "@/assets/bitcoin-logo.png";
 
 export interface TipReceiptData {
   receipt_public_id: string;
@@ -21,7 +22,7 @@ export interface TipReceiptData {
   message?: string | null;
   tx_hash?: string | null;
   created_at?: string;
-  tokenType?: "internal" | "camly_web3" | "fun_money" | "usdt" | "usdc" | "bnb";
+  tokenType?: "internal" | "camly_web3" | "fun_money" | "usdt" | "usdc" | "bnb" | "bitcoin";
   tokenSymbol?: string;
   explorerUrl?: string;
 }
@@ -48,6 +49,8 @@ function getTokenDisplay(tokenType?: string) {
       return { logo: USDC_LOGO, label: "USDC", explorer: "https://bscscan.com" };
     case "bnb":
       return { logo: BNB_LOGO, label: "BNB", explorer: "https://bscscan.com" };
+    case "bitcoin":
+      return { logo: bitcoinLogo, label: "BTC", explorer: "https://bscscan.com" };
     default:
       return { logo: camlyCoinLogo, label: "Camly Coin", explorer: "" };
   }

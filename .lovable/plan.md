@@ -6,13 +6,14 @@
 ### ✅ Phần 1: Chuẩn Bị Tài Nguyên
 - [x] Copy 3 file nhạc Rich vào `public/audio/`
 - [x] Download logo Bitcoin vào `src/assets/bitcoin-logo.png`
-- [x] Cập nhật TokenSelector: bỏ USDC/BNB, thêm Bitcoin (giữ nguyên giao diện cũ)
+- [x] Cập nhật TokenSelector: giữ nguyên giao diện, thêm Bitcoin, giữ BNB
 - [x] Sửa GiftCoinDialog để tương thích với token mới
 
-### 🔲 Phần 2: Bước 1 - SendGiftModal (Refactor GiftCoinDialog thành flow 3 bước)
-- [ ] Refactor UI step 1: người gửi/nhận info, quick amounts, bỏ slider
-- [ ] Step 2: bảng xác nhận đầy đủ trước ký MetaMask
-- [ ] Step 3: chuyển sang GiftCelebrationModal
+### ✅ Phần 2: Bước 1+2 - SendGiftModal (Flow 2 bước cho Internal Camly)
+- [x] Step 1: Người gửi (avatar+tên+ví), Người nhận (tìm kiếm), mức nhanh (10/50/100/500), lời nhắn 200 ký tự
+- [x] Step 2: Bảng xác nhận đầy đủ (người gửi/nhận, số lượng, lời nhắn, cảnh báo) + nút Quay lại/Xác nhận & Tặng
+- [x] Web3 tabs (CAMLY Web3, FUN, BNB, USDT, Bitcoin) vẫn dùng CryptoTransferTab như cũ
+- [x] Cập nhật TipCelebrationReceipt hỗ trợ token Bitcoin
 
 ### 🔲 Phần 3: GiftCelebrationModal (Celebration Card)
 - [ ] Tạo CelebrationThemeSelector (6 chủ đề, 3 background/chủ đề, upload ảnh)
