@@ -49,37 +49,7 @@ export function useDailyLogin() {
 
       const result = loginResult?.[0];
 
-
-      // Submit PPLP action for daily login (if not already logged in)
-      if (!result?.already_logged_in) {
-        try {
-          await supabase.functions.invoke("pplp-submit-action", {
-            body: {
-              platform_id: "angel_ai",
-              action_type: "DAILY_LOGIN",
-              actor_id: user.id,
-              metadata: {
-                streak: result?.streak_count || 1,
-                content_length: 50,
-                has_evidence: true,
-                verified: true,
-                sentiment_score: 0.75,
-              },
-              impact: {
-                beneficiaries: 1,
-                outcome: "positive",
-                promotes_unity: true,
-                healing_effect: true,
-                scope: "individual",
-              },
-              integrity: { source_verified: true, anti_sybil_score: 0.85 },
-              evidences: [],
-            },
-          });
-        } catch (pplpErr) {
-          console.warn("PPLP daily login submit warning:", pplpErr);
-        }
-      }
+      // DAILY_LOGIN only earns Camly Coin, not eligible for FUN Money minting
 
       // Fetch login history for calendar display (last 30 days)
       const { data: historyData } = await supabase

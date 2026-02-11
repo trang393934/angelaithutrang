@@ -54,7 +54,7 @@ export const PPLP_ACTION_TYPES = {
   GRATITUDE_PRACTICE: 'GRATITUDE_PRACTICE',
   JOURNAL_WRITE: 'JOURNAL_WRITE',
   QUESTION_ASK: 'QUESTION_ASK',
-  DAILY_LOGIN: 'DAILY_LOGIN',
+  // DAILY_LOGIN removed - only earns Camly Coin
   
   // Investment & Trading
   STAKE_LOCK: 'STAKE_LOCK',
@@ -288,7 +288,7 @@ export const ACTION_TYPE_INFO: Record<PPLPActionType, { label: string; icon: str
   GRATITUDE_PRACTICE: { label: 'Thực hành biết ơn', icon: '🙏', category: 'Hàng ngày' },
   JOURNAL_WRITE: { label: 'Viết nhật ký', icon: '📓', category: 'Hàng ngày' },
   QUESTION_ASK: { label: 'Đặt câu hỏi', icon: '❓', category: 'Hàng ngày' },
-  DAILY_LOGIN: { label: 'Đăng nhập hàng ngày', icon: '📆', category: 'Hàng ngày' },
+  // DAILY_LOGIN removed from PPLP
   
   // Investment
   STAKE_LOCK: { label: 'Stake token', icon: '🔒', category: 'Đầu tư' },
@@ -342,7 +342,7 @@ export const BASE_REWARDS: Record<PPLPActionType, number> = {
   GRATITUDE_PRACTICE: 1000,
   JOURNAL_WRITE: 2000,
   QUESTION_ASK: 1500,
-  DAILY_LOGIN: 100,
+  // DAILY_LOGIN removed
   ECO_ACTION: 500,
   REFERRAL_INVITE: 1000,
   
