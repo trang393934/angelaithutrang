@@ -168,6 +168,40 @@ export default function AdminMintApproval() {
     fetchGlobalCounts();
   }, [fetchRequests, fetchGlobalCounts]);
 
+  // Helper: extract error body from FunctionsHttpError (409 returns body in context)
+  const extractErrorBody = async (error: unknown): Promise<string> => {
+    try {
+      // FunctionsHttpError has a context.body (ReadableStream) or context.json()
+      const e = error as any;
+      if (e?.context?.json) {
+        const body = await e.context.json();
+        return JSON.stringify(body);
+      }
+      if (e?.context?.text) {
+        return await e.context.text();
+      }
+      if (e?.message) return e.message;
+      return typeof error === 'object' ? JSON.stringify(error) : String(error);
+    } catch {
+      return String(error);
+    }
+  };
+
+  const isAlreadyMintedError = (msg: string): boolean => {
+    return msg.includes('already minted') || msg.includes('"error":"Action already minted');
+  };
+
+  const extractTxFromError = (msg: string): string => {
+    try {
+      const jsonMatch = msg.match(/\{.*\}/s);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.tx_hash) return ` TX: ${parsed.tx_hash.slice(0, 10)}...`;
+      }
+    } catch { /* ignore */ }
+    return '';
+  };
+
   // Approve & sign a mint request (triggers backend to sign + execute on-chain)
   const handleApproveAndSign = useCallback(
     async (request: MintRequestRow) => {
@@ -185,20 +219,10 @@ export default function AdminMintApproval() {
 
         // Handle 409 "already minted" gracefully
         if (error) {
-          const errMsg = (error as any)?.message || '';
-          const isAlreadyMinted = errMsg.includes('already minted') || errMsg.includes('409');
-          
-          if (isAlreadyMinted) {
-            // Try to extract tx_hash from error message
-            let txInfo = '';
-            try {
-              const jsonMatch = errMsg.match(/\{.*\}/s);
-              if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
-                if (parsed.tx_hash) txInfo = ` TX: ${parsed.tx_hash.slice(0, 10)}...`;
-              }
-            } catch { /* ignore parse errors */ }
-            
+          const errMsg = await extractErrorBody(error);
+
+          if (isAlreadyMintedError(errMsg)) {
+            const txInfo = extractTxFromError(errMsg);
             toast.info(`ℹ️ Action này đã được mint on-chain trước đó rồi.${txInfo}`, {
               id: `approve-${request.id}`,
               duration: 5000,
@@ -214,7 +238,6 @@ export default function AdminMintApproval() {
             id: `approve-${request.id}`,
           });
         } else if (data?.on_chain_error) {
-          // Signed successfully but on-chain failed with classified error
           const errLabel = data.on_chain_error === "ATTESTER_NOT_REGISTERED" ? "Attester chưa đăng ký"
             : data.on_chain_error === "ACTION_NOT_REGISTERED" ? "Action chưa đăng ký"
             : data.on_chain_error === "INSUFFICIENT_GAS" ? "Thiếu tBNB"
@@ -233,19 +256,11 @@ export default function AdminMintApproval() {
         }
 
         await fetchRequests();
-      } catch (error: any) {
-        const errMsg = String(error?.message || error || '');
-        const isAlreadyMinted = errMsg.includes('already minted') || errMsg.includes('"error":"Action already minted');
-        
-        if (isAlreadyMinted) {
-          let txInfo = '';
-          try {
-            const jsonMatch = errMsg.match(/\{.*\}/s);
-            if (jsonMatch) {
-              const parsed = JSON.parse(jsonMatch[0]);
-              if (parsed.tx_hash) txInfo = ` TX: ${parsed.tx_hash.slice(0, 10)}...`;
-            }
-          } catch { /* ignore */ }
+      } catch (error: unknown) {
+        const errMsg = await extractErrorBody(error);
+
+        if (isAlreadyMintedError(errMsg)) {
+          const txInfo = extractTxFromError(errMsg);
           toast.info(`ℹ️ Action đã mint on-chain rồi.${txInfo}`, { id: `approve-${request.id}`, duration: 5000 });
           await fetchRequests();
         } else {
@@ -321,8 +336,8 @@ export default function AdminMintApproval() {
         });
 
         if (error) {
-          const errMsg = typeof error === 'object' ? JSON.stringify(error) : String(error);
-          if (errMsg.includes('already minted')) { successCount++; continue; }
+          const errMsg = await extractErrorBody(error);
+          if (isAlreadyMintedError(errMsg)) { successCount++; continue; }
           throw error;
         }
 
@@ -331,8 +346,9 @@ export default function AdminMintApproval() {
         } else {
           failCount++;
         }
-      } catch {
-        failCount++;
+      } catch (e) {
+        const errMsg = await extractErrorBody(e);
+        if (isAlreadyMintedError(errMsg)) { successCount++; } else { failCount++; }
       }
 
       setRetryProgress({ done: i + 1, total: signedRequests.length });
@@ -431,13 +447,16 @@ export default function AdminMintApproval() {
           body: { action_id: selected[i].action_id, wallet_address: selected[i].recipient_address },
         });
         if (error) {
-          const errMsg = typeof error === 'object' ? JSON.stringify(error) : String(error);
-          if (errMsg.includes('already minted')) { success++; continue; }
+          const errMsg = await extractErrorBody(error);
+          if (isAlreadyMintedError(errMsg)) { success++; continue; }
           throw error;
         }
         if (data?.tx_hash || data?.success) success++;
         else fail++;
-      } catch { fail++; }
+      } catch (e) {
+        const errMsg = await extractErrorBody(e);
+        if (isAlreadyMintedError(errMsg)) { success++; } else { fail++; }
+      }
       setBatchProgress({ done: i + 1, total: selected.length });
     }
 
