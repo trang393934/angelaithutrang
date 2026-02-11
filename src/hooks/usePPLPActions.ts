@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +71,9 @@ export function usePPLPActions() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /**
+   * Fetch all actions with pagination (loads ALL via loop)
+   */
   const fetchActions = useCallback(async (limit = 50) => {
     if (!user) return;
     
@@ -93,6 +95,55 @@ export function usePPLPActions() {
     }
   }, [user]);
 
+  /**
+   * Fetch only unminted actions (scored + pass, no existing mint request).
+   * Uses paginated loading to get ALL eligible actions.
+   */
+  const fetchUnmintedActions = useCallback(async (): Promise<PPLPAction[]> => {
+    if (!user) return [];
+
+    setIsLoading(true);
+    try {
+      const PAGE_SIZE = 500;
+      let offset = 0;
+      let allActions: PPLPAction[] = [];
+
+      while (true) {
+        const { data, error } = await supabase
+          .from("pplp_actions")
+          .select("*, pplp_scores!inner(*), pplp_mint_requests(*)")
+          .eq("actor_id", user.id)
+          .eq("status", "scored")
+          .order("created_at", { ascending: false })
+          .range(offset, offset + PAGE_SIZE - 1);
+
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+
+        // Filter: decision=pass AND no existing mint request
+        const eligible = (data as unknown as PPLPAction[]).filter((a) => {
+          const score = Array.isArray(a.pplp_scores) ? a.pplp_scores[0] : a.pplp_scores;
+          if (!score || score.decision !== "pass") return false;
+
+          const mr = Array.isArray(a.pplp_mint_requests) ? a.pplp_mint_requests[0] : a.pplp_mint_requests;
+          return !mr; // No mint request exists
+        });
+
+        allActions = allActions.concat(eligible);
+        if (data.length < PAGE_SIZE) break;
+        offset += PAGE_SIZE;
+      }
+
+      setActions(allActions);
+      return allActions;
+    } catch (error) {
+      console.error("Error fetching unminted actions:", error);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
   const submitAction = useCallback(async (params: SubmitActionParams) => {
     if (!user) {
       toast({
@@ -105,39 +156,35 @@ export function usePPLPActions() {
 
     setIsSubmitting(true);
     try {
-      // Calculate content length for scoring
       const contentLength = typeof params.metadata?.content === 'string' 
         ? params.metadata.content.length 
         : typeof params.metadata?.content_length === 'number' 
           ? params.metadata.content_length 
           : 100;
       
-      // Enriched metadata for better Light Score
       const enrichedMetadata = {
         content_length: contentLength,
-        has_evidence: true,           // User submitted real content
-        verified: true,               // User is authenticated
-        sentiment_score: 0.75,        // Default positive sentiment
+        has_evidence: true,
+        verified: true,
+        sentiment_score: 0.75,
         is_educational: params.action_type === 'QUESTION_ASK' || 
                        params.action_type === 'LEARN_COMPLETE',
         purity_score: 0.8,
-        ...params.metadata,           // Allow override from caller
+        ...params.metadata,
       };
       
-      // Enriched impact fields for better Light Score
       const enrichedImpact = {
-        beneficiaries: 1,             // Self-benefit at minimum
-        outcome: 'positive',          // Default positive outcome
-        promotes_unity: true,         // Connecting with community/AI
-        healing_effect: true,         // Spiritual growth effect
+        beneficiaries: 1,
+        outcome: 'positive',
+        promotes_unity: true,
+        healing_effect: true,
         scope: 'individual' as const,
         ...params.metadata?.impact as Record<string, unknown> || {},
       };
       
-      // Enriched integrity fields
       const enrichedIntegrity = {
         source_verified: true,
-        anti_sybil_score: 0.85,       // User is authenticated
+        anti_sybil_score: 0.85,
       };
 
       const response = await supabase.functions.invoke("pplp-submit-action", {
@@ -163,7 +210,6 @@ export function usePPLPActions() {
           description: `Action ID: ${result.action_id?.slice(0, 8)}...`
         });
         
-        // Refresh actions list
         await fetchActions();
         return result;
       } else {
@@ -218,6 +264,7 @@ export function usePPLPActions() {
     isLoading,
     isSubmitting,
     fetchActions,
+    fetchUnmintedActions,
     submitAction,
     getActionScore,
     getActionEvidences
