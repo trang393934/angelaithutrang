@@ -156,22 +156,21 @@ export default function AdminMintApproval() {
 
         // Handle 409 "already minted" gracefully
         if (error) {
-          let errBody = '';
-          try {
-            // FunctionsHttpError: context is a Response object
-            const ctx = (error as any)?.context;
-            if (ctx && typeof ctx.json === 'function') {
-              const responseJson = await ctx.json();
-              errBody = JSON.stringify(responseJson || '');
-            } else {
-              errBody = (error as any)?.message || JSON.stringify(error);
-            }
-          } catch {
-            errBody = (error as any)?.message || String(error);
-          }
+          const errMsg = (error as any)?.message || '';
+          const isAlreadyMinted = errMsg.includes('already minted') || errMsg.includes('409');
           
-          if (errBody.includes('already minted')) {
-            toast.info("ℹ️ Action này đã được mint on-chain trước đó rồi.", {
+          if (isAlreadyMinted) {
+            // Try to extract tx_hash from error message
+            let txInfo = '';
+            try {
+              const jsonMatch = errMsg.match(/\{.*\}/s);
+              if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                if (parsed.tx_hash) txInfo = ` TX: ${parsed.tx_hash.slice(0, 10)}...`;
+              }
+            } catch { /* ignore parse errors */ }
+            
+            toast.info(`ℹ️ Action này đã được mint on-chain trước đó rồi.${txInfo}`, {
               id: `approve-${request.id}`,
               duration: 5000,
             });
