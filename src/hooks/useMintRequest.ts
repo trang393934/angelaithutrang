@@ -31,11 +31,10 @@ export interface MintRequest {
 export function useMintRequest() {
   const { user } = useAuth();
   const [isRequesting, setIsRequesting] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
 
   /**
    * Create a new mint request for a scored action.
-   * This does NOT trigger on-chain minting - it creates a pending request
-   * that admin must approve first.
    */
   const requestMint = useCallback(
     async (actionId: string, walletAddress: string): Promise<boolean> => {
@@ -52,7 +51,6 @@ export function useMintRequest() {
       setIsRequesting(true);
 
       try {
-        // Check if action exists and is scored with pass
         const { data: action, error: actionError } = await supabase
           .from("pplp_actions")
           .select("id, actor_id, action_type, status, evidence_hash, pplp_scores(final_reward, decision)")
@@ -75,7 +73,6 @@ export function useMintRequest() {
           return false;
         }
 
-        // Resolve score (one-to-one join can return object or array)
         const scoreRaw = action.pplp_scores;
         const score = Array.isArray(scoreRaw) ? scoreRaw[0] : scoreRaw;
 
@@ -84,7 +81,6 @@ export function useMintRequest() {
           return false;
         }
 
-        // Check for existing mint request
         const { data: existing } = await supabase
           .from("pplp_mint_requests")
           .select("id, status")
@@ -102,7 +98,6 @@ export function useMintRequest() {
           }
         }
 
-        // Create or update mint request as "pending"
         const actionHash = "0x" + Array.from(
           new Uint8Array(
             await crypto.subtle.digest("SHA-256", new TextEncoder().encode(action.action_type))
@@ -122,7 +117,7 @@ export function useMintRequest() {
               action_hash: actionHash,
               evidence_hash: evidenceHash,
               policy_version: 1,
-              nonce: 0, // Will be set by admin when signing
+              nonce: 0,
               status: "pending",
               signature: null,
               signer_address: null,
@@ -152,6 +147,105 @@ export function useMintRequest() {
   );
 
   /**
+   * Batch request mint for multiple scored+pass actions that don't have mint requests yet.
+   */
+  const requestMintBatch = useCallback(
+    async (
+      actions: Array<{ id: string; action_type: string; evidence_hash: string | null; pplp_scores: any }>,
+      walletAddress: string
+    ): Promise<{ success: number; skipped: number; failed: number }> => {
+      if (!user) {
+        toast.error("Vui lòng đăng nhập");
+        return { success: 0, skipped: 0, failed: 0 };
+      }
+
+      if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+        toast.error("Địa chỉ ví không hợp lệ");
+        return { success: 0, skipped: 0, failed: 0 };
+      }
+
+      const total = actions.length;
+      let success = 0;
+      let skipped = 0;
+      let failed = 0;
+
+      setBatchProgress({ current: 0, total });
+      setIsRequesting(true);
+
+      try {
+        // Batch upsert in chunks of 50
+        const CHUNK_SIZE = 50;
+        for (let i = 0; i < actions.length; i += CHUNK_SIZE) {
+          const chunk = actions.slice(i, i + CHUNK_SIZE);
+          
+          const records = await Promise.all(chunk.map(async (action) => {
+            const scoreRaw = action.pplp_scores;
+            const score = Array.isArray(scoreRaw) ? scoreRaw[0] : scoreRaw;
+            if (!score || score.decision !== "pass") return null;
+
+            const actionHash = "0x" + Array.from(
+              new Uint8Array(
+                await crypto.subtle.digest("SHA-256", new TextEncoder().encode(action.action_type))
+              )
+            ).map(b => b.toString(16).padStart(2, "0")).join("");
+
+            return {
+              action_id: action.id,
+              actor_id: user.id,
+              recipient_address: walletAddress,
+              amount: score.final_reward,
+              action_hash: actionHash,
+              evidence_hash: action.evidence_hash || "0x" + "0".repeat(64),
+              policy_version: 1,
+              nonce: 0,
+              status: "pending" as const,
+              signature: null,
+              signer_address: null,
+              tx_hash: null,
+              minted_at: null,
+            };
+          }));
+
+          const validRecords = records.filter(Boolean);
+          skipped += records.length - validRecords.length;
+
+          if (validRecords.length > 0) {
+            const { error } = await supabase
+              .from("pplp_mint_requests")
+              .upsert(validRecords as any[], { onConflict: "action_id", ignoreDuplicates: true });
+
+            if (error) {
+              console.error("Batch mint error:", error);
+              failed += validRecords.length;
+            } else {
+              success += validRecords.length;
+            }
+          }
+
+          setBatchProgress({ current: Math.min(i + CHUNK_SIZE, total), total });
+        }
+
+        if (success > 0) {
+          toast.success(`🎯 Đã gửi ${success} yêu cầu mint thành công!`);
+        }
+        if (failed > 0) {
+          toast.error(`${failed} yêu cầu bị lỗi`);
+        }
+
+        return { success, skipped, failed };
+      } catch (error) {
+        console.error("requestMintBatch error:", error);
+        toast.error("Có lỗi xảy ra khi gửi yêu cầu mint hàng loạt");
+        return { success, skipped, failed };
+      } finally {
+        setIsRequesting(false);
+        setBatchProgress(null);
+      }
+    },
+    [user]
+  );
+
+  /**
    * Get mint request for a specific action
    */
   const getMintRequest = useCallback(
@@ -169,7 +263,9 @@ export function useMintRequest() {
 
   return {
     requestMint,
+    requestMintBatch,
     getMintRequest,
     isRequesting,
+    batchProgress,
   };
 }

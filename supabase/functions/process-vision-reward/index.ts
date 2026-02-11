@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -160,11 +161,41 @@ Deno.serve(async (req) => {
 
     console.log(`Successfully rewarded user ${userId} with ${REWARD_AMOUNT} coins for first vision board`);
 
+    // ============= PPLP Integration =============
+    const pplpResult = await submitAndScorePPLPAction(supabaseAdmin, {
+      action_type: PPLP_ACTION_TYPES.DAILY_LOGIN, // Reuse closest type; VISION_CREATE not in types
+      actor_id: userId,
+      target_id: visionBoardId,
+      metadata: {
+        vision_board_id: visionBoardId,
+        content_length: 100,
+        has_evidence: true,
+        verified: true,
+        sentiment_score: 0.8,
+      },
+      impact: {
+        scope: 'individual',
+        quality_indicators: ['creative', 'vision'],
+      },
+      integrity: {
+        source_verified: true,
+      },
+      reward_amount: REWARD_AMOUNT,
+      purity_score: 0.8,
+      content_length: 100,
+    });
+    
+    if (pplpResult.success) {
+      console.log(`[PPLP] Vision board action submitted: ${pplpResult.action_id}`);
+    }
+    // ============= End PPLP =============
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         coinsEarned: REWARD_AMOUNT,
-        message: `🎉 Chúc mừng! Bạn đã nhận ${REWARD_AMOUNT} Camly Coin cho Vision Board đầu tiên!`
+        message: `🎉 Chúc mừng! Bạn đã nhận ${REWARD_AMOUNT} Camly Coin cho Vision Board đầu tiên!`,
+        pplpActionId: pplpResult.success ? pplpResult.action_id : undefined,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

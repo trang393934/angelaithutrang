@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { submitPPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -399,7 +399,7 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
       ? PPLP_ACTION_TYPES.GRATITUDE_PRACTICE 
       : PPLP_ACTION_TYPES.JOURNAL_WRITE;
       
-    const pplpResult = await submitPPLPAction(supabase, {
+    const pplpResult = await submitAndScorePPLPAction(supabase, {
       action_type: actionType,
       actor_id: userId,
       target_id: journalRecord?.id,
