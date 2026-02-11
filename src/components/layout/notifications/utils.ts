@@ -56,6 +56,8 @@ export const getNotificationIcon = (type: string): string => {
       return "🎁";
     case "gift_sent":
       return "💝";
+    case "mint_approved":
+      return "⛏️";
     case "reward_approved":
       return "🎉";
     case "reward_rejected":
@@ -117,6 +119,8 @@ export const getNotificationActionText = (
       return t("notifications.type.rewardApproved");
     case "reward_rejected":
       return t("notifications.type.rewardRejected");
+    case "mint_approved":
+      return t("notifications.type.mintApproved") || "đã được duyệt mint FUN Money thành công";
     case "gift_received":
       return t("notifications.giftReceived");
     case "gift_sent":
@@ -140,6 +144,9 @@ export const getNotificationLink = (notif: Notification): string | null => {
   }
   if (notif.type === "reward_approved" || notif.type === "reward_rejected") {
     return "/earn";
+  }
+  if (notif.type === "mint_approved") {
+    return "/mint";
   }
   return null;
 };

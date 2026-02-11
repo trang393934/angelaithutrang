@@ -626,6 +626,38 @@ serve(async (req) => {
         _is_positive: true,
       });
 
+      // Send notification to user about successful mint
+      try {
+        const actionLabel = action.action_type === "QUESTION_ASK" ? "Hỏi AI"
+          : action.action_type === "JOURNAL_WRITE" ? "Nhật ký"
+          : action.action_type === "POST_CREATE" || action.action_type === "CONTENT_CREATE" ? "Đăng bài"
+          : action.action_type === "COMMENT_CREATE" ? "Bình luận"
+          : action.action_type === "DONATE" ? "Donate"
+          : action.action_type === "SHARE_CONTENT" ? "Chia sẻ"
+          : action.action_type === "DAILY_LOGIN" ? "Đăng nhập"
+          : action.action_type === "GRATITUDE_PRACTICE" ? "Biết ơn"
+          : action.action_type === "VISION_CREATE" ? "Vision"
+          : action.action_type;
+
+        await supabase.from("notifications").insert({
+          user_id: action.actor_id,
+          type: "mint_approved",
+          title: `✅ ${Number(userAmount).toLocaleString()} FUN đã mint thành công!`,
+          content: `Hành động "${actionLabel}" đã được duyệt và lock on-chain. Vào trang Mint để Activate & Claim.`,
+          reference_id: action.id,
+          reference_type: "pplp_action",
+          metadata: {
+            tx_hash: txHash,
+            amount: Number(userAmount),
+            total_reward: rewardAmount,
+            action_type: action.action_type,
+          },
+        });
+        console.log(`[PPLP Lock] ✓ Notification sent to user ${action.actor_id}`);
+      } catch (notifErr) {
+        console.warn("[PPLP Lock] Failed to send notification (non-fatal):", notifErr);
+      }
+
       console.log(`[PPLP Lock] ✓ Action ${action.id} minted on-chain: ${userAmount}/${rewardAmount} FUN Money (user/total)`);
     } else {
       console.log(`[PPLP Lock] Action ${action.id}: Off-chain signature stored, on-chain pending`);
