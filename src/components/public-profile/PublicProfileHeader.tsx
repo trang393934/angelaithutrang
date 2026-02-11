@@ -71,7 +71,7 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
       </div>
 
       {/* Profile Info */}
-      <div className="max-w-3xl mx-auto px-4 -mt-20 sm:-mt-24 relative z-10">
+      <div className="max-w-3xl mx-auto px-4 -mt-8 sm:-mt-10 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
