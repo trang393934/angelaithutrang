@@ -94,8 +94,15 @@ export function useFUNMoneyContract() {
 
   // Get contract address for current chain
   const getContractAddress = useCallback(() => {
-    if (!chainId) return null;
-    return FUN_MONEY_ADDRESSES[chainId] || null;
+    if (!chainId) {
+      console.warn("[FUNMoney] getContractAddress: chainId is undefined");
+      return null;
+    }
+    const addr = FUN_MONEY_ADDRESSES[chainId] || null;
+    if (!addr) {
+      console.warn(`[FUNMoney] getContractAddress: no contract for chainId=${chainId}. Expected 97 (BSC Testnet).`);
+    }
+    return addr;
   }, [chainId]);
 
   // Verify contract exists before making calls
@@ -148,6 +155,9 @@ export function useFUNMoneyContract() {
       const provider = getEthereumProvider();
 
       if (!contractAddress || !provider || !isConnected) {
+        if (isConnected && !contractAddress) {
+          console.warn(`[FUNMoney] Contract init skipped: no contract address for chainId=${chainId}. User may be on wrong network.`);
+        }
         setContract(null);
         setSigner(null);
         setContractDiagnostics(null);
@@ -187,7 +197,12 @@ export function useFUNMoneyContract() {
 
   // Fetch contract info
   const fetchContractInfo = useCallback(async () => {
-    if (!contract || !address) return null;
+    if (!contract || !address) {
+      if (!contract && address) {
+        console.warn("[FUNMoney] fetchContractInfo skipped: contract is null (wrong network or init failed)");
+      }
+      return null;
+    }
 
     // Skip if contract diagnostics show invalid
     if (contractDiagnostics && !contractDiagnostics.isContractValid) {
