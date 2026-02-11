@@ -34,6 +34,7 @@ interface CryptoTransferTabProps {
   hasWallet: boolean;
   explorerUrl: string;
   accentColor: string;
+  preselectedUser?: UserSearchResult | null;
   onConnect: () => Promise<void>;
   onTransfer: (toAddress: string, amount: number) => Promise<TransferResult>;
   onFetchBalance: () => void;
@@ -50,6 +51,7 @@ export function CryptoTransferTab({
   hasWallet,
   explorerUrl,
   accentColor,
+  preselectedUser,
   onConnect,
   onTransfer,
   onFetchBalance,
@@ -130,6 +132,16 @@ export function CryptoTransferTab({
     }, 400);
     return () => clearTimeout(timeout);
   }, [walletAddress, cryptoRecipient]);
+
+  // Auto-fill preselected user (from profile page)
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
+  useEffect(() => {
+    if (preselectedUser && !hasAutoFilled) {
+      setHasAutoFilled(true);
+      setCryptoRecipient("profile");
+      handleSelectCryptoUser(preselectedUser);
+    }
+  }, [preselectedUser, hasAutoFilled]);
 
   useEffect(() => {
     if (isConnected) {

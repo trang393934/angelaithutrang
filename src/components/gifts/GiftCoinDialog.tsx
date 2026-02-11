@@ -429,6 +429,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                 tokenType="camly" tokenSymbol="CAMLY" tokenBalance={camlyCoinBalance}
                 isConnected={isConnected} isTransferring={isTransferring} address={address}
                 hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="orange"
+                preselectedUser={preselectedUser ? { user_id: preselectedUser.id, display_name: preselectedUser.display_name, avatar_url: preselectedUser.avatar_url } : null}
                 onConnect={connect} onTransfer={transferCamly} onFetchBalance={fetchCamlyBalance}
                 onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "CAMLY", msg)}
               />
@@ -440,6 +441,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                 tokenType="fun" tokenSymbol="FUN" tokenBalance={funMoneyBalance}
                 isConnected={isConnected} isTransferring={isTransferring} address={address}
                 hasWallet={hasWallet} explorerUrl="https://testnet.bscscan.com" accentColor="violet"
+                preselectedUser={preselectedUser ? { user_id: preselectedUser.id, display_name: preselectedUser.display_name, avatar_url: preselectedUser.avatar_url } : null}
                 onConnect={connect} onTransfer={transferFunMoney} onFetchBalance={fetchFunMoneyBalance}
                 onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "FUN", msg)}
               />
@@ -451,6 +453,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                 tokenType="bnb" tokenSymbol="BNB" tokenBalance={bnbBalance}
                 isConnected={isConnected} isTransferring={isTransferring} address={address}
                 hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="orange"
+                preselectedUser={preselectedUser ? { user_id: preselectedUser.id, display_name: preselectedUser.display_name, avatar_url: preselectedUser.avatar_url } : null}
                 onConnect={connect} onTransfer={transferBnb} onFetchBalance={fetchBnbBalance}
                 onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "BNB", msg)}
               />
@@ -462,6 +465,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                 tokenType="usdt" tokenSymbol="USDT" tokenBalance={usdtBalance}
                 isConnected={isConnected} isTransferring={isTransferring} address={address}
                 hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="orange"
+                preselectedUser={preselectedUser ? { user_id: preselectedUser.id, display_name: preselectedUser.display_name, avatar_url: preselectedUser.avatar_url } : null}
                 onConnect={connect} onTransfer={transferUsdt} onFetchBalance={fetchUsdtBalance}
                 onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "USDT", msg)}
               />
@@ -473,6 +477,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                 tokenType="usdc" tokenSymbol="USDC" tokenBalance={usdcBalance}
                 isConnected={isConnected} isTransferring={isTransferring} address={address}
                 hasWallet={hasWallet} explorerUrl="https://bscscan.com" accentColor="violet"
+                preselectedUser={preselectedUser ? { user_id: preselectedUser.id, display_name: preselectedUser.display_name, avatar_url: preselectedUser.avatar_url } : null}
                 onConnect={connect} onTransfer={transferUsdc} onFetchBalance={fetchUsdcBalance}
                 onSuccess={(r, u, a, amt, msg) => handleCryptoSuccess(r, u, a, amt, "USDC", msg)}
               />
