@@ -1,42 +1,36 @@
 
 
-# Bổ sung Số Liệu Tổng Quan Dự Án vào Trang Quản Lý User
+# Thêm Bảng Dữ Liệu Thời Gian Thực vào Trang Lì xì Tết
 
-## Vấn đề hiện tại
-Hiện tại trang Quản lý User chỉ có 5 thẻ thống kê:
-1. Tổng users
-2. Camly đã phát
-3. FUN Money
-4. Tặng nội bộ
-5. Tặng Web3
+## Mô tả
+Thêm một bảng mới vào trang `/admin/tet-reward` hiển thị dữ liệu FUN Money **tính đến thời điểm hiện tại** (real-time từ database), thay vì snapshot cố định ngày 07/02/2026. Sử dụng cùng công thức **1 FUN = 1.000 Camly Coin**.
 
-Thiếu nhiều số liệu tổng quan quan trọng để quản lý toàn diện dự án.
+## Cách thực hiện
 
-## Giải pháp
+### Chỉnh sửa tệp: `src/pages/AdminTetReward.tsx`
 
-### Chỉnh sửa tệp: `src/pages/AdminUserManagement.tsx`
+1. **Thêm truy vấn dữ liệu real-time**: Gọi RPC `get_admin_user_management_data` (đã có sẵn) để lấy dữ liệu `fun_money_received` hiện tại của tất cả user, kèm `camly_balance`, `camly_lifetime_earned`, `total_withdrawn`, `light_score`.
 
-**Mở rộng phần tính toán `stats`** để bổ sung thêm các con số tổng:
+2. **Thêm phần "Dữ liệu hiện tại" phía dưới bảng snapshot**: Bao gồm:
+   - **Banner tiêu đề**: "Dữ liệu tính đến hiện tại" với thời gian cập nhật
+   - **4 thẻ thống kê tổng**:
+     - Tổng FUN Money (hiện tại)
+     - Tổng Camly Coin quy đổi (FUN x 1.000)
+     - Số user đủ điều kiện (FUN > 0)
+     - Avg Light Score
+   - **Bảng chi tiết user**: Giống bảng snapshot nhưng với cột:
+     - Thứ hạng, Tên user, FUN Money nhận được, Camly quy đổi, Camly đang có, Camly đã rút, Light Score
+   - **Nút Refresh** để cập nhật lại dữ liệu
+   - **Tìm kiếm** riêng cho bảng real-time
 
-| Số liệu mới | Cách tính | Mô tả |
-|---|---|---|
-| Tổng Camly còn lại | Tổng `camly_balance` tất cả user | Số Camly Coin đang tồn tại trong tài khoản |
-| Tổng Camly đã tiêu | Tổng `camly_lifetime_spent` | Bao gồm rút + tặng + chi tiêu |
-| Tổng đã rút | Tổng `total_withdrawn` | Camly đã rút ra ví ngoài |
-| Tổng tặng nội bộ (nhận) | Tổng `gift_internal_received` | Camly nhận được từ tặng nội bộ |
-| Tổng tặng Web3 (nhận) | Tổng `gift_web3_received` | Nhận được từ Web3 |
-| Tổng bài đăng | Tổng `post_count` | Tổng bài viết cộng đồng |
-| Tổng bình luận | Tổng `comment_count` | Tổng bình luận |
-
-**Thay đổi bố cục thẻ thống kê:**
-- Chia thành 2 hàng thẻ thống kê:
-  - Hàng 1 (5 thẻ): Tổng users, Camly còn lại, Camly đã phát, Camly đã tiêu, Tổng đã rút
-  - Hàng 2 (5 thẻ): FUN Money, Tặng nội bộ (gửi), Tặng nội bộ (nhận), Tặng Web3 (gửi), Tặng Web3 (nhận)
-  - Hàng 3 (3 thẻ, nhỏ hơn): Tổng bài đăng, Tổng bình luận, Tổng yêu cầu rút
+3. **Bố cục**: Dùng Tabs để chia thành 2 tab:
+   - Tab 1: "Snapshot 07/02/2026" (bảng hiện tại, giữ nguyên)
+   - Tab 2: "Dữ liệu hiện tại" (bảng mới, real-time)
 
 ### Chi tiết kỹ thuật
-- Chỉ chỉnh sửa 1 tệp: `src/pages/AdminUserManagement.tsx`
-- Thêm các phép tính `reduce` mới vào `useMemo` của `stats`
-- Thêm thêm icon từ `lucide-react` (ví dụ: `TrendingDown`, `ArrowDownToLine`, `MessageSquare`, `FileText`)
-- Mở rộng grid từ 1 hàng thành 2-3 hàng thẻ thống kê
+- Chỉ chỉnh sửa 1 tệp: `src/pages/AdminTetReward.tsx`
+- Tái sử dụng RPC `get_admin_user_management_data` đã có
+- Thêm import `Tabs, TabsContent, TabsList, TabsTrigger` từ UI components
+- Thêm state cho dữ liệu real-time, search, sort riêng biệt
+- Hỗ trợ xuất Excel cho cả 2 tab
 
