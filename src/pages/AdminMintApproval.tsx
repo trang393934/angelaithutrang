@@ -633,15 +633,15 @@ export default function AdminMintApproval() {
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="pending" className="gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                Chờ duyệt ({counts.pending})
+                Chờ duyệt ({globalCounts ? globalCounts.pending.toLocaleString("vi-VN") : counts.pending})
               </TabsTrigger>
               <TabsTrigger value="signed" className="gap-1">
                 <FileCheck className="h-3.5 w-3.5" />
-                Đã ký ({counts.signed})
+                Đã ký ({globalCounts ? globalCounts.signed.toLocaleString("vi-VN") : counts.signed})
               </TabsTrigger>
               <TabsTrigger value="minted" className="gap-1">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Đã mint ({counts.minted})
+                Đã mint ({globalCounts ? globalCounts.minted.toLocaleString("vi-VN") : counts.minted})
               </TabsTrigger>
               <TabsTrigger value="rejected" className="gap-1">
                 <XCircle className="h-3.5 w-3.5" />
