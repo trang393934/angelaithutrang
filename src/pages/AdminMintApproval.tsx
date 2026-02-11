@@ -72,7 +72,6 @@ const ACTION_LABELS: Record<string, string> = {
   COMMENT_CREATE: "💬 Bình luận",
   DONATE: "🎁 Donate",
   SHARE_CONTENT: "🔗 Chia sẻ",
-  DAILY_LOGIN: "📅 Đăng nhập",
   GRATITUDE_PRACTICE: "🙏 Biết ơn",
   VISION_CREATE: "🌟 Vision",
 };

@@ -24,8 +24,7 @@ export const PPLP_ACTION_TYPES = {
   JOURNAL_WRITE: 'JOURNAL_WRITE',
   GRATITUDE_PRACTICE: 'GRATITUDE_PRACTICE',
   
-  // Engagement actions
-  DAILY_LOGIN: 'DAILY_LOGIN',
+  // Engagement actions (DAILY_LOGIN removed - only earns Camly Coin)
   HELP_COMMUNITY: 'HELP_COMMUNITY',
   DONATE_SUPPORT: 'DONATE_SUPPORT',
   IDEA_SUBMIT: 'IDEA_SUBMIT',
@@ -55,7 +54,7 @@ const POLICY_V101_BASE_REWARDS: Record<string, { baseFUN: number; platform: stri
   // FUNLife Platform
   JOURNAL_WRITE:     { baseFUN: 20,  platform: 'FUNLIFE',     policyAction: 'DAILY_RITUAL' },
   GRATITUDE_PRACTICE:{ baseFUN: 20,  platform: 'FUNLIFE',     policyAction: 'DAILY_RITUAL' },
-  DAILY_LOGIN:       { baseFUN: 20,  platform: 'FUNLIFE',     policyAction: 'DAILY_RITUAL' },
+  // DAILY_LOGIN removed - not eligible for FUN minting
   
   // FUN Charity Platform
   DONATE_SUPPORT:    { baseFUN: 120, platform: 'FUN_CHARITY', policyAction: 'DONATE' },
@@ -369,7 +368,7 @@ export function mapRewardToPPLPAction(transactionType: string): PPLPActionType |
     'engagement_reward': PPLP_ACTION_TYPES.POST_ENGAGEMENT,
     'content_share': PPLP_ACTION_TYPES.SHARE_CONTENT,
     'journal_reward': PPLP_ACTION_TYPES.JOURNAL_WRITE,
-    'daily_login': PPLP_ACTION_TYPES.DAILY_LOGIN,
+    // 'daily_login' removed from PPLP mapping
     'community_help': PPLP_ACTION_TYPES.HELP_COMMUNITY,
     'donation_support': PPLP_ACTION_TYPES.DONATE_SUPPORT,
     'idea_submit': PPLP_ACTION_TYPES.IDEA_SUBMIT,
