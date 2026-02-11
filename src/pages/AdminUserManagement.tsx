@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/table";
 import {
   ArrowLeft, Users, Coins, Sparkles, Gift, Wallet, Search,
-  RefreshCw, LogOut, Loader2, ArrowUpDown, ChevronLeft, ChevronRight
+  RefreshCw, LogOut, Loader2, ArrowUpDown, ChevronLeft, ChevronRight,
+  TrendingDown, ArrowDownToLine, MessageSquare, FileText, Hash
 } from "lucide-react";
 import AdminNavToolbar from "@/components/admin/AdminNavToolbar";
 import { UserDetailDialog } from "@/components/admin/UserDetailDialog";
@@ -186,10 +187,18 @@ const AdminUserManagement = () => {
   // Stats
   const stats = useMemo(() => ({
     totalUsers: users.length,
+    totalCamlyBalance: users.reduce((s, u) => s + u.camly_balance, 0),
     totalCamlyDistributed: users.reduce((s, u) => s + u.camly_lifetime_earned, 0),
+    totalCamlySpent: users.reduce((s, u) => s + u.camly_lifetime_spent, 0),
+    totalWithdrawn: users.reduce((s, u) => s + u.total_withdrawn, 0),
     totalFunMoney: users.reduce((s, u) => s + u.fun_money_received, 0),
-    totalInternalGifts: users.reduce((s, u) => s + u.gift_internal_sent, 0),
-    totalWeb3Gifts: users.reduce((s, u) => s + u.gift_web3_sent, 0),
+    totalInternalGiftsSent: users.reduce((s, u) => s + u.gift_internal_sent, 0),
+    totalInternalGiftsReceived: users.reduce((s, u) => s + u.gift_internal_received, 0),
+    totalWeb3GiftsSent: users.reduce((s, u) => s + u.gift_web3_sent, 0),
+    totalWeb3GiftsReceived: users.reduce((s, u) => s + u.gift_web3_received, 0),
+    totalPosts: users.reduce((s, u) => s + u.post_count, 0),
+    totalComments: users.reduce((s, u) => s + u.comment_count, 0),
+    totalWithdrawalCount: users.reduce((s, u) => s + u.withdrawal_count, 0),
   }), [users]);
 
   if (authLoading || isLoading) {
@@ -235,8 +244,8 @@ const AdminUserManagement = () => {
       <AdminNavToolbar />
 
       <main className="container mx-auto px-2 sm:px-4 py-6 max-w-[1400px]">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+        {/* Stats Row 1: Users & Camly Overview */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-3">
           <Card className="border-purple-500/20">
             <CardContent className="pt-3 pb-3">
               <div className="flex items-center gap-2">
@@ -244,6 +253,17 @@ const AdminUserManagement = () => {
                 <div>
                   <p className="text-lg font-bold">{formatNumber(stats.totalUsers)}</p>
                   <p className="text-[10px] text-foreground-muted">Tổng users</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-emerald-500/20">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalCamlyBalance)}</p>
+                  <p className="text-[10px] text-foreground-muted">Camly còn lại</p>
                 </div>
               </div>
             </CardContent>
@@ -259,13 +279,50 @@ const AdminUserManagement = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-emerald-500/20">
+          <Card className="border-orange-500/20">
             <CardContent className="pt-3 pb-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-600 shrink-0" />
+                <TrendingDown className="w-5 h-5 text-orange-600 shrink-0" />
+                <div>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalCamlySpent)}</p>
+                  <p className="text-[10px] text-foreground-muted">Camly đã tiêu</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-rose-500/20">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <ArrowDownToLine className="w-5 h-5 text-rose-600 shrink-0" />
+                <div>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalWithdrawn)}</p>
+                  <p className="text-[10px] text-foreground-muted">Tổng đã rút</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Stats Row 2: FUN Money & Gifts */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-3">
+          <Card className="border-indigo-500/20">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-indigo-600 shrink-0" />
                 <div>
                   <p className="text-lg font-bold">{formatNumber(stats.totalFunMoney)}</p>
                   <p className="text-[10px] text-foreground-muted">FUN Money</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-green-500/20">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <Gift className="w-5 h-5 text-green-600 shrink-0" />
+                <div>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalInternalGiftsSent)}</p>
+                  <p className="text-[10px] text-foreground-muted">Tặng nội bộ (gửi)</p>
                 </div>
               </div>
             </CardContent>
@@ -275,19 +332,67 @@ const AdminUserManagement = () => {
               <div className="flex items-center gap-2">
                 <Gift className="w-5 h-5 text-blue-600 shrink-0" />
                 <div>
-                  <p className="text-lg font-bold">{formatNumber(stats.totalInternalGifts)}</p>
-                  <p className="text-[10px] text-foreground-muted">Tặng nội bộ</p>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalInternalGiftsReceived)}</p>
+                  <p className="text-[10px] text-foreground-muted">Tặng nội bộ (nhận)</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-rose-500/20">
+          <Card className="border-cyan-500/20">
             <CardContent className="pt-3 pb-3">
               <div className="flex items-center gap-2">
-                <Wallet className="w-5 h-5 text-rose-600 shrink-0" />
+                <Wallet className="w-5 h-5 text-cyan-600 shrink-0" />
                 <div>
-                  <p className="text-lg font-bold">{formatNumber(stats.totalWeb3Gifts)}</p>
-                  <p className="text-[10px] text-foreground-muted">Tặng Web3</p>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalWeb3GiftsSent)}</p>
+                  <p className="text-[10px] text-foreground-muted">Tặng Web3 (gửi)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-teal-500/20">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-teal-600 shrink-0" />
+                <div>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalWeb3GiftsReceived)}</p>
+                  <p className="text-[10px] text-foreground-muted">Tặng Web3 (nhận)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Stats Row 3: Community Activity */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <Card className="border-violet-500/20">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-violet-600 shrink-0" />
+                <div>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalPosts)}</p>
+                  <p className="text-[10px] text-foreground-muted">Tổng bài đăng</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-sky-500/20">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-sky-600 shrink-0" />
+                <div>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalComments)}</p>
+                  <p className="text-[10px] text-foreground-muted">Tổng bình luận</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-pink-500/20">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <Hash className="w-5 h-5 text-pink-600 shrink-0" />
+                <div>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalWithdrawalCount)}</p>
+                  <p className="text-[10px] text-foreground-muted">Tổng yêu cầu rút</p>
                 </div>
               </div>
             </CardContent>
