@@ -171,12 +171,12 @@ export function UserDetailDialog({ user, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden p-0">
-        <DialogHeader className="p-6 pb-3">
+      <DialogContent className="max-w-[95vw] w-full h-[90vh] overflow-hidden p-0 flex flex-col">
+        <DialogHeader className="p-6 pb-3 shrink-0">
           <div className="flex items-center gap-3">
             <Avatar className="w-12 h-12">
               <AvatarImage src={user.avatar_url || ""} />
-              <AvatarFallback className="bg-primary-pale text-primary text-lg">
+              <AvatarFallback className="bg-primary/10 text-primary text-lg">
                 {(user.display_name || "?")[0]}
               </AvatarFallback>
             </Avatar>
@@ -190,7 +190,7 @@ export function UserDetailDialog({ user, open, onOpenChange }: Props) {
           </div>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(85vh-100px)]">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="px-6 pb-6 space-y-4">
             {/* Quick Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
