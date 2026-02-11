@@ -1,81 +1,78 @@
 
 
-## Mo Cong Tat Ca Cac Trang Cho Khach Xem Tu Do
+## Cap Nhat Mo Hinh Truy Cap FUN.RICH — 3 Tang
 
 ### Tong Quan
 
-Hien tai nhieu trang (Earn, Vision, Mint, Ideas, Bounty, Chat, Messages) dang chan khach bang man hinh "Dang nhap ngay" khi chua dang nhap. Thay doi nay se:
+Phan lon cac trang da duoc mo cho khach tu lan cap nhat truoc. Lan nay tap trung vao:
 
-1. **Mo tat ca trang cho khach doc tu do** -- khong con man hinh chan
-2. **Chi yeu cau dang ky khi tuong tac** (dang bai, binh luan, like, gui tin, tao board...)
-3. **Chat**: cho phep 5 luot chat, sau do hien popup dac biet
-4. **Popup dang ky** voi thong diep: "VUI LONG DANG KY DE DUOC CHOI, DUOC HOC, DUOC VOC, DUOC LI XI 🧧"
+1. **Cap nhat noi dung popup** `SignupPromptDialog` va `AuthActionGuard` voi format moi (bullet points, song ngu VN/EN)
+2. **Cap nhat i18n** them cac key moi cho popup song ngu
+3. **Dam bao trang Messages** hien thi dung cho khach (cho xem giao dien nhung yeu cau dang nhap khi tuong tac)
+4. **Kiem tra cac trang UserProfile, Community** — thay toast error bang popup khi khach like/comment/share
 
 ### Chi Tiet Ky Thuat
 
-#### Buoc 1: Tao component `SignupPromptDialog`
+#### 1. Cap nhat `SignupPromptDialog.tsx`
 
-Tao file `src/components/SignupPromptDialog.tsx` -- dialog popup chinh giua voi thong diep:
+Thay doi noi dung popup thanh format bullet points song ngu:
 
-"VUI LONG DANG KY DE DUOC CHOI, DUOC HOC, DUOC VOC, DUOC LI XI 🧧"
+```text
+VN: VUI LONG DANG KY DE
+  - DUOC CHOI 🌼
+  - DUOC HOC 📚
+  - DUOC VOC 📲
+  - DUOC LI XI 🧧
 
-Su dung Dialog cua Radix UI, hien thi khi khach co gang tuong tac hoac sau 5 tin nhan chat.
+EN: PLEASE REGISTER FOR
+  - USE & EARN 💰
+  - LEARN & EARN 💵
+  - GIVE & GAIN 🏅
+  - REVIEW & REWARD 🏆
+```
 
-#### Buoc 2: Xoa man hinh chan khach tai 7 trang
+Su dung `useLanguage()` de hien thi dung ngon ngu. Them cac translation key moi.
 
-Cac trang sau dang co block `if (!user) { return <...login wall...> }` can xoa:
+#### 2. Cap nhat `AuthActionGuard.tsx`
 
-| Trang | Thay doi |
-|---|---|
-| `src/pages/Earn.tsx` (dong 65-89) | Xoa block `if (!user)`, cho khach xem toan bo noi dung. Boc cac nut tuong tac bang `AuthActionGuard` |
-| `src/pages/Vision.tsx` (dong 53-81) | Xoa block `if (!user)`, boc nut "Tao Vision Board" bang `AuthActionGuard` |
-| `src/pages/Mint.tsx` (dong 19-43) | Xoa block `if (!user)`, boc nut mint bang `AuthActionGuard` |
-| `src/pages/Ideas.tsx` (dong 156-188) | Xoa block `if (!user)`, boc form gop y bang `AuthActionGuard` |
-| `src/pages/Bounty.tsx` (dong 184-208) | Xoa block `if (!user)`, boc nut submit bang `AuthActionGuard` |
-| `src/pages/ContentWriter.tsx` | Thay toast error thanh `SignupPromptDialog` khi generate |
-| `src/pages/Chat.tsx` (dong 744-754) | Cho khach chat 5 luot (dung localStorage nhu ChatDemoWidget), sau do hien `SignupPromptDialog` |
+Dong bo noi dung popup voi `SignupPromptDialog` — dung cung format bullet points song ngu.
 
-#### Buoc 3: Cap nhat Chat.tsx cho khach chat 5 luot
+#### 3. Them translation keys
 
-- Them state dem so tin nhan cua khach (localStorage key `angel_ai_guest_chat_count`)
-- Trong `handleSubmit`: neu `!user`, dem so luot. Neu < 5, cho gui binh thuong. Neu >= 5, hien `SignupPromptDialog`
-- Khach van xem duoc lich su chat hien tai, chi bi chan khi gui tin nhan thu 6
+Them vao `vi.ts` va `en.ts` (va 10 file ngon ngu con lai):
 
-#### Buoc 4: Cap nhat Messages va ActivityHistory
+```text
+"signup.promptTitle": "VUI LONG DANG KY DE" / "PLEASE REGISTER FOR"
+"signup.play": "DUOC CHOI 🌼" / "USE & EARN 💰"
+"signup.learn": "DUOC HOC 📚" / "LEARN & EARN 💵"
+"signup.explore": "DUOC VOC 📲" / "GIVE & GAIN 🏅"
+"signup.reward": "DUOC LI XI 🧧" / "REVIEW & REWARD 🏆"
+```
 
-| Trang | Thay doi |
-|---|---|
-| `src/pages/Messages.tsx` | Xoa `LightGate`, cho khach vao xem giao dien nhung boc cac hanh dong nhan tin bang `AuthActionGuard` |
-| `src/App.tsx` | Xoa `ProfileCompletionGate` boc `Messages` va `ActivityHistory` -- de khach vao xem |
+#### 4. Cap nhat `UserProfile.tsx` va `Community.tsx`
 
-#### Buoc 5: Cap nhat AuthActionGuard
+Thay cac `toast.error("Vui long dang nhap...")` bang hien thi `SignupPromptDialog` khi khach co gang like, comment, share. Them state `showSignupPrompt` va import `SignupPromptDialog`.
 
-Thay doi noi dung popup mac dinh cua `AuthActionGuard` thanh thong diep moi:
+#### 5. Cap nhat `Messages.tsx` cho khach
 
-"VUI LONG DANG KY DE DUOC CHOI, DUOC HOC, DUOC VOC, DUOC LI XI 🧧"
+Hien tai trang Messages khong co guard cho khach. Them logic: neu `!user`, hien giao dien "Tin nhan" voi thong bao nhe "Dang nhap de bat dau nhan tin" va nut dang nhap, thay vi de trang trong hoac loi.
 
-Thay doi trong `DialogTitle` va `DialogDescription` de su dung thong diep nay.
-
-### Danh Sach Cac File Can Sua
+### Danh Sach Files Can Sua
 
 | # | File | Mo ta |
 |---|---|---|
-| 1 | `src/components/SignupPromptDialog.tsx` | **Tao moi** -- popup dang ky chinh giua |
-| 2 | `src/components/AuthActionGuard.tsx` | Cap nhat thong diep mac dinh |
-| 3 | `src/pages/Earn.tsx` | Xoa login wall, boc tuong tac AuthActionGuard |
-| 4 | `src/pages/Vision.tsx` | Xoa login wall, boc tuong tac AuthActionGuard |
-| 5 | `src/pages/Mint.tsx` | Xoa login wall, boc tuong tac AuthActionGuard |
-| 6 | `src/pages/Ideas.tsx` | Xoa login wall, boc tuong tac AuthActionGuard |
-| 7 | `src/pages/Bounty.tsx` | Xoa login wall, boc tuong tac AuthActionGuard |
-| 8 | `src/pages/ContentWriter.tsx` | Thay toast thanh popup |
-| 9 | `src/pages/Chat.tsx` | Them logic 5 luot chat cho khach |
-| 10 | `src/pages/Messages.tsx` | Xoa LightGate |
-| 11 | `src/App.tsx` | Xoa ProfileCompletionGate boc Messages/ActivityHistory |
+| 1 | `src/components/SignupPromptDialog.tsx` | Cap nhat noi dung bullet points song ngu |
+| 2 | `src/components/AuthActionGuard.tsx` | Dong bo noi dung popup moi |
+| 3 | `src/translations/vi.ts` | Them signup prompt keys |
+| 4 | `src/translations/en.ts` | Them signup prompt keys |
+| 5 | `src/pages/UserProfile.tsx` | Thay toast bang SignupPromptDialog |
+| 6 | `src/pages/Community.tsx` | Thay toast bang SignupPromptDialog |
+| 7 | `src/pages/Messages.tsx` | Them guest-friendly UI |
 
 ### Luu Y
 
-- Cac trang Admin van giu nguyen bao mat (redirect ve /admin/login)
-- Cac trang docs, community, knowledge, profile cong khai da san sang -- khong can thay doi
-- Fallback: neu khach co gang thuc hien hanh dong yeu cau auth, popup se hien ngay lap tuc
-- Khong thay doi RLS hay database -- chi thay doi UI/UX
+- Cac trang Admin giu nguyen bao mat — khong thay doi
+- Khong thay doi RLS hay database
+- Logic 5 luot chat da duoc cai dat truoc do — giu nguyen
+- Cac trang Earn, Vision, Mint, Ideas, Bounty da mo — giu nguyen
 
