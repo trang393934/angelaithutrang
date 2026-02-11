@@ -56,6 +56,14 @@ Deno.serve(async (req) => {
       .eq("user_id", gift.receiver_id)
       .maybeSingle();
 
+    // Fetch wallet addresses
+    const { data: wallets } = await supabaseAdmin
+      .from("user_wallet_addresses")
+      .select("user_id, wallet_address")
+      .in("user_id", [gift.sender_id, gift.receiver_id]);
+
+    const walletMap = new Map(wallets?.map((w: any) => [w.user_id, w.wallet_address]) || []);
+
     // If context_type is 'post', fetch post info
     let postInfo = null;
     if (gift.context_type === "post" && gift.context_id) {
@@ -78,8 +86,8 @@ Deno.serve(async (req) => {
         receipt: {
           id: gift.id,
           receipt_public_id: gift.receipt_public_id,
-          sender: senderProfile || { user_id: gift.sender_id, display_name: null, avatar_url: null },
-          receiver: receiverProfile || { user_id: gift.receiver_id, display_name: null, avatar_url: null },
+          sender: { ...(senderProfile || { user_id: gift.sender_id, display_name: null, avatar_url: null }), wallet_address: walletMap.get(gift.sender_id) || null },
+          receiver: { ...(receiverProfile || { user_id: gift.receiver_id, display_name: null, avatar_url: null }), wallet_address: walletMap.get(gift.receiver_id) || null },
           amount: gift.amount,
           message: gift.message,
           gift_type: gift.gift_type,

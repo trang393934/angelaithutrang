@@ -15,9 +15,11 @@ export interface TipReceiptData {
   sender_id: string;
   sender_name: string;
   sender_avatar?: string | null;
+  sender_wallet?: string | null;
   receiver_id: string;
   receiver_name: string;
   receiver_avatar?: string | null;
+  receiver_wallet?: string | null;
   amount: number;
   message?: string | null;
   tx_hash?: string | null;
@@ -129,6 +131,11 @@ export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrati
     toast.success("Đã sao chép link biên nhận!");
   };
 
+  const copyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`Đã sao chép ${label}!`);
+  };
+
   const formatAmount = (amount: number) => new Intl.NumberFormat("vi-VN").format(amount);
 
   const confettiPieces = Array.from({ length: 80 }, (_, i) => ({
@@ -227,6 +234,12 @@ export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrati
                   <div className="min-w-0">
                     <p className="text-xs text-amber-600">Người tặng</p>
                     <p className="font-semibold text-sm truncate text-gray-800">{data.sender_name || "Ẩn danh"}</p>
+                    {data.sender_wallet && (
+                      <button onClick={() => copyText(data.sender_wallet!, "ví")} className="text-[10px] text-gray-400 hover:text-amber-600 flex items-center gap-0.5 mt-0.5">
+                        <span className="font-mono">{data.sender_wallet.slice(0, 6)}...{data.sender_wallet.slice(-4)}</span>
+                        <Copy className="w-2.5 h-2.5" />
+                      </button>
+                    )}
                   </div>
                 </Link>
 
@@ -236,6 +249,12 @@ export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrati
                   <div className="min-w-0 text-right">
                     <p className="text-xs text-rose-500">Người nhận</p>
                     <p className="font-semibold text-sm truncate text-gray-800">{data.receiver_name || "Ẩn danh"}</p>
+                    {data.receiver_wallet && (
+                      <button onClick={() => copyText(data.receiver_wallet!, "ví")} className="text-[10px] text-gray-400 hover:text-rose-500 flex items-center gap-0.5 mt-0.5 ml-auto">
+                        <span className="font-mono">{data.receiver_wallet.slice(0, 6)}...{data.receiver_wallet.slice(-4)}</span>
+                        <Copy className="w-2.5 h-2.5" />
+                      </button>
+                    )}
                   </div>
                   <Avatar className="h-10 w-10 ring-2 ring-rose-300">
                     <AvatarImage src={data.receiver_avatar || ""} />
