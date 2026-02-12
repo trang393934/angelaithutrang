@@ -4,7 +4,7 @@ import { decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const DAILY_IMAGE_LIMIT = 3;
@@ -38,9 +38,11 @@ serve(async (req) => {
         global: { headers: { Authorization: authHeader } }
       });
       
-      const token = authHeader.replace('Bearer ', '');
-      const { data: claimsData } = await supabase.auth.getClaims(token);
-      userId = claimsData?.claims?.sub as string || null;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error("Auth error:", userError);
+      }
+      userId = user?.id || null;
       
       if (userId) {
         // Check and increment usage with daily limit
