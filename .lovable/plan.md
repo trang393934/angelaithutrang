@@ -1,39 +1,51 @@
 
-
-# Cập Nhật Logo Angel AI Toàn Hệ Thống
+# Nâng Cấp Trang Lịch Sử Giao Dịch
 
 ## Tổng Quan
-Thay thế logo Angel AI cũ bằng logo mới (hình thiên thần vàng kim) ở **tất cả** các vị trí hiển thị, đồng thời loại bỏ nền trắng để logo tràn viền.
+Thêm nút quay về trang chủ, mở rộng hệ thống thống kê với các chỉ số chi tiết hơn, và thêm chế độ xem "Cá nhân" vs "Tất cả".
 
-## Thay Đổi
+## Các Thay Đổi
 
-### 1. Thay thế file ảnh
-- Copy file `user-uploads://photo_2026-01-20_09-24-47.jpg` vào `src/assets/angel-avatar.png` (ghi đè)
-- Copy cùng file vào `src/assets/angel-ai-logo.png` (ghi đè)
-- Copy cùng file vào `src/assets/angel-ai-golden-logo.png` (ghi đè)
+### 1. Nút quay về trang chủ
+- Thêm icon `ArrowLeft` vào header, bên trái logo Globe
+- Click sẽ `navigate("/")` về trang chủ
 
-Vì tất cả 54+ file đều import từ 3 file asset này, việc ghi đè sẽ tự động cập nhật logo ở mọi nơi mà không cần sửa import.
+### 2. Mở rộng thống kê (Stat Cards)
+Thay 5 thẻ hiện tại bằng hệ thống thống kê chi tiết hơn:
 
-### 2. Xóa nền trắng ở các container logo
-Hai vị trí có wrapper `bg-white` cần sửa:
+**Hàng 1 - Tổng quan (4 thẻ):**
+- Tổng giao dịch (số lượt)
+- Tổng gửi đi (số lượt gửi)
+- Tổng nhận về (số lượt nhận)
+- Onchain (số lượt có tx_hash)
 
-- **MainSidebar.tsx** (dòng 55-58): Xóa div `bg-white`, cho logo `object-cover` tràn viền trong vòng tròn gradient vàng
-- **Leaderboard.tsx** (dòng 73-76): Tương tự, xóa div `bg-white`, logo tràn viền
+**Hàng 2 - Tổng theo token (hiển thị giá trị):**
+- Tổng CAMLY (tổng amount từ tất cả giao dịch, vì hiện tại hệ thống chỉ dùng CAMLY)
+- Tổng Donate (tổng amount từ project_donations)
+- Tổng Tặng thưởng (tổng amount từ coin_gifts)
+- Hôm nay (tổng amount giao dịch trong ngày)
 
-### 3. Đảm bảo `object-cover` thay vì `object-contain`
-Các vị trí đang dùng `object-contain` sẽ đổi sang `object-cover` để logo tràn đầy khung tròn, không bị co lại:
-- MainSidebar.tsx
-- Leaderboard.tsx
+### 3. Chế độ xem "Cá nhân" vs "Tất cả"
+- Thêm toggle/tabs ở trên bộ lọc: **"Tất cả"** | **"Cá nhân"**
+- "Tất cả": hiển thị toàn bộ giao dịch (mặc định, như hiện tại)
+- "Cá nhân": chỉ hiển thị giao dịch liên quan đến user đang đăng nhập (sender_id hoặc receiver_id = current user)
+- Khi ở chế độ "Cá nhân", stat cards cũng tính theo dữ liệu cá nhân
+- Nếu chưa đăng nhập, tab "Cá nhân" sẽ hiển thị thông báo yêu cầu đăng nhập
 
 ## Chi Tiết Kỹ Thuật
 
-### Files cần sửa (code):
-1. `src/components/MainSidebar.tsx` - Xóa wrapper bg-white, đổi object-contain -> object-cover, tăng kích thước ảnh để tràn viền
-2. `src/components/Leaderboard.tsx` - Tương tự, xóa wrapper bg-white, đổi object-contain -> object-cover
-
-### Files chỉ cần ghi đè ảnh (không sửa code):
-- `src/assets/angel-avatar.png` -- dùng bởi ~26 files
-- `src/assets/angel-ai-logo.png` -- dùng bởi ~2 files  
-- `src/assets/angel-ai-golden-logo.png` -- dùng bởi ~5 files
-
-Tổng cộng: 3 file ảnh ghi đè + 2 file code sửa nhỏ. Tất cả 54+ vị trí hiển thị logo sẽ được cập nhật tự động.
+### File cần sửa:
+**`src/pages/ActivityHistory.tsx`**
+- Import thêm `ArrowLeft`, `Users`, `User` từ lucide-react
+- Import `useAuth` hook để lấy user hiện tại
+- Thêm state `viewMode`: `"all"` | `"personal"`
+- Thêm nút Back trong header
+- Thay thế grid stat cards thành 2 hàng với 8 thẻ thống kê
+- Tính toán stats dựa trên `viewMode`:
+  - `totalSent`: đếm/tổng amount giao dịch user là sender
+  - `totalReceived`: đếm/tổng amount giao dịch user là receiver
+  - `totalCamly`: tổng amount tất cả
+  - `totalDonation`: tổng amount loại donation
+  - `totalGift`: tổng amount loại gift
+- Thêm tabs "Tất cả" / "Cá nhân" vào khu vực filter
+- Cập nhật logic filter để lọc theo viewMode
