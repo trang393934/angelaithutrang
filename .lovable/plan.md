@@ -1,63 +1,53 @@
 
 
-## Cập nhật hành vi tự động sau tặng thưởng
+## Sửa lỗi: Tự động gửi tin nhắn & Tự động phát âm thanh
 
-### Mục tiêu
-1. Nút "Đăng Profile" đăng biên nhận tặng thưởng (receipt) theo giao diện cũ kèm hashtag
-2. Tự động gửi tin nhắn DM cho người nhận ngay khi tặng thành công (không cần bấm nút)
-3. Hiệu ứng pháo hoa + coin rơi chạy liên tục đến khi đóng; nhạc tự động phát 1 lần duy nhất (không loop)
+### Vấn đề phát hiện
 
-### Các thay đổi chi tiết
+**1. Âm thanh không tự động phát**
 
-**1. File: `src/components/gifts/GiftCelebrationModal.tsx`**
-
-- **Hiệu ứng liên tục**: Xóa timer `setTimeout(() => setShowEffects(false), 8000)`. Thay vào đó `setShowEffects(true)` khi modal mở và chỉ tắt khi đóng modal. Thêm `repeat: Infinity` cho các animation firework và falling coins.
-- **Xóa nút "Gửi tin nhắn cho người nhận"**: Vì tin nhắn sẽ được gửi tự động từ `GiftCoinDialog`, không cần nút này nữa.
-- **Xóa props `onSendMessage`** khỏi interface và component.
-
-**2. File: `src/components/gifts/CelebrationAudioPlayer.tsx`**
-
-- Xóa thuộc tính `loop` trên thẻ `<audio>`. Nhạc sẽ chỉ phát 1 lần khi modal mở (autoPlay đã có sẵn).
-- Khi nhạc kết thúc tự nhiên, cập nhật `isPlaying = false` (đã có `onEnded`).
-
-**3. File: `src/components/gifts/GiftCoinDialog.tsx`**
-
-- **Tự động gửi DM**: Di chuyển logic gửi tin nhắn DM (hiện ở prop `onSendMessage`) vào ngay sau khi `setCelebrationData` + `setShowCelebration(true)` trong cả `handleSendGift` (internal) và `handleCryptoSuccess` (web3). Gửi ngầm không chờ, không hỏi user.
-- **Nút "Đăng Profile"**: Thay vì chụp ảnh Celebration Card bằng html2canvas, đăng bài community dạng text biên nhận kèm hashtag:
-  ```
-  🎁 Biên nhận tặng thưởng
-  Người tặng: {senderName}
-  Người nhận: {receiverName}
-  Số lượng: {amount} {tokenLabel}
-  {message nếu có: Lời nhắn: "..."}
-  ⏰ {thời gian}
-  #AngelAI #TặngThưởng #CamlyCoin #FUNMoney
-  ```
-  Không cần chụp ảnh card, không dùng html2canvas cho phần này. Vẫn giữ imageUrl nếu muốn đính kèm ảnh card.
-- **Xóa prop `onSendMessage`** khỏi `<GiftCelebrationModal>`.
-
-### Luồng hoạt động mới
-
-```text
-Tặng thành công
-    |
-    +-- [TỰ ĐỘNG] Gửi DM cho người nhận (ảnh card + nội dung)
-    |
-    v
-Celebration Modal mở
-    - Pháo hoa + coin rơi: LIÊN TỤC đến khi đóng
-    - Nhạc: tự động phát 1 lần
-    |
-    +-- Nút "Đăng Profile" --> Đăng biên nhận text + hashtag
-    +-- Nút "Lưu ảnh" --> Tải về máy
-    +-- Nút "Chia sẻ" --> Copy link
-    |
-    v
-User đóng modal -> tắt hiệu ứng
+Trong `CelebrationAudioPlayer.tsx`, useEffect autoPlay phụ thuộc vào `[autoPlay]`:
+```
+useEffect(() => {
+  if (autoPlay && audioRef.current) {
+    audioRef.current.play().catch(() => {});
+  }
+}, [autoPlay]);
 ```
 
-### Files thay đổi
-1. `src/components/gifts/GiftCelebrationModal.tsx` - Hiệu ứng liên tục, xóa nút gửi tin nhắn
-2. `src/components/gifts/CelebrationAudioPlayer.tsx` - Nhạc phát 1 lần (không loop)
-3. `src/components/gifts/GiftCoinDialog.tsx` - Auto DM, đăng biên nhận text
+Vấn đề: Khi modal mở, component mount với `autoPlay=true` ngay từ đầu. Effect chạy 1 lần nhưng:
+- Trình duyệt chặn autoplay nếu chưa có tương tác người dùng gần đây
+- `.catch(() => {})` nuốt lỗi im lặng, không retry
+- Audio element có thể chưa load xong khi effect chạy
 
+**Giải pháp**: Thêm delay nhỏ (300ms) để đợi audio element sẵn sàng, retry play khi `canplaythrough` event fire, và thêm `preload="auto"` cho audio tag. Vì người dùng đã click nút tặng (user interaction), trình duyệt sẽ cho phép play nếu timing đúng.
+
+**2. Tin nhắn tự động không gửi được**
+
+Trong `autoSendDM`, có guard:
+```
+if (!celData.receiver_id || !user?.id) return;
+```
+
+Với giao dịch Web3 đến địa chỉ ví ngoài (không chọn user), `receiver_id` = `""` (empty string), nên hàm return sớm mà không gửi. Ngoài ra, insert vào `direct_messages` cần đúng format và receiver phải là user hợp lệ trong hệ thống.
+
+**Giải pháp**: Chỉ gửi DM khi `receiver_id` là UUID hợp lệ (người nhận có tài khoản), log rõ ràng hơn khi không gửi được. Đồng thời thêm `console.log` debug để theo dõi luồng thực thi.
+
+### Thay đổi chi tiết
+
+**File 1: `src/components/gifts/CelebrationAudioPlayer.tsx`**
+
+- Thêm `preload="auto"` vào thẻ `<audio>`
+- Thay đổi useEffect autoPlay: thêm delay 300ms + lắng nghe event `canplaythrough` để retry play
+- Thêm ref `hasAutoPlayed` để đảm bảo chỉ auto-play 1 lần duy nhất
+- Log lỗi thay vì nuốt im lặng
+
+**File 2: `src/components/gifts/GiftCoinDialog.tsx`**
+
+- Thêm console.log trong `autoSendDM` để debug (log khi gọi, log khi skip, log khi thành công/thất bại)
+- Validate `receiver_id` là UUID hợp lệ trước khi insert
+- Đảm bảo toast thông báo rõ ràng khi gửi thành công hoặc khi không thể gửi (người nhận không có tài khoản)
+
+### Files thay đổi
+1. `src/components/gifts/CelebrationAudioPlayer.tsx` - Fix autoplay timing
+2. `src/components/gifts/GiftCoinDialog.tsx` - Fix auto DM validation + debug logs
