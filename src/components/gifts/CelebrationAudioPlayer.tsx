@@ -79,7 +79,7 @@ export function CelebrationAudioPlayer({ selectedTrack, onTrackChange, autoPlay 
           {isMuted ? <VolumeX className="w-3.5 h-3.5 text-amber-900" /> : <Volume2 className="w-3.5 h-3.5 text-amber-900" />}
         </button>
       </div>
-      <audio ref={audioRef} src={currentTrack.src} loop onEnded={() => setIsPlaying(false)} />
+      <audio ref={audioRef} src={currentTrack.src} onEnded={() => setIsPlaying(false)} />
     </div>
   );
 }

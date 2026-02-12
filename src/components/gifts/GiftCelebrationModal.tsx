@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { X, ExternalLink, Copy, Sparkles, ArrowRight, Download, Share2, MessageCircle, FileText, Image, Loader2 } from "lucide-react";
+import { X, ExternalLink, Copy, Sparkles, ArrowRight, Download, Share2, FileText, Image, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
@@ -37,7 +37,6 @@ interface GiftCelebrationModalProps {
   onOpenChange: (open: boolean) => void;
   data: CelebrationData | null;
   onPostToProfile?: (data: CelebrationData, themeId: string) => void;
-  onSendMessage?: (data: CelebrationData) => void;
 }
 
 const USDT_LOGO = "https://cryptologos.cc/logos/tether-usdt-logo.png?v=040";
@@ -84,7 +83,7 @@ const FireworkBurst = ({ delay, x, y }: { delay: number; x: number; y: number })
               y: [0, Math.sin(angle) * dist],
               opacity: [0, 1, 0],
             }}
-            transition={{ duration: 1.2, delay: delay + i * 0.03, ease: "easeOut" }}
+            transition={{ duration: 1.2, delay: delay + i * 0.03, ease: "easeOut", repeat: Infinity, repeatDelay: 1.5 }}
           />
         );
       })}
@@ -103,7 +102,7 @@ const FallingCoin = ({ delay, left, size, logo }: { delay: number; left: number;
       rotate: [0, 360, 720, 1080],
       x: [0, Math.random() > 0.5 ? 15 : -15],
     }}
-    transition={{ duration: 3.5 + Math.random() * 2, delay, ease: "easeIn" }}
+    transition={{ duration: 3.5 + Math.random() * 2, delay, ease: "easeIn", repeat: Infinity, repeatDelay: 0.5 }}
   >
     <img src={logo} alt="" className="w-full h-full drop-shadow-md rounded-full" />
   </motion.div>
@@ -121,21 +120,20 @@ const FloatingSparkle = ({ delay, x, y }: { delay: number; x: number; y: number 
   </motion.div>
 );
 
-export function GiftCelebrationModal({ open, onOpenChange, data, onPostToProfile, onSendMessage }: GiftCelebrationModalProps) {
+export function GiftCelebrationModal({ open, onOpenChange, data, onPostToProfile }: GiftCelebrationModalProps) {
   const [showEffects, setShowEffects] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState("congratulations");
   const [selectedBackground, setSelectedBackground] = useState(0);
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [selectedTrack, setSelectedTrack] = useState("rich-1");
   const [isPostingProfile, setIsPostingProfile] = useState(false);
-  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open && data) {
       setShowEffects(true);
-      const timer = setTimeout(() => setShowEffects(false), 8000);
-      return () => clearTimeout(timer);
+    } else {
+      setShowEffects(false);
     }
   }, [open, data]);
 
@@ -455,24 +453,6 @@ export function GiftCelebrationModal({ open, onOpenChange, data, onPostToProfile
                 >
                   {isPostingProfile ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Image className="w-3.5 h-3.5 mr-1" />}
                   {isPostingProfile ? "Đang đăng..." : "Đăng Profile"}
-                </Button>
-              )}
-              {onSendMessage && (
-                <Button
-                  onClick={async () => {
-                    setIsSendingMessage(true);
-                    try {
-                      await onSendMessage(data);
-                    } finally {
-                      setIsSendingMessage(false);
-                    }
-                  }}
-                  disabled={isSendingMessage}
-                  size="sm"
-                  className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold text-xs col-span-2"
-                >
-                  {isSendingMessage ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5 mr-1" />}
-                  {isSendingMessage ? "Đang gửi..." : "Gửi tin nhắn cho người nhận"}
                 </Button>
               )}
               <Button
