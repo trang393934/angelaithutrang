@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Globe, RefreshCw, Download, Search, Gift, Heart, Wallet,
   ArrowUpRight, ArrowDownLeft, Copy, ExternalLink, Check,
-  Clock, TrendingUp, Activity, CheckCircle2, Loader2, Filter,
-  ChevronDown
+  Clock, TrendingUp, Activity, CheckCircle2, Loader2,
+  ArrowLeft, Users, User, Send, Inbox
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import { formatDistanceToNow, format, isToday, subDays, subMonths } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
 interface Transaction {
@@ -217,12 +218,14 @@ function TransactionItem({ tx }: { tx: Transaction }) {
 const ActivityHistory = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
   const [onchainOnly, setOnchainOnly] = useState(false);
+  const [viewMode, setViewMode] = useState<"all" | "personal">("all");
 
   const fetchTransactions = useCallback(async () => {
     setIsLoading(true);
@@ -305,10 +308,17 @@ const ActivityHistory = () => {
     return () => { supabase.removeChannel(channel); };
   }, [fetchTransactions]);
 
+  // View-filtered base (all vs personal)
+  const viewFiltered = useMemo(() => {
+    if (viewMode === "personal" && user) {
+      return transactions.filter(tx => tx.sender_id === user.id || tx.receiver_id === user.id);
+    }
+    return transactions;
+  }, [transactions, viewMode, user]);
+
   // Filtered list
   const filtered = useMemo(() => {
-    return transactions.filter(tx => {
-      // Search
+    return viewFiltered.filter(tx => {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const match = 
@@ -319,23 +329,29 @@ const ActivityHistory = () => {
           (tx.message || "").toLowerCase().includes(q);
         if (!match) return false;
       }
-      // Type
       if (typeFilter === "gifts" && tx.type !== "gift") return false;
       if (typeFilter === "donations" && tx.type !== "donation") return false;
-      // Time
       if (timeFilter === "today" && !isToday(new Date(tx.created_at))) return false;
       if (timeFilter === "7days" && new Date(tx.created_at) < subDays(new Date(), 7)) return false;
       if (timeFilter === "30days" && new Date(tx.created_at) < subMonths(new Date(), 1)) return false;
-      // Onchain
       if (onchainOnly && !tx.tx_hash && tx.gift_type !== "web3" && tx.donation_type !== "manual") return false;
       return true;
     });
-  }, [transactions, searchQuery, typeFilter, timeFilter, onchainOnly]);
+  }, [viewFiltered, searchQuery, typeFilter, timeFilter, onchainOnly]);
 
-  // Stats
-  const todayCount = transactions.filter(tx => isToday(new Date(tx.created_at))).length;
-  const totalValue = transactions.reduce((s, tx) => s + tx.amount, 0);
-  const onchainCount = transactions.filter(tx => tx.tx_hash).length;
+  // Stats based on viewFiltered
+  const stats = useMemo(() => {
+    const data = viewFiltered;
+    const totalCount = data.length;
+    const sentCount = user ? data.filter(tx => tx.sender_id === user.id).length : data.filter(tx => tx.type === "gift").length;
+    const receivedCount = user ? data.filter(tx => tx.receiver_id === user.id).length : data.length - sentCount;
+    const onchainCount = data.filter(tx => tx.tx_hash).length;
+    const totalCamly = data.reduce((s, tx) => s + tx.amount, 0);
+    const totalDonate = data.filter(tx => tx.type === "donation").reduce((s, tx) => s + tx.amount, 0);
+    const totalGift = data.filter(tx => tx.type === "gift").reduce((s, tx) => s + tx.amount, 0);
+    const todayValue = data.filter(tx => isToday(new Date(tx.created_at))).reduce((s, tx) => s + tx.amount, 0);
+    return { totalCount, sentCount, receivedCount, onchainCount, totalCamly, totalDonate, totalGift, todayValue };
+  }, [viewFiltered, user]);
 
   // Export CSV
   const exportCSV = () => {
@@ -367,6 +383,9 @@ const ActivityHistory = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              <button onClick={() => navigate("/")} className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
+                <ArrowLeft className="w-4 h-4 text-white" />
+              </button>
               <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <Globe className="w-5 h-5 text-white" />
               </div>
@@ -400,13 +419,53 @@ const ActivityHistory = () => {
       </header>
 
       <main className="container mx-auto max-w-5xl px-4 sm:px-6 py-5 space-y-4">
-        {/* Stat Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
-          <StatCard icon={Activity} label="Tổng giao dịch" value={transactions.length} color="bg-gradient-to-br from-[#daa520] to-[#b8860b]" />
-          <StatCard icon={TrendingUp} label="Tổng giá trị" value={totalValue} color="bg-gradient-to-br from-[#ffd700] to-[#daa520]" />
-          <StatCard icon={Clock} label="Hôm nay" value={todayCount} color="bg-gradient-to-br from-amber-500 to-amber-600" />
-          <StatCard icon={CheckCircle2} label="Onchain" value={onchainCount} color="bg-gradient-to-br from-emerald-500 to-emerald-600" />
-          <StatCard icon={Wallet} label="Chờ xử lý" value={transactions.length - onchainCount} color="bg-gradient-to-br from-blue-500 to-blue-600" />
+        {/* View Mode Tabs */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode("all")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              viewMode === "all"
+                ? "bg-gradient-to-r from-[#daa520] to-[#b8860b] text-white shadow-md"
+                : "bg-white/80 text-[#8B7355] border border-[#daa520]/30 hover:border-[#daa520]/50"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Tất cả
+          </button>
+          <button
+            onClick={() => setViewMode("personal")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              viewMode === "personal"
+                ? "bg-gradient-to-r from-[#daa520] to-[#b8860b] text-white shadow-md"
+                : "bg-white/80 text-[#8B7355] border border-[#daa520]/30 hover:border-[#daa520]/50"
+            }`}
+          >
+            <User className="w-4 h-4" />
+            Cá nhân
+          </button>
+        </div>
+
+        {/* Personal mode login prompt */}
+        {viewMode === "personal" && !user && (
+          <div className="bg-[#ffd700]/10 border border-[#daa520]/30 rounded-xl p-4 text-center">
+            <p className="text-sm text-[#8B7355]">Vui lòng <Link to="/auth" className="text-[#b8860b] font-semibold underline">đăng nhập</Link> để xem giao dịch cá nhân.</p>
+          </div>
+        )}
+
+        {/* Stat Cards - Row 1: Overview */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          <StatCard icon={Activity} label="Tổng giao dịch" value={stats.totalCount} color="bg-gradient-to-br from-[#daa520] to-[#b8860b]" />
+          <StatCard icon={Send} label="Tổng gửi" value={stats.sentCount} color="bg-gradient-to-br from-amber-500 to-amber-600" />
+          <StatCard icon={Inbox} label="Tổng nhận" value={stats.receivedCount} color="bg-gradient-to-br from-emerald-500 to-emerald-600" />
+          <StatCard icon={CheckCircle2} label="Onchain" value={stats.onchainCount} color="bg-gradient-to-br from-blue-500 to-blue-600" />
+        </div>
+
+        {/* Stat Cards - Row 2: Token values */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          <StatCard icon={TrendingUp} label="Tổng CAMLY" value={stats.totalCamly} color="bg-gradient-to-br from-[#ffd700] to-[#daa520]" />
+          <StatCard icon={Heart} label="Tổng Donate" value={stats.totalDonate} color="bg-gradient-to-br from-rose-400 to-pink-500" />
+          <StatCard icon={Gift} label="Tổng Tặng" value={stats.totalGift} color="bg-gradient-to-br from-[#b8860b] to-[#8B6914]" />
+          <StatCard icon={Clock} label="Hôm nay" value={stats.todayValue} color="bg-gradient-to-br from-violet-500 to-purple-600" />
         </div>
 
         {/* Filters */}
