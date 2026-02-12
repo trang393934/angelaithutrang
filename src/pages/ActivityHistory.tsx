@@ -4,7 +4,8 @@ import {
   Globe, RefreshCw, Download, Search, Gift, Heart, Wallet,
   ArrowUpRight, ArrowDownLeft, Copy, ExternalLink, Check,
   Clock, TrendingUp, Activity, CheckCircle2, Loader2,
-  ArrowLeft, Users, User, Send, Inbox, Filter, Sparkles
+  ArrowLeft, Users, User, Send, Inbox, Filter, Sparkles,
+  ShieldCheck, Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,10 +23,14 @@ import { useAuth } from "@/hooks/useAuth";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
 import bitcoinLogo from "@/assets/bitcoin-logo.png";
+import angelAiLogo from "@/assets/angel-ai-golden-logo.png";
 import { GiftCelebrationModal, type CelebrationData } from "@/components/gifts/GiftCelebrationModal";
 
 const USDT_LOGO = "https://cryptologos.cc/logos/tether-usdt-logo.png?v=040";
 const BNB_LOGO = "https://cryptologos.cc/logos/bnb-bnb-logo.png?v=040";
+
+const TREASURY_WALLET = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
+const TREASURY_SENDER_ID = "ANGEL_AI_TREASURY";
 
 function getTokenDisplay(giftType: string | null): { logo: string; symbol: string } {
   switch (giftType) {
@@ -39,7 +44,7 @@ function getTokenDisplay(giftType: string | null): { logo: string; symbol: strin
 
 interface Transaction {
   id: string;
-  type: "gift" | "donation";
+  type: "gift" | "donation" | "treasury_reward" | "treasury_lixi";
   sender_id: string;
   sender_name: string | null;
   sender_avatar: string | null;
@@ -74,6 +79,8 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
   );
 }
 
+const isTreasuryTx = (tx: Transaction) => tx.type === "treasury_reward" || tx.type === "treasury_lixi";
+
 function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx: Transaction) => void }) {
   const { currentLanguage } = useLanguage();
   const locale = currentLanguage === "vi" ? vi : enUS;
@@ -81,7 +88,8 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
   const [copiedWallet, setCopiedWallet] = useState<string | null>(null);
 
   const isGift = tx.type === "gift";
-  const isOnchain = tx.tx_hash || tx.gift_type === "web3" || tx.donation_type === "manual";
+  const isTreasury = isTreasuryTx(tx);
+  const isOnchain = tx.tx_hash || tx.gift_type === "web3" || tx.donation_type === "manual" || isTreasury;
 
   const copyWallet = async (addr: string) => {
     await navigator.clipboard.writeText(addr);
@@ -90,33 +98,57 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
     setTimeout(() => setCopiedWallet(null), 2000);
   };
 
+  const typeLabel = isTreasury
+    ? (tx.type === "treasury_lixi" ? "Lì xì" : "Trả thưởng")
+    : isGift ? "Tặng thưởng" : "Donate";
+
+  const typeIcon = isTreasury
+    ? <Building2 className="w-2.5 h-2.5" />
+    : isGift ? <Gift className="w-2.5 h-2.5" /> : <Heart className="w-2.5 h-2.5" />;
+
   return (
     <div className="bg-white/70 backdrop-blur-sm rounded-xl border border-[#daa520]/20 p-3 sm:p-4 hover:border-[#daa520]/40 transition-all hover:shadow-md group">
       <div className="flex items-start gap-3">
         {/* Type icon */}
         <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center shadow-sm ${
-          isGift 
-            ? 'bg-gradient-to-br from-[#daa520] to-[#b8860b]' 
-            : 'bg-gradient-to-br from-rose-400 to-pink-500'
+          isTreasury
+            ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
+            : isGift 
+              ? 'bg-gradient-to-br from-[#daa520] to-[#b8860b]' 
+              : 'bg-gradient-to-br from-rose-400 to-pink-500'
         }`}>
-          {isGift ? <Gift className="w-4 h-4 text-white" /> : <Heart className="w-4 h-4 text-white fill-white" />}
+          {isTreasury ? <Building2 className="w-4 h-4 text-white" /> : isGift ? <Gift className="w-4 h-4 text-white" /> : <Heart className="w-4 h-4 text-white fill-white" />}
         </div>
 
         <div className="flex-1 min-w-0">
           {/* Sender -> Receiver */}
           <div className="flex items-center gap-1.5 flex-wrap mb-1">
             <div className="flex flex-col">
-              <Link to={`/user/${tx.sender_id}`} className="flex items-center gap-1.5 hover:opacity-80">
-                <Avatar className="w-5 h-5">
-                  <AvatarImage src={tx.sender_avatar || ""} />
-                  <AvatarFallback className="text-[8px] bg-[#ffd700]/20 text-[#b8860b]">
-                    {(tx.sender_name || "?")[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="font-semibold text-sm text-[#3D2800] truncate max-w-[100px]">
-                  {tx.sender_name || "Ẩn danh"}
-                </span>
-              </Link>
+              {isTreasury ? (
+                <div className="flex items-center gap-1.5">
+                  <Avatar className="w-5 h-5">
+                    <AvatarImage src={angelAiLogo} />
+                    <AvatarFallback className="text-[8px] bg-emerald-100 text-emerald-700">AI</AvatarFallback>
+                  </Avatar>
+                  <span className="font-semibold text-sm text-[#3D2800]">Angel AI Treasury</span>
+                  <span className="inline-flex items-center gap-0.5 text-[9px] bg-emerald-100 text-emerald-700 border border-emerald-300 px-1.5 py-0.5 rounded-full font-bold">
+                    <ShieldCheck className="w-2.5 h-2.5" />
+                    Verified
+                  </span>
+                </div>
+              ) : (
+                <Link to={`/user/${tx.sender_id}`} className="flex items-center gap-1.5 hover:opacity-80">
+                  <Avatar className="w-5 h-5">
+                    <AvatarImage src={tx.sender_avatar || ""} />
+                    <AvatarFallback className="text-[8px] bg-[#ffd700]/20 text-[#b8860b]">
+                      {(tx.sender_name || "?")[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-semibold text-sm text-[#3D2800] truncate max-w-[100px]">
+                    {tx.sender_name || "Ẩn danh"}
+                  </span>
+                </Link>
+              )}
               {tx.sender_wallet && (
                 <div className="flex items-center gap-1 text-[10px] text-[#8B7355] ml-6.5 mt-0.5">
                   <span className="font-mono">{truncateWallet(tx.sender_wallet)}</span>
@@ -127,13 +159,9 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
               )}
             </div>
 
-            {isGift ? (
-              <ArrowUpRight className="w-3.5 h-3.5 text-[#daa520] flex-shrink-0" />
-            ) : (
-              <ArrowDownLeft className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
-            )}
+            <ArrowUpRight className={`w-3.5 h-3.5 flex-shrink-0 ${isTreasury ? 'text-emerald-500' : isGift ? 'text-[#daa520]' : 'text-rose-500'}`} />
 
-            {isGift && tx.receiver_id ? (
+            {(isGift || isTreasury) && tx.receiver_id ? (
               <div className="flex flex-col">
                 <Link to={`/user/${tx.receiver_id}`} className="flex items-center gap-1.5 hover:opacity-80">
                   <Avatar className="w-5 h-5">
@@ -155,26 +183,35 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
                   </div>
                 )}
               </div>
-            ) : (
+            ) : !isTreasury ? (
               <span className="font-semibold text-sm text-rose-600">Angel AI</span>
-            )}
+            ) : null}
           </div>
 
           {/* Badges row */}
           <div className="flex items-center gap-1.5 flex-wrap mt-1">
             <span className={`inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium ${
-              isGift 
-                ? 'bg-gradient-to-r from-[#ffd700]/20 to-[#daa520]/20 text-[#b8860b] border border-[#daa520]/30' 
-                : 'bg-rose-100 text-rose-600 border border-rose-200'
+              isTreasury
+                ? 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border border-emerald-300'
+                : isGift 
+                  ? 'bg-gradient-to-r from-[#ffd700]/20 to-[#daa520]/20 text-[#b8860b] border border-[#daa520]/30' 
+                  : 'bg-rose-100 text-rose-600 border border-rose-200'
             }`}>
-              {isGift ? <Gift className="w-2.5 h-2.5" /> : <Heart className="w-2.5 h-2.5" />}
-              {isGift ? "Tặng thưởng" : "Donate"}
+              {typeIcon}
+              {typeLabel}
             </span>
 
             {isOnchain && (
               <span className="inline-flex items-center gap-0.5 text-[10px] bg-gradient-to-r from-[#ffd700]/20 to-[#daa520]/20 text-[#b8860b] border border-[#daa520]/30 px-2 py-0.5 rounded-full font-medium">
                 <Wallet className="w-2.5 h-2.5" />
                 Onchain
+              </span>
+            )}
+
+            {isTreasury && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-medium">
+                <CheckCircle2 className="w-2.5 h-2.5" />
+                Thành công
               </span>
             )}
 
@@ -189,7 +226,7 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-1.5">
               <img src={getTokenDisplay(tx.gift_type).logo} alt={getTokenDisplay(tx.gift_type).symbol} className="w-4 h-4 rounded-full" />
-              <span className={`font-bold text-base ${isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
+              <span className={`font-bold text-base ${isTreasury ? 'text-emerald-600' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
                 {tx.amount.toLocaleString()}
               </span>
               <span className="text-[10px] text-[#8B7355] font-medium">{getTokenDisplay(tx.gift_type).symbol}</span>
@@ -279,22 +316,43 @@ const ActivityHistory = () => {
   const fetchTransactions = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: gifts } = await supabase
-        .from("coin_gifts")
-        .select("id, sender_id, receiver_id, amount, message, created_at, tx_hash, gift_type, receipt_public_id")
-        .order("created_at", { ascending: false })
-        .limit(500);
+      // Fetch gifts, donations, withdrawals, lixi in parallel
+      const [giftsRes, donationsRes, withdrawalsRes, lixiRes] = await Promise.all([
+        supabase
+          .from("coin_gifts")
+          .select("id, sender_id, receiver_id, amount, message, created_at, tx_hash, gift_type, receipt_public_id")
+          .order("created_at", { ascending: false })
+          .limit(500),
+        supabase
+          .from("project_donations")
+          .select("id, donor_id, amount, message, created_at, donation_type, tx_hash, status")
+          .eq("status", "confirmed")
+          .order("created_at", { ascending: false })
+          .limit(500),
+        supabase
+          .from("coin_withdrawals")
+          .select("id, user_id, amount, wallet_address, tx_hash, created_at")
+          .eq("status", "completed")
+          .order("created_at", { ascending: false })
+          .limit(500),
+        supabase
+          .from("lixi_claims")
+          .select("id, user_id, camly_amount, wallet_address, tx_hash, claimed_at")
+          .eq("status", "completed")
+          .order("claimed_at", { ascending: false })
+          .limit(500),
+      ]);
 
-      const { data: donations } = await supabase
-        .from("project_donations")
-        .select("id, donor_id, amount, message, created_at, donation_type, tx_hash, status")
-        .eq("status", "confirmed")
-        .order("created_at", { ascending: false })
-        .limit(500);
+      const gifts = giftsRes.data;
+      const donations = donationsRes.data;
+      const withdrawals = withdrawalsRes.data;
+      const lixiClaims = lixiRes.data;
 
       const userIds = new Set<string>();
       gifts?.forEach(g => { userIds.add(g.sender_id); userIds.add(g.receiver_id); });
       donations?.forEach(d => userIds.add(d.donor_id));
+      withdrawals?.forEach(w => userIds.add(w.user_id));
+      lixiClaims?.forEach(l => userIds.add(l.user_id));
 
       const userIdArr = Array.from(userIds);
 
@@ -336,6 +394,36 @@ const ActivityHistory = () => {
         });
       });
 
+      // Treasury rewards (withdrawals)
+      withdrawals?.forEach(w => {
+        const receiver = profileMap.get(w.user_id);
+        allTx.push({
+          id: `wd_${w.id}`, type: "treasury_reward",
+          sender_id: TREASURY_SENDER_ID, sender_name: "Angel AI Treasury",
+          sender_avatar: angelAiLogo, sender_wallet: TREASURY_WALLET,
+          receiver_id: w.user_id, receiver_name: receiver?.display_name || null,
+          receiver_avatar: receiver?.avatar_url || null, receiver_wallet: w.wallet_address || walletMap.get(w.user_id) || null,
+          amount: w.amount, message: "Trả thưởng CAMLY từ Angel AI Treasury",
+          created_at: w.created_at, tx_hash: w.tx_hash || null,
+          gift_type: null, donation_type: null, receipt_public_id: null,
+        });
+      });
+
+      // Treasury lixi
+      lixiClaims?.forEach(l => {
+        const receiver = profileMap.get(l.user_id);
+        allTx.push({
+          id: `lx_${l.id}`, type: "treasury_lixi",
+          sender_id: TREASURY_SENDER_ID, sender_name: "Angel AI Treasury",
+          sender_avatar: angelAiLogo, sender_wallet: TREASURY_WALLET,
+          receiver_id: l.user_id, receiver_name: receiver?.display_name || null,
+          receiver_avatar: receiver?.avatar_url || null, receiver_wallet: l.wallet_address || walletMap.get(l.user_id) || null,
+          amount: l.camly_amount, message: "🧧 Lì xì Tết từ Angel AI Treasury",
+          created_at: l.claimed_at, tx_hash: l.tx_hash || null,
+          gift_type: null, donation_type: null, receipt_public_id: null,
+        });
+      });
+
       allTx.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setTransactions(allTx);
     } catch (error) {
@@ -353,6 +441,8 @@ const ActivityHistory = () => {
       .channel("activity_history_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "coin_gifts" }, () => fetchTransactions())
       .on("postgres_changes", { event: "*", schema: "public", table: "project_donations" }, () => fetchTransactions())
+      .on("postgres_changes", { event: "*", schema: "public", table: "coin_withdrawals" }, () => fetchTransactions())
+      .on("postgres_changes", { event: "*", schema: "public", table: "lixi_claims" }, () => fetchTransactions())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchTransactions]);
@@ -380,22 +470,29 @@ const ActivityHistory = () => {
       }
       if (typeFilter === "gifts" && tx.type !== "gift") return false;
       if (typeFilter === "donations" && tx.type !== "donation") return false;
+      if (typeFilter === "treasury_reward" && tx.type !== "treasury_reward") return false;
+      if (typeFilter === "treasury_lixi" && tx.type !== "treasury_lixi") return false;
       if (timeFilter === "today" && !isToday(new Date(tx.created_at))) return false;
       if (timeFilter === "7days" && new Date(tx.created_at) < subDays(new Date(), 7)) return false;
       if (timeFilter === "30days" && new Date(tx.created_at) < subMonths(new Date(), 1)) return false;
-      if (onchainOnly && !tx.tx_hash && tx.gift_type !== "web3" && tx.donation_type !== "manual") return false;
+      if (onchainOnly && !tx.tx_hash && tx.gift_type !== "web3" && tx.donation_type !== "manual" && !isTreasuryTx(tx)) return false;
       // Token filter
       if (tokenFilter !== "all") {
         const gt = tx.gift_type || "";
-        if (tokenFilter === "camly" && !["", "internal", "web3", "web3_CAMLY"].includes(gt)) return false;
-        if (tokenFilter === "fun" && gt !== "web3_FUN") return false;
-        if (tokenFilter === "usdt" && gt !== "web3_USDT") return false;
-        if (tokenFilter === "bnb" && gt !== "web3_BNB") return false;
-        if (tokenFilter === "btc" && gt !== "web3_BTC") return false;
+        // Treasury transactions are always CAMLY
+        if (isTreasuryTx(tx)) {
+          if (tokenFilter !== "camly") return false;
+        } else {
+          if (tokenFilter === "camly" && !["", "internal", "web3", "web3_CAMLY"].includes(gt)) return false;
+          if (tokenFilter === "fun" && gt !== "web3_FUN") return false;
+          if (tokenFilter === "usdt" && gt !== "web3_USDT") return false;
+          if (tokenFilter === "bnb" && gt !== "web3_BNB") return false;
+          if (tokenFilter === "btc" && gt !== "web3_BTC") return false;
+        }
       }
       // Status filter
-      if (statusFilter === "confirmed" && !tx.tx_hash) return false;
-      if (statusFilter === "pending" && tx.tx_hash) return false;
+      if (statusFilter === "confirmed" && !tx.tx_hash && !isTreasuryTx(tx)) return false;
+      if (statusFilter === "pending" && (tx.tx_hash || isTreasuryTx(tx))) return false;
       return true;
     });
   }, [viewFiltered, searchQuery, typeFilter, timeFilter, onchainOnly, tokenFilter, statusFilter]);
@@ -411,7 +508,8 @@ const ActivityHistory = () => {
     const totalDonate = data.filter(tx => tx.type === "donation").reduce((s, tx) => s + tx.amount, 0);
     const totalGift = data.filter(tx => tx.type === "gift").reduce((s, tx) => s + tx.amount, 0);
     const todayValue = data.filter(tx => isToday(new Date(tx.created_at))).reduce((s, tx) => s + tx.amount, 0);
-    return { totalCount, sentCount, receivedCount, onchainCount, totalCamly, totalDonate, totalGift, todayValue };
+    const treasuryCount = data.filter(tx => isTreasuryTx(tx)).length;
+    return { totalCount, sentCount, receivedCount, onchainCount, totalCamly, totalDonate, totalGift, todayValue, treasuryCount };
   }, [viewFiltered, user]);
 
   // Export CSV
@@ -419,7 +517,7 @@ const ActivityHistory = () => {
     const headers = ["Thời gian", "Loại", "Người gửi", "Người nhận", "Số lượng", "TX Hash", "Lời nhắn"];
     const rows = filtered.map(tx => [
       format(new Date(tx.created_at), "dd/MM/yyyy HH:mm"),
-      tx.type === "gift" ? "Tặng thưởng" : "Donate",
+      tx.type === "gift" ? "Tặng thưởng" : tx.type === "donation" ? "Donate" : tx.type === "treasury_lixi" ? "Lì xì" : "Trả thưởng",
       tx.sender_name || tx.sender_id,
       tx.receiver_name || tx.receiver_id || "Angel AI",
       tx.amount.toString(),
@@ -514,11 +612,12 @@ const ActivityHistory = () => {
         )}
 
         {/* Stat Cards - Row 1: Overview */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
           <StatCard icon={Activity} label="Tổng giao dịch" value={stats.totalCount} color="bg-gradient-to-br from-[#daa520] to-[#b8860b]" />
           <StatCard icon={Send} label="Tổng gửi" value={stats.sentCount} color="bg-gradient-to-br from-amber-500 to-amber-600" />
           <StatCard icon={Inbox} label="Tổng nhận" value={stats.receivedCount} color="bg-gradient-to-br from-emerald-500 to-emerald-600" />
           <StatCard icon={CheckCircle2} label="Onchain" value={stats.onchainCount} color="bg-gradient-to-br from-blue-500 to-blue-600" />
+          <StatCard icon={Building2} label="Treasury" value={stats.treasuryCount} color="bg-gradient-to-br from-teal-500 to-emerald-600" />
         </div>
 
         {/* Stat Cards - Row 2: Token values */}
@@ -587,6 +686,8 @@ const ActivityHistory = () => {
                 <SelectItem value="all">Tất cả loại</SelectItem>
                 <SelectItem value="gifts">Tặng thưởng</SelectItem>
                 <SelectItem value="donations">Donate</SelectItem>
+                <SelectItem value="treasury_reward">Trả thưởng</SelectItem>
+                <SelectItem value="treasury_lixi">Lì xì</SelectItem>
               </SelectContent>
             </Select>
 
