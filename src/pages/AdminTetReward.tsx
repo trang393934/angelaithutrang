@@ -85,8 +85,9 @@ const AdminTetReward = () => {
   // Distribution results per user (keyed by display_name)
   const [distributionResults, setDistributionResults] = useState<Map<string, DistributionResult>>(new Map());
 
-  // Name to userId mapping for claim lookup
+  // Name to userId mapping for claim lookup + wallet addresses
   const [nameToUserIdMap, setNameToUserIdMap] = useState<Map<string, string>>(new Map());
+  const [userWalletMap, setUserWalletMap] = useState<Map<string, string>>(new Map());
 
   // Lixi claims hook
   const { claims: lixiClaims, updateClaimStatus } = useLixiClaims();
@@ -139,7 +140,11 @@ const AdminTetReward = () => {
             nameToId.set(p.display_name, p.user_id);
           }
         }
-        setNameToUserIdMap(nameToId);
+        setNameToUserIdMap(prev => {
+          const merged = new Map(prev);
+          nameToId.forEach((v, k) => merged.set(k, v));
+          return merged;
+        });
 
         const results = new Map<string, DistributionResult>();
         for (const tx of rewardTxs) {
@@ -161,6 +166,50 @@ const AdminTetReward = () => {
     };
 
     loadDistributionStatus();
+  }, []);
+
+  // Fetch wallet addresses for ALL snapshot users
+  useEffect(() => {
+    const loadWallets = async () => {
+      try {
+        // Get all display_names from snapshot data
+        const allNames = tetRewardData.map(u => u.name);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, display_name")
+          .in("display_name", allNames);
+
+        if (!profiles || profiles.length === 0) return;
+
+        const nameToId = new Map<string, string>();
+        for (const p of profiles) {
+          if (p.display_name) nameToId.set(p.display_name, p.user_id);
+        }
+
+        // Merge into existing nameToUserIdMap
+        setNameToUserIdMap(prev => {
+          const merged = new Map(prev);
+          nameToId.forEach((v, k) => merged.set(k, v));
+          return merged;
+        });
+
+        const userIds = [...new Set(profiles.map(p => p.user_id))];
+        const { data: wallets } = await supabase
+          .from("user_wallet_addresses")
+          .select("user_id, wallet_address")
+          .in("user_id", userIds);
+
+        const walletMap = new Map<string, string>();
+        for (const w of wallets || []) {
+          const name = [...nameToId.entries()].find(([, id]) => id === w.user_id)?.[0];
+          if (name) walletMap.set(name, w.wallet_address);
+        }
+        setUserWalletMap(walletMap);
+      } catch (err) {
+        console.error("Lỗi tải wallet addresses:", err);
+      }
+    };
+    loadWallets();
   }, []);
 
   // ─── Overview stats ────────────────────────────────────────
@@ -877,6 +926,12 @@ const AdminTetReward = () => {
                             <ArrowUpDown className={`w-2 h-2 flex-shrink-0 ${sortKey === "avgLightScore" ? "text-primary" : "text-muted-foreground/30"}`} />
                           </span>
                         </th>
+                        <th className="px-2 py-2 text-center font-medium min-w-[120px]">
+                          <span className="flex flex-col items-center gap-0.5 leading-tight">
+                            <span className="text-base">👛</span>
+                            <span className="text-[10px] leading-none">Wallet</span>
+                          </span>
+                        </th>
                         <th className="px-2 py-2 text-center font-medium min-w-[100px]">
                           <span className="flex flex-col items-center gap-0.5 leading-tight">
                             <span className="text-base">📋</span>
@@ -894,7 +949,7 @@ const AdminTetReward = () => {
                     <tbody>
                       {filteredRows.length === 0 ? (
                         <tr>
-                          <td colSpan={ACTION_COLS.length + 8} className="text-center py-12 text-muted-foreground">
+                          <td colSpan={ACTION_COLS.length + 10} className="text-center py-12 text-muted-foreground">
                             Không tìm thấy user nào
                           </td>
                         </tr>
@@ -963,6 +1018,33 @@ const AdminTetReward = () => {
                               ) : (
                                 <span className="text-muted-foreground/30">—</span>
                               )}
+                            </td>
+                            {/* Wallet Address Column */}
+                            <td className="px-2 py-2.5 text-center">
+                              {(() => {
+                                const wallet = userWalletMap.get(row.name);
+                                if (!wallet) return <span className="text-muted-foreground/30">—</span>;
+                                return (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <a
+                                          href={`https://bscscan.com/address/${wallet}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-mono text-[10px]"
+                                        >
+                                          {wallet.slice(0, 6)}...{wallet.slice(-4)}
+                                          <ExternalLink className="w-2.5 h-2.5" />
+                                        </a>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="left">
+                                        <p className="font-mono text-xs break-all">{wallet}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                );
+                              })()}
                             </td>
                             <td className="px-2 py-2.5 text-center">
                               {(() => {
