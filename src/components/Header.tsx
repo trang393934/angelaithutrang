@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Shield } from "lucide-react";
@@ -35,6 +36,24 @@ interface UserProfile {
   display_name: string | null;
   avatar_url: string | null;
 }
+
+// Gift Button component for header
+const GiftButton = () => {
+  const [giftOpen, setGiftOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setGiftOpen(true)}
+        className="flex items-center gap-1 px-2 lg:px-2.5 py-1 lg:py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 transition-all shadow-sm hover:shadow-md"
+        title="Tặng thưởng"
+      >
+        <Gift className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-black" />
+        <span className="hidden xl:inline text-xs font-bold text-black">Tặng thưởng</span>
+      </button>
+      <GiftCoinDialog open={giftOpen} onOpenChange={setGiftOpen} />
+    </>
+  );
+};
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -148,6 +167,9 @@ export const Header = () => {
           <div className="hidden lg:flex items-center gap-0.5 lg:gap-1 xl:gap-1.5 shrink-0">
             {/* Language Selector - Compact on lg */}
             <LanguageSelector compact />
+
+            {/* Gift Button */}
+            <GiftButton />
             
             {/* Web3 Wallet Button - Always visible */}
             <Web3WalletButton compact />
