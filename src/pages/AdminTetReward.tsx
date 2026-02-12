@@ -14,8 +14,11 @@ import {
 import {
   ArrowLeft, Sparkles, LogOut, Search, Download,
   Coins, Users, ArrowUpDown, Star, Gift, CheckCircle2, XCircle, Clock, ExternalLink,
-  Wallet, RefreshCw
+  Wallet, RefreshCw, Filter
 } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import angelAvatar from "@/assets/angel-avatar.png";
@@ -57,6 +60,7 @@ const AdminTetReward = () => {
   const [sortKey, setSortKey] = useState<SortKey>("totalFun");
   const [sortAsc, setSortAsc] = useState(false);
   const [activeTab, setActiveTab] = useState("snapshot");
+  const [claimFilter, setClaimFilter] = useState<"all" | "completed" | "failed" | "pending" | "unclaimed">("all");
 
   // Real-time tab state
   const [rtData, setRtData] = useState<any[]>([]);
@@ -306,11 +310,38 @@ const AdminTetReward = () => {
     else { setSortKey(key); setSortAsc(false); }
   };
 
+  // ─── Lì xì on-chain stats ──────────────────────────────────
+  const lixiStats = useMemo(() => {
+    const completed = lixiClaims.filter(c => c.status === "completed");
+    const unsuccessful = lixiClaims.filter(c => c.status === "failed" || c.status === "pending");
+    const totalCamlyDistributed = completed.reduce((s, c) => s + c.camly_amount, 0);
+    return {
+      completedCount: completed.length,
+      totalCamlyDistributed,
+      unsuccessfulCount: unsuccessful.length,
+    };
+  }, [lixiClaims]);
+
   const filteredRows = useMemo(() => {
     let result = tetRewardData.filter(r => {
       if (!searchQuery) return true;
       return r.name.toLowerCase().includes(searchQuery.toLowerCase());
     });
+
+    // Claim filter
+    if (claimFilter !== "all") {
+      result = result.filter(r => {
+        const userId = nameToUserIdMap.get(r.name);
+        const claim = userId ? lixiClaims.find(c => c.user_id === userId) : undefined;
+        switch (claimFilter) {
+          case "completed": return claim?.status === "completed";
+          case "failed": return claim?.status === "failed";
+          case "pending": return claim?.status === "pending";
+          case "unclaimed": return !claim;
+          default: return true;
+        }
+      });
+    }
 
     result = [...result].sort((a, b) => {
       if (sortKey === "name") {
@@ -324,7 +355,7 @@ const AdminTetReward = () => {
     });
 
     return result;
-  }, [searchQuery, sortKey, sortAsc]);
+  }, [searchQuery, sortKey, sortAsc, claimFilter, nameToUserIdMap, lixiClaims]);
 
   // ─── Checkbox logic ────────────────────────────────────────
   const eligibleRows = useMemo(() => filteredRows.filter(r => r.totalFun > 0), [filteredRows]);
@@ -590,16 +621,31 @@ const AdminTetReward = () => {
 
           {/* ═══ Tab 1: Snapshot ═══ */}
           <TabsContent value="snapshot">
-            {/* Search */}
+            {/* Search + Claim Filter */}
             <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Tìm user..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="flex items-center gap-3 flex-1">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Tìm user..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={claimFilter} onValueChange={(v: typeof claimFilter) => setClaimFilter(v)}>
+                  <SelectTrigger className="w-[180px]">
+                    <Filter className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                    <SelectValue placeholder="Lọc Claim" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="completed">✅ Đã claim</SelectItem>
+                    <SelectItem value="failed">❌ Thất bại</SelectItem>
+                    <SelectItem value="pending">⏳ Đang chờ</SelectItem>
+                    <SelectItem value="unclaimed">⬜ Chưa claim</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <p className="text-xs text-foreground-muted">
                 📸 Snapshot: {TET_REWARD_SNAPSHOT_DATE} · {overview.totalUsers} users
@@ -663,6 +709,56 @@ const AdminTetReward = () => {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Lì xì on-chain stats */}
+            <div className="mb-8">
+              <p className="text-xs font-semibold text-foreground-muted mb-3 flex items-center gap-1.5">
+                🧧 Thống kê Lì xì on-chain
+              </p>
+              <div className="grid grid-cols-3 gap-4">
+                <Card className="border-green-500/20">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-green-500/10">
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-foreground">{lixiStats.completedCount}</p>
+                        <p className="text-xs text-foreground-muted">User đã Lì xì</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-amber-500/20">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-amber-500/10">
+                        <Gift className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-foreground">{formatNum(lixiStats.totalCamlyDistributed)}</p>
+                        <p className="text-xs text-foreground-muted">Tổng Camly đã Lì xì</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-red-500/20">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-red-500/10">
+                        <XCircle className="w-5 h-5 text-red-500" />
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-foreground">{lixiStats.unsuccessfulCount}</p>
+                        <p className="text-xs text-foreground-muted">Chưa thành công</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
             {/* Action Bar */}
