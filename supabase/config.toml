@@ -172,3 +172,6 @@ verify_jwt = false
 
 [functions.distribute-fun-camly-reward]
 verify_jwt = false
+
+[functions.process-lixi-claim]
+verify_jwt = false

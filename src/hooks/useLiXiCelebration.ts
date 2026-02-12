@@ -70,19 +70,27 @@ export function useLiXiCelebration() {
         .eq("user_id", user.id)
         .maybeSingle();
 
+      if (!walletData?.wallet_address) {
+        toast.error("Vui lòng kết nối ví Web3 trước khi nhận Lì xì.", { duration: 5000 });
+        setIsClaiming(false);
+        return;
+      }
+
       // Insert claim record
-      const { error: claimError } = await supabase
+      const { data: claimRecord, error: claimError } = await supabase
         .from("lixi_claims")
         .insert({
           user_id: user.id,
           notification_id: pendingLiXi.id,
           camly_amount: pendingLiXi.camlyAmount,
           fun_amount: pendingLiXi.funAmount,
-          wallet_address: walletData?.wallet_address || null,
+          wallet_address: walletData.wallet_address,
           status: "pending",
-        });
+        })
+        .select("id")
+        .single();
 
-      if (claimError) {
+      if (claimError || !claimRecord) {
         console.error("Lỗi tạo yêu cầu claim:", claimError);
         toast.error("Không thể gửi yêu cầu claim. Vui lòng thử lại.");
         return;
@@ -94,45 +102,49 @@ export function useLiXiCelebration() {
         .update({ is_read: true, read_at: new Date().toISOString() })
         .eq("id", pendingLiXi.id);
 
-      // Send notification to admin about the claim request
-      const { data: adminRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin")
-        .limit(5);
+      // Show processing toast
+      toast.loading("🧧 Đang chuyển Camly Coin on-chain...", { id: "lixi-claim" });
 
-      if (adminRoles && adminRoles.length > 0) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("display_name")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        const adminNotifications = adminRoles.map((admin) => ({
-          user_id: admin.user_id,
-          type: "lixi_claim_request",
-          title: "🧧 Yêu cầu Claim Lì xì mới",
-          content: `${profile?.display_name || "Người dùng"} đã yêu cầu claim ${pendingLiXi.camlyAmount.toLocaleString()} Camly Coin từ chương trình Lì xì Tết.`,
-          metadata: {
-            claimer_id: user.id,
-            camly_amount: pendingLiXi.camlyAmount,
-            fun_amount: pendingLiXi.funAmount,
-            wallet_address: walletData?.wallet_address || null,
+      // Call edge function to process on-chain transfer
+      const { data: session } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-lixi-claim`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.session?.access_token}`,
           },
-        }));
+          body: JSON.stringify({ claim_id: claimRecord.id }),
+        }
+      );
 
-        await supabase.from("notifications").insert(adminNotifications);
+      const result = await response.json();
+
+      if (result.success && result.tx_hash) {
+        toast.success(
+          `🧧 Đã chuyển ${pendingLiXi.camlyAmount.toLocaleString()} Camly Coin thành công!`,
+          {
+            id: "lixi-claim",
+            duration: 8000,
+            action: {
+              label: "Xem TX",
+              onClick: () => window.open(`https://bscscan.com/tx/${result.tx_hash}`, "_blank"),
+            },
+          }
+        );
+      } else {
+        toast.error(result.error || "Chuyển on-chain thất bại. Admin sẽ xử lý.", {
+          id: "lixi-claim",
+          duration: 6000,
+        });
       }
-
-      toast.success("🧧 Yêu cầu claim đã gửi! Admin sẽ chuyển thưởng đến ví Web3 của bạn.", {
-        duration: 5000,
-      });
 
       setShowPopup(false);
       setPendingLiXi(null);
     } catch (error) {
       console.error("Lỗi claim Lì xì:", error);
-      toast.error("Đã xảy ra lỗi khi gửi yêu cầu claim.");
+      toast.error("Đã xảy ra lỗi khi xử lý claim.", { id: "lixi-claim" });
     } finally {
       setIsClaiming(false);
     }

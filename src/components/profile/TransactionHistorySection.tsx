@@ -68,6 +68,7 @@ const TX_TYPE_LABELS: Record<string, string> = {
   knowledge_reward: "Thưởng kiến thức",
   bounty_reward: "Thưởng bounty",
   referral_reward: "Thưởng giới thiệu",
+  lixi_claim: "🧧 Lì xì Tết",
 };
 
 const ACTION_TYPE_LABELS: Record<string, string> = {
@@ -219,17 +220,22 @@ export function TransactionHistorySection({ userId }: TransactionHistorySectionP
     }
 
     // Map internal
-    const internal: UnifiedTransaction[] = (internalRes.data || []).map(tx => ({
-      id: tx.id,
-      type: "internal" as const,
-      subType: tx.transaction_type,
-      amount: Math.abs(tx.amount),
-      direction: tx.amount >= 0 ? "in" as const : "out" as const,
-      description: tx.description || TX_TYPE_LABELS[tx.transaction_type] || tx.transaction_type,
-      createdAt: tx.created_at,
-      tokenType: "CAMLY" as const,
-      network: "Internal" as const,
-    }));
+    const internal: UnifiedTransaction[] = (internalRes.data || []).map(tx => {
+      const meta = tx.metadata as Record<string, unknown> | null;
+      const isLixi = (tx.transaction_type as string) === 'lixi_claim';
+      return {
+        id: tx.id,
+        type: isLixi ? "web3" as const : "internal" as const,
+        subType: tx.transaction_type,
+        amount: Math.abs(tx.amount),
+        direction: tx.amount >= 0 ? "in" as const : "out" as const,
+        description: tx.description || TX_TYPE_LABELS[tx.transaction_type] || tx.transaction_type,
+        createdAt: tx.created_at,
+        txHash: isLixi && meta ? (meta.tx_hash as string) : undefined,
+        tokenType: "CAMLY" as const,
+        network: isLixi ? "BSC" as const : "Internal" as const,
+      };
+    });
 
     // Map web3 gifts
     const web3Sent: UnifiedTransaction[] = (giftsSentRes.data || [])
