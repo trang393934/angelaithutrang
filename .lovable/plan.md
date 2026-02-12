@@ -1,47 +1,68 @@
 
+## Hành vi tự động sau khi tặng thưởng thành công
 
-## Thiết kế lại giao diện Tặng Thưởng theo phong cách Angel AI
-
-### Mục tiêu
-Nâng cấp toàn bộ giao diện dialog "Tặng Thưởng" (GiftCoinDialog + TokenSelector + CryptoTransferTab) sang phong cách vàng ánh kim sang trọng, đồng bộ với hệ thống thiết kế Golden Luxe của Angel AI.
+### Tổng quan
+Hoàn thiện quy trình sau tặng thưởng: (1) Nút "Chia sẻ" tự động đăng bài Profile với ảnh Celebration Card, (2) Tự động gửi tin nhắn cho người nhận kèm ảnh Card, (3) Nút "Xem Card Chúc Mừng" trong lịch sử giao dịch mở đúng Celebration Modal với hiệu ứng. Xóa toàn bộ GIF ngẫu nhiên.
 
 ### Các thay đổi chi tiết
 
 **1. File: `src/components/gifts/GiftCoinDialog.tsx`**
 
-- **Dialog container**: Thêm gradient nền vàng nhạt (`bg-gradient-to-b from-amber-50/30 via-background to-amber-50/20`), viền vàng (`border-amber-200/60`)
-- **Header**: Tiêu đề gradient vàng kim với icon Gift vàng, thêm dòng phụ "Angel AI Gift System"
-- **Quick amount buttons**: Chuyển sang style vàng ánh kim - khi được chọn dùng gradient metallic gold (`from-[#b8860b] via-[#daa520] to-[#ffd700]`) với text đen bold; khi chưa chọn dùng viền vàng nhạt
-- **Input fields**: Thêm viền vàng nhạt khi focus (`focus:border-amber-400 focus:ring-amber-300/30`)
-- **Labels**: Thêm màu vàng đậm cho các nhãn (`text-amber-800`)
-- **Nút "Xem lai & Xac nhan"** va **"Xac nhan & Tang"**: Dùng class `btn-golden-3d !text-black font-bold` thay vì gradient tím/xanh hiện tại
-- **Confirmation card (Step 2)**: Nền gradient vàng nhạt (`from-amber-50/80 to-yellow-50/40`), viền vàng (`border-amber-200`)
-- **Sender/Receiver cards**: Ring vàng (`ring-amber-400/40`), nền ấm hơn
+Truyền 2 handler `onPostToProfile` và `onSendMessage` vào `GiftCelebrationModal` (hiện đang thiếu):
 
-**2. File: `src/components/gifts/TokenSelector.tsx`**
+- **`onPostToProfile`**: Dùng `html2canvas` chụp Celebration Card thành ảnh PNG, upload lên Supabase Storage, rồi gọi `process-community-post` edge function để tạo bài đăng với nội dung:
+  ```
+  🎁 Đã tặng {amount} {tokenLabel} cho {receiverName}!
+  {message nếu có}
+  #AngelAI #TặngThưởng #CamlyCoin #FUNMoney
+  ```
+  Kèm ảnh Celebration Card (không dùng GIF).
 
-- **Selected token button**: Gradient vàng kim sang trọng hơn (`from-amber-50 via-yellow-50/80 to-amber-50`), viền vàng đậm hơn, shadow glow nhẹ
-- **Dropdown**: Viền vàng, nền ấm, item được chọn highlight vàng (`bg-amber-50 border-l-2 border-amber-400`)
-- **Label "Chon Token"**: Font bold, màu vàng đậm
+- **`onSendMessage`**: Chụp Celebration Card thành ảnh, upload lên Storage, rồi gửi tin nhắn DM cho người nhận qua bảng `direct_messages` với:
+  - Ảnh Celebration Card đính kèm
+  - Nội dung: "🎁 Chúc mừng {receiverName}! Bạn nhận được {amount} {token} từ {senderName}. Xem Card Chúc Mừng: {link}"
+  - `message_type: "tip"`
 
-**3. File: `src/components/gifts/CryptoTransferTab.tsx`**
+**2. File: `src/components/gifts/GiftCelebrationModal.tsx`**
 
-- **Balance card**: Thống nhất gradient vàng ánh kim cho tất cả token (thay vì violet/orange riêng) - `from-amber-50 via-yellow-50 to-amber-50/80`, viền `border-amber-200`
-- **Recipient type buttons**: Khi active dùng `btn-golden-3d` style thay vì màu violet/orange
-- **Message template pills**: Viền vàng, khi chọn dùng gradient vàng với text đen
-- **Transfer button**: Dùng `btn-golden-3d !text-black font-bold` cho tất cả token
-- **Success card**: Gradient vàng thay vì xanh lá (`from-amber-50 to-yellow-50`, `border-amber-200`)
+- Thêm logic chụp ảnh Card (html2canvas) và upload lên Storage trong component (hàm `captureCardImage`)
+- Cập nhật nút "Đăng Profile" thành nút nổi bật hơn, hiển thị trạng thái loading khi đang xử lý
+- Cập nhật nút "Gửi tin nhắn cho người nhận" tương tự
+- Xóa mọi tham chiếu GIF ngẫu nhiên (nếu có)
 
-### Nguyên tac thiet ke
-- Mau chu dao: Gradient vang anh kim (#b8860b -> #daa520 -> #ffd700 -> #ffec8b)
-- Text tren nen vang: Luon dung mau den (text-black) de dam bao tuong phan
-- Labels: Dung `text-amber-800` hoac `text-amber-900`
-- Vien: `border-amber-200` den `border-amber-400`
-- Shadow: `shadow-[0_0_20px_-5px_rgba(218,165,32,0.15)]` (golden glow)
-- Tat ca buttons chinh: Dung he thong `btn-golden-3d` da co san
+**3. File: `src/pages/ActivityHistory.tsx`**
 
-### Files thay doi
-1. `src/components/gifts/GiftCoinDialog.tsx`
-2. `src/components/gifts/TokenSelector.tsx`
-3. `src/components/gifts/CryptoTransferTab.tsx`
+- Thay link "Xem Card" (hiện chỉ trỏ đến `/receipt/:id`) thành nút mở `GiftCelebrationModal` inline:
+  - Thêm state `celebrationModalData` và `showCelebrationModal`
+  - Khi click "Xem Card Chúc Mừng", fetch dữ liệu giao dịch từ `coin_gifts` và mở `GiftCelebrationModal` với đầy đủ hiệu ứng (pháo hoa, coin rơi, nhạc)
+  - Import `GiftCelebrationModal` component
+  - Vẫn giữ link `/receipt/:id` cho "Xem biên nhận" riêng biệt
 
+### Luồng hoạt động
+
+```text
+Tặng thành công
+    |
+    v
+Celebration Modal mở (pháo hoa + nhạc)
+    |
+    +-- Nút "Đăng Profile" --> Chụp Card --> Upload ảnh --> Tạo bài đăng Community
+    |
+    +-- Nút "Gửi tin nhắn" --> Chụp Card --> Upload ảnh --> Gửi DM cho người nhận
+    |
+    +-- Nút "Lưu ảnh" --> Tải về máy
+    |
+    v
+Lịch sử giao dịch: Nút "Xem Card Chúc Mừng" --> Mở lại Celebration Modal
+```
+
+### Ràng buộc
+- Xóa toàn bộ GIF ngẫu nhiên (Giphy, randomGif) - chỉ dùng Celebration Card do hệ thống tạo
+- Mọi text bằng tiếng Việt có dấu
+- Ảnh đăng Profile = ảnh chụp từ Celebration Card (.png)
+- Hashtag mặc định: #AngelAI #TặngThưởng
+
+### Files thay đổi
+1. `src/components/gifts/GiftCoinDialog.tsx` - Thêm handlers onPostToProfile, onSendMessage
+2. `src/components/gifts/GiftCelebrationModal.tsx` - Thêm logic chụp + upload ảnh Card
+3. `src/pages/ActivityHistory.tsx` - Thêm nút "Xem Card Chúc Mừng" mở Celebration Modal
