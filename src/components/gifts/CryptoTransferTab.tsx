@@ -289,16 +289,14 @@ export function CryptoTransferTab({
     }
   };
 
-  const gradientFrom = accentColor === "violet" ? "from-violet-50" : "from-orange-50";
-  const gradientTo = accentColor === "violet" ? "to-purple-50" : "to-amber-50";
-  const borderColor = accentColor === "violet" ? "border-violet-200" : "border-orange-200";
-  const textColor = accentColor === "violet" ? "text-violet-600" : "text-orange-600";
-  const textBold = accentColor === "violet" ? "text-violet-700" : "text-orange-700";
-  const btnGradient = accentColor === "violet"
-    ? "bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
-    : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600";
-  const ringColor = accentColor === "violet" ? "ring-violet-300" : "ring-orange-300";
-  const activeBtn = accentColor === "violet" ? "bg-violet-500" : "bg-orange-500";
+  const gradientFrom = "from-amber-50";
+  const gradientTo = "to-yellow-50/80";
+  const borderColor = "border-amber-200";
+  const textColor = "text-amber-700";
+  const textBold = "text-amber-800";
+  const btnGradient = "btn-golden-3d !text-black font-bold";
+  const ringColor = "ring-amber-400/40";
+  const activeBtn = "bg-gradient-to-r from-[#b8860b] via-[#daa520] to-[#ffd700] text-black border-amber-500";
 
   if (!isConnected) {
     return (
@@ -333,7 +331,7 @@ export function CryptoTransferTab({
               toast.error("Không thể kết nối ví. Vui lòng mở MetaMask và thử lại.");
             }
           }}
-          className={btnGradient}
+          className="btn-golden-3d !text-black font-bold"
         >
           <Wallet className="w-4 h-4 mr-2" />
           {t("crypto.connectWallet")}
@@ -366,7 +364,7 @@ export function CryptoTransferTab({
 
       {/* Recipient Type Selection */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">{t("crypto.recipientType")}</label>
+        <label className="text-sm font-medium text-amber-800">{t("crypto.recipientType")}</label>
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant={cryptoRecipient === "address" ? "default" : "outline"}
@@ -390,7 +388,7 @@ export function CryptoTransferTab({
       {/* Wallet Address Input */}
       {cryptoRecipient === "address" ? (
         <div className="space-y-2">
-          <label className="text-sm font-medium">{t("crypto.recipientAddress")}</label>
+          <label className="text-sm font-medium text-amber-800">{t("crypto.recipientAddress")}</label>
           <Input
             placeholder="0x..."
             value={walletAddress}
@@ -508,7 +506,7 @@ export function CryptoTransferTab({
 
       {/* Amount Input */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Số lượng {tokenSymbol}</label>
+        <label className="text-sm font-medium text-amber-800">Số lượng {tokenSymbol}</label>
         <Input
           type="number"
           placeholder="100"
@@ -535,8 +533,8 @@ export function CryptoTransferTab({
               onClick={() => setGiftMessage(tmpl)}
               className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                 giftMessage === tmpl
-                  ? `${activeBtn} text-white border-transparent`
-                  : "border-border hover:bg-accent text-muted-foreground hover:text-foreground"
+                  ? "bg-gradient-to-r from-[#b8860b] via-[#daa520] to-[#ffd700] text-black border-amber-500 font-bold"
+                  : "border-amber-200 hover:bg-amber-50 text-muted-foreground hover:text-foreground"
               }`}
             >
               {tmpl}
@@ -556,7 +554,7 @@ export function CryptoTransferTab({
       <Button
         onClick={handleTransfer}
         disabled={isTransferring || !cryptoAmount || !walletAddress}
-        className={`w-full ${btnGradient}`}
+        className="w-full btn-golden-3d !text-black font-bold"
       >
         {isTransferring ? (
           <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -568,9 +566,9 @@ export function CryptoTransferTab({
 
       {/* Transaction Link */}
       {lastTxHash && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
-          <div className="flex items-center gap-2 text-green-700 font-medium text-sm">
-            <Sparkles className="w-4 h-4" />
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-2 text-amber-800 font-medium text-sm">
+            <Sparkles className="w-4 h-4 text-amber-600" />
             Chúc mừng bạn đã chuyển thành công!
           </div>
           <div className="flex items-center gap-2">

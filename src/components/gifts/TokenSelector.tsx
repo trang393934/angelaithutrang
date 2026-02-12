@@ -41,7 +41,7 @@ export function TokenSelector({ selected, onSelect, balanceLabel }: TokenSelecto
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium flex items-center gap-1.5">
+        <label className="text-sm font-bold text-amber-800 flex items-center gap-1.5">
           Chọn Token 💰
         </label>
         {balanceLabel && (
@@ -54,7 +54,7 @@ export function TokenSelector({ selected, onSelect, balanceLabel }: TokenSelecto
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-50/50 to-yellow-50/50 hover:border-amber-400 transition-colors"
+          className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 via-yellow-50/80 to-amber-50 hover:border-amber-400 transition-colors shadow-[0_0_20px_-5px_rgba(218,165,32,0.15)]"
         >
           <div className="flex items-center gap-3">
             <img src={selectedToken.logo} alt="" className="w-8 h-8 rounded-full" />
@@ -81,7 +81,7 @@ export function TokenSelector({ selected, onSelect, balanceLabel }: TokenSelecto
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
               transition={{ duration: 0.15 }}
-              className="absolute z-50 w-full mt-1 bg-card border-2 border-border rounded-xl shadow-lg overflow-hidden"
+              className="absolute z-50 w-full mt-1 bg-gradient-to-b from-amber-50/30 to-card border-2 border-amber-300 rounded-xl shadow-lg overflow-hidden"
             >
               {TOKEN_OPTIONS.map((token) => (
                 <button
@@ -91,8 +91,8 @@ export function TokenSelector({ selected, onSelect, balanceLabel }: TokenSelecto
                     onSelect(token.id);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent/50 transition-colors ${
-                    selected === token.id ? "bg-accent/70" : ""
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-amber-50/60 transition-colors ${
+                    selected === token.id ? "bg-amber-50 border-l-2 border-amber-400" : ""
                   }`}
                 >
                   {selected === token.id ? (
