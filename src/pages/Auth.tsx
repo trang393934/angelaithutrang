@@ -336,9 +336,9 @@ const Auth = () => {
       .maybeSingle();
     
     if (data) {
-      // Already agreed - redirect to return origin or profile
-      if (!redirectToReturnOrigin("/profile")) {
-        navigate("/profile");
+      // Already agreed - redirect to return origin or home
+      if (!redirectToReturnOrigin("/")) {
+        navigate("/");
       }
     } else {
       // User hasn't agreed yet - show post-login agreement dialog
@@ -361,8 +361,8 @@ const Auth = () => {
       });
       
       setShowPostLoginAgreement(false);
-      if (!redirectToReturnOrigin("/profile")) {
-        navigate("/profile");
+      if (!redirectToReturnOrigin("/")) {
+        navigate("/");
       }
     } catch (error) {
       toast({
