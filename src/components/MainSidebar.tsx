@@ -2,7 +2,7 @@ import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import { 
   Home, Info, BookOpen, MessageCircle, Users, 
-  PenLine, ArrowRightLeft, Star, PanelLeft, Gift, History
+  PenLine, ArrowRightLeft, Star, PanelLeft, Gift, History, Shield
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { NavLink } from "@/components/NavLink";
@@ -123,6 +123,25 @@ export function MainSidebar() {
                   <NavLink to="/activity-history">
                     <History className={`w-5 h-5 ${location.pathname === "/activity-history" ? 'text-white' : 'text-primary'}`} />
                     <span className={`font-medium ${location.pathname === "/activity-history" ? 'text-white' : ''}`}>Lịch sử giao dịch</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* User Management */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={location.pathname === "/admin/user-management"}
+                  tooltip="Quản lý User"
+                  className={`transition-all duration-200 ${
+                    location.pathname === "/admin/user-management"
+                      ? 'bg-gradient-to-r from-primary to-primary-deep text-white shadow-md'
+                      : 'hover:bg-amber-100/70 text-foreground'
+                  }`}
+                >
+                  <NavLink to="/admin/user-management">
+                    <Shield className={`w-5 h-5 ${location.pathname === "/admin/user-management" ? 'text-white' : 'text-primary'}`} />
+                    <span className={`font-medium ${location.pathname === "/admin/user-management" ? 'text-white' : ''}`}>Quản lý User</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
