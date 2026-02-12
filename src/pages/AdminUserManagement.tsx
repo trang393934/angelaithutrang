@@ -85,12 +85,10 @@ const AdminUserManagement = () => {
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
 
   useEffect(() => {
-    if (!authLoading && isAdminChecked) {
-      if (!user) navigate("/admin/login");
-      else if (!isAdmin) { toast.error("Không có quyền truy cập"); navigate("/"); }
-      else fetchUsers();
+    if (!authLoading) {
+      fetchUsers();
     }
-  }, [user, isAdmin, authLoading, isAdminChecked]);
+  }, [authLoading]);
 
   const fetchUsers = async () => {
     setIsRefreshing(true);
@@ -201,7 +199,7 @@ const AdminUserManagement = () => {
     totalWithdrawalCount: users.reduce((s, u) => s + u.withdrawal_count, 0),
   }), [users]);
 
-  if (authLoading || isLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex items-center justify-center">
         <div className="text-center">
@@ -233,15 +231,17 @@ const AdminUserManagement = () => {
               <Button variant="ghost" size="sm" onClick={fetchUsers} disabled={isRefreshing}>
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => signOut().then(() => navigate("/"))}>
-                <LogOut className="w-4 h-4" />
-              </Button>
+              {user && (
+                <Button variant="ghost" size="sm" onClick={() => signOut().then(() => navigate("/"))}>
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      <AdminNavToolbar />
+      {user && isAdmin && <AdminNavToolbar />}
 
       <main className="container mx-auto px-2 sm:px-4 py-6 max-w-[1400px]">
         {/* Stats Row 1: Users & Camly Overview */}
@@ -513,7 +513,15 @@ const AdminUserManagement = () => {
                     <TableRow
                       key={u.user_id}
                       className="cursor-pointer hover:bg-primary-pale/30 transition-colors"
-                      onClick={() => setSelectedUser(u)}
+                      onClick={() => {
+                        if (!user) {
+                          toast.info("Vui lòng đăng nhập để xem chi tiết người dùng", {
+                            action: { label: "Đăng nhập", onClick: () => navigate("/auth") }
+                          });
+                          return;
+                        }
+                        setSelectedUser(u);
+                      }}
                     >
                       <TableCell className="sticky left-0 bg-background-pure/80 z-10">
                         <div className="flex items-center gap-2">
