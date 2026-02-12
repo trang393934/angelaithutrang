@@ -3790,6 +3790,7 @@ export type Database = {
         | "project_donation"
         | "project_reward"
         | "pplp_reward"
+        | "lixi_claim"
       energy_level: "very_high" | "high" | "neutral" | "low" | "very_low"
       pplp_action_status:
         | "pending"
@@ -4015,6 +4016,7 @@ export const Constants = {
         "project_donation",
         "project_reward",
         "pplp_reward",
+        "lixi_claim",
       ],
       energy_level: ["very_high", "high", "neutral", "low", "very_low"],
       pplp_action_status: [
