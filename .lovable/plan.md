@@ -1,53 +1,49 @@
 
 
-## Sửa lỗi: Tự động gửi tin nhắn & Tự động phát âm thanh
+## Hiển thị Lịch sử Trả thưởng từ Angel AI Treasury
 
-### Vấn đề phát hiện
+### Tổng quan
+Tích hợp dữ liệu trả thưởng từ ví Treasury (withdrawals + lì xì Tết) vào trang Lịch sử Giao Dịch hiện tại (`/activity-history`), hiển thị Angel AI Treasury là người gửi với đầy đủ thông tin on-chain.
 
-**1. Âm thanh không tự động phát**
-
-Trong `CelebrationAudioPlayer.tsx`, useEffect autoPlay phụ thuộc vào `[autoPlay]`:
-```
-useEffect(() => {
-  if (autoPlay && audioRef.current) {
-    audioRef.current.play().catch(() => {});
-  }
-}, [autoPlay]);
-```
-
-Vấn đề: Khi modal mở, component mount với `autoPlay=true` ngay từ đầu. Effect chạy 1 lần nhưng:
-- Trình duyệt chặn autoplay nếu chưa có tương tác người dùng gần đây
-- `.catch(() => {})` nuốt lỗi im lặng, không retry
-- Audio element có thể chưa load xong khi effect chạy
-
-**Giải pháp**: Thêm delay nhỏ (300ms) để đợi audio element sẵn sàng, retry play khi `canplaythrough` event fire, và thêm `preload="auto"` cho audio tag. Vì người dùng đã click nút tặng (user interaction), trình duyệt sẽ cho phép play nếu timing đúng.
-
-**2. Tin nhắn tự động không gửi được**
-
-Trong `autoSendDM`, có guard:
-```
-if (!celData.receiver_id || !user?.id) return;
-```
-
-Với giao dịch Web3 đến địa chỉ ví ngoài (không chọn user), `receiver_id` = `""` (empty string), nên hàm return sớm mà không gửi. Ngoài ra, insert vào `direct_messages` cần đúng format và receiver phải là user hợp lệ trong hệ thống.
-
-**Giải pháp**: Chỉ gửi DM khi `receiver_id` là UUID hợp lệ (người nhận có tài khoản), log rõ ràng hơn khi không gửi được. Đồng thời thêm `console.log` debug để theo dõi luồng thực thi.
+### Nguồn dữ liệu
+- **`coin_withdrawals`** (status = 'completed'): Trả thưởng rút CAMLY
+- **`lixi_claims`** (status = 'completed'): Lì xì Tết
 
 ### Thay đổi chi tiết
 
-**File 1: `src/components/gifts/CelebrationAudioPlayer.tsx`**
+**File: `src/pages/ActivityHistory.tsx`**
 
-- Thêm `preload="auto"` vào thẻ `<audio>`
-- Thay đổi useEffect autoPlay: thêm delay 300ms + lắng nghe event `canplaythrough` để retry play
-- Thêm ref `hasAutoPlayed` để đảm bảo chỉ auto-play 1 lần duy nhất
-- Log lỗi thay vì nuốt im lặng
+1. **Mở rộng Transaction interface**: Thêm type mới `"treasury_reward" | "treasury_lixi"` vào union type.
 
-**File 2: `src/components/gifts/GiftCoinDialog.tsx`**
+2. **Fetch thêm 2 bảng dữ liệu** trong `fetchTransactions`:
+   - Query `coin_withdrawals` (status = 'completed') lấy id, user_id, amount, wallet_address, tx_hash, created_at
+   - Query `lixi_claims` (status = 'completed') lấy id, user_id, camly_amount, wallet_address, tx_hash, claimed_at
+   - Gộp user_id vào danh sách để fetch profiles + wallets
 
-- Thêm console.log trong `autoSendDM` để debug (log khi gọi, log khi skip, log khi thành công/thất bại)
-- Validate `receiver_id` là UUID hợp lệ trước khi insert
-- Đảm bảo toast thông báo rõ ràng khi gửi thành công hoặc khi không thể gửi (người nhận không có tài khoản)
+3. **Map dữ liệu Treasury thành Transaction**:
+   - `sender_id`: Cố định = "ANGEL_AI_TREASURY"
+   - `sender_name`: "Angel AI Treasury"
+   - `sender_avatar`: Logo dự án (`angel-ai-golden-logo.png`)
+   - `sender_wallet`: Địa chỉ Treasury cố định (`0x416336c3b7ACAe89F47EAD2707412f20DA159ac8`)
+   - `receiver_id/name/avatar/wallet`: Lấy từ profile + wallet user nhận
+   - `tx_hash`: Từ dữ liệu giao dịch (link trực tiếp BscScan)
+   - `type`: `"treasury_reward"` hoặc `"treasury_lixi"`
+
+4. **Cập nhật TransactionItem** để hiển thị đặc biệt cho Treasury:
+   - Nếu sender = Treasury: hiển thị badge "Verified" xanh lá kèm icon shield
+   - Loại giao dịch hiển thị: "Trả thưởng" / "Lì xì" thay vì "Tặng thưởng"
+   - Icon gradient xanh/tím thay vì vàng gold
+   - Không link đến profile cho Treasury sender (vì không phải user)
+
+5. **Cập nhật bộ lọc**: Thêm option "Trả thưởng" và "Lì xì" vào dropdown loại giao dịch.
+
+6. **Cập nhật thống kê**: Thêm stat card "Treasury" đếm tổng giao dịch từ Treasury.
+
+### Nguyên tắc bảo đảm
+- Tất cả dữ liệu lấy trực tiếp từ database (không tạo dữ liệu ảo)
+- Mỗi giao dịch có tx_hash link trực tiếp đến BscScan
+- Dữ liệu chỉ đọc, không chỉnh sửa được từ frontend
+- Realtime subscription cho cả 2 bảng mới
 
 ### Files thay đổi
-1. `src/components/gifts/CelebrationAudioPlayer.tsx` - Fix autoplay timing
-2. `src/components/gifts/GiftCoinDialog.tsx` - Fix auto DM validation + debug logs
+1. `src/pages/ActivityHistory.tsx` - Tích hợp treasury data, UI, filters
