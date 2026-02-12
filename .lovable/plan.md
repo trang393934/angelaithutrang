@@ -1,68 +1,83 @@
 
-## Hành vi tự động sau khi tặng thưởng thành công
+## Nâng cấp Bộ lọc & Hiển thị Token trong Lịch sử Giao dịch
 
-### Tổng quan
-Hoàn thiện quy trình sau tặng thưởng: (1) Nút "Chia sẻ" tự động đăng bài Profile với ảnh Celebration Card, (2) Tự động gửi tin nhắn cho người nhận kèm ảnh Card, (3) Nút "Xem Card Chúc Mừng" trong lịch sử giao dịch mở đúng Celebration Modal với hiệu ứng. Xóa toàn bộ GIF ngẫu nhiên.
+### Mục tiêu
+1. Thêm 2 dropdown mới: **"Tất cả token"** và **"Tất cả trạng thái"** vào thanh bộ lọc
+2. Hiển thị đúng **logo + tên token** thực tế (CAMLY, USDT, FUN, BNB, BTC) thay vì luôn hiển thị "CAMLY"
+3. Thiết kế bộ lọc theo phong cách Angel AI vàng ánh kim sang trọng với tiêu đề "Bộ lọc & Tìm kiếm"
+
+### Phân tích dữ liệu thực tế
+Dữ liệu `gift_type` trong database: `internal`, `web3`, `web3_CAMLY`, `web3_FUN`, `web3_USDT` (tương lai có thể thêm `web3_BNB`, `web3_BTC`).
 
 ### Các thay đổi chi tiết
 
-**1. File: `src/components/gifts/GiftCoinDialog.tsx`**
+**File duy nhất: `src/pages/ActivityHistory.tsx`**
 
-Truyền 2 handler `onPostToProfile` và `onSendMessage` vào `GiftCelebrationModal` (hiện đang thiếu):
+**A. Thêm bộ lọc mới (filter state + logic)**
 
-- **`onPostToProfile`**: Dùng `html2canvas` chụp Celebration Card thành ảnh PNG, upload lên Supabase Storage, rồi gọi `process-community-post` edge function để tạo bài đăng với nội dung:
-  ```
-  🎁 Đã tặng {amount} {tokenLabel} cho {receiverName}!
-  {message nếu có}
-  #AngelAI #TặngThưởng #CamlyCoin #FUNMoney
-  ```
-  Kèm ảnh Celebration Card (không dùng GIF).
+1. Thêm state `tokenFilter` (giá trị: `"all"`, `"camly"`, `"fun"`, `"usdt"`, `"bnb"`, `"btc"`)
+2. Thêm state `statusFilter` (giá trị: `"all"`, `"confirmed"`, `"pending"`)
+3. Cập nhật hàm `filtered` (useMemo) thêm điều kiện lọc theo token và trạng thái
 
-- **`onSendMessage`**: Chụp Celebration Card thành ảnh, upload lên Storage, rồi gửi tin nhắn DM cho người nhận qua bảng `direct_messages` với:
-  - Ảnh Celebration Card đính kèm
-  - Nội dung: "🎁 Chúc mừng {receiverName}! Bạn nhận được {amount} {token} từ {senderName}. Xem Card Chúc Mừng: {link}"
-  - `message_type: "tip"`
+**B. Thiết kế lại khung bộ lọc**
 
-**2. File: `src/components/gifts/GiftCelebrationModal.tsx`**
+Khung filter section sẽ được nâng cấp:
+- Tiêu đề "Bộ lọc & Tìm kiếm" với icon Clock, màu vàng ánh kim
+- Thanh tìm kiếm với viền vàng và icon vàng
+- 4 dropdown ngang hàng: Token | Loại | Thời gian | Trạng thái
+- Toggle "Chỉ onchain" bên phải
+- Tất cả dropdown viền vàng, nền ấm, text vàng đậm
 
-- Thêm logic chụp ảnh Card (html2canvas) và upload lên Storage trong component (hàm `captureCardImage`)
-- Cập nhật nút "Đăng Profile" thành nút nổi bật hơn, hiển thị trạng thái loading khi đang xử lý
-- Cập nhật nút "Gửi tin nhắn cho người nhận" tương tự
-- Xóa mọi tham chiếu GIF ngẫu nhiên (nếu có)
+Cụ thể 4 dropdown:
 
-**3. File: `src/pages/ActivityHistory.tsx`**
+| Dropdown | Giá trị |
+|---|---|
+| Tất cả token | Tất cả token / CAMLY / FUN Money / USDT / BNB / BTC |
+| Tất cả loại | Tất cả loại / Tặng thưởng / Donate |
+| Tất cả thời gian | Tất cả / Hôm nay / 7 ngày / 30 ngày |
+| Tất cả trạng thái | Tất cả / Đã xác nhận / Đang chờ |
 
-- Thay link "Xem Card" (hiện chỉ trỏ đến `/receipt/:id`) thành nút mở `GiftCelebrationModal` inline:
-  - Thêm state `celebrationModalData` và `showCelebrationModal`
-  - Khi click "Xem Card Chúc Mừng", fetch dữ liệu giao dịch từ `coin_gifts` và mở `GiftCelebrationModal` với đầy đủ hiệu ứng (pháo hoa, coin rơi, nhạc)
-  - Import `GiftCelebrationModal` component
-  - Vẫn giữ link `/receipt/:id` cho "Xem biên nhận" riêng biệt
+**C. Hiển thị đúng token trong TransactionItem**
 
-### Luồng hoạt động
+Hiện tại luôn hiển thị logo CAMLY + text "CAMLY". Sẽ thêm logic nhận diện token từ `gift_type`:
 
 ```text
-Tặng thành công
-    |
-    v
-Celebration Modal mở (pháo hoa + nhạc)
-    |
-    +-- Nút "Đăng Profile" --> Chụp Card --> Upload ảnh --> Tạo bài đăng Community
-    |
-    +-- Nút "Gửi tin nhắn" --> Chụp Card --> Upload ảnh --> Gửi DM cho người nhận
-    |
-    +-- Nút "Lưu ảnh" --> Tải về máy
-    |
-    v
-Lịch sử giao dịch: Nút "Xem Card Chúc Mừng" --> Mở lại Celebration Modal
+Mapping gift_type -> Token hiển thị:
+  "internal" / null / "web3" / "web3_CAMLY"  -> logo CAMLY, text "CAMLY"
+  "web3_FUN"                                  -> logo FUN Money, text "FUN"
+  "web3_USDT"                                 -> logo USDT, text "USDT"
+  "web3_BNB"                                  -> logo BNB, text "BNB"
+  "web3_BTC"                                  -> logo BTC, text "BTC"
 ```
 
-### Ràng buộc
-- Xóa toàn bộ GIF ngẫu nhiên (Giphy, randomGif) - chỉ dùng Celebration Card do hệ thống tạo
-- Mọi text bằng tiếng Việt có dấu
-- Ảnh đăng Profile = ảnh chụp từ Celebration Card (.png)
-- Hashtag mặc định: #AngelAI #TặngThưởng
+- Import thêm logo từ `TokenSelector.tsx` (funMoneyLogo, bitcoinLogo, USDT_LOGO, BNB_LOGO)
+- Tạo hàm `getTokenDisplay(gift_type)` trả về `{ logo, symbol }`
+- Cập nhật dòng hiển thị amount trong `TransactionItem` sử dụng logo + symbol đúng
+
+**D. Styling Golden Angel AI**
+
+- Khung filter: `bg-gradient-to-r from-amber-50/80 via-white to-amber-50/80`, viền `border-amber-200/40`
+- Tiêu đề: Icon Clock màu vàng, text `text-amber-800 font-bold`
+- Dropdown trigger: `border-amber-300/50`, `text-amber-900`
+- Dropdown content: `bg-white border-amber-200` (không trong suốt, z-index cao)
+- Toggle switch: tông vàng khi bật
+
+### Chi tiết kỹ thuật - Logic lọc token
+
+```text
+tokenFilter logic trong useMemo filtered:
+  "camly"  -> gift_type IN [null, "internal", "web3", "web3_CAMLY"]
+  "fun"    -> gift_type === "web3_FUN"
+  "usdt"   -> gift_type === "web3_USDT"
+  "bnb"    -> gift_type === "web3_BNB"
+  "btc"    -> gift_type === "web3_BTC"
+  "all"    -> không lọc
+
+statusFilter logic:
+  "confirmed" -> tx_hash !== null (đã có hash on-chain)
+  "pending"   -> tx_hash === null
+  "all"       -> không lọc
+```
 
 ### Files thay đổi
-1. `src/components/gifts/GiftCoinDialog.tsx` - Thêm handlers onPostToProfile, onSendMessage
-2. `src/components/gifts/GiftCelebrationModal.tsx` - Thêm logic chụp + upload ảnh Card
-3. `src/pages/ActivityHistory.tsx` - Thêm nút "Xem Card Chúc Mừng" mở Celebration Modal
+1. `src/pages/ActivityHistory.tsx` - Thêm filters, cập nhật hiển thị token, nâng cấp UI bộ lọc
