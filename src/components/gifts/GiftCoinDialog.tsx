@@ -314,12 +314,13 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto bg-gradient-to-b from-amber-50/30 via-background to-amber-50/20 border-amber-200/60 shadow-[0_0_30px_-5px_rgba(218,165,32,0.15)]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-primary">
-              <Gift className="w-5 h-5" />
-              {t("gift.title")}
+            <DialogTitle className="flex items-center gap-2">
+              <Gift className="w-5 h-5 text-amber-600" />
+              <span className="bg-gradient-to-r from-[#b8860b] via-[#daa520] to-[#ffd700] bg-clip-text text-transparent font-bold">{t("gift.title")}</span>
             </DialogTitle>
+            <p className="text-xs text-amber-700/70 font-medium">Angel AI Gift System ✨</p>
           </DialogHeader>
 
           {/* Token Selector Dropdown */}
@@ -353,9 +354,9 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                   >
                     {/* Người gửi */}
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-muted-foreground">Người gửi</label>
-                      <div className="flex items-center gap-3 p-3 bg-accent/30 rounded-xl border border-border/50">
-                        <Avatar className="h-10 w-10 ring-2 ring-primary/30">
+                      <label className="text-sm font-medium text-amber-800">Người gửi</label>
+                      <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-50/50 to-yellow-50/30 rounded-xl border border-amber-200/60">
+                        <Avatar className="h-10 w-10 ring-2 ring-amber-400/40">
                           <AvatarImage src={senderProfile.avatar_url || ""} />
                           <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
                         </Avatar>
@@ -374,7 +375,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                     {/* Người nhận */}
                     {!selectedUser ? (
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Người nhận 💝</label>
+                      <label className="text-sm font-medium text-amber-800">Người nhận 💝</label>
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
@@ -415,9 +416,9 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                       </div>
                     ) : (
                       <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Người nhận 💝</label>
-                        <div className="flex items-center gap-3 p-3 bg-accent/30 rounded-xl border border-border/50">
-                          <Avatar className="h-10 w-10 ring-2 ring-primary/30">
+                        <label className="text-sm font-medium text-amber-800">Người nhận 💝</label>
+                        <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-50/50 to-yellow-50/30 rounded-xl border border-amber-200/60">
+                          <Avatar className="h-10 w-10 ring-2 ring-amber-400/40">
                             <AvatarImage src={selectedUser.avatar_url || ""} />
                             <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
                           </Avatar>
@@ -463,17 +464,17 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
 
                     {/* Số tiền + Mức nhanh */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">{t("gift.amount")} 💰</label>
+                      <label className="text-sm font-medium text-amber-800">{t("gift.amount")} 💰</label>
                       <div className="flex gap-2 flex-wrap">
                         {QUICK_AMOUNTS_MAP[activeTab].map((qa) => (
                           <button
                             key={qa}
                             type="button"
                             onClick={() => setAmount(String(qa))}
-                            className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${
+                            className={`px-3 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${
                               Number(amount) === qa
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-border hover:border-primary/50 text-foreground"
+                                ? "bg-gradient-to-r from-[#b8860b] via-[#daa520] to-[#ffd700] text-black border-amber-500 shadow-[0_0_12px_-3px_rgba(218,165,32,0.4)]"
+                                : "border-amber-200 hover:border-amber-400 text-foreground bg-amber-50/30"
                             }`}
                           >
                             {qa.toLocaleString()}
@@ -493,7 +494,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
 
                     {/* Lời nhắn */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Lời nhắn yêu thương 💌</label>
+                      <label className="text-sm font-medium text-amber-800">Lời nhắn yêu thương 💌</label>
                       <Textarea
                         placeholder={t("gift.messagePlaceholder")}
                         value={message}
@@ -514,7 +515,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                         setInternalStep(2);
                       }}
                       disabled={!canProceedToConfirm}
-                      className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold"
+                      className="w-full btn-golden-3d !text-black font-bold"
                     >
                       <CheckCircle2 className="w-4 h-4 mr-2" />
                       Xem lại & Xác nhận
@@ -533,15 +534,15 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                     className="space-y-4"
                   >
                     <div className="text-center mb-2">
-                      <h3 className="font-bold text-lg">Xác nhận tặng thưởng</h3>
+                      <h3 className="font-bold text-lg bg-gradient-to-r from-[#b8860b] via-[#daa520] to-[#ffd700] bg-clip-text text-transparent">Xác nhận tặng thưởng</h3>
                       <p className="text-xs text-muted-foreground">Vui lòng kiểm tra thông tin trước khi gửi</p>
                     </div>
 
                     {/* Confirmation Card */}
-                    <div className="bg-gradient-to-br from-accent/50 to-accent/20 rounded-2xl p-4 space-y-4 border border-border/50">
+                    <div className="bg-gradient-to-br from-amber-50/80 to-yellow-50/40 rounded-2xl p-4 space-y-4 border border-amber-200">
                       {/* Người gửi */}
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12 ring-2 ring-primary/30">
+                        <Avatar className="h-12 w-12 ring-2 ring-amber-400/40">
                           <AvatarImage src={senderProfile.avatar_url || ""} />
                           <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
                         </Avatar>
@@ -564,7 +565,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
 
                       {/* Người nhận */}
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12 ring-2 ring-primary/30">
+                        <Avatar className="h-12 w-12 ring-2 ring-amber-400/40">
                           <AvatarImage src={selectedUser.avatar_url || ""} />
                           <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
                         </Avatar>
@@ -604,7 +605,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                       <Button
                         onClick={handleSendGift}
                         disabled={isLoading}
-                        className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold"
+                        className="flex-1 btn-golden-3d !text-black font-bold"
                       >
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Gift className="w-4 h-4 mr-2" />}
                         Xác nhận & Tặng
