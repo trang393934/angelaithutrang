@@ -20,6 +20,8 @@ import { vi, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+import { GiftCelebrationModal, type CelebrationData } from "@/components/gifts/GiftCelebrationModal";
+import { Sparkles } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -58,7 +60,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
   );
 }
 
-function TransactionItem({ tx }: { tx: Transaction }) {
+function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx: Transaction) => void }) {
   const { currentLanguage } = useLanguage();
   const locale = currentLanguage === "vi" ? vi : enUS;
   const timeAgo = formatDistanceToNow(new Date(tx.created_at), { addSuffix: true, locale });
@@ -197,8 +199,17 @@ function TransactionItem({ tx }: { tx: Transaction }) {
                   className="text-[10px] text-[#b8860b] hover:text-[#8B6914] flex items-center gap-0.5 ml-1"
                 >
                   <Gift className="w-3 h-3" />
-                  Xem Card
+                  Biên nhận
                 </Link>
+              )}
+              {tx.type === "gift" && onViewCard && (
+                <button
+                  onClick={() => onViewCard(tx)}
+                  className="text-[10px] text-[#b8860b] hover:text-[#8B6914] flex items-center gap-0.5 ml-1 font-medium"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  Xem Card
+                </button>
               )}
             </div>
           </div>
@@ -226,6 +237,28 @@ const ActivityHistory = () => {
   const [timeFilter, setTimeFilter] = useState("all");
   const [onchainOnly, setOnchainOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"all" | "personal">("all");
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationData, setCelebrationData] = useState<CelebrationData | null>(null);
+
+  const handleViewCard = (tx: Transaction) => {
+    setCelebrationData({
+      receipt_public_id: tx.receipt_public_id || "",
+      sender_id: tx.sender_id,
+      sender_name: tx.sender_name || "Ẩn danh",
+      sender_avatar: tx.sender_avatar,
+      sender_wallet: tx.sender_wallet,
+      receiver_id: tx.receiver_id || "",
+      receiver_name: tx.receiver_name || "Ẩn danh",
+      receiver_avatar: tx.receiver_avatar,
+      receiver_wallet: tx.receiver_wallet,
+      amount: tx.amount,
+      message: tx.message,
+      tx_hash: tx.tx_hash,
+      created_at: tx.created_at,
+      tokenType: tx.gift_type === "web3" ? "camly_web3" : "internal",
+    });
+    setShowCelebration(true);
+  };
 
   const fetchTransactions = useCallback(async () => {
     setIsLoading(true);
@@ -537,11 +570,18 @@ const ActivityHistory = () => {
         ) : (
           <div className="space-y-2">
             {filtered.map(tx => (
-              <TransactionItem key={tx.id} tx={tx} />
+              <TransactionItem key={tx.id} tx={tx} onViewCard={handleViewCard} />
             ))}
           </div>
         )}
       </main>
+
+      {/* Celebration Modal */}
+      <GiftCelebrationModal
+        open={showCelebration}
+        onOpenChange={setShowCelebration}
+        data={celebrationData}
+      />
     </div>
   );
 };
