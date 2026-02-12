@@ -1,47 +1,35 @@
 
 
-# Hoàn thiện kết nối Google AI Studio qua Cloudflare AI Gateway
+## Reset dữ liệu test Lì xì cho ANGEL ÁNH NGUYỆT
 
-## Vấn đề hiện tại
-Tất cả 10 Edge Functions đang dùng URL Cloudflare **thiếu** đuôi `/chat/completions`:
+### Mục tiêu
+Reset trạng thái Lì xì Tết của user **ANGEL ÁNH NGUYỆT** (`user_id: 1096564a-...`) để có thể test lại popup chúc mừng và nút CLAIM từ đầu.
+
+### Các bước thực hiện
+
+1. **Xóa bản ghi claim** trong bảng `lixi_claims` của user này (status đang là `pending`)
+2. **Đặt lại notification** `tet_lixi_reward` về `is_read = false`, `read_at = NULL` để popup hiện lại khi đăng nhập
+3. **Đăng nhập tài khoản ANGEL ÁNH NGUYỆT** trên trình duyệt để xác nhận popup Lì xì Tết hiển thị
+4. **Nhấn nút CLAIM** và xác nhận:
+   - Bản ghi mới được tạo trong `lixi_claims` với status `pending`
+   - Notification được đánh dấu `is_read = true`
+   - Toast thông báo thành công hiển thị
+   - Admin nhận notification về yêu cầu claim mới
+
+### Chi tiết kỹ thuật
+
+Hai câu lệnh SQL cần chạy:
+
+```text
+-- Bước 1: Xóa claim cũ
+DELETE FROM lixi_claims
+WHERE user_id = '1096564a-...' AND notification_id = '<notification_id>';
+
+-- Bước 2: Reset notification
+UPDATE notifications
+SET is_read = false, read_at = NULL
+WHERE user_id = '1096564a-...' AND type = 'tet_lixi_reward';
 ```
-// Hiện tại (SAI)
-https://gateway.ai.cloudflare.com/v1/.../angel-ai/compat
 
-// Đúng theo Cloudflare docs
-https://gateway.ai.cloudflare.com/v1/.../angel-ai/compat/chat/completions
-```
-
-Khi dùng `fetch` trực tiếp (không dùng OpenAI SDK), phải gắn đầy đủ path `/chat/completions` vì không có SDK tự thêm. Hiện tại CF có thể trả lỗi hoặc response sai, rồi fallback về Lovable Gateway.
-
-## Thay đổi
-
-Sửa **CF_GATEWAY_URL** trong tất cả 10 Edge Functions, thêm `/chat/completions` vào cuối URL:
-
-```
-TRƯỚC: "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat"
-SAU:   "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions"
-```
-
-### Danh sách 10 files cần sửa (11 vị trí):
-1. `supabase/functions/angel-chat/index.ts` -- 2 vị trí (demo + main)
-2. `supabase/functions/analyze-image/index.ts`
-3. `supabase/functions/analyze-onboarding/index.ts`
-4. `supabase/functions/analyze-reward-journal/index.ts`
-5. `supabase/functions/analyze-reward-question/index.ts`
-6. `supabase/functions/check-user-energy/index.ts`
-7. `supabase/functions/generate-content/index.ts`
-8. `supabase/functions/global-search/index.ts`
-9. `supabase/functions/send-healing-message/index.ts`
-10. `supabase/functions/verify-avatar-for-withdrawal/index.ts`
-
-## Giữ nguyên
-- Logic fallback về Lovable Gateway (khi CF lỗi)
-- Model mapping: `google/` -> `google-ai-studio/` cho BYOK
-- Auth header: `Bearer ${CF_API_TOKEN}`
-- Secret `CF_API_TOKEN` đã có sẵn
-- Secret `GOOGLE_AI_API_KEY` đã được lưu trong CF Provider Keys (BYOK)
-
-## Kết quả
-Sau sửa, tất cả AI calls sẽ đi qua Cloudflare AI Gateway thành công (có analytics, rate limiting, caching trên CF dashboard), với fallback tự động về Lovable Gateway nếu CF gặp sự cố.
+Sau khi reset, đăng nhập bằng tài khoản `daothianhnguyet.pt@gmail.com` để test toàn bộ luồng end-to-end.
 
