@@ -4,7 +4,7 @@ import {
   Globe, RefreshCw, Download, Search, Gift, Heart, Wallet,
   ArrowUpRight, ArrowDownLeft, Copy, ExternalLink, Check,
   Clock, TrendingUp, Activity, CheckCircle2, Loader2,
-  ArrowLeft, Users, User, Send, Inbox
+  ArrowLeft, Users, User, Send, Inbox, Filter, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,8 +20,22 @@ import { vi, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+import funMoneyLogo from "@/assets/fun-money-logo.png";
+import bitcoinLogo from "@/assets/bitcoin-logo.png";
 import { GiftCelebrationModal, type CelebrationData } from "@/components/gifts/GiftCelebrationModal";
-import { Sparkles } from "lucide-react";
+
+const USDT_LOGO = "https://cryptologos.cc/logos/tether-usdt-logo.png?v=040";
+const BNB_LOGO = "https://cryptologos.cc/logos/bnb-bnb-logo.png?v=040";
+
+function getTokenDisplay(giftType: string | null): { logo: string; symbol: string } {
+  switch (giftType) {
+    case "web3_FUN": return { logo: funMoneyLogo, symbol: "FUN" };
+    case "web3_USDT": return { logo: USDT_LOGO, symbol: "USDT" };
+    case "web3_BNB": return { logo: BNB_LOGO, symbol: "BNB" };
+    case "web3_BTC": return { logo: bitcoinLogo, symbol: "BTC" };
+    default: return { logo: camlyCoinLogo, symbol: "CAMLY" };
+  }
+}
 
 interface Transaction {
   id: string;
@@ -174,11 +188,11 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
           {/* Amount + TX Hash */}
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-1.5">
-              <img src={camlyCoinLogo} alt="CAMLY" className="w-4 h-4 rounded-full" />
+              <img src={getTokenDisplay(tx.gift_type).logo} alt={getTokenDisplay(tx.gift_type).symbol} className="w-4 h-4 rounded-full" />
               <span className={`font-bold text-base ${isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
                 {tx.amount.toLocaleString()}
               </span>
-              <span className="text-[10px] text-[#8B7355] font-medium">CAMLY</span>
+              <span className="text-[10px] text-[#8B7355] font-medium">{getTokenDisplay(tx.gift_type).symbol}</span>
             </div>
 
             <div className="flex items-center gap-1">
@@ -236,6 +250,8 @@ const ActivityHistory = () => {
   const [typeFilter, setTypeFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
   const [onchainOnly, setOnchainOnly] = useState(false);
+  const [tokenFilter, setTokenFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"all" | "personal">("all");
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationData, setCelebrationData] = useState<CelebrationData | null>(null);
@@ -368,9 +384,21 @@ const ActivityHistory = () => {
       if (timeFilter === "7days" && new Date(tx.created_at) < subDays(new Date(), 7)) return false;
       if (timeFilter === "30days" && new Date(tx.created_at) < subMonths(new Date(), 1)) return false;
       if (onchainOnly && !tx.tx_hash && tx.gift_type !== "web3" && tx.donation_type !== "manual") return false;
+      // Token filter
+      if (tokenFilter !== "all") {
+        const gt = tx.gift_type || "";
+        if (tokenFilter === "camly" && !["", "internal", "web3", "web3_CAMLY"].includes(gt)) return false;
+        if (tokenFilter === "fun" && gt !== "web3_FUN") return false;
+        if (tokenFilter === "usdt" && gt !== "web3_USDT") return false;
+        if (tokenFilter === "bnb" && gt !== "web3_BNB") return false;
+        if (tokenFilter === "btc" && gt !== "web3_BTC") return false;
+      }
+      // Status filter
+      if (statusFilter === "confirmed" && !tx.tx_hash) return false;
+      if (statusFilter === "pending" && tx.tx_hash) return false;
       return true;
     });
-  }, [viewFiltered, searchQuery, typeFilter, timeFilter, onchainOnly]);
+  }, [viewFiltered, searchQuery, typeFilter, timeFilter, onchainOnly, tokenFilter, statusFilter]);
 
   // Stats based on viewFiltered
   const stats = useMemo(() => {
@@ -502,7 +530,15 @@ const ActivityHistory = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-[#daa520]/20 p-3 sm:p-4 space-y-3">
+        <div className="bg-gradient-to-r from-amber-50/80 via-white to-amber-50/80 backdrop-blur-sm rounded-xl border border-[#daa520]/30 p-3 sm:p-4 space-y-3 shadow-sm">
+          {/* Filter header */}
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#daa520] to-[#b8860b] flex items-center justify-center">
+              <Filter className="w-3 h-3 text-white" />
+            </div>
+            <h3 className="text-sm font-bold text-[#8B6914]">Bộ lọc & Tìm kiếm</h3>
+          </div>
+
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#b8860b]/60" />
@@ -511,28 +547,55 @@ const ActivityHistory = () => {
               placeholder="Tìm theo tên, địa chỉ ví, mã giao dịch (tx hash)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-[#daa520]/30 focus:border-[#daa520] focus:ring-[#daa520]/20"
+              className="pl-10 border-[#daa520]/40 focus:border-[#daa520] focus:ring-[#daa520]/20 bg-white"
             />
           </div>
 
-          {/* Dropdowns + Toggle */}
+          {/* Dropdowns row */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Token filter */}
+            <Select value={tokenFilter} onValueChange={setTokenFilter}>
+              <SelectTrigger className="w-[130px] h-8 text-xs border-[#daa520]/40 text-[#8B6914] bg-white font-medium">
+                <SelectValue placeholder="Tất cả token" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-[#daa520]/30 z-50">
+                <SelectItem value="all">Tất cả token</SelectItem>
+                <SelectItem value="camly">
+                  <span className="flex items-center gap-1.5"><img src={camlyCoinLogo} className="w-3.5 h-3.5 rounded-full" /> CAMLY</span>
+                </SelectItem>
+                <SelectItem value="fun">
+                  <span className="flex items-center gap-1.5"><img src={funMoneyLogo} className="w-3.5 h-3.5 rounded-full" /> FUN Money</span>
+                </SelectItem>
+                <SelectItem value="usdt">
+                  <span className="flex items-center gap-1.5"><img src={USDT_LOGO} className="w-3.5 h-3.5 rounded-full" /> USDT</span>
+                </SelectItem>
+                <SelectItem value="bnb">
+                  <span className="flex items-center gap-1.5"><img src={BNB_LOGO} className="w-3.5 h-3.5 rounded-full" /> BNB</span>
+                </SelectItem>
+                <SelectItem value="btc">
+                  <span className="flex items-center gap-1.5"><img src={bitcoinLogo} className="w-3.5 h-3.5 rounded-full" /> BTC</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Type filter */}
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-xs border-[#daa520]/30">
+              <SelectTrigger className="w-[130px] h-8 text-xs border-[#daa520]/40 text-[#8B6914] bg-white font-medium">
                 <SelectValue placeholder="Tất cả loại" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-[#daa520]/30 z-50">
                 <SelectItem value="all">Tất cả loại</SelectItem>
                 <SelectItem value="gifts">Tặng thưởng</SelectItem>
                 <SelectItem value="donations">Donate</SelectItem>
               </SelectContent>
             </Select>
 
+            {/* Time filter */}
             <Select value={timeFilter} onValueChange={setTimeFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-xs border-[#daa520]/30">
+              <SelectTrigger className="w-[140px] h-8 text-xs border-[#daa520]/40 text-[#8B6914] bg-white font-medium">
                 <SelectValue placeholder="Tất cả thời gian" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-[#daa520]/30 z-50">
                 <SelectItem value="all">Tất cả thời gian</SelectItem>
                 <SelectItem value="today">Hôm nay</SelectItem>
                 <SelectItem value="7days">7 ngày qua</SelectItem>
@@ -540,9 +603,26 @@ const ActivityHistory = () => {
               </SelectContent>
             </Select>
 
+            {/* Status filter */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px] h-8 text-xs border-[#daa520]/40 text-[#8B6914] bg-white font-medium">
+                <SelectValue placeholder="Tất cả trạng thái" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-[#daa520]/30 z-50">
+                <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                <SelectItem value="confirmed">✅ Đã xác nhận</SelectItem>
+                <SelectItem value="pending">⏳ Đang chờ</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Onchain toggle */}
             <div className="flex items-center gap-2 ml-auto">
               <label className="text-xs text-[#8B7355] font-medium">Chỉ onchain</label>
-              <Switch checked={onchainOnly} onCheckedChange={setOnchainOnly} />
+              <Switch 
+                checked={onchainOnly} 
+                onCheckedChange={setOnchainOnly}
+                className="data-[state=checked]:bg-[#daa520]"
+              />
             </div>
           </div>
         </div>
