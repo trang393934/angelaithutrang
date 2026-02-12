@@ -1,41 +1,38 @@
 
 
-## Thêm số liệu Lì xì và bộ lọc Claim vào tab Snapshot
+## Cập nhật số lượng gợi ý theo từng loại token
 
-### Tổng quan
-Bổ sung 3 thẻ thống kê mới về tình hình Lì xì on-chain vào phần Stats Cards của tab Snapshot 07/02/2026, đồng thời thêm bộ lọc (filter) cho cột Claim trong bảng dữ liệu.
+### Mục tiêu
+Thay đổi các nút gợi ý nhanh (quick amounts) trong dialog Tặng Thưởng để phù hợp với giá trị thực tế của từng loại token, thay vì dùng chung 4 mức [10, 50, 100, 500] cho tất cả.
 
-### Thay đổi cụ thể
+### Bảng gợi ý mới
 
-**File: `src/pages/AdminTetReward.tsx`**
-
-**1. Thêm 3 thẻ thống kê Lì xì (dưới 4 thẻ hiện tại)**
-
-Tính toán từ `lixiClaims` (đã có sẵn từ hook `useLixiClaims`):
-
-| Thẻ | Icon | Giá trị | Mô tả |
-|---|---|---|---|
-| Tổng user đã Lì xì | CheckCircle2 (xanh lá) | Đếm claims có status = "completed" | User đã nhận on-chain thành công |
-| Tổng Camly đã Lì xì | Gift (vàng cam) | Tổng camly_amount của claims completed | Tổng coin đã chuyển on-chain |
-| Lì xì chưa thành công | XCircle (đỏ) | Đếm claims có status = "failed" hoặc "pending" | Cần xử lý lại |
-
-Ba thẻ này sẽ nằm trong 1 hàng riêng (grid 3 cột) ngay dưới 4 thẻ thống kê hiện tại, với tiêu đề nhỏ "Thống kê Lì xì on-chain".
-
-**2. Thêm bộ lọc cột Claim**
-
-Thêm 1 dropdown/select filter cho cột Claim ngay cạnh ô tìm kiếm, cho phép lọc theo:
-- Tất cả (mặc định)
-- Đã claim thành công (completed)
-- Claim thất bại (failed)
-- Đang chờ (pending)
-- Chưa claim
-
-Logic: lọc `filteredRows` dựa trên trạng thái claim của từng user (tra cứu qua `nameToUserIdMap` + `lixiClaims`).
+| Token | Nút gợi ý |
+|---|---|
+| Camly Coin (Nội bộ) | 10.000 / 50.000 / 100.000 / 500.000 / 1.000.000 |
+| Camly Coin (Web3) | 10.000 / 50.000 / 100.000 / 500.000 / 1.000.000 |
+| FUN Money | 10 / 50 / 100 / 500 / 1.000 |
+| BNB | 0,01 / 0,05 / 0,1 / 0,5 |
+| USDT | 5 / 10 / 50 / 100 |
+| Bitcoin (BTC) | 0,001 / 0,005 / 0,01 / 0,05 |
 
 ### Chi tiết kỹ thuật
 
-- Thêm state `claimFilter` kiểu `"all" | "completed" | "failed" | "pending" | "unclaimed"`
-- Tính `lixiStats` bằng `useMemo` từ mảng `lixiClaims`
-- Cập nhật `filteredRows` useMemo để thêm logic lọc theo `claimFilter`
-- Sử dụng component `Select` từ `@/components/ui/select` cho dropdown lọc
-- Chỉ sửa 1 file: `src/pages/AdminTetReward.tsx`
+**File: `src/components/gifts/GiftCoinDialog.tsx`**
+
+1. Thay hằng số `QUICK_AMOUNTS = [10, 50, 100, 500]` bằng một object map theo token type:
+
+```text
+QUICK_AMOUNTS_MAP: Record<SelectedToken, number[]> = {
+  internal:    [10000, 50000, 100000, 500000, 1000000],
+  camly_web3:  [10000, 50000, 100000, 500000, 1000000],
+  fun_money:   [10, 50, 100, 500, 1000],
+  bnb:         [0.01, 0.05, 0.1, 0.5],
+  usdt:        [5, 10, 50, 100],
+  bitcoin:     [0.001, 0.005, 0.01, 0.05],
+}
+```
+
+2. Cập nhật phần render nút gợi ý (dòng ~461) thay `QUICK_AMOUNTS` thành `QUICK_AMOUNTS_MAP[activeTab]` (biến `activeTab` chính là `SelectedToken` hiện tại).
+
+3. Chỉ sửa 1 file duy nhất.
