@@ -44,7 +44,14 @@ interface UserSearchResult {
   avatar_url: string | null;
 }
 
-const QUICK_AMOUNTS = [10, 50, 100, 500];
+const QUICK_AMOUNTS_MAP: Record<SelectedToken, number[]> = {
+  internal: [10000, 50000, 100000, 500000, 1000000],
+  camly_web3: [10000, 50000, 100000, 500000, 1000000],
+  fun_money: [10, 50, 100, 500, 1000],
+  bnb: [0.01, 0.05, 0.1, 0.5],
+  usdt: [5, 10, 50, 100],
+  bitcoin: [0.001, 0.005, 0.01, 0.05],
+};
 
 export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextType, contextId }: GiftCoinDialogProps) {
   const { t } = useLanguage();
@@ -458,7 +465,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                     <div className="space-y-2">
                       <label className="text-sm font-medium">{t("gift.amount")} 💰</label>
                       <div className="flex gap-2 flex-wrap">
-                        {QUICK_AMOUNTS.map((qa) => (
+                        {QUICK_AMOUNTS_MAP[activeTab].map((qa) => (
                           <button
                             key={qa}
                             type="button"
