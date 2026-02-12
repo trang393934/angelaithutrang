@@ -721,6 +721,104 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
         open={showCelebration}
         onOpenChange={setShowCelebration}
         data={celebrationData}
+        onPostToProfile={async (celData, themeId) => {
+          try {
+            // Capture card as image using html2canvas
+            const cardEl = document.querySelector('[data-celebration-card]') as HTMLElement;
+            if (!cardEl) {
+              toast.error("Không tìm thấy Card để chụp");
+              return;
+            }
+            const { default: html2canvas } = await import("html2canvas");
+            const canvas = await html2canvas(cardEl, { useCORS: true, scale: 2 });
+            const blob = await new Promise<Blob>((resolve) =>
+              canvas.toBlob((b) => resolve(b!), "image/png")
+            );
+
+            // Upload to storage
+            const fileName = `celebration-${Date.now()}-${Math.random().toString(36).slice(2)}.png`;
+            const filePath = `${user!.id}/${fileName}`;
+            const { error: uploadErr } = await supabase.storage
+              .from("community")
+              .upload(filePath, blob, { contentType: "image/png" });
+            if (uploadErr) throw uploadErr;
+
+            const { data: urlData } = supabase.storage.from("community").getPublicUrl(filePath);
+            const imageUrl = urlData.publicUrl;
+
+            // Create community post
+            const tokenLabel = celData.tokenType === "fun_money" ? "FUN Money"
+              : celData.tokenType === "camly_web3" ? "CAMLY (Web3)"
+              : celData.tokenType === "usdt" ? "USDT"
+              : celData.tokenType === "bnb" ? "BNB"
+              : celData.tokenType === "bitcoin" ? "BTC"
+              : "Camly Coin";
+            const postContent = `🎁 Đã tặng ${celData.amount.toLocaleString()} ${tokenLabel} cho ${celData.receiver_name}!${celData.message ? `\n${celData.message}` : ""}\n#AngelAI #TặngThưởng`;
+
+            const { data: postResult, error: postErr } = await supabase.functions.invoke("process-community-post", {
+              body: { action: "create_post", content: postContent, imageUrl },
+            });
+            if (postErr) throw postErr;
+            toast.success("Đã đăng bài lên Profile! 🎉");
+          } catch (err: any) {
+            console.error("[PostToProfile] Error:", err);
+            toast.error("Không thể đăng bài. Vui lòng thử lại.");
+          }
+        }}
+        onSendMessage={async (celData) => {
+          try {
+            if (!celData.receiver_id) {
+              toast.error("Không tìm thấy người nhận");
+              return;
+            }
+            // Capture card as image
+            const cardEl = document.querySelector('[data-celebration-card]') as HTMLElement;
+            if (!cardEl) {
+              toast.error("Không tìm thấy Card để chụp");
+              return;
+            }
+            const { default: html2canvas } = await import("html2canvas");
+            const canvas = await html2canvas(cardEl, { useCORS: true, scale: 2 });
+            const blob = await new Promise<Blob>((resolve) =>
+              canvas.toBlob((b) => resolve(b!), "image/png")
+            );
+
+            // Upload to storage
+            const fileName = `celebration-dm-${Date.now()}-${Math.random().toString(36).slice(2)}.png`;
+            const filePath = `${user!.id}/${fileName}`;
+            const { error: uploadErr } = await supabase.storage
+              .from("community")
+              .upload(filePath, blob, { contentType: "image/png" });
+            if (uploadErr) throw uploadErr;
+
+            const { data: urlData } = supabase.storage.from("community").getPublicUrl(filePath);
+            const imageUrl = urlData.publicUrl;
+
+            const tokenLabel = celData.tokenType === "fun_money" ? "FUN Money"
+              : celData.tokenType === "camly_web3" ? "CAMLY"
+              : celData.tokenType === "usdt" ? "USDT"
+              : celData.tokenType === "bnb" ? "BNB"
+              : celData.tokenType === "bitcoin" ? "BTC"
+              : "Camly Coin";
+            const receiptLink = celData.receipt_public_id
+              ? `${window.location.origin}/receipt/${celData.receipt_public_id}`
+              : "";
+            const msgContent = `🎁 Chúc mừng ${celData.receiver_name}! Bạn nhận được ${celData.amount.toLocaleString()} ${tokenLabel} từ ${celData.sender_name}.${receiptLink ? `\nXem Card Chúc Mừng: ${receiptLink}` : ""}`;
+
+            const { error: dmErr } = await supabase.from("direct_messages").insert({
+              sender_id: user!.id,
+              receiver_id: celData.receiver_id,
+              content: msgContent,
+              image_url: imageUrl,
+              message_type: "tip",
+            });
+            if (dmErr) throw dmErr;
+            toast.success("Đã gửi tin nhắn cho người nhận! 💌");
+          } catch (err: any) {
+            console.error("[SendMessage] Error:", err);
+            toast.error("Không thể gửi tin nhắn. Vui lòng thử lại.");
+          }
+        }}
       />
     </>
   );

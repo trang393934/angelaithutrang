@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { X, ExternalLink, Copy, Sparkles, ArrowRight, Download, Share2, MessageCircle, FileText, Image } from "lucide-react";
+import { X, ExternalLink, Copy, Sparkles, ArrowRight, Download, Share2, MessageCircle, FileText, Image, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
@@ -127,6 +127,8 @@ export function GiftCelebrationModal({ open, onOpenChange, data, onPostToProfile
   const [selectedBackground, setSelectedBackground] = useState(0);
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [selectedTrack, setSelectedTrack] = useState("rich-1");
+  const [isPostingProfile, setIsPostingProfile] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -205,6 +207,7 @@ export function GiftCelebrationModal({ open, onOpenChange, data, onPostToProfile
       <DialogContent className="sm:max-w-md p-0 overflow-hidden border-0 bg-transparent shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
         <motion.div
           ref={cardRef}
+          data-celebration-card
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.8, opacity: 0 }}
@@ -438,24 +441,38 @@ export function GiftCelebrationModal({ open, onOpenChange, data, onPostToProfile
               )}
               {onPostToProfile && (
                 <Button
-                  onClick={() => onPostToProfile(data, selectedTheme)}
-                  variant="outline"
+                  onClick={async () => {
+                    setIsPostingProfile(true);
+                    try {
+                      await onPostToProfile(data, selectedTheme);
+                    } finally {
+                      setIsPostingProfile(false);
+                    }
+                  }}
+                  disabled={isPostingProfile}
                   size="sm"
-                  className="bg-white/80 border-white/50 text-amber-900 hover:bg-white/90 text-xs"
+                  className="btn-golden-3d !text-black font-bold text-xs"
                 >
-                  <Image className="w-3.5 h-3.5 mr-1" />
-                  Đăng Profile
+                  {isPostingProfile ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Image className="w-3.5 h-3.5 mr-1" />}
+                  {isPostingProfile ? "Đang đăng..." : "Đăng Profile"}
                 </Button>
               )}
               {onSendMessage && (
                 <Button
-                  onClick={() => onSendMessage(data)}
-                  variant="outline"
+                  onClick={async () => {
+                    setIsSendingMessage(true);
+                    try {
+                      await onSendMessage(data);
+                    } finally {
+                      setIsSendingMessage(false);
+                    }
+                  }}
+                  disabled={isSendingMessage}
                   size="sm"
-                  className="bg-white/80 border-white/50 text-amber-900 hover:bg-white/90 text-xs col-span-2"
+                  className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold text-xs col-span-2"
                 >
-                  <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                  Gửi tin nhắn cho người nhận
+                  {isSendingMessage ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5 mr-1" />}
+                  {isSendingMessage ? "Đang gửi..." : "Gửi tin nhắn cho người nhận"}
                 </Button>
               )}
               <Button
