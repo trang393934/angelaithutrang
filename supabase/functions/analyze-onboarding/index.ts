@@ -131,7 +131,7 @@ Hãy phân tích tần số năng lượng của họ và đưa ra quyết đị
 Trả về JSON với format: {"decision": "approved/trial/rejected", "reason": "lý do ngắn gọn", "message": "thông điệp yêu thương gửi đến họ"}`;
 
         // --- AI Gateway Config ---
-        const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat";
+        const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
         const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
         const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
         const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
