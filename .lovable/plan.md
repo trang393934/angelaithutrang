@@ -1,49 +1,37 @@
 
 
-## Hiển thị Lịch sử Trả thưởng từ Angel AI Treasury
+## Fix: Công khai Lịch sử Trả thưởng Treasury
 
-### Tổng quan
-Tích hợp dữ liệu trả thưởng từ ví Treasury (withdrawals + lì xì Tết) vào trang Lịch sử Giao Dịch hiện tại (`/activity-history`), hiển thị Angel AI Treasury là người gửi với đầy đủ thông tin on-chain.
+### Nguyên nhân
+Hai bảng `coin_withdrawals` và `lixi_claims` đều có RLS policy giới hạn SELECT chỉ cho chính chủ (`auth.uid() = user_id`) hoặc admin. Do đó user thường không thể xem giao dịch trả thưởng của người khác trên trang Lịch sử.
 
-### Nguồn dữ liệu
-- **`coin_withdrawals`** (status = 'completed'): Trả thưởng rút CAMLY
-- **`lixi_claims`** (status = 'completed'): Lì xì Tết
+### Giải pháp
+Thêm RLS policy SELECT công khai cho các giao dịch đã hoàn thành (`status = 'completed'`), để tất cả user đã đăng nhập đều xem được lịch sử trả thưởng minh bạch.
 
-### Thay đổi chi tiết
+### Thay đổi cụ thể
 
-**File: `src/pages/ActivityHistory.tsx`**
+**Database Migration** - Thêm 2 RLS policies mới:
 
-1. **Mở rộng Transaction interface**: Thêm type mới `"treasury_reward" | "treasury_lixi"` vào union type.
+```sql
+-- Cho phép mọi user đã đăng nhập xem các giao dịch rút thưởng đã hoàn thành
+CREATE POLICY "Anyone can view completed withdrawals"
+  ON public.coin_withdrawals
+  FOR SELECT
+  USING (status = 'completed');
 
-2. **Fetch thêm 2 bảng dữ liệu** trong `fetchTransactions`:
-   - Query `coin_withdrawals` (status = 'completed') lấy id, user_id, amount, wallet_address, tx_hash, created_at
-   - Query `lixi_claims` (status = 'completed') lấy id, user_id, camly_amount, wallet_address, tx_hash, claimed_at
-   - Gộp user_id vào danh sách để fetch profiles + wallets
+-- Cho phép mọi user đã đăng nhập xem các lì xì đã hoàn thành
+CREATE POLICY "Anyone can view completed lixi claims"
+  ON public.lixi_claims
+  FOR SELECT
+  USING (status = 'completed');
+```
 
-3. **Map dữ liệu Treasury thành Transaction**:
-   - `sender_id`: Cố định = "ANGEL_AI_TREASURY"
-   - `sender_name`: "Angel AI Treasury"
-   - `sender_avatar`: Logo dự án (`angel-ai-golden-logo.png`)
-   - `sender_wallet`: Địa chỉ Treasury cố định (`0x416336c3b7ACAe89F47EAD2707412f20DA159ac8`)
-   - `receiver_id/name/avatar/wallet`: Lấy từ profile + wallet user nhận
-   - `tx_hash`: Từ dữ liệu giao dịch (link trực tiếp BscScan)
-   - `type`: `"treasury_reward"` hoặc `"treasury_lixi"`
-
-4. **Cập nhật TransactionItem** để hiển thị đặc biệt cho Treasury:
-   - Nếu sender = Treasury: hiển thị badge "Verified" xanh lá kèm icon shield
-   - Loại giao dịch hiển thị: "Trả thưởng" / "Lì xì" thay vì "Tặng thưởng"
-   - Icon gradient xanh/tím thay vì vàng gold
-   - Không link đến profile cho Treasury sender (vì không phải user)
-
-5. **Cập nhật bộ lọc**: Thêm option "Trả thưởng" và "Lì xì" vào dropdown loại giao dịch.
-
-6. **Cập nhật thống kê**: Thêm stat card "Treasury" đếm tổng giao dịch từ Treasury.
-
-### Nguyên tắc bảo đảm
-- Tất cả dữ liệu lấy trực tiếp từ database (không tạo dữ liệu ảo)
-- Mỗi giao dịch có tx_hash link trực tiếp đến BscScan
-- Dữ liệu chỉ đọc, không chỉnh sửa được từ frontend
-- Realtime subscription cho cả 2 bảng mới
+### Tại sao an toàn
+- Chỉ mở SELECT (đọc), không ảnh hưởng INSERT/UPDATE/DELETE
+- Chỉ hiển thị giao dịch đã `completed` (có tx_hash on-chain) -- dữ liệu đã công khai trên blockchain
+- Giao dịch pending/processing/failed vẫn chỉ chính chủ + admin mới thấy
+- Phù hợp nguyên tắc minh bạch: dữ liệu on-chain vốn đã public
 
 ### Files thay đổi
-1. `src/pages/ActivityHistory.tsx` - Tích hợp treasury data, UI, filters
+1. Database migration: Thêm 2 RLS policies công khai cho completed records
+
