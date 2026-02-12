@@ -167,7 +167,21 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
   // Auto-send DM to receiver
   const autoSendDM = async (celData: CelebrationData) => {
     try {
-      if (!celData.receiver_id || !user?.id) return;
+      // Validate receiver_id is a valid UUID (not empty or wallet address)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!celData.receiver_id || !uuidRegex.test(celData.receiver_id)) {
+        console.log("[AutoDM] Skipped: receiver_id is not a valid UUID:", celData.receiver_id);
+        return;
+      }
+      if (!user?.id) {
+        console.log("[AutoDM] Skipped: no authenticated user");
+        return;
+      }
+      if (celData.receiver_id === user.id) {
+        console.log("[AutoDM] Skipped: cannot DM yourself");
+        return;
+      }
+      console.log("[AutoDM] Sending DM to:", celData.receiver_id);
       const tokenLabel = celData.tokenType === "fun_money" ? "FUN Money"
         : celData.tokenType === "camly_web3" ? "CAMLY"
         : celData.tokenType === "usdt" ? "USDT"
@@ -179,13 +193,18 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
         : "";
       const msgContent = `🎁 Chúc mừng ${celData.receiver_name}! Bạn nhận được ${celData.amount.toLocaleString()} ${tokenLabel} từ ${celData.sender_name}.${celData.message ? `\nLời nhắn: "${celData.message}"` : ""}${receiptLink ? `\nXem biên nhận: ${receiptLink}` : ""}`;
 
-      await supabase.from("direct_messages").insert({
+      const { error } = await supabase.from("direct_messages").insert({
         sender_id: user.id,
         receiver_id: celData.receiver_id,
         content: msgContent,
         message_type: "tip",
       });
-      toast.success("Đã tự động gửi tin nhắn cho người nhận! 💌");
+      if (error) {
+        console.error("[AutoDM] Insert failed:", error);
+      } else {
+        console.log("[AutoDM] DM sent successfully to:", celData.receiver_id);
+        toast.success("Đã tự động gửi tin nhắn cho người nhận! 💌");
+      }
     } catch (err) {
       console.warn("[AutoDM] Error:", err);
     }
