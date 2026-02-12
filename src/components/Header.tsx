@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   LogIn, LogOut, User, MessageCircle, Search,
   Home, Info, BookOpen, Users, PenLine, ArrowRightLeft, 
-  Star, Wallet, ChevronRight, ChevronDown, ArrowLeft, Settings
+  Star, Wallet, ChevronRight, ChevronDown, ArrowLeft, Settings, Gift
 } from "lucide-react";
 import {
   Collapsible,
@@ -103,7 +103,7 @@ export const Header = () => {
     { label: t("nav.community") || "Cộng đồng", href: "/community", icon: Users },
     { label: t("nav.contentWriter"), href: "/content-writer", icon: PenLine },
     { label: t("nav.swap"), href: "/swap", icon: ArrowRightLeft },
-    { label: t("nav.earn"), href: "/earn", icon: Star },
+    { label: t("nav.gift") || "Tặng thưởng", href: "/earn", icon: Gift },
   ];
 
   return (

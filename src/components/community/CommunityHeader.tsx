@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { Home, Users, MessageCircle, ShoppingBag, Plus, User, LogOut, Star, ChevronDown } from "lucide-react";
+import { Home, Users, MessageCircle, Gift, Plus, User, LogOut, Star, ChevronDown } from "lucide-react";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ export function CommunityHeader() {
     { icon: Home, href: "/community", label: t("community.navHome"), action: null },
     { icon: Users, href: "/community?search=1", label: t("community.navFindFriends") || "Tìm bạn bè", action: () => setShowFriendSearch(true), mobileOnly: true },
     { icon: MessageCircle, href: "/messages", label: t("community.navMessages"), action: null },
-    { icon: ShoppingBag, href: "/earn", label: t("community.navEarn"), action: null },
+    { icon: Gift, href: "/earn", label: t("nav.gift") || "Tặng thưởng", action: null },
   ];
 
   const isActive = (href: string) => {
