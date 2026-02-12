@@ -15,16 +15,42 @@ interface CelebrationAudioPlayerProps {
 
 export function CelebrationAudioPlayer({ selectedTrack, onTrackChange, autoPlay = false }: CelebrationAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hasAutoPlayed = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
   const currentTrack = AUDIO_TRACKS.find((t) => t.id === selectedTrack) || AUDIO_TRACKS[0];
 
   useEffect(() => {
-    if (autoPlay && audioRef.current) {
-      audioRef.current.play().catch(() => {});
-      setIsPlaying(true);
-    }
+    if (!autoPlay || hasAutoPlayed.current) return;
+
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const tryPlay = () => {
+      if (hasAutoPlayed.current) return;
+      audio.play().then(() => {
+        hasAutoPlayed.current = true;
+        setIsPlaying(true);
+        console.log("[CelebrationAudio] Autoplay started successfully");
+      }).catch((err) => {
+        console.warn("[CelebrationAudio] Autoplay blocked:", err.message);
+      });
+    };
+
+    // Delay 300ms to allow audio to load after user interaction
+    const timer = setTimeout(() => {
+      if (audio.readyState >= 3) {
+        tryPlay();
+      } else {
+        audio.addEventListener("canplaythrough", tryPlay, { once: true });
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      audio.removeEventListener("canplaythrough", tryPlay);
+    };
   }, [autoPlay]);
 
   useEffect(() => {
@@ -79,7 +105,7 @@ export function CelebrationAudioPlayer({ selectedTrack, onTrackChange, autoPlay 
           {isMuted ? <VolumeX className="w-3.5 h-3.5 text-amber-900" /> : <Volume2 className="w-3.5 h-3.5 text-amber-900" />}
         </button>
       </div>
-      <audio ref={audioRef} src={currentTrack.src} onEnded={() => setIsPlaying(false)} />
+      <audio ref={audioRef} src={currentTrack.src} preload="auto" onEnded={() => setIsPlaying(false)} />
     </div>
   );
 }
