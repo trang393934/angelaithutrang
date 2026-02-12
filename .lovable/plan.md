@@ -1,78 +1,62 @@
 
 
-## Tự động chuyển Camly Coin on-chain khi user nhấn CLAIM Lì xì
+## Thiết kế lại Popup Lì xì Tết theo hình mẫu
 
-### Tổng quan
-Khi user nhấn nút **CLAIM** trên popup Lì xì Tết, hệ thống sẽ **tự động chuyển Camly Coin on-chain** từ ví Treasury đến ví Web3 của user, cập nhật trạng thái `completed` kèm `tx_hash`, và ghi nhận giao dịch vào lịch sử.
+### Mục tiêu
+Cập nhật component `UserLiXiCelebrationPopup.tsx` cho khớp với thiết kế trong hình tham khảo, giữ nguyên dữ liệu động (camly_amount, fun_amount) theo từng user, bổ sung hiệu ứng pháo hoa và đồng Camly Coin + FUN Money.
 
-### Luồng hoạt động
+### So sánh hiện tại vs hình mẫu
 
-```text
-User nhấn CLAIM
-    │
-    ▼
-Insert lixi_claims (status: pending)
-    │
-    ▼
-Gọi Edge Function "process-lixi-claim"
-    │
-    ├── Kiểm tra wallet_address (bắt buộc)
-    ├── Chuyển CAMLY on-chain từ Treasury
-    ├── Chờ xác nhận giao dịch
-    │
-    ├── Thành công:
-    │   ├── Update lixi_claims: status=completed, tx_hash=...
-    │   ├── Insert camly_coin_transactions (ghi lịch sử)
-    │   └── Gửi notification cho user kèm tx_hash
-    │
-    └── Thất bại:
-        ├── Update lixi_claims: status=failed, error_message=...
-        └── Gửi notification lỗi cho admin
-```
+Popup hiện tại đã có hầu hết các thành phần (nền vàng kim, khung giấy cổ, cành hoa đào, đèn lồng, confetti, coin rơi). Cần tinh chỉnh:
+
+| Thành phần | Hiện tại | Cần thay đổi |
+|---|---|---|
+| Đồng coin Camly/FUN | Xoay 3D trong khung giấy | Chuyển xuống góc trái dưới như hình mẫu, chồng lên nhau |
+| Pháo hoa | Chưa có | Thêm hiệu ứng firework burst (tia sáng tỏa ra từ tâm) |
+| Bố cục khung giấy | Coin nằm trong khung | Coin nằm ngoài khung, sát góc trái dưới popup |
+| Cành hoa đào | Trên cùng hai bên | Mở rộng thêm hoa ở cạnh trái/phải giống hình |
+| Nút "Thêm thông tin" | Link đến /admin/tet-reward | Giữ nguyên nhưng thêm icon tay chỉ giống hình |
 
 ### Các thay đổi cụ thể
 
-**1. Tạo Edge Function mới: `process-lixi-claim`**
-- Tái sử dụng logic chuyển CAMLY on-chain từ `process-withdrawal` (dùng `TREASURY_PRIVATE_KEY`, ethers, BSC Mainnet)
-- Nhận `claim_id` từ request body
-- Xác thực user (claim phải thuộc user đang đăng nhập)
-- Chuyển CAMLY on-chain, chờ receipt
-- Nếu `receipt.status === 1`: cập nhật `lixi_claims` thành `completed` + `tx_hash`
-- Nếu thất bại: cập nhật `status=failed` + `error_message`
-- Ghi bản ghi vào `camly_coin_transactions` với `transaction_type = "lixi_claim"` để hiển thị trong lịch sử
+**File: `src/components/UserLiXiCelebrationPopup.tsx`**
 
-**2. Cập nhật `useLiXiCelebration.ts`**
-- Sau khi insert claim record, gọi Edge Function `process-lixi-claim` với `claim_id`
-- Hiển thị trạng thái "Đang chuyển on-chain..." trong khi chờ
-- Nếu thành công: toast kèm link BSCScan
-- Nếu thất bại (VD: chưa có ví): thông báo lỗi rõ ràng
-- Yêu cầu user phải có wallet_address trước khi claim
+1. **Thêm hiệu ứng pháo hoa (Firework)**
+   - Tạo component `FireworkBurst` với các tia sáng phóng ra từ tâm theo hình tròn
+   - 3-4 đợt pháo hoa bắn ở các vị trí khác nhau, stagger delay
+   - Màu sắc: vàng, đỏ, hồng, trắng
 
-**3. Cập nhật hiển thị lịch sử giao dịch**
-- Trong `TransactionHistorySection.tsx`: thêm nhận diện `transaction_type = "lixi_claim"` hiển thị với icon/label phù hợp (VD: "🧧 Lì xì Tết")
-- Hiển thị `tx_hash` với link BSCScan
+2. **Di chuyển đồng coin ra góc trái dưới**
+   - Xóa khối coin xoay 3D khỏi bên trong khung giấy (dòng 415-441)
+   - Đặt 2-3 đồng coin (Camly + FUN) ở góc trái dưới popup, chồng lên nhau, có hiệu ứng glow vàng, nằm ngoài khung giấy
 
-**4. Cập nhật `supabase/config.toml`**
-- Thêm config cho function `process-lixi-claim` với `verify_jwt = false`
+3. **Mở rộng trang trí hoa đào hai bên**
+   - Thêm hoa ở cạnh trái và phải (giữa popup) để tạo hiệu ứng bao quanh như hình mẫu
+   - Thêm vài cánh hoa rải rác ở góc phải dưới
 
-### Xử lý trường hợp đặc biệt
-- **User chưa có ví Web3**: Hiện thông báo yêu cầu kết nối ví trước khi claim
-- **Treasury hết CAMLY/BNB**: Trả lỗi rõ ràng, giữ claim ở `pending` để admin xử lý thủ công
-- **Giao dịch bị revert**: Chỉ đánh dấu `completed` khi `receipt.status === 1`
+4. **Tinh chỉnh nút "Thêm thông tin"**
+   - Thêm emoji/icon con trỏ tay (giống hình mẫu) bên cạnh text
+
+5. **Giữ nguyên logic dữ liệu động**
+   - `pendingLiXi.camlyAmount` và `pendingLiXi.funAmount` từ `useLiXiCelebration` hook
+   - Nút CLAIM gọi hàm `claim()` -> Edge Function `process-lixi-claim` tự động chuyển on-chain
 
 ### Chi tiết kỹ thuật
 
-**Edge Function `process-lixi-claim/index.ts`:**
-- Auth: xác thực JWT, kiểm tra `claim.user_id === authenticated user`
-- Dùng `SUPABASE_SERVICE_ROLE_KEY` để update `lixi_claims` (bypass RLS)
-- CAMLY contract: `0x0910320181889fefde0bb1ca63962b0a8882e413` trên BSC Mainnet
-- CAMLY decimals: 3
-- Secrets cần: `TREASURY_PRIVATE_KEY`, `BSC_RPC_URL`
-
-**Ghi lịch sử `camly_coin_transactions`:**
+**Component FireworkBurst mới:**
 ```text
-user_id, amount (camly_amount), transaction_type = "lixi_claim",
-description = "Lì xì Tết 2026 - {fun_amount} FUN",
-metadata = { tx_hash, claim_id, fun_amount, source: "tet_lixi" }
+- Mỗi firework gồm ~12 tia sáng phóng ra từ tâm theo góc đều
+- Mỗi tia: motion.div nhỏ, animate từ tâm ra ngoài + fade out
+- 3 firework bursts ở vị trí (20%, 10%), (80%, 15%), (50%, 5%) với delay khác nhau
+- Lặp lại 2 lần rồi dừng
 ```
+
+**Bố cục đồng coin góc trái dưới:**
+```text
+- Position absolute, bottom: -10px, left: 10px
+- 2 coin chồng: Camly lớn (w-16) phía trước, FUN nhỏ hơn (w-12) phía sau
+- Hiệu ứng glow vàng (box-shadow) + nhẹ nhàng lắc lư
+```
+
+Chỉ sửa 1 file duy nhất: `src/components/UserLiXiCelebrationPopup.tsx`
 
