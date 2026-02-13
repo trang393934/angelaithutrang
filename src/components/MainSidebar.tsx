@@ -1,11 +1,13 @@
-import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { 
   Home, Info, BookOpen, MessageCircle, Users, 
-  PenLine, ArrowRightLeft, Star, PanelLeft, Gift, History, Shield
+  PenLine, ArrowRightLeft, Star, PanelLeft, Gift, History, Shield, User
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { NavLink } from "@/components/NavLink";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -29,7 +31,25 @@ export function MainSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [showGiftDialog, setShowGiftDialog] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("avatar_url, display_name")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setAvatarUrl(data.avatar_url);
+          setDisplayName(data.display_name);
+        }
+      });
+  }, [user]);
 
   const navItems = [
     { label: t("nav.home"), href: "/", icon: Home },
@@ -150,9 +170,29 @@ export function MainSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Toggle Button at bottom */}
-      <div className={`p-3 border-t border-amber-200/30 ${isCollapsed ? 'flex justify-center' : ''}`}>
-        <SidebarTrigger className="w-full justify-center hover:bg-amber-100/70" />
+      {/* User Avatar + Toggle at bottom */}
+      <div className={`border-t border-amber-200/30`}>
+        {user && (
+          <button
+            onClick={() => navigate("/profile")}
+            className={`flex items-center gap-2 w-full p-3 transition-all duration-200 hover:bg-amber-100/70 ${isCollapsed ? 'justify-center' : ''}`}
+          >
+            <Avatar className="w-8 h-8 shrink-0 ring-2 ring-primary/30">
+              <AvatarImage src={avatarUrl || undefined} alt={displayName || "Profile"} />
+              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                <User className="w-4 h-4" />
+              </AvatarFallback>
+            </Avatar>
+            {!isCollapsed && (
+              <span className="text-sm font-medium text-foreground truncate">
+                {displayName || user.email?.split("@")[0] || "Hồ sơ"}
+              </span>
+            )}
+          </button>
+        )}
+        <div className={`p-3 ${isCollapsed ? 'flex justify-center' : ''}`}>
+          <SidebarTrigger className="w-full justify-center hover:bg-amber-100/70" />
+        </div>
       </div>
 
       {/* Gift Dialog */}
