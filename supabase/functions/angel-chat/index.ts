@@ -67,7 +67,7 @@ const RESPONSE_STYLES = {
 - Cung cấp hướng dẫn CỤ THỂ, từng bước
 - Kết luận với lời khuyên THIẾT THỰC và động viên
 `,
-    maxTokens: 1500
+    maxTokens: 2500
   },
   balanced: {
     name: 'Cân bằng',
@@ -78,7 +78,7 @@ const RESPONSE_STYLES = {
 - Giữ sự rõ ràng và mạch lạc
 - Kết hợp giữa phân tích và lời khuyên thực tế
 `,
-    maxTokens: 1000
+    maxTokens: 1500
   },
   concise: {
     name: 'Ngắn gọn',
@@ -244,6 +244,21 @@ Communication style by language:
 • Maximum 1 blank line between paragraphs (never 2 consecutive blank lines)
 • Numbered lists ARE ALLOWED in simple format: "1. content", "2. content" (NO bold, NO symbols inside)
 • NEVER wrap words in asterisks, backticks, or any special characters
+
+═══════════════════════════════════════════
+🎯 ANSWER QUALITY RULES (CRITICAL - MUST FOLLOW)
+═══════════════════════════════════════════
+
+1. PHAN TICH cau hoi cua user truoc khi tra loi: user thuc su muon biet dieu gi? Xac dinh RO RANG muc dich cua ho.
+2. Tra loi TRUC TIEP vao trong tam cau hoi, KHONG vong vo, KHONG noi chung chung.
+3. Cung cap NOI DUNG CU THE, co gia tri thuc te - vi du thuc, so lieu, buoc hanh dong ro rang.
+4. Neu user hoi "cac buoc" hoac "huong dan" -> LIET KE DAY DU tung buoc cu the, moi buoc co giai thich ro rang va vi du minh hoa.
+5. KHONG BAO GIO bat dau nhieu cau tra loi lien tiep bang cung mot cau truc hoac cung mot cau mo dau. Moi cau tra loi phai co cach mo dau KHAC NHAU.
+6. KHONG tu xung "Voi tu cach la ANGEL CTO" khi tra loi user binh thuong - chi xung nhu vay khi user HOI TRUC TIEP ve he thong FUN hoac vai tro cua Angel.
+7. HOAN THANH tron ven cau tra loi - KHONG BAO GIO cat ngang giua chung. Neu noi dung dai, hay chia thanh cac phan ro rang nhung PHAI KET THUC DAY DU.
+8. Su dung KIEN THUC RONG RAI tu moi linh vuc de tra loi: kinh doanh, marketing, tam ly hoc, khoa hoc, nghe thuat, ky nang song, tai chinh, suc khoe... KHONG chi gioi han trong tam linh.
+9. Khi user hoi ve kinh doanh, marketing, ky nang song, ky thuat -> tra loi bang kien thuc CHUYEN MON THUC TE, cu the va co the ap dung ngay.
+10. KHONG lap lai noi dung da tra loi trong cac tin nhan truoc do cua cung mot hoi thoai. Neu user hoi lai, hay MO RONG hoac DI SAU HON thay vi noi lai y cu.
 
 ═══════════════════════════════════════════
 ✨ DIVINE MANTRAS (YOUR INNER RESONANCE)
@@ -831,7 +846,14 @@ function checkFAQCache(text: string): string | null {
     return null;
   }
   
-  const trimmed = text.trim().toLowerCase();
+  // CRITICAL: Skip FAQ cache for long/complex questions - they deserve deep AI analysis
+  const cleanText = text.trim();
+  if (cleanText.length > 60) {
+    console.log(`Question too complex for FAQ (${cleanText.length} chars) - SKIPPING FAQ for deep AI analysis`);
+    return null;
+  }
+  
+  const trimmed = cleanText.toLowerCase();
   for (const faq of FAQ_CACHE) {
     for (const pattern of faq.patterns) {
       if (pattern.test(trimmed)) {
