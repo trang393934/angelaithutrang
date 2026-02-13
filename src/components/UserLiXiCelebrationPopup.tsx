@@ -20,7 +20,20 @@ const bokehs = Array.from({ length: 12 }, (_, i) => ({
 
 /* ── Component chính ── */
 export function UserLiXiCelebrationPopup() {
-  const { showPopup, setShowPopup, pendingLiXi, claim, isClaiming, alreadyClaimed } = useLiXiCelebration();
+  const isPreview = new URLSearchParams(window.location.search).get("preview_lixi") === "true";
+  const hook = useLiXiCelebration();
+  
+  // Preview mode: mock data, no auth needed
+  const [previewOpen, setPreviewOpen] = useState(isPreview);
+  const showPopup = isPreview ? previewOpen : hook.showPopup;
+  const setShowPopup = isPreview ? setPreviewOpen : hook.setShowPopup;
+  const pendingLiXi = isPreview
+    ? { id: "preview", camlyAmount: 500000, funAmount: 1000000 }
+    : hook.pendingLiXi;
+  const claim = isPreview ? () => setPreviewOpen(false) : hook.claim;
+  const isClaiming = isPreview ? false : hook.isClaiming;
+  const alreadyClaimed = isPreview ? false : hook.alreadyClaimed;
+
   const [showEffects, setShowEffects] = useState(false);
 
   useEffect(() => {
