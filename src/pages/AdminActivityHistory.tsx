@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { stripMarkdown } from "@/lib/stripMarkdown";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, 
@@ -1401,7 +1402,7 @@ const AdminActivityHistory = () => {
                     Copy
                   </Button>
                 </div>
-                <p className="text-sm whitespace-pre-wrap break-words">{viewDialog.item.answer_text}</p>
+                <p className="text-sm whitespace-pre-wrap break-words">{stripMarkdown(viewDialog.item.answer_text)}</p>
               </div>
 
               {/* Reward Info */}

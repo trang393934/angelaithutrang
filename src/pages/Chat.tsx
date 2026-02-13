@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { stripMarkdown } from "@/lib/stripMarkdown";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2, 
@@ -1011,7 +1012,7 @@ const Chat = () => {
                     }`}
                   >
                     <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap break-words message-content">
-                      {message.content || (isLoading && index === messages.length - 1 ? "" : message.content)}
+                      {message.role === "assistant" ? stripMarkdown(message.content) : (message.content || (isLoading && index === messages.length - 1 ? "" : message.content))}
                     </p>
                     {(isLoading || isGenerating || isAnalyzing) && message.role === "assistant" && !message.content && (
                       <div className="flex items-center gap-2">
