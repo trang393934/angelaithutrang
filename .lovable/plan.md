@@ -1,66 +1,80 @@
 
-## Fix lỗi Lì Xì bị claim trùng lặp (Double-Claim Prevention)
 
-### Nguyên nhân
+## Cai thien thong bao Li Xi Tet
 
-User "Tran Phuong" nhan nut "Nhan Li Xi" 2 lan trong 3 giay. Ca 2 request deu duoc xu ly thanh cong vi backend khong kiem tra xem notification do da co claim completed chua. Ket qua: Treasury bi tru 10.000 CAMLY thay vi 5.000.
+### Hien trang
 
-### Ke hoach sua
+- Thong bao `tet_lixi_reward` hien thi noi dung raw tu database (vd: "Claim 86409e2e..." hoac "621,000 Camly Coin da duoc chuyen...")
+- Bam vao thong bao khong co hanh dong gi (getNotificationLink tra ve null)
+- Popup Li Xi chi hien tu dong khi load trang neu co notification chua doc va chua claim
 
-**1. Backend: `supabase/functions/process-lixi-claim/index.ts`**
+### Ke hoach thay doi
 
-Them kiem tra deduplication TRUOC khi xu ly:
+**1. Hien thi noi dung thong bao dep hon**
 
-- Sau khi lay claim detail (dong 96-107), them logic kiem tra: "Co claim nao KHAC cung notification_id va status = 'completed' khong?"
-- Neu co -> tra ve loi "Da duoc xu ly" va KHONG thuc hien giao dich on-chain
-- Them SELECT ... FOR UPDATE hoac check status = 'pending' de tranh race condition
+File: `src/components/layout/notifications/utils.ts`
+- Them case `tet_lixi_reward` vao `getNotificationIcon` -> icon "🧧"
+- Them case `tet_lixi_reward` vao `getNotificationActionText` -> "Angel AI Treasury da gui den ban thong bao ve Li Xi Tet"
 
-Cu the:
+**2. Bam vao thong bao mo popup Li Xi**
+
+File: `src/components/layout/NotificationDropdown.tsx`
+- Trong `handleNotificationClick`, neu notification type la `tet_lixi_reward`, thay vi navigate, se trigger mo popup Li Xi
+
+File: `src/hooks/useLiXiCelebration.ts`
+- Export them ham `openPopupForNotification(notificationId)` de cho phep mo popup tu ben ngoai (tu NotificationDropdown)
+- Sua logic: khi mo popup cho notification da claimed, van hien thi popup nhung voi nut CLAIM bi vo hieu hoa (disable) va hien thi "DA NHAN"
+
+**3. Tich hop vao Notification system**
+
+File: `src/components/layout/NotificationDropdown.tsx`
+- Import va su dung `useLiXiCelebration` hook
+- Khi click vao notification `tet_lixi_reward`:
+  - Dong popover thong bao
+  - Goi `openPopupForNotification` de mo popup Li Xi
+  - Popup se tu kiem tra trang thai claim va hien thi nut phu hop
+
+**4. Cap nhat Popup hien thi trang thai da claim**
+
+File: `src/components/UserLiXiCelebrationPopup.tsx`
+- Them trang thai `alreadyClaimed` 
+- Khi `alreadyClaimed = true`: nut CLAIM hien thi "DA NHAN" va bi disable (mau xam), nut dong van hoat dong binh thuong
+
+### Chi tiet ky thuat
+
+**useLiXiCelebration.ts** - Sua hook:
+- Them state `alreadyClaimed: boolean`
+- Them ham `openPopupForNotification(notifId: string)`:
+  - Query notification metadata de lay camlyAmount, funAmount
+  - Query lixi_claims de kiem tra da claim chua
+  - Set `alreadyClaimed` tuong ung
+  - Set `showPopup = true`
+
+**utils.ts** - Them 2 case:
 ```
-// After getting claim, check for duplicate completed claims with same notification
-const { data: existingCompleted } = await adminClient
-  .from('lixi_claims')
-  .select('id, tx_hash')
-  .eq('notification_id', claim.notification_id)
-  .eq('status', 'completed')
-  .neq('id', claim_id)
-  .limit(1);
+// getNotificationIcon
+case "tet_lixi_reward": return "🧧";
 
-if (existingCompleted && existingCompleted.length > 0) {
-  // Mark this duplicate as rejected
-  await adminClient.from('lixi_claims').update({ 
-    status: 'failed', 
-    error_message: 'Duplicate claim - already processed' 
-  }).eq('id', claim_id);
-  
-  return Response with error "Already claimed via another request"
+// getNotificationActionText  
+case "tet_lixi_reward": return "Angel AI Treasury da gui den ban thong bao ve Li Xi Tet";
+```
+
+**NotificationDropdown.tsx** - Them xu ly click:
+```
+if (notif.type === "tet_lixi_reward") {
+  setOpen(false);
+  openPopupForNotification(notif.id);
+  return;
 }
 ```
 
-- Them kiem tra claim.status phai la 'pending' (hien tai chi check !== 'completed', nghia la 'processing' van duoc xu ly lai)
-
-**2. Frontend: `src/components/UserLiXiCelebrationPopup.tsx`**
-
-- Them state `isClaiming` de disable nut ngay khi user click lan dau
-- Set `isClaiming = true` TRUOC khi goi API
-- Disable nut khi `isClaiming === true`
-
-**3. Xu ly du lieu sai hien tai**
-
-Mot trong 2 claim la du thua. Can:
-- Danh dau 1 claim (id: `8e7edaaa...`) la `status = 'duplicate'` hoac `failed` de ghi nhan day la giao dich trung
-- Giao dich on-chain da thuc hien roi nen khong thu hoi duoc, nhung can ghi nhan de doi soat
-
-### Database migration
-
-Khong can thay doi schema. Chi can update du lieu sai:
-
-```sql
-UPDATE lixi_claims 
-SET status = 'failed', error_message = 'Duplicate claim - same notification already processed'
-WHERE id = '8e7edaaa-227b-4e88-9d4a-0aa35f6bf351';
-```
+**UserLiXiCelebrationPopup.tsx** - Them hien thi khi da claim:
+- Nut CLAIM -> "DA NHAN" (disabled, mau xam) khi `alreadyClaimed`
 
 ### Files thay doi
-1. `supabase/functions/process-lixi-claim/index.ts` - Them deduplication check
-2. `src/components/UserLiXiCelebrationPopup.tsx` - Disable nut sau khi click
+1. `src/components/layout/notifications/utils.ts` - Icon va text cho tet_lixi_reward
+2. `src/hooks/useLiXiCelebration.ts` - Them openPopupForNotification va alreadyClaimed
+3. `src/components/layout/NotificationDropdown.tsx` - Xu ly click mo popup
+4. `src/components/UserLiXiCelebrationPopup.tsx` - Hien thi trang thai da claim
+5. `src/pages/Notifications.tsx` - Xu ly click tren trang notifications (tuong tu NotificationDropdown)
+
