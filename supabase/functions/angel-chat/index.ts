@@ -1457,13 +1457,14 @@ HƯỚNG DẪN XỬ LÝ:
     }
 
     let fullResponse = "";
+    const streamDecoder = new TextDecoder();
     const { readable, writable } = new TransformStream({
       transform(chunk, controller) {
         controller.enqueue(chunk);
         
         // Try to parse and collect content
         try {
-          const text = new TextDecoder().decode(chunk);
+          const text = streamDecoder.decode(chunk, { stream: true });
           const lines = text.split('\n');
           for (const line of lines) {
             if (line.startsWith('data: ') && line !== 'data: [DONE]') {
