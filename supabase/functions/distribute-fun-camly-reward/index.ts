@@ -220,6 +220,7 @@ Deno.serve(async (req) => {
           type: "tet_lixi_reward",
           title: "Chúc mừng bạn đã nhận được Lì xì!",
           content: `Bạn nhận được ${camlyAmount.toLocaleString("vi-VN")} Camly Coin, được quy đổi dựa trên ${fun_amount.toLocaleString("vi-VN")} FUN Money.`,
+          actor_id: TREASURY_USER_ID,
           metadata: {
             camly_amount: camlyAmount,
             fun_amount: fun_amount,
