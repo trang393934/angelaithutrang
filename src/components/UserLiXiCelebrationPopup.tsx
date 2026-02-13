@@ -20,7 +20,7 @@ const bokehs = Array.from({ length: 12 }, (_, i) => ({
 
 /* ── Component chính ── */
 export function UserLiXiCelebrationPopup() {
-  const { showPopup, setShowPopup, pendingLiXi, claim, isClaiming } = useLiXiCelebration();
+  const { showPopup, setShowPopup, pendingLiXi, claim, isClaiming, alreadyClaimed } = useLiXiCelebration();
   const [showEffects, setShowEffects] = useState(false);
 
   useEffect(() => {
@@ -35,10 +35,18 @@ export function UserLiXiCelebrationPopup() {
 
   const formatNum = (n: number) => n.toLocaleString("vi-VN");
 
-  const handleClaim = () => { claim(); };
+  const handleClaim = () => {
+    if (alreadyClaimed) {
+      setShowPopup(false);
+      return;
+    }
+    claim();
+  };
+
+  const isDisabled = isClaiming || alreadyClaimed;
 
   return (
-    <Dialog open={showPopup} onOpenChange={(open) => { if (!open) handleClaim(); }}>
+    <Dialog open={showPopup} onOpenChange={(open) => { if (!open) { if (alreadyClaimed) setShowPopup(false); else handleClaim(); } }}>
       <DialogContent className="sm:max-w-lg p-0 overflow-hidden border-0 bg-transparent shadow-none [&>button]:hidden max-h-[92vh]">
         <motion.div
           initial={{ scale: 0.7, opacity: 0, rotateX: 15 }}
@@ -93,7 +101,7 @@ export function UserLiXiCelebrationPopup() {
 
           {/* ── Nút đóng ── */}
           <button
-            onClick={handleClaim}
+            onClick={() => setShowPopup(false)}
             className="absolute top-3 right-3 z-40 p-1.5 rounded-full bg-black/15 hover:bg-black/30 transition-colors backdrop-blur-sm"
           >
             <X className="w-5 h-5 text-white drop-shadow" />
@@ -170,7 +178,7 @@ export function UserLiXiCelebrationPopup() {
                   textShadow: "0 1px 2px rgba(200,160,60,0.3)",
                 }}
               >
-                Chúc mừng bạn đã nhận được Lì xì!
+                {alreadyClaimed ? "Bạn đã nhận Lì xì thành công!" : "Chúc mừng bạn đã nhận được Lì xì!"}
               </motion.h2>
 
               {/* Chi tiết phần thưởng */}
@@ -230,21 +238,23 @@ export function UserLiXiCelebrationPopup() {
               className="flex gap-3 w-full"
             >
               <motion.button
-                whileHover={!isClaiming ? { scale: 1.03 } : {}}
-                whileTap={!isClaiming ? { scale: 0.97 } : {}}
+                whileHover={!isDisabled ? { scale: 1.03 } : {}}
+                whileTap={!isDisabled ? { scale: 0.97 } : {}}
                 onClick={handleClaim}
-                disabled={isClaiming}
+                disabled={isDisabled}
                 className="flex-1 h-12 rounded-xl text-white font-bold text-lg tracking-widest transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
-                  background: isClaiming
+                  background: isDisabled
                     ? "linear-gradient(145deg, #5a5a5a 0%, #4a4a4a 50%, #3a3a3a 100%)"
                     : "linear-gradient(145deg, #2d7a3a 0%, #1a6b28 50%, #145a1f 100%)",
-                  border: `2px solid ${isClaiming ? '#444' : '#0f4a17'}`,
-                  boxShadow: "0 4px 16px rgba(30,100,40,0.5), inset 0 1px 1px rgba(255,255,255,0.2)",
+                  border: `2px solid ${isDisabled ? '#444' : '#0f4a17'}`,
+                  boxShadow: isDisabled
+                    ? "0 4px 16px rgba(80,80,80,0.3)"
+                    : "0 4px 16px rgba(30,100,40,0.5), inset 0 1px 1px rgba(255,255,255,0.2)",
                   textShadow: "0 1px 3px rgba(0,0,0,0.3)",
                 }}
               >
-                {isClaiming ? "ĐANG XỬ LÝ..." : "CLAIM"}
+                {alreadyClaimed ? "ĐÃ NHẬN ✓" : isClaiming ? "ĐANG XỬ LÝ..." : "CLAIM"}
               </motion.button>
 
               <motion.button

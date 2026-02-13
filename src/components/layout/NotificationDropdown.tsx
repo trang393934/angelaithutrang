@@ -14,6 +14,7 @@ import { useNotifications, type Notification } from "@/hooks/useNotifications";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFriendRequestActions } from "@/hooks/useFriendRequestActions";
+import { useLiXiCelebration } from "@/hooks/useLiXiCelebration";
 import { cn } from "@/lib/utils";
 import {
   type FilterTab,
@@ -35,17 +36,23 @@ export function NotificationDropdown({ variant = "header" }: NotificationDropdow
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const { handleAccept, handleReject, isProcessing } = useFriendRequestActions(markAsRead);
+  const { openPopupForNotification } = useLiXiCelebration();
 
   const handleNotificationClick = useCallback(
     async (notif: Notification) => {
       await markAsRead(notif.id);
+      if (notif.type === "tet_lixi_reward") {
+        setOpen(false);
+        openPopupForNotification(notif.id);
+        return;
+      }
       const link = getNotificationLink(notif);
       if (link) {
         setOpen(false);
         navigate(link);
       }
     },
-    [markAsRead, navigate]
+    [markAsRead, navigate, openPopupForNotification]
   );
 
   // Filter + group

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useNotifications, type Notification } from "@/hooks/useNotifications";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useFriendRequestActions } from "@/hooks/useFriendRequestActions";
+import { useLiXiCelebration } from "@/hooks/useLiXiCelebration";
 import { cn } from "@/lib/utils";
 import {
   type FilterTab,
@@ -20,14 +21,19 @@ export default function NotificationsPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const { handleAccept, handleReject, isProcessing } = useFriendRequestActions(markAsRead);
+  const { openPopupForNotification } = useLiXiCelebration();
 
   const handleNotificationClick = useCallback(
     async (notif: Notification) => {
       await markAsRead(notif.id);
+      if (notif.type === "tet_lixi_reward") {
+        openPopupForNotification(notif.id);
+        return;
+      }
       const link = getNotificationLink(notif);
       if (link) navigate(link);
     },
-    [markAsRead, navigate]
+    [markAsRead, navigate, openPopupForNotification]
   );
 
   const { friendRequests, otherNotifications } = useMemo(() => {

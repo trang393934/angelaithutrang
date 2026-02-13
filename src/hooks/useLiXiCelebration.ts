@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ export function useLiXiCelebration() {
   const [pendingLiXi, setPendingLiXi] = useState<LiXiNotification | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [alreadyClaimed, setAlreadyClaimed] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -51,12 +52,53 @@ export function useLiXiCelebration() {
           camlyAmount: Number(meta.camly_amount) || 0,
           funAmount: Number(meta.fun_amount) || 0,
         });
+        setAlreadyClaimed(false);
         setShowPopup(true);
       }
     };
 
     fetchPendingLiXi();
   }, [user?.id]);
+
+  /**
+   * Open popup for a specific notification (called from notification list).
+   * Checks claim status and sets alreadyClaimed accordingly.
+   */
+  const openPopupForNotification = useCallback(
+    async (notificationId: string) => {
+      if (!user?.id) return;
+
+      // Fetch notification metadata
+      const { data: notifData } = await supabase
+        .from("notifications")
+        .select("id, metadata")
+        .eq("id", notificationId)
+        .maybeSingle();
+
+      if (!notifData?.metadata) return;
+
+      const meta = notifData.metadata as Record<string, unknown>;
+
+      // Check if already claimed
+      const { data: existingClaim } = await supabase
+        .from("lixi_claims")
+        .select("id, status")
+        .eq("notification_id", notificationId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const claimed = !!existingClaim;
+
+      setPendingLiXi({
+        id: notifData.id,
+        camlyAmount: Number(meta.camly_amount) || 0,
+        funAmount: Number(meta.fun_amount) || 0,
+      });
+      setAlreadyClaimed(claimed);
+      setShowPopup(true);
+    },
+    [user?.id]
+  );
 
   const claim = async () => {
     if (!pendingLiXi || !user?.id) return;
@@ -142,6 +184,7 @@ export function useLiXiCelebration() {
 
       setShowPopup(false);
       setPendingLiXi(null);
+      setAlreadyClaimed(false);
     } catch (error) {
       console.error("Lỗi claim Lì xì:", error);
       toast.error("Đã xảy ra lỗi khi xử lý claim.", { id: "lixi-claim" });
@@ -156,5 +199,7 @@ export function useLiXiCelebration() {
     pendingLiXi,
     claim,
     isClaiming,
+    alreadyClaimed,
+    openPopupForNotification,
   };
 }
