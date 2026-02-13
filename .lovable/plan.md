@@ -1,96 +1,102 @@
 
+## Gui thong bao va tin nhan tu dong sau khi claim Li Xi thanh cong
 
-## Them tin nhan tu dong (DM) tu ANGEL AI TREASURY khi duyet thuong Li Xi Tet
+### Hien trang
 
-### Tong quan
-Khi admin duyet thuong Li Xi, ngoai thong bao va healing message, he thong se tu dong gui 1 tin nhan truc tiep (DM) tu tai khoan **ANGEL AI TREASURY** (`9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad`) den nguoi dung. Khi nguoi dung nhan vao tin nhan nay, popup Li Xi se hien thi de thao tac CLAIM.
+Trong `process-lixi-claim/index.ts`, khi claim thanh cong (dong 200-211), he thong da gui 1 notification `lixi_claim_completed` nhung:
+- Noi dung chua day du (thieu ten chuong trinh, thieu tx_hash hien thi)
+- Chua gui DM tu ANGEL AI TREASURY
+- Notification khong co link BscScan
 
-### Cac thay doi
+### Ke hoach thay doi
 
-**1. Database Migration - Them cot `metadata` vao `direct_messages`**
+**1. Cap nhat Edge Function `process-lixi-claim/index.ts`**
 
-Them cot `metadata jsonb default null` de luu thong tin lien ket voi notification (notification_id, camly_amount, fun_amount, source).
+Sau khi claim thanh cong (dong 200-211), them logic:
 
-**2. Edge Function - Gui DM tu dong**
+a) **Cap nhat noi dung notification** (dong 201-211):
+- Title: "🧧 Chuc mung ban da nhan Li Xi Tet!"
+- Content: "Chuc mung! Ban da nhan X Camly Coin tu chuong trinh Li Xi Tet. Giao dich da duoc xac nhan tren blockchain."
+- Metadata: them tx_hash, bscscan_url
 
-File: `supabase/functions/distribute-fun-camly-reward/index.ts`
+b) **Gui DM tu ANGEL AI TREASURY** (them moi):
+- sender_id: `9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad` (ANGEL AI TREASURY)
+- receiver_id: userId
+- message_type: `"tet_lixi_receipt"` (loai moi de phan biet voi DM thong bao ban dau)
+- content: noi dung chuc mung kem tx_hash va link BscScan
+- metadata: `{ camly_amount, fun_amount, tx_hash, bscscan_url, source: "tet_lixi_claim_completed" }`
 
-Sau khi insert notification `tet_lixi_reward` (dong 218-229), them logic:
-- Lay `notification_id` tu ket qua insert notification (can sua thanh `.select("id").single()`)
-- Insert vao `direct_messages` voi:
-  - `sender_id`: **ANGEL AI TREASURY** user_id (hardcode `9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad`)
-  - `receiver_id`: user_id nguoi nhan
-  - `content`: noi dung tuong tu thong bao
-  - `message_type`: `"tet_lixi"`
-  - `metadata`: `{ notification_id, camly_amount, fun_amount, source: "tet_lixi_reward" }`
+**2. Tao component `LiXiReceiptCard.tsx`**
 
-**3. Component moi - LiXiMessageCard**
+File moi: `src/components/messages/LiXiReceiptCard.tsx`
 
-File moi: `src/components/messages/LiXiMessageCard.tsx`
+Card hien thi bien nhan chuyen thuong thanh cong:
+- Gradient xanh-vang (khac voi card Li Xi do-vang ban dau)
+- Icon check thanh cong
+- So Camly Coin
+- tx_hash rut gon (0x1234...abcd)
+- Nut "Xem tren BscScan" -> mo link `https://bscscan.com/tx/{tx_hash}` trong tab moi
+- Ten chuong trinh: Li Xi Tet 2026
 
-Card hien thi thong tin Li Xi voi giao dien do-vang (phong cach Tet):
-- Icon bao li xi 🧧
-- So Camly Coin va FUN Money
-- Deadline: 08/02/2026
-- Nut "Xem Li Xi" -> goi callback `onOpenLiXi(notificationId)`
+**3. Cap nhat MessageBubble.tsx**
 
-**4. Cap nhat MessageBubble**
+- Them case `message_type === "tet_lixi_receipt"` -> render `LiXiReceiptCard`
+- Truyen metadata (camly_amount, fun_amount, tx_hash) xuong component
 
-File: `src/components/messages/MessageBubble.tsx`
+**4. Cap nhat notification utils**
 
-- Them prop `onOpenLiXi?: (notificationId: string) => void`
-- Them interface field `metadata?: any` cho message
-- Khi `message_type === "tet_lixi"`, render `LiXiMessageCard` thay vi text bubble thuong
-- Truyen `metadata.notification_id` va `onOpenLiXi` xuong component
-
-**5. Tich hop vao trang Messages**
-
-File: `src/pages/Messages.tsx`
-
-- Import `useLiXiCelebration` hook va `UserLiXiCelebrationPopup`
-- Truyen `openPopupForNotification` xuong MessageBubble lam prop `onOpenLiXi`
-- Render `<UserLiXiCelebrationPopup />` trong trang Messages
+File: `src/components/layout/notifications/utils.ts`
+- Them case `lixi_claim_completed` vao `getNotificationIcon` -> icon "✅"
+- Them case `lixi_claim_completed` vao `getNotificationActionText` -> "Chuc mung! Ban da nhan Camly Coin tu chuong trinh Li Xi Tet"
 
 ### Chi tiet ky thuat
 
-**Migration SQL:**
-```text
-ALTER TABLE public.direct_messages ADD COLUMN metadata jsonb DEFAULT null;
-```
+**process-lixi-claim/index.ts** - Sua doan success (dong 200-211):
 
-**Edge Function (distribute-fun-camly-reward):**
-Sua doan insert notification thanh `.select("id").single()` de lay notification_id, roi them:
 ```text
 const TREASURY_USER_ID = "9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad";
+const bscscanUrl = `https://bscscan.com/tx/${result.hash}`;
 
-// Sau khi insert notification thanh cong
-const notifId = notifData?.id;
-await supabaseAdmin.from("direct_messages").insert({
+// Notification
+await adminClient.from('notifications').insert({
+  user_id: userId,
+  type: 'lixi_claim_completed',
+  title: '🧧 Chúc mừng bạn đã nhận Lì Xì Tết!',
+  content: `Chúc mừng! Bạn đã nhận ${claim.camly_amount.toLocaleString()} Camly Coin từ chương trình Lì Xì Tết.`,
+  metadata: {
+    tx_hash: result.hash,
+    bscscan_url: bscscanUrl,
+    camly_amount: claim.camly_amount,
+    fun_amount: claim.fun_amount,
+  },
+});
+
+// DM tu ANGEL AI TREASURY
+await adminClient.from('direct_messages').insert({
   sender_id: TREASURY_USER_ID,
-  receiver_id: user_id,
-  content: `🧧 Angel AI Treasury da gui den ban thong bao ve Li Xi Tet!\n\n💰 ${camlyAmount.toLocaleString("vi-VN")} Camly Coin\n📊 Dua tren ${fun_amount.toLocaleString("vi-VN")} FUN Money\n\n⏰ Ap dung den 08/02/2026`,
-  message_type: "tet_lixi",
-  metadata: { notification_id: notifId, camly_amount: camlyAmount, fun_amount, source: "tet_lixi_reward" }
+  receiver_id: userId,
+  content: `✅ Chúc mừng! Bạn đã nhận ${claim.camly_amount.toLocaleString()} Camly Coin từ chương trình Lì Xì Tết!\n\n📋 Biên nhận: ${result.hash}\n🔗 BscScan: ${bscscanUrl}`,
+  message_type: "tet_lixi_receipt",
+  metadata: {
+    camly_amount: claim.camly_amount,
+    fun_amount: claim.fun_amount,
+    tx_hash: result.hash,
+    bscscan_url: bscscanUrl,
+    source: "tet_lixi_claim_completed",
+  },
 });
 ```
 
-**LiXiMessageCard.tsx:**
-- Gradient do-vang, icon 🧧, hien thi so Camly/FUN
-- Nut "Xem Li Xi" goi `onOpenLiXi(notificationId)`
+**LiXiReceiptCard.tsx:**
+- Gradient xanh la-vang (thanh cong)
+- Hien thi: icon ✅, so Camly, tx_hash rut gon, nut BscScan
+- Khong co nut CLAIM (vi da claim xong)
 
 **MessageBubble.tsx:**
-- Them case `message_type === "tet_lixi"` -> render `LiXiMessageCard`
-- Truyen metadata.notification_id va onOpenLiXi callback
-
-**Messages.tsx:**
-- Import va su dung `useLiXiCelebration`
-- Render `UserLiXiCelebrationPopup`
-- Truyen `openPopupForNotification` xuong cac `MessageBubble`
+- Them: `if (message_type === "tet_lixi_receipt")` -> render `LiXiReceiptCard`
 
 ### Danh sach file thay doi
-1. Migration SQL - Them cot `metadata` vao `direct_messages`
-2. `supabase/functions/distribute-fun-camly-reward/index.ts` - Gui DM tu ANGEL AI TREASURY
-3. `src/components/messages/LiXiMessageCard.tsx` (file moi) - Card hien thi Li Xi trong DM
-4. `src/components/messages/MessageBubble.tsx` - Them case render LiXiMessageCard
-5. `src/pages/Messages.tsx` - Tich hop popup Li Xi
-
+1. `supabase/functions/process-lixi-claim/index.ts` - Them gui DM va cap nhat notification
+2. `src/components/messages/LiXiReceiptCard.tsx` (file moi) - Card bien nhan thanh cong
+3. `src/components/messages/MessageBubble.tsx` - Them case render LiXiReceiptCard
+4. `src/components/layout/notifications/utils.ts` - Them icon va text cho lixi_claim_completed
