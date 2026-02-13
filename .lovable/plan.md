@@ -1,37 +1,76 @@
 
 
-## Fix: Công khai Lịch sử Trả thưởng Treasury
+## Chia trang Profile thành Tab với Sub-routes
 
-### Nguyên nhân
-Hai bảng `coin_withdrawals` và `lixi_claims` đều có RLS policy giới hạn SELECT chỉ cho chính chủ (`auth.uid() = user_id`) hoặc admin. Do đó user thường không thể xem giao dịch trả thưởng của người khác trên trang Lịch sử.
+### Tong quan
+Trang `/profile` se duoc chia thanh 4 tab voi cac route phu rieng biet, su dung React Router nested routes thay vi query params.
 
-### Giải pháp
-Thêm RLS policy SELECT công khai cho các giao dịch đã hoàn thành (`status = 'completed'`), để tất cả user đã đăng nhập đều xem được lịch sử trả thưởng minh bạch.
+### Cau truc Route
 
-### Thay đổi cụ thể
-
-**Database Migration** - Thêm 2 RLS policies mới:
-
-```sql
--- Cho phép mọi user đã đăng nhập xem các giao dịch rút thưởng đã hoàn thành
-CREATE POLICY "Anyone can view completed withdrawals"
-  ON public.coin_withdrawals
-  FOR SELECT
-  USING (status = 'completed');
-
--- Cho phép mọi user đã đăng nhập xem các lì xì đã hoàn thành
-CREATE POLICY "Anyone can view completed lixi claims"
-  ON public.lixi_claims
-  FOR SELECT
-  USING (status = 'completed');
+```text
+/profile          --> redirect to /profile/info
+/profile/info     --> Tab Ho so
+/profile/assets   --> Tab Tai san
+/profile/angel    --> Tab Angel AI
+/profile/settings --> Tab Cai dat
 ```
 
-### Tại sao an toàn
-- Chỉ mở SELECT (đọc), không ảnh hưởng INSERT/UPDATE/DELETE
-- Chỉ hiển thị giao dịch đã `completed` (có tx_hash on-chain) -- dữ liệu đã công khai trên blockchain
-- Giao dịch pending/processing/failed vẫn chỉ chính chủ + admin mới thấy
-- Phù hợp nguyên tắc minh bạch: dữ liệu on-chain vốn đã public
+### Phan chia noi dung Tab
 
-### Files thay đổi
-1. Database migration: Thêm 2 RLS policies công khai cho completed records
+**Tab 1: `/profile/info` - Ho so**
+- Cover Photo card
+- Avatar & Username card
+- Profile Info (ten, bio)
+- Username / Handle selector
+- Soul Tags
+- Social Links Editor
+
+**Tab 2: `/profile/assets` - Tai san**
+- Activity History link
+- Transaction History section
+- Camly Coin & Light Points
+- Coin Withdrawal
+- Wallet Address card
+
+**Tab 3: `/profile/angel` - Angel AI**
+- Response Style (phong cach tra loi)
+- Daily Gratitude & Journal
+- Healing Messages Panel
+
+**Tab 4: `/profile/settings` - Cai dat**
+- Account Info (email, ngay tham gia, doi mat khau)
+- Public Profile Settings
+- PoPL Score Card
+- API Keys
+- Light Law Agreement
+- Sign Out button
+
+### Chi tiet ky thuat
+
+**File 1: `src/App.tsx`**
+- Thay route `/profile` thanh `/profile/*` de ho tro nested routes
+- Them 4 route con: `/profile/info`, `/profile/assets`, `/profile/angel`, `/profile/settings`
+
+**File 2: `src/pages/Profile.tsx`**
+- Import `useParams`, `useNavigate`, `Navigate` tu react-router-dom
+- Import `Tabs, TabsList, TabsTrigger, TabsContent` tu `@/components/ui/tabs`
+- Trich xuat tab hien tai tu URL path (vd: `/profile/assets` -> `assets`)
+- Neu truy cap `/profile` khong co sub-path -> redirect sang `/profile/info`
+- Su dung `Tabs` component voi `value` dong bo voi URL
+- Khi click tab -> navigate den route tuong ung (vd: `/profile/angel`)
+- TabsList se co style `sticky top-16 z-10 bg-background/95 backdrop-blur` de luon hien thi
+- Moi TabsContent boc nhom cac section tuong ung
+- Logic setup mode (onboarding profile moi) van giu nguyen o ngoai tabs
+- Cac dialog (change password, lightbox, cover editor) van giu o ngoai tabs
+
+### Uu diem
+- URL co the chia se/bookmark truc tiep den tab cu the
+- Back/Forward cua trinh duyet hoat dong dung
+- Giam cuon trang toi thieu 75%
+- Moi tab chi hien thi 4-6 section thay vi 20+
+- Khong thay doi logic hay chuc nang hien tai
+
+### Files thay doi
+1. `src/App.tsx` - Them nested routes cho `/profile/*`
+2. `src/pages/Profile.tsx` - Them Tabs layout dong bo voi URL sub-routes
 
