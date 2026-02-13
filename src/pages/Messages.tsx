@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { MessageCircle, Users, Search, ArrowLeft, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { UserLiXiCelebrationPopup } from "@/components/UserLiXiCelebrationPopup";
 
 const Messages = () => {
   const { userId: conversationUserId } = useParams<{ userId: string }>();
@@ -33,6 +34,10 @@ const Messages = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [isSending, setIsSending] = useState(false);
+
+  const handleOpenLiXi = useCallback((notificationId: string) => {
+    window.dispatchEvent(new CustomEvent("open-lixi-popup", { detail: notificationId }));
+  }, []);
   const [partnerProfile, setPartnerProfile] = useState<{
     display_name: string;
     avatar_url: string | null;
@@ -340,6 +345,7 @@ const Messages = () => {
                     onReply={handleReply}
                     onDelete={deleteMessage}
                     replyToMessage={getReplyToMessage(msg.reply_to_id)}
+                    onOpenLiXi={handleOpenLiXi}
                   />
                 ))
               )}
@@ -368,6 +374,9 @@ const Messages = () => {
           onCancelReply={() => setReplyTo(null)}
         />
       </div>
+
+      {/* Li Xi Celebration Popup */}
+      <UserLiXiCelebrationPopup />
     </div>
   );
 };
