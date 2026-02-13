@@ -3,20 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { useLiXiCelebration } from "@/hooks/useLiXiCelebration";
-import camlyCoinLogo from "@/assets/camly-coin-new.png";
-import funMoneyCoinLogo from "@/assets/fun-money-coin.png";
+import lixiPopupBg from "@/assets/lixi-popup-bg.jpg";
 import { FireworkBurst } from "@/components/lixi/FireworkBurst";
-import { CherryBranch } from "@/components/lixi/CherryBranch";
 import { LiXiEffects } from "@/components/lixi/LiXiEffects";
-import { Lantern } from "@/components/lixi/Lantern";
-import { BokehDot } from "@/components/lixi/BokehDot";
-import { CornerCoins } from "@/components/lixi/CornerCoins";
-
-/* ── Dữ liệu animation tĩnh ── */
-const bokehs = Array.from({ length: 12 }, (_, i) => ({
-  id: i, delay: Math.random() * 3, x: Math.random() * 100,
-  y: Math.random() * 100, size: 8 + Math.random() * 20,
-}));
 
 /* ── Component chính ── */
 export function UserLiXiCelebrationPopup() {
@@ -28,7 +17,7 @@ export function UserLiXiCelebrationPopup() {
   const showPopup = isPreview ? previewOpen : hook.showPopup;
   const setShowPopup = isPreview ? setPreviewOpen : hook.setShowPopup;
   const pendingLiXi = isPreview
-    ? { id: "preview", camlyAmount: 500000, funAmount: 1000000 }
+    ? { id: "preview", camlyAmount: 5000, funAmount: 5 }
     : hook.pendingLiXi;
   const claim = isPreview ? () => setPreviewOpen(false) : hook.claim;
   const isClaiming = isPreview ? false : hook.isClaiming;
@@ -60,39 +49,20 @@ export function UserLiXiCelebrationPopup() {
 
   return (
     <Dialog open={showPopup} onOpenChange={(open) => { if (!open) { if (alreadyClaimed) setShowPopup(false); else handleClaim(); } }}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden border-0 bg-transparent shadow-none [&>button]:hidden max-h-[92vh]">
+      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden border-0 bg-transparent shadow-none [&>button]:hidden max-h-[92vh]">
         <motion.div
           initial={{ scale: 0.7, opacity: 0, rotateX: 15 }}
           animate={{ scale: 1, opacity: 1, rotateX: 0 }}
           exit={{ scale: 0.7, opacity: 0 }}
           transition={{ type: "spring", duration: 0.6, bounce: 0.3 }}
           className="relative rounded-2xl shadow-2xl overflow-hidden"
-          style={{
-            background: `
-              radial-gradient(ellipse at 30% 20%, rgba(255,236,139,0.6) 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 80%, rgba(255,215,0,0.4) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 50%, rgba(255,248,220,0.3) 0%, transparent 70%),
-              linear-gradient(135deg, #b8860b 0%, #daa520 15%, #ffd700 30%, #ffec8b 50%, #ffd700 70%, #daa520 85%, #b8860b 100%)
-            `,
-            minHeight: 420,
-          }}
         >
-          {/* ── Bokeh lấp lánh nền ── */}
-          {bokehs.map((b) => (
-            <BokehDot key={`bk-${b.id}`} delay={b.delay} x={b.x} y={b.y} size={b.size} />
-          ))}
-
-          {/* ── Cành hoa đào hai bên ── */}
-          <CherryBranch side="left" />
-          <CherryBranch side="right" />
-
-          {/* ── Thêm hoa đào ở cạnh trái/phải giữa popup ── */}
-          <CherryBranch side="left" position="middle" />
-          <CherryBranch side="right" position="middle" />
-
-          {/* ── Đèn lồng ── */}
-          <Lantern x="6%" y="0" size={22} delay={0.4} />
-          <Lantern x="82%" y="2%" size={18} delay={0.6} />
+          {/* ── Background image from design ── */}
+          <img
+            src={lixiPopupBg}
+            alt="Lì xì Tết background"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
 
           {/* ── Pháo hoa ── */}
           <AnimatePresence>
@@ -101,56 +71,31 @@ export function UserLiXiCelebrationPopup() {
                 <FireworkBurst x={20} y={10} delay={0.3} />
                 <FireworkBurst x={80} y={15} delay={0.8} />
                 <FireworkBurst x={50} y={5} delay={1.3} />
-                <FireworkBurst x={35} y={20} delay={1.8} />
               </>
             )}
           </AnimatePresence>
 
-          {/* ── Hiệu ứng confetti + coin rơi + cánh hoa rơi ── */}
+          {/* ── Hiệu ứng confetti + coin rơi ── */}
           <LiXiEffects showEffects={showEffects} />
-
-          {/* ── Lớp phủ ánh sáng mềm ── */}
-          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-white/25 pointer-events-none" />
 
           {/* ── Nút đóng ── */}
           <button
             onClick={() => setShowPopup(false)}
-            className="absolute top-3 right-3 z-40 p-1.5 rounded-full bg-black/15 hover:bg-black/30 transition-colors backdrop-blur-sm"
+            className="absolute top-3 right-3 z-40 p-1.5 rounded-full bg-black/20 hover:bg-black/40 transition-colors backdrop-blur-sm"
           >
             <X className="w-5 h-5 text-white drop-shadow" />
           </button>
 
-          {/* ── Đồng coin góc trái dưới ── */}
-          <CornerCoins />
+          {/* ── Nội dung chính — overlay trên hình nền ── */}
+          <div className="relative z-20 flex flex-col items-center text-center px-8 pt-[52%] pb-6">
+            {/* Spacer cho phần trên của hình (bao lì xì, hoa đào, đèn lồng đã có trong ảnh) */}
 
-          {/* ── Nội dung chính ── */}
-          <div className="relative z-20 flex flex-col items-center text-center px-5 pt-20 pb-5 space-y-4">
-            {/* Bao lì xì 3D */}
-            <motion.div
-              initial={{ y: -30, opacity: 0, scale: 0.5 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              transition={{ delay: 0.15, type: "spring", bounce: 0.5 }}
-              className="relative"
-            >
-              <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg"
-                style={{
-                  background: "linear-gradient(145deg, #e32636 0%, #cc0000 50%, #a00000 100%)",
-                  boxShadow: "0 6px 20px rgba(200,0,0,0.5), inset 0 1px 2px rgba(255,200,100,0.3)",
-                }}
-              >
-                <img src={camlyCoinLogo} alt="Camly Coin" className="w-10 h-10 rounded-full drop-shadow-md" />
-              </div>
-              {/* Glow bao lì xì */}
-              <div className="absolute -inset-2 bg-red-500/20 blur-xl rounded-full -z-10" />
-            </motion.div>
-
-            {/* ── Khung giấy cổ ── */}
+            {/* ── Khung giấy cổ (parchment) ── */}
             <motion.div
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.25, type: "spring" }}
-              className="w-full rounded-xl p-5 relative"
+              className="w-full rounded-xl p-6 relative"
               style={{
                 background: `
                   url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
@@ -165,7 +110,7 @@ export function UserLiXiCelebrationPopup() {
                 `,
               }}
             >
-              {/* Viền trang trí */}
+              {/* Viền trang trí góc */}
               <div className="absolute top-0 left-4 right-4 h-0.5" style={{ background: "linear-gradient(90deg, transparent, #d4a843, #ffd700, #d4a843, transparent)" }} />
               <div className="absolute bottom-0 left-4 right-4 h-0.5" style={{ background: "linear-gradient(90deg, transparent, #d4a843, #ffd700, #d4a843, transparent)" }} />
               <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 rounded-tl" style={{ borderColor: "#c8a84e" }} />
@@ -178,7 +123,7 @@ export function UserLiXiCelebrationPopup() {
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.35 }}
-                className="text-2xl font-bold italic mb-4 leading-snug"
+                className="text-2xl font-bold italic mb-5 leading-snug"
                 style={{
                   color: "#6B3A10",
                   fontFamily: "'Georgia', 'Times New Roman', serif",
@@ -189,30 +134,27 @@ export function UserLiXiCelebrationPopup() {
               </motion.h2>
 
               {/* Chi tiết phần thưởng */}
-              <div className="space-y-3.5 text-sm" style={{ color: "#5D3A1A" }}>
+              <div className="space-y-4 text-base" style={{ color: "#5D3A1A" }}>
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.45 }}
-                  className="flex items-start gap-2.5"
+                  className="text-center"
                 >
-                  <span className="text-lg mt-0.5">🎁</span>
-                  <div className="text-left flex-1">
-                    <p className="leading-relaxed">
-                      Bạn nhận được{" "}
-                      <span className="font-bold text-2xl" style={{ color: "#8B6914" }}>
-                        {formatNum(pendingLiXi.camlyAmount)}
-                      </span>{" "}
-                      <span className="font-bold" style={{ color: "#B8860B" }}>Camly Coin</span>,
-                    </p>
-                    <p className="text-xs mt-1" style={{ color: "#7A6530" }}>
-                      được quy đổi dựa trên{" "}
-                      <span className="font-bold" style={{ color: "#8B6914" }}>
-                        {formatNum(pendingLiXi.funAmount)}
-                      </span>{" "}
-                      FUN Money.
-                    </p>
-                  </div>
+                  <p className="leading-relaxed">
+                    🎁 Bạn nhận được{" "}
+                    <span className="font-bold text-xl" style={{ color: "#8B6914" }}>
+                      {formatNum(pendingLiXi.camlyAmount)}
+                    </span>{" "}
+                    <span className="font-bold" style={{ color: "#B8860B" }}>Camly Coin</span>,
+                  </p>
+                  <p className="text-sm mt-1" style={{ color: "#7A6530" }}>
+                    được quy đổi dựa trên{" "}
+                    <span className="font-bold" style={{ color: "#8B6914" }}>
+                      {formatNum(pendingLiXi.funAmount)}
+                    </span>{" "}
+                    FUN Money.
+                  </p>
                 </motion.div>
 
                 <motion.div
@@ -224,10 +166,10 @@ export function UserLiXiCelebrationPopup() {
                   <p className="leading-relaxed">
                     🎁 Chương trình Lì xì Tết tổng giá trị
                   </p>
-                  <p className="text-xl font-bold mt-1" style={{ color: "#B8860B" }}>
-                    26.000.000.000 VND,
+                  <p className="text-2xl font-bold mt-1" style={{ color: "#B8860B" }}>
+                    26,000,000,000 VND,
                   </p>
-                  <p className="text-xs mt-1" style={{ color: "#7A6530" }}>
+                  <p className="text-sm mt-1" style={{ color: "#7A6530" }}>
                     được phân phối bằng FUN Money & Camly Coin.
                   </p>
                 </motion.div>
@@ -238,7 +180,7 @@ export function UserLiXiCelebrationPopup() {
                 initial={{ y: 25, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.65, type: "spring" }}
-                className="flex gap-3 w-full mt-4"
+                className="flex gap-3 w-full mt-5"
               >
                 <motion.button
                   whileHover={!isDisabled ? { scale: 1.03 } : {}}
