@@ -1136,6 +1136,7 @@ export type Database = {
           is_deleted: boolean | null
           is_read: boolean
           message_type: string | null
+          metadata: Json | null
           reactions: Json | null
           read_at: string | null
           receiver_id: string
@@ -1152,6 +1153,7 @@ export type Database = {
           is_deleted?: boolean | null
           is_read?: boolean
           message_type?: string | null
+          metadata?: Json | null
           reactions?: Json | null
           read_at?: string | null
           receiver_id: string
@@ -1168,6 +1170,7 @@ export type Database = {
           is_deleted?: boolean | null
           is_read?: boolean
           message_type?: string | null
+          metadata?: Json | null
           reactions?: Json | null
           read_at?: string | null
           receiver_id?: string

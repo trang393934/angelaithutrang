@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import { TipMessageCard } from "./TipMessageCard";
+import { LiXiMessageCard } from "./LiXiMessageCard";
 
 interface MessageBubbleProps {
   message: {
@@ -25,12 +26,14 @@ interface MessageBubbleProps {
     sender_avatar_url?: string | null;
     message_type?: string | null;
     tip_gift_id?: string | null;
+    metadata?: any;
   };
   isOwn: boolean;
   onReaction?: (messageId: string, emoji: string) => void;
   onReply?: (message: any) => void;
   onDelete?: (messageId: string) => void;
   replyToMessage?: { content: string; sender_display_name: string } | null;
+  onOpenLiXi?: (notificationId: string) => void;
 }
 
 export function MessageBubble({
@@ -40,6 +43,7 @@ export function MessageBubble({
   onReply,
   onDelete,
   replyToMessage,
+  onOpenLiXi,
 }: MessageBubbleProps) {
   const [showActions, setShowActions] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
@@ -186,7 +190,14 @@ export function MessageBubble({
 
             {/* Text content */}
             {message.content && (
-              message.message_type === "tip" ? (
+              message.message_type === "tet_lixi" ? (
+                <LiXiMessageCard
+                  camlyAmount={Number(message.metadata?.camly_amount) || 0}
+                  funAmount={Number(message.metadata?.fun_amount) || 0}
+                  notificationId={message.metadata?.notification_id || null}
+                  onOpenLiXi={onOpenLiXi}
+                />
+              ) : message.message_type === "tip" ? (
                 <TipMessageCard
                   content={message.content}
                   tipGiftId={message.tip_gift_id}

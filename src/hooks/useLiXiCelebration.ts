@@ -16,6 +16,15 @@ export function useLiXiCelebration() {
   const [isClaiming, setIsClaiming] = useState(false);
   const [alreadyClaimed, setAlreadyClaimed] = useState(false);
 
+  // Listen for external trigger (e.g., from Messages page or Notification click)
+  useEffect(() => {
+    const handler = (e: CustomEvent<string>) => {
+      openPopupForNotification(e.detail);
+    };
+    window.addEventListener("open-lixi-popup", handler as EventListener);
+    return () => window.removeEventListener("open-lixi-popup", handler as EventListener);
+  }, []);
+
   useEffect(() => {
     if (!user?.id) return;
 

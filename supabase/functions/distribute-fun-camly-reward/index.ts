@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
         });
 
         // Gửi notification cho popup chúc mừng Lì xì
-        await supabaseAdmin.from("notifications").insert({
+        const { data: notifData, error: notifError } = await supabaseAdmin.from("notifications").insert({
           user_id,
           type: "tet_lixi_reward",
           title: "Chúc mừng bạn đã nhận được Lì xì!",
@@ -225,6 +225,23 @@ Deno.serve(async (req) => {
             fun_amount: fun_amount,
             source: "fun_to_camly_reward",
             batch_date: batchDate,
+          },
+        }).select("id").single();
+
+        // Gửi DM tự động từ ANGEL AI TREASURY
+        const TREASURY_USER_ID = "9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad";
+        const notifId = notifData?.id || null;
+
+        await supabaseAdmin.from("direct_messages").insert({
+          sender_id: TREASURY_USER_ID,
+          receiver_id: user_id,
+          content: `🧧 Angel AI Treasury đã gửi đến bạn thông báo về Lì Xì Tết!\n\n💰 ${camlyAmount.toLocaleString("vi-VN")} Camly Coin\n📊 Dựa trên ${fun_amount.toLocaleString("vi-VN")} FUN Money\n\n⏰ Áp dụng đến 08/02/2026`,
+          message_type: "tet_lixi",
+          metadata: {
+            notification_id: notifId,
+            camly_amount: camlyAmount,
+            fun_amount: fun_amount,
+            source: "tet_lixi_reward",
           },
         });
 
