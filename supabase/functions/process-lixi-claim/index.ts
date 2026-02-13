@@ -112,6 +112,37 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Only process claims with 'pending' status (reject 'processing' retries too)
+    if (claim.status !== 'pending') {
+      return new Response(JSON.stringify({ error: `Claim is already in '${claim.status}' state` }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Deduplication: check if another claim for same notification is already completed
+    const { data: existingCompleted } = await adminClient
+      .from('lixi_claims')
+      .select('id, tx_hash')
+      .eq('notification_id', claim.notification_id)
+      .eq('status', 'completed')
+      .neq('id', claim_id)
+      .limit(1);
+
+    if (existingCompleted && existingCompleted.length > 0) {
+      await adminClient.from('lixi_claims').update({
+        status: 'failed',
+        error_message: 'Duplicate claim - already processed via another request',
+      }).eq('id', claim_id);
+
+      console.log(`Duplicate claim rejected: ${claim_id}, original: ${existingCompleted[0].id}`);
+      return new Response(JSON.stringify({ 
+        error: 'Lì xì này đã được nhận thành công trước đó.',
+        tx_hash: existingCompleted[0].tx_hash 
+      }), {
+        status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (!claim.wallet_address) {
       return new Response(JSON.stringify({ error: 'No wallet address. Please connect your Web3 wallet first.' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },

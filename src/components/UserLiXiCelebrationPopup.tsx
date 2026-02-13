@@ -20,7 +20,7 @@ const bokehs = Array.from({ length: 12 }, (_, i) => ({
 
 /* ── Component chính ── */
 export function UserLiXiCelebrationPopup() {
-  const { showPopup, setShowPopup, pendingLiXi, claim } = useLiXiCelebration();
+  const { showPopup, setShowPopup, pendingLiXi, claim, isClaiming } = useLiXiCelebration();
   const [showEffects, setShowEffects] = useState(false);
 
   useEffect(() => {
@@ -230,18 +230,21 @@ export function UserLiXiCelebrationPopup() {
               className="flex gap-3 w-full"
             >
               <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={!isClaiming ? { scale: 1.03 } : {}}
+                whileTap={!isClaiming ? { scale: 0.97 } : {}}
                 onClick={handleClaim}
-                className="flex-1 h-12 rounded-xl text-white font-bold text-lg tracking-widest transition-all"
+                disabled={isClaiming}
+                className="flex-1 h-12 rounded-xl text-white font-bold text-lg tracking-widest transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
-                  background: "linear-gradient(145deg, #2d7a3a 0%, #1a6b28 50%, #145a1f 100%)",
-                  border: "2px solid #0f4a17",
+                  background: isClaiming
+                    ? "linear-gradient(145deg, #5a5a5a 0%, #4a4a4a 50%, #3a3a3a 100%)"
+                    : "linear-gradient(145deg, #2d7a3a 0%, #1a6b28 50%, #145a1f 100%)",
+                  border: `2px solid ${isClaiming ? '#444' : '#0f4a17'}`,
                   boxShadow: "0 4px 16px rgba(30,100,40,0.5), inset 0 1px 1px rgba(255,255,255,0.2)",
                   textShadow: "0 1px 3px rgba(0,0,0,0.3)",
                 }}
               >
-                CLAIM
+                {isClaiming ? "ĐANG XỬ LÝ..." : "CLAIM"}
               </motion.button>
 
               <motion.button
