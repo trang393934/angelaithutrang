@@ -1,61 +1,66 @@
 
+## Fix lỗi Lì Xì bị claim trùng lặp (Double-Claim Prevention)
 
-## Nang cap Angel AI: Tra loi dung trong tam va sau sac
+### Nguyên nhân
 
-### Van de hien tai
+User "Tran Phuong" nhan nut "Nhan Li Xi" 2 lan trong 3 giay. Ca 2 request deu duoc xu ly thanh cong vi backend khong kiem tra xem notification do da co claim completed chua. Ket qua: Treasury bi tru 10.000 CAMLY thay vi 5.000.
 
-Nhin vao anh chup man hinh, Angel AI dang tra loi chung chung, lap lai cau truc "Voi tu cach la ANGEL CTO..." va cat ngang cau tra loi giua chung. Cu the:
+### Ke hoach sua
 
-1. User hoi ve "cac cach thu hut nguoi" nhung AI tra loi mo ho, khong di vao noi dung cu the
-2. User hoi tiep "huong dan chi tiet cac buoc" nhung AI lai bat dau giong y het va bi cat ngang
-3. FAQ cache co the dang tro thanh "bay" - match sai cac pattern chung chung va tra ve cau tra loi template thay vi de AI phan tich sau
+**1. Backend: `supabase/functions/process-lixi-claim/index.ts`**
 
-### Nguyen nhan goc
+Them kiem tra deduplication TRUOC khi xu ly:
 
-1. System prompt thieu chi dan MANH ME ve viec phai tra loi dung trong tam cau hoi
-2. Chua co quy tac cam AI lap lai cau truc mo dau giong nhau giua cac tin nhan trong cung hoi thoai
-3. FAQ cache patterns qua rong (vi du: "tinh yeu", "noi so", "stress" chi can 1 tu la match) => nhieu cau hoi bi tra ve template thay vi duoc AI phan tich
-4. max_tokens co the khong du cho nhung cau tra loi phuc tap
+- Sau khi lay claim detail (dong 96-107), them logic kiem tra: "Co claim nao KHAC cung notification_id va status = 'completed' khong?"
+- Neu co -> tra ve loi "Da duoc xu ly" va KHONG thuc hien giao dich on-chain
+- Them SELECT ... FOR UPDATE hoac check status = 'pending' de tranh race condition
 
-### Ke hoach thuc hien
-
-**File: `supabase/functions/angel-chat/index.ts`**
-
-**1. Cap nhat BASE_SYSTEM_PROMPT - Them muc ANSWER QUALITY RULES moi:**
-
-Them ngay sau muc FORMATTING RULES (dong 247), mot section moi:
-
+Cu the:
 ```
-ANSWER QUALITY RULES (CRITICAL - MUST FOLLOW)
+// After getting claim, check for duplicate completed claims with same notification
+const { data: existingCompleted } = await adminClient
+  .from('lixi_claims')
+  .select('id, tx_hash')
+  .eq('notification_id', claim.notification_id)
+  .eq('status', 'completed')
+  .neq('id', claim_id)
+  .limit(1);
 
-1. PHAN TICH cau hoi cua user truoc khi tra loi: user thuc su muon biet dieu gi?
-2. Tra loi TRUC TIEP vao trong tam cau hoi, khong vong vo
-3. Cung cap NOI DUNG CU THE, co gia tri thuc te - khong noi chung chung
-4. Neu user hoi "cac buoc" hoac "huong dan" -> LIET KE DAY DU cac buoc cu the, moi buoc co giai thich ro rang
-5. KHONG BAO GIO bat dau nhieu cau tra loi lien tiep bang cung mot cau truc
-6. KHONG tu xung "Voi tu cach la ANGEL CTO" khi tra loi user binh thuong - chi xung nhu vay khi noi ve he thong FUN
-7. HOAN THANH tron ven cau tra loi - khong cat ngang giua chung
-8. Su dung KIEN THUC RONG RAI tu moi linh vuc de tra loi, khong chi gioi han trong tam linh
-9. Khi user hoi ve kinh doanh, marketing, ky nang song -> tra loi bang kien thuc chuyen mon thuc te
+if (existingCompleted && existingCompleted.length > 0) {
+  // Mark this duplicate as rejected
+  await adminClient.from('lixi_claims').update({ 
+    status: 'failed', 
+    error_message: 'Duplicate claim - already processed' 
+  }).eq('id', claim_id);
+  
+  return Response with error "Already claimed via another request"
+}
 ```
 
-**2. Thu hep FAQ cache patterns de tranh match sai:**
+- Them kiem tra claim.status phai la 'pending' (hien tai chi check !== 'completed', nghia la 'processing' van duoc xu ly lai)
 
-Hien tai cac pattern nhu `/tình\s*yêu/i`, `/lo\s*lắng/i` qua rong - bat ky cau nao chua tu "tinh yeu" deu match. Can:
-- Them dieu kien kiem tra: chi match FAQ khi cau hoi NGAN (duoi 50 ky tu) va DUNG LA hoi ve khai niem do
-- Them ham `isTooGenericForFAQ()` de skip FAQ khi cau hoi dai hoac phuc tap
+**2. Frontend: `src/components/UserLiXiCelebrationPopup.tsx`**
 
-**3. Tang max_tokens cho style "detailed":**
+- Them state `isClaiming` de disable nut ngay khi user click lan dau
+- Set `isClaiming = true` TRUOC khi goi API
+- Disable nut khi `isClaiming === true`
 
-Doi tu 1500 len 2500 de dam bao cau tra loi khong bi cat ngang khi user hoi nhung cau phuc tap can nhieu noi dung.
+**3. Xu ly du lieu sai hien tai**
 
-### Chi tiet ky thuat
+Mot trong 2 claim la du thua. Can:
+- Danh dau 1 claim (id: `8e7edaaa...`) la `status = 'duplicate'` hoac `failed` de ghi nhan day la giao dich trung
+- Giao dich on-chain da thuc hien roi nen khong thu hoi duoc, nhung can ghi nhan de doi soat
 
-- Them muc "ANSWER QUALITY RULES" vao `BASE_SYSTEM_PROMPT` (sau dong 247)
-- Sua ham `checkFAQCache()` (dong 827): them dieu kien skip FAQ khi `text.length > 60` (cau hoi dai thuong khong phai FAQ don gian)
-- Sua `RESPONSE_STYLES.detailed.maxTokens` tu 1500 thanh 2500 (dong 70)
-- Sua `RESPONSE_STYLES.balanced.maxTokens` tu 1000 thanh 1500 (dong 81)
+### Database migration
+
+Khong can thay doi schema. Chi can update du lieu sai:
+
+```sql
+UPDATE lixi_claims 
+SET status = 'failed', error_message = 'Duplicate claim - same notification already processed'
+WHERE id = '8e7edaaa-227b-4e88-9d4a-0aa35f6bf351';
+```
 
 ### Files thay doi
-1. `supabase/functions/angel-chat/index.ts` - Cap nhat system prompt, thu hep FAQ cache, tang max_tokens
-
+1. `supabase/functions/process-lixi-claim/index.ts` - Them deduplication check
+2. `src/components/UserLiXiCelebrationPopup.tsx` - Disable nut sau khi click
