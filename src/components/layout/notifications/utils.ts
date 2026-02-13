@@ -60,6 +60,8 @@ export const getNotificationIcon = (type: string): string => {
       return "⛏️";
     case "tet_lixi_reward":
       return "🧧";
+    case "lixi_claim_completed":
+      return "✅";
     case "reward_approved":
       return "🎉";
     case "reward_rejected":
@@ -129,6 +131,8 @@ export const getNotificationActionText = (
       return t("notifications.giftSent");
     case "tet_lixi_reward":
       return "Angel AI Treasury đã gửi đến bạn thông báo về Lì Xì Tết";
+    case "lixi_claim_completed":
+      return "Chúc mừng! Bạn đã nhận Camly Coin từ chương trình Lì Xì Tết";
     default:
       return t("notifications.type.interacted");
   }

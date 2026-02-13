@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import { TipMessageCard } from "./TipMessageCard";
 import { LiXiMessageCard } from "./LiXiMessageCard";
+import { LiXiReceiptCard } from "./LiXiReceiptCard";
 
 interface MessageBubbleProps {
   message: {
@@ -196,6 +197,13 @@ export function MessageBubble({
                   funAmount={Number(message.metadata?.fun_amount) || 0}
                   notificationId={message.metadata?.notification_id || null}
                   onOpenLiXi={onOpenLiXi}
+                />
+              ) : message.message_type === "tet_lixi_receipt" ? (
+                <LiXiReceiptCard
+                  camlyAmount={Number(message.metadata?.camly_amount) || 0}
+                  funAmount={Number(message.metadata?.fun_amount) || 0}
+                  txHash={message.metadata?.tx_hash || ""}
+                  bscscanUrl={message.metadata?.bscscan_url || ""}
                 />
               ) : message.message_type === "tip" ? (
                 <TipMessageCard
