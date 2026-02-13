@@ -120,19 +120,13 @@ export function UserLiXiCelebrationPopup() {
               className="relative"
             >
               <div
-                className="w-16 h-16 rounded-xl flex items-center justify-center shadow-lg"
+                className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg"
                 style={{
                   background: "linear-gradient(145deg, #e32636 0%, #cc0000 50%, #a00000 100%)",
                   boxShadow: "0 6px 20px rgba(200,0,0,0.5), inset 0 1px 2px rgba(255,200,100,0.3)",
                 }}
               >
-                <div
-                  className="w-8 h-8 rounded-full"
-                  style={{
-                    background: "radial-gradient(circle, #ffd700 30%, #daa520 70%, #b8860b 100%)",
-                    boxShadow: "0 0 10px rgba(255,215,0,0.6)",
-                  }}
-                />
+                <img src={camlyCoinLogo} alt="Camly Coin" className="w-10 h-10 rounded-full drop-shadow-md" />
               </div>
               {/* Glow bao lì xì */}
               <div className="absolute -inset-2 bg-red-500/20 blur-xl rounded-full -z-10" />
@@ -171,7 +165,7 @@ export function UserLiXiCelebrationPopup() {
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.35 }}
-                className="text-xl font-bold mb-4 leading-snug"
+                className="text-2xl font-bold italic mb-4 leading-snug"
                 style={{
                   color: "#6B3A10",
                   fontFamily: "'Georgia', 'Times New Roman', serif",
@@ -193,7 +187,7 @@ export function UserLiXiCelebrationPopup() {
                   <div className="text-left flex-1">
                     <p className="leading-relaxed">
                       Bạn nhận được{" "}
-                      <span className="font-bold text-lg" style={{ color: "#8B6914" }}>
+                      <span className="font-bold text-2xl" style={{ color: "#8B6914" }}>
                         {formatNum(pendingLiXi.camlyAmount)}
                       </span>{" "}
                       <span className="font-bold" style={{ color: "#B8860B" }}>Camly Coin</span>,
@@ -254,7 +248,7 @@ export function UserLiXiCelebrationPopup() {
                   textShadow: "0 1px 3px rgba(0,0,0,0.3)",
                 }}
               >
-                {alreadyClaimed ? "ĐÃ NHẬN ✓" : isClaiming ? "ĐANG XỬ LÝ..." : "CLAIM"}
+                {alreadyClaimed ? "ĐÃ NHẬN ✓" : isClaiming ? "ĐANG XỬ LÝ..." : "🧧 CLAIM"}
               </motion.button>
 
               <motion.button
@@ -264,8 +258,9 @@ export function UserLiXiCelebrationPopup() {
                 className="flex-1 h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
                 style={{
                   background: "rgba(255,255,255,0.9)",
-                  border: "2px solid #b8a070",
+                  border: "3px solid #b8a070",
                   color: "#5D3A1A",
+                  fontWeight: 700,
                   boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                 }}
               >
