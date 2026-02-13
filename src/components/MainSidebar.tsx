@@ -41,7 +41,7 @@ export function MainSidebar() {
     supabase
       .from("profiles")
       .select("avatar_url, display_name")
-      .eq("id", user.id)
+      .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
         if (data) {
