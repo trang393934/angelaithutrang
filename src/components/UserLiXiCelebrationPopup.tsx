@@ -285,12 +285,12 @@ export function UserLiXiCelebrationPopup() {
               transition={{ duration: 0.32, ease: "easeOut" }}
               className="relative overflow-hidden"
               style={{
-                /* ── Nền vàng ánh kim nhiều lớp ── */
-                background: "linear-gradient(175deg, #FDF6D8 0%, #F5E4A0 30%, #EECF6D 60%, #D4A843 85%, #C49538 100%)",
-                border: "2px solid #C9A227",
+                /* ── Nền vàng ánh kim – spotlight giữa, tối rìa ── */
+                background: "radial-gradient(ellipse at 50% 40%, #FDF6D8 0%, #F5E4A0 25%, #EECF6D 50%, #D4A843 75%, #B8892A 100%)",
+                border: "1px solid rgba(201,162,39,0.6)",
                 borderRadius: 18,
                 padding: "36px 44px",
-                boxShadow: "0 25px 70px rgba(0,0,0,0.3), 0 8px 30px rgba(180,130,30,0.2), inset 0 0 40px rgba(255,220,100,0.5), inset 0 2px 0 rgba(255,255,255,0.3)",
+                boxShadow: "0 25px 70px rgba(0,0,0,0.3), 0 8px 30px rgba(180,130,30,0.2), inset 0 0 60px rgba(255,225,120,0.45), inset 0 0 120px rgba(255,240,180,0.2), inset 0 2px 0 rgba(255,255,255,0.35)",
                 maxHeight: "92vh",
                 overflowY: "auto",
               }}
@@ -316,28 +316,32 @@ export function UserLiXiCelebrationPopup() {
                 }}
               />
 
-              {/* ── Inner glow vàng ── */}
+              {/* ── Spotlight glow trung tâm ── */}
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                  background: "radial-gradient(ellipse at 50% 30%, rgba(255,220,100,0.3) 0%, transparent 60%)",
+                  background: "radial-gradient(ellipse 70% 60% at 50% 35%, rgba(255,240,180,0.4) 0%, rgba(255,220,100,0.15) 40%, transparent 70%)",
+                }}
+              />
+              {/* ── Vignette tối rìa ── */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: "radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(160,120,30,0.12) 100%)",
                 }}
               />
 
               {/* ── Cành hoa đào góc trên trái ── */}
-              <PeachBranch x="-20px" y="-20px" scale={0.85} />
-              {/* ── Cành hoa đào góc trên phải (mirror) ── */}
-              <PeachBranch x="calc(100% - 130px)" y="-15px" flip scale={0.72} />
-              {/* ── Hoa mai góc dưới trái ── */}
-              <ApricotBranch x="-10px" y="calc(100% - 115px)" scale={0.72} />
-              {/* ── Hoa mai góc dưới phải ── */}
-              <ApricotBranch x="calc(100% - 115px)" y="calc(100% - 105px)" flip scale={0.6} />
+              <div style={{ opacity: 0.9 }}><PeachBranch x="-25px" y="-25px" scale={0.7} /></div>
+              <div style={{ opacity: 0.9 }}><PeachBranch x="calc(100% - 105px)" y="-20px" flip scale={0.6} /></div>
+              <div style={{ opacity: 0.9 }}><ApricotBranch x="-15px" y="calc(100% - 100px)" scale={0.6} /></div>
+              <div style={{ opacity: 0.9 }}><ApricotBranch x="calc(100% - 100px)" y="calc(100% - 95px)" flip scale={0.52} /></div>
 
               {/* ── Đèn lồng đỏ – lớn hơn, chi tiết hơn ── */}
-              <Lantern x="3%" y="-2%" size={42} delay={0.15} />
-              <Lantern x="13%" y="4%" size={28} delay={0.3} />
-              <Lantern x="82%" y="-1%" size={34} delay={0.25} />
-              <Lantern x="91%" y="5%" size={22} delay={0.4} />
+              <div style={{ opacity: 0.9 }}><Lantern x="2%" y="-3%" size={36} delay={0.15} /></div>
+              <div style={{ opacity: 0.9 }}><Lantern x="11%" y="3%" size={24} delay={0.3} /></div>
+              <div style={{ opacity: 0.9 }}><Lantern x="83%" y="-2%" size={30} delay={0.25} /></div>
+              <div style={{ opacity: 0.9 }}><Lantern x="92%" y="4%" size={20} delay={0.4} /></div>
 
               {/* ── Cánh hoa rơi (nhiều hơn, tự nhiên hơn) ── */}
               {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
@@ -396,11 +400,11 @@ export function UserLiXiCelebrationPopup() {
                   transition={{ delay: 0.18, duration: 0.35, ease: "easeOut" }}
                   className="w-full relative"
                   style={{
-                    background: "linear-gradient(180deg, #FFFEFB 0%, #FFF9EC 40%, #FFF4D9 100%)",
-                    border: "1.5px solid #DFC87A",
+                    background: "linear-gradient(180deg, #FFFEFB 0%, #FFFAF0 35%, #FFF5DC 100%)",
+                    border: "1px solid rgba(201,162,39,0.45)",
                     borderRadius: 16,
-                    padding: "32px 28px",
-                    boxShadow: "inset 0 0 24px rgba(200,160,60,0.08), 0 10px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(180,140,40,0.15)",
+                    padding: "34px 30px",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(200,160,60,0.15), inset 0 0 20px rgba(200,160,60,0.06), 0 1px 3px rgba(180,140,40,0.12), 0 10px 40px rgba(0,0,0,0.08)",
                   }}
                 >
                   {/* Corner ornaments */}
@@ -419,12 +423,13 @@ export function UserLiXiCelebrationPopup() {
                     transition={{ delay: 0.28 }}
                     className="mb-6 leading-snug"
                     style={{
-                      color: "#5A3A00",
+                      color: "#6B4A10",
                       fontFamily: "'Playfair Display', 'Georgia', 'Noto Serif', 'Times New Roman', serif",
-                      fontSize: 28,
-                      fontWeight: 700,
-                      lineHeight: 1.35,
-                      textShadow: "0 1px 2px rgba(180,140,40,0.1)",
+                      fontSize: 27,
+                      fontWeight: 600,
+                      lineHeight: 1.4,
+                      letterSpacing: "0.5px",
+                      textShadow: "0 1px 1px rgba(180,140,40,0.08)",
                     }}
                   >
                     {alreadyClaimed ? "Bạn đã nhận Lì xì thành công!" : "Chúc mừng bạn đã nhận được Lì xì!"}
@@ -501,7 +506,7 @@ export function UserLiXiCelebrationPopup() {
                         borderRadius: 10,
                         background: isDisabled
                           ? "linear-gradient(180deg, #5a5a5a 0%, #3a3a3a 100%)"
-                          : "linear-gradient(180deg, #2F5E2F 0%, #1E3D1E 100%)",
+                          : "linear-gradient(180deg, #3A7A3A 0%, #2F5E2F 35%, #1E3D1E 100%)",
                         color: "white",
                         fontWeight: 700,
                         fontSize: 16,
@@ -509,7 +514,7 @@ export function UserLiXiCelebrationPopup() {
                         border: "none",
                         boxShadow: isDisabled
                           ? "0 4px 0 #333, 0 8px 16px rgba(0,0,0,0.15)"
-                          : "0 5px 0 #183018, 0 12px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                          : "0 5px 0 #14280F, 0 12px 28px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)",
                         cursor: isDisabled ? "not-allowed" : "pointer",
                         textTransform: "uppercase",
                       }}
