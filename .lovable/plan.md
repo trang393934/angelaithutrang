@@ -1,102 +1,86 @@
 
-## Gui thong bao va tin nhan tu dong sau khi claim Li Xi thanh cong
+# Tong hop quy trinh thuong Li Xi Tet - Ket qua kiem tra
 
-### Hien trang
-
-Trong `process-lixi-claim/index.ts`, khi claim thanh cong (dong 200-211), he thong da gui 1 notification `lixi_claim_completed` nhung:
-- Noi dung chua day du (thieu ten chuong trinh, thieu tx_hash hien thi)
-- Chua gui DM tu ANGEL AI TREASURY
-- Notification khong co link BscScan
-
-### Ke hoach thay doi
-
-**1. Cap nhat Edge Function `process-lixi-claim/index.ts`**
-
-Sau khi claim thanh cong (dong 200-211), them logic:
-
-a) **Cap nhat noi dung notification** (dong 201-211):
-- Title: "🧧 Chuc mung ban da nhan Li Xi Tet!"
-- Content: "Chuc mung! Ban da nhan X Camly Coin tu chuong trinh Li Xi Tet. Giao dich da duoc xac nhan tren blockchain."
-- Metadata: them tx_hash, bscscan_url
-
-b) **Gui DM tu ANGEL AI TREASURY** (them moi):
-- sender_id: `9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad` (ANGEL AI TREASURY)
-- receiver_id: userId
-- message_type: `"tet_lixi_receipt"` (loai moi de phan biet voi DM thong bao ban dau)
-- content: noi dung chuc mung kem tx_hash va link BscScan
-- metadata: `{ camly_amount, fun_amount, tx_hash, bscscan_url, source: "tet_lixi_claim_completed" }`
-
-**2. Tao component `LiXiReceiptCard.tsx`**
-
-File moi: `src/components/messages/LiXiReceiptCard.tsx`
-
-Card hien thi bien nhan chuyen thuong thanh cong:
-- Gradient xanh-vang (khac voi card Li Xi do-vang ban dau)
-- Icon check thanh cong
-- So Camly Coin
-- tx_hash rut gon (0x1234...abcd)
-- Nut "Xem tren BscScan" -> mo link `https://bscscan.com/tx/{tx_hash}` trong tab moi
-- Ten chuong trinh: Li Xi Tet 2026
-
-**3. Cap nhat MessageBubble.tsx**
-
-- Them case `message_type === "tet_lixi_receipt"` -> render `LiXiReceiptCard`
-- Truyen metadata (camly_amount, fun_amount, tx_hash) xuong component
-
-**4. Cap nhat notification utils**
-
-File: `src/components/layout/notifications/utils.ts`
-- Them case `lixi_claim_completed` vao `getNotificationIcon` -> icon "✅"
-- Them case `lixi_claim_completed` vao `getNotificationActionText` -> "Chuc mung! Ban da nhan Camly Coin tu chuong trinh Li Xi Tet"
-
-### Chi tiet ky thuat
-
-**process-lixi-claim/index.ts** - Sua doan success (dong 200-211):
+## Quy trinh tong the (3 giai doan)
 
 ```text
-const TREASURY_USER_ID = "9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad";
-const bscscanUrl = `https://bscscan.com/tx/${result.hash}`;
+GIAI DOAN 1: ADMIN DUYET THUONG
+distribute-fun-camly-reward
+        |
+        +-- Cap nhat so du Camly Coin (camly_coin_balances)
+        +-- Ghi giao dich (camly_coin_transactions, type: admin_adjustment)
+        +-- Gui Healing Message (healing_messages)
+        +-- Gui Notification (type: tet_lixi_reward)
+        +-- Gui DM tu ANGEL AI TREASURY (message_type: tet_lixi)
+        
+GIAI DOAN 2: USER CLAIM ON-CHAIN
+useLiXiCelebration hook -> process-lixi-claim edge function
+        |
+        +-- Tao ban ghi lixi_claims (status: pending -> processing)
+        +-- Chuyen CAMLY token on-chain qua BSC
+        +-- Cap nhat lixi_claims (status: completed, tx_hash)
+        +-- Ghi giao dich (camly_coin_transactions, type: lixi_claim)
+        +-- Gui Notification (type: lixi_claim_completed, kem tx_hash)
+        +-- Gui DM tu ANGEL AI TREASURY (message_type: tet_lixi_receipt, kem tx_hash + BscScan)
 
-// Notification
-await adminClient.from('notifications').insert({
-  user_id: userId,
-  type: 'lixi_claim_completed',
-  title: '🧧 Chúc mừng bạn đã nhận Lì Xì Tết!',
-  content: `Chúc mừng! Bạn đã nhận ${claim.camly_amount.toLocaleString()} Camly Coin từ chương trình Lì Xì Tết.`,
-  metadata: {
-    tx_hash: result.hash,
-    bscscan_url: bscscanUrl,
-    camly_amount: claim.camly_amount,
-    fun_amount: claim.fun_amount,
-  },
-});
-
-// DM tu ANGEL AI TREASURY
-await adminClient.from('direct_messages').insert({
-  sender_id: TREASURY_USER_ID,
-  receiver_id: userId,
-  content: `✅ Chúc mừng! Bạn đã nhận ${claim.camly_amount.toLocaleString()} Camly Coin từ chương trình Lì Xì Tết!\n\n📋 Biên nhận: ${result.hash}\n🔗 BscScan: ${bscscanUrl}`,
-  message_type: "tet_lixi_receipt",
-  metadata: {
-    camly_amount: claim.camly_amount,
-    fun_amount: claim.fun_amount,
-    tx_hash: result.hash,
-    bscscan_url: bscscanUrl,
-    source: "tet_lixi_claim_completed",
-  },
-});
+GIAI DOAN 3: USER XEM KET QUA
+        |
+        +-- Notification -> bam -> mo popup (da claimed thi hien "DA NHAN")
+        +-- DM tet_lixi -> hien LiXiMessageCard (do-vang) -> bam "Xem Li Xi" -> mo popup
+        +-- DM tet_lixi_receipt -> hien LiXiReceiptCard (xanh-vang) -> xem tx_hash + BscScan
+        +-- Notification lixi_claim_completed -> icon ✅ + text chuc mung
 ```
 
-**LiXiReceiptCard.tsx:**
-- Gradient xanh la-vang (thanh cong)
-- Hien thi: icon ✅, so Camly, tx_hash rut gon, nut BscScan
-- Khong co nut CLAIM (vi da claim xong)
+## Trang thai hien tai cac file
 
-**MessageBubble.tsx:**
-- Them: `if (message_type === "tet_lixi_receipt")` -> render `LiXiReceiptCard`
+### Backend (Edge Functions)
 
-### Danh sach file thay doi
-1. `supabase/functions/process-lixi-claim/index.ts` - Them gui DM va cap nhat notification
-2. `src/components/messages/LiXiReceiptCard.tsx` (file moi) - Card bien nhan thanh cong
-3. `src/components/messages/MessageBubble.tsx` - Them case render LiXiReceiptCard
-4. `src/components/layout/notifications/utils.ts` - Them icon va text cho lixi_claim_completed
+| File | Chuc nang | Trang thai |
+|------|-----------|------------|
+| `distribute-fun-camly-reward/index.ts` | Admin duyet thuong: cap nhat balance, ghi TX, gui healing msg, notification, DM | Hoan chinh |
+| `process-lixi-claim/index.ts` | User claim on-chain: chuyen CAMLY, ghi TX, gui notification + DM kem tx_hash | Hoan chinh |
+
+### Frontend - Hooks
+
+| File | Chuc nang | Trang thai |
+|------|-----------|------------|
+| `useLiXiCelebration.ts` | Quan ly popup claim: auto-show, openPopupForNotification, claim flow, alreadyClaimed | Hoan chinh |
+| `useLixiClaims.ts` | Admin: fetch/update claims, realtime subscription | Hoan chinh |
+
+### Frontend - Components
+
+| File | Chuc nang | Trang thai |
+|------|-----------|------------|
+| `UserLiXiCelebrationPopup.tsx` | Popup claim voi hieu ung Tet, nut CLAIM / DA NHAN | Hoan chinh |
+| `LiXiMessageCard.tsx` | Card DM do-vang (truoc khi claim), nut "Xem Li Xi" | Hoan chinh |
+| `LiXiReceiptCard.tsx` | Card DM xanh-vang (sau khi claim), hien tx_hash + BscScan | Hoan chinh |
+| `MessageBubble.tsx` | Render card dung loai: tet_lixi -> LiXiMessageCard, tet_lixi_receipt -> LiXiReceiptCard | Hoan chinh |
+
+### Frontend - Notification System
+
+| File | Chuc nang | Trang thai |
+|------|-----------|------------|
+| `notifications/utils.ts` | Icon 🧧 cho tet_lixi_reward, ✅ cho lixi_claim_completed, text tuong ung | Hoan chinh |
+| `NotificationDropdown.tsx` | Bam notification tet_lixi_reward -> mo popup Li Xi | Hoan chinh |
+| `Notifications.tsx` (page) | Tuong tu dropdown, bam -> mo popup | Hoan chinh |
+| `Messages.tsx` (page) | Render UserLiXiCelebrationPopup, truyen handleOpenLiXi xuong MessageBubble | Hoan chinh |
+
+## Bao mat va chong gian lan
+
+| Lop bao ve | Vi tri | Mo ta |
+|------------|--------|-------|
+| Chong trung lap duyet thuong | distribute-fun-camly-reward | Kiem tra metadata `source: fun_to_camly_reward` truoc khi duyet |
+| Chong trung lap claim | process-lixi-claim | Kiem tra status `pending` va dedup theo `notification_id` |
+| Status machine | process-lixi-claim | pending -> processing -> completed/failed (khong cho retry processing) |
+| Xac nhan on-chain | process-lixi-claim | Chi cap nhat completed khi `receipt.status === 1` |
+| Thong bao admin khi loi | process-lixi-claim | Gui notification cho admin khi claim that bai |
+
+## Ket luan
+
+He thong thuong Li Xi Tet da duoc xay dung hoan chinh voi day du 3 giai doan. Moi giai doan deu co:
+- Thong bao (notification) voi icon va noi dung phu hop
+- Tin nhan truc tiep (DM) tu ANGEL AI TREASURY voi card chuyen dung
+- Popup tuong tac cho nguoi dung
+- Bao mat chong gian lan da lop
+
+Khong can thay doi gi them. He thong da san sang hoat dong.
