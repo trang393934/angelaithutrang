@@ -197,16 +197,35 @@ Deno.serve(async (req) => {
           },
         });
 
+      const TREASURY_USER_ID = "9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad";
+      const bscscanUrl = `https://bscscan.com/tx/${result.hash}`;
+
       // Send success notification to user
       await adminClient.from('notifications').insert({
         user_id: userId,
         type: 'lixi_claim_completed',
-        title: '🧧 Lì xì đã chuyển thành công!',
-        content: `${claim.camly_amount.toLocaleString()} Camly Coin đã được chuyển đến ví Web3 của bạn.`,
+        title: '🧧 Chúc mừng bạn đã nhận Lì Xì Tết!',
+        content: `Chúc mừng! Bạn đã nhận ${claim.camly_amount.toLocaleString()} Camly Coin từ chương trình Lì Xì Tết. Giao dịch đã được xác nhận trên blockchain.`,
         metadata: {
           tx_hash: result.hash,
+          bscscan_url: bscscanUrl,
           camly_amount: claim.camly_amount,
           fun_amount: claim.fun_amount,
+        },
+      });
+
+      // Send DM from ANGEL AI TREASURY
+      await adminClient.from('direct_messages').insert({
+        sender_id: TREASURY_USER_ID,
+        receiver_id: userId,
+        content: `✅ Chúc mừng! Bạn đã nhận ${claim.camly_amount.toLocaleString()} Camly Coin từ chương trình Lì Xì Tết!\n\n📋 Biên nhận: ${result.hash}\n🔗 BscScan: ${bscscanUrl}`,
+        message_type: "tet_lixi_receipt",
+        metadata: {
+          camly_amount: claim.camly_amount,
+          fun_amount: claim.fun_amount,
+          tx_hash: result.hash,
+          bscscan_url: bscscanUrl,
+          source: "tet_lixi_claim_completed",
         },
       });
 
