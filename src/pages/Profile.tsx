@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useNavigate, Link, useSearchParams, useParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLightAgreement } from "@/hooks/useLightAgreement";
@@ -25,6 +25,7 @@ import { PoPLBadge } from "@/components/profile/PoPLBadge";
 import { SoulTagsEditor } from "@/components/profile/SoulTagsEditor";
 import { SocialLinksEditor } from "@/components/profile/SocialLinksEditor";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import angelAvatar from "@/assets/angel-avatar.png";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
 import DailyGratitude from "@/components/DailyGratitude";
@@ -113,7 +114,9 @@ function UsernameDisplay() {
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { tab } = useParams<{ tab?: string }>();
   const [searchParams] = useSearchParams();
+  const currentTab = tab || "info";
   const { user, isLoading: authLoading, signOut } = useAuth();
   const { hasAgreed, isChecking: isCheckingAgreement } = useLightAgreement();
   const poplScore = usePoPLScore();
@@ -1008,531 +1011,419 @@ const Profile = () => {
           </h1>
         </div>
 
-        <div className="space-y-6">
-          {/* Activity History Link */}
-          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-divine-gold/5 hover:shadow-md transition-shadow cursor-pointer">
-            <Link to="/activity-history">
-              <CardContent className="py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-primary/10">
-                      <History className="w-5 h-5 text-primary" />
+        {/* Tab Navigation */}
+        <Tabs value={currentTab} onValueChange={(value) => navigate(`/profile/${value}`)} className="w-full">
+          <TabsList className="w-full grid grid-cols-4 sticky top-16 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 mb-6">
+            <TabsTrigger value="info" className="text-xs sm:text-sm">
+              <User className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Hồ sơ</span>
+              <span className="sm:hidden">Hồ sơ</span>
+            </TabsTrigger>
+            <TabsTrigger value="assets" className="text-xs sm:text-sm">
+              <Wallet className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Tài sản</span>
+              <span className="sm:hidden">Tài sản</span>
+            </TabsTrigger>
+            <TabsTrigger value="angel" className="text-xs sm:text-sm">
+              <MessageCircle className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Angel AI</span>
+              <span className="sm:hidden">Angel</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs sm:text-sm">
+              <Shield className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Cài đặt</span>
+              <span className="sm:hidden">Cài đặt</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab 1: Hồ sơ */}
+          <TabsContent value="info" className="space-y-6">
+            {/* Cover Photo Card */}
+            <Card className="border-divine-gold/30 shadow-divine overflow-hidden bg-gradient-to-b from-background to-divine-deep/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
+                  <ImageIcon className="w-5 h-5 text-divine-gold" />
+                  Ảnh Bìa
+                </CardTitle>
+                <CardDescription>
+                  Tùy chỉnh ảnh bìa cho trang cá nhân của bạn (tối đa 10MB)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative w-full h-[150px] sm:h-[200px] rounded-xl overflow-hidden bg-gradient-to-br from-divine-gold/20 via-divine-deep/30 to-divine-gold/20 group">
+                  {profile?.cover_photo_url ? (
+                    <>
+                      <img 
+                        src={profile.cover_photo_url} 
+                        alt="Cover photo" 
+                        className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-[1.02]"
+                        style={{ objectPosition: `center ${coverPosition}%` }}
+                        onClick={() => setCoverLightboxOpen(true)}
+                      />
+                      <div 
+                        className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 cursor-pointer flex items-center justify-center opacity-0 group-hover:opacity-100"
+                        onClick={() => setCoverLightboxOpen(true)}
+                      >
+                        <div className="bg-black/60 text-white px-4 py-2 rounded-full flex items-center gap-2">
+                          <Maximize2 className="w-4 h-4" />
+                          <span className="text-sm font-medium">Xem ảnh đầy đủ</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <button
+                      onClick={handleCoverClick}
+                      disabled={isUploadingCover}
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-3 cursor-pointer"
+                    >
+                      <div className="p-4 rounded-full bg-black/80 group-hover:bg-black transition-all duration-300">
+                        <ImageIcon className="w-10 h-10 text-white group-hover:scale-110 transition-transform duration-300" />
+                      </div>
+                      <p className="text-black font-medium group-hover:text-gray-700 transition-colors">Nhấn để tải ảnh bìa</p>
+                    </button>
+                  )}
+                  {isUploadingCover && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <Loader2 className="w-10 h-10 text-divine-gold animate-spin" />
                     </div>
-                    <div>
-                      <h3 className="font-medium text-foreground">Lịch Sử Hoạt Động</h3>
-                      <p className="text-sm text-foreground-muted">Xem lại các cuộc trò chuyện với Angel AI</p>
-                    </div>
+                  )}
+                </div>
+                {profile?.cover_photo_url && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleCoverClick} disabled={isUploadingCover} className="flex-1 border-divine-gold/30 hover:border-divine-gold">
+                      <Camera className="w-4 h-4 mr-2" /> Đổi ảnh
+                    </Button>
+                    <Button variant="outline" onClick={() => setCoverPositionEditorOpen(true)} className="flex-1 border-divine-gold/30 hover:border-divine-gold">
+                      <Move className="w-4 h-4 mr-2" /> Điều chỉnh vị trí
+                    </Button>
                   </div>
-                  <ArrowLeft className="w-5 h-5 text-foreground-muted rotate-180" />
+                )}
+                <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
+              </CardContent>
+            </Card>
+
+            {/* Avatar & Username Card */}
+            <Card className="border-divine-gold/30 shadow-divine bg-gradient-to-b from-background to-divine-deep/10">
+              <CardContent className="pt-6">
+                <div className="w-full flex flex-col items-center gap-4">
+                  <div className="relative group">
+                    <div className="absolute -inset-2 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold rounded-full opacity-30 blur-lg group-hover:opacity-60 group-hover:blur-xl transition-all duration-500" />
+                    <div 
+                      className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-divine-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] group-hover:shadow-[0_0_40px_rgba(212,175,55,0.5)] transition-all duration-500 group-hover:scale-105 cursor-pointer"
+                      onClick={() => profile?.avatar_url && setAvatarLightboxOpen(true)}
+                    >
+                      {isUploadingAvatar ? (
+                        <div className="w-full h-full bg-gradient-to-br from-divine-gold/20 to-divine-deep/30 flex items-center justify-center">
+                          <Loader2 className="w-10 h-10 text-divine-gold animate-spin" />
+                        </div>
+                      ) : (
+                        <>
+                          <img src={profile?.avatar_url || angelAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                          {profile?.avatar_url && (
+                            <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <Maximize2 className="w-8 h-8 text-white drop-shadow-lg" />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <button onClick={handleAvatarClick} disabled={isUploadingAvatar} className="absolute -bottom-1 -right-1 p-3 rounded-full bg-black text-white shadow-lg shadow-black/40 hover:shadow-black/60 hover:scale-110 transition-all duration-300 z-10">
+                      <Camera className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="text-center space-y-1">
+                    <h2 className="text-xl font-bold text-foreground">{displayName || t("profile.displayNamePlaceholder")}</h2>
+                    <UsernameDisplay />
+                  </div>
+                  <p className="text-divine-gold font-medium text-sm">{t("profile.avatarHint")}</p>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                 </div>
               </CardContent>
-            </Link>
-          </Card>
+            </Card>
 
-          {/* Transaction History & Wallet Assets */}
-          {user && <TransactionHistorySection userId={user.id} />}
-
-          {/* Camly Coin & Light Points Section */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <CamlyCoinDisplay />
-            <LightPointsDisplay />
-          </div>
-
-          {/* Coin Withdrawal Section */}
-          <CoinWithdrawal />
-
-          {/* Wallet Address Card */}
-          <Card className="border-blue-500/20 shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Wallet className="w-5 h-5 text-blue-500" />
-                Địa chỉ ví Web3
-              </CardTitle>
-              <CardDescription>
-                Nhập địa chỉ ví BSC/BNB Chain để nhận Camly Coin khi rút.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="walletAddress">Địa chỉ ví (BSC Network)</Label>
-                <Input
-                  id="walletAddress"
-                  value={walletAddress}
-                  onChange={(e) => setWalletAddress(e.target.value)}
-                  placeholder="0x..."
-                  className="border-blue-500/20 focus:border-blue-500 font-mono text-sm"
-                />
-              </div>
-
-              <Button
-                onClick={handleSaveWalletAddress}
-                disabled={isSavingWallet}
-                className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-              >
-                {isSavingWallet ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang lưu...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Check className="w-4 h-4" />
-                    Lưu địa chỉ ví
-                  </span>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Gratitude & Journal Section */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <DailyGratitude />
-            <GratitudeJournal />
-          </div>
-
-          {/* Healing Messages from Angel AI */}
-          <HealingMessagesPanel />
-
-          {/* Cover Photo Card */}
-          <Card className="border-divine-gold/30 shadow-divine overflow-hidden bg-gradient-to-b from-background to-divine-deep/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold bg-clip-text text-transparent">
-                <ImageIcon className="w-5 h-5 text-divine-gold" />
-                Ảnh Bìa
-              </CardTitle>
-              <CardDescription>
-                Tùy chỉnh ảnh bìa cho trang cá nhân của bạn (tối đa 10MB)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Cover Preview */}
-              <div className="relative w-full h-[150px] sm:h-[200px] rounded-xl overflow-hidden bg-gradient-to-br from-divine-gold/20 via-divine-deep/30 to-divine-gold/20 group">
-                {profile?.cover_photo_url ? (
-                  <>
-                    <img 
-                      src={profile.cover_photo_url} 
-                      alt="Cover photo" 
-                      className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-[1.02]"
-                      style={{ objectPosition: `center ${coverPosition}%` }}
-                      onClick={() => setCoverLightboxOpen(true)}
-                    />
-                    {/* Hover overlay */}
-                    <div 
-                      className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 cursor-pointer flex items-center justify-center opacity-0 group-hover:opacity-100"
-                      onClick={() => setCoverLightboxOpen(true)}
-                    >
-                      <div className="bg-black/60 text-white px-4 py-2 rounded-full flex items-center gap-2">
-                        <Maximize2 className="w-4 h-4" />
-                        <span className="text-sm font-medium">Xem ảnh đầy đủ</span>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <button
-                    onClick={handleCoverClick}
-                    disabled={isUploadingCover}
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 cursor-pointer"
-                  >
-                    <div className="p-4 rounded-full bg-black/80 group-hover:bg-black transition-all duration-300">
-                      <ImageIcon className="w-10 h-10 text-white group-hover:scale-110 transition-transform duration-300" />
-                    </div>
-                    <p className="text-black font-medium group-hover:text-gray-700 transition-colors">Nhấn để tải ảnh bìa</p>
-                  </button>
-                )}
-                
-                {isUploadingCover && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <Loader2 className="w-10 h-10 text-divine-gold animate-spin" />
-                  </div>
-                )}
-              </div>
-
-              {/* Action buttons for cover */}
-              {profile?.cover_photo_url && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleCoverClick}
-                    disabled={isUploadingCover}
-                    className="flex-1 border-divine-gold/30 hover:border-divine-gold"
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    Đổi ảnh
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setCoverPositionEditorOpen(true)}
-                    className="flex-1 border-divine-gold/30 hover:border-divine-gold"
-                  >
-                    <Move className="w-4 h-4 mr-2" />
-                    Điều chỉnh vị trí
-                  </Button>
-                </div>
-              )}
-
-              <input
-                ref={coverInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleCoverChange}
-                className="hidden"
-              />
-            </CardContent>
-          </Card>
-
-          {/* Avatar & Username Card */}
-          <Card className="border-divine-gold/30 shadow-divine bg-gradient-to-b from-background to-divine-deep/10">
-            <CardContent className="pt-6">
-              <div className="w-full flex flex-col items-center gap-4">
-                <div className="relative group">
-                  {/* Glowing effect */}
-                  <div className="absolute -inset-2 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold rounded-full opacity-30 blur-lg group-hover:opacity-60 group-hover:blur-xl transition-all duration-500" />
-                  <div 
-                    className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-divine-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] group-hover:shadow-[0_0_40px_rgba(212,175,55,0.5)] transition-all duration-500 group-hover:scale-105 cursor-pointer"
-                    onClick={() => profile?.avatar_url && setAvatarLightboxOpen(true)}
-                  >
-                    {isUploadingAvatar ? (
-                      <div className="w-full h-full bg-gradient-to-br from-divine-gold/20 to-divine-deep/30 flex items-center justify-center">
-                        <Loader2 className="w-10 h-10 text-divine-gold animate-spin" />
-                      </div>
-                    ) : (
-                      <>
-                        <img 
-                          src={profile?.avatar_url || angelAvatar} 
-                          alt="Avatar" 
-                          className="w-full h-full object-cover"
-                        />
-                        {/* Avatar hover overlay */}
-                        {profile?.avatar_url && (
-                          <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <Maximize2 className="w-8 h-8 text-white drop-shadow-lg" />
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  {/* Camera button */}
-                  <button
-                    onClick={handleAvatarClick}
-                    disabled={isUploadingAvatar}
-                    className="absolute -bottom-1 -right-1 p-3 rounded-full bg-black text-white shadow-lg shadow-black/40 hover:shadow-black/60 hover:scale-110 transition-all duration-300 z-10"
-                  >
-                    <Camera className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Display name + @username like Telegram */}
-                <div className="text-center space-y-1">
-                  <h2 className="text-xl font-bold text-foreground">
-                    {displayName || t("profile.displayNamePlaceholder")}
-                  </h2>
-                  <UsernameDisplay />
-                </div>
-
-                <p className="text-divine-gold font-medium text-sm">
-                  {t("profile.avatarHint")}
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Profile Info Card */}
-          <Card className="border-divine-gold/20 shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <User className="w-5 h-5 text-divine-gold" />
-                {t("profile.personalInfo")}
-              </CardTitle>
-              <CardDescription>
-                {t("profile.personalInfoDesc")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="displayName">{t("profile.displayNameLabel")}</Label>
-                <Input
-                  id="displayName"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder={t("profile.displayNamePlaceholder")}
-                  className="border-divine-gold/20 focus:border-divine-gold"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bio">{t("profile.bioLabel")}</Label>
-                <Textarea
-                  id="bio"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder={t("profile.bioPlaceholder")}
-                  className="border-divine-gold/20 focus:border-divine-gold min-h-[100px]"
-                />
-              </div>
-
-              <Button
-                onClick={handleSaveProfile}
-                disabled={isSaving}
-                className="w-full bg-sapphire-gradient hover:opacity-90"
-              >
-                {isSaving ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {t("profile.saving")}
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Check className="w-4 h-4" />
-                    {t("profile.saveChanges")}
-                  </span>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Username / FUN Profile Link */}
-          <Card id="handle-section" className="border-divine-gold/20 shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <AtSign className="w-5 h-5 text-divine-gold" />
-                Username
-              </CardTitle>
-              <CardDescription>
-                Chọn @username duy nhất của bạn (giống Telegram). Link hồ sơ: angel.fun.rich/username
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <HandleSelector source="settings" />
-            </CardContent>
-          </Card>
-
-          {/* PoPL Score Card - Pure Love Score */}
-          <PoPLScoreCard
-            score={poplScore.score}
-            positiveActions={poplScore.positiveActions}
-            negativeActions={poplScore.negativeActions}
-            isVerified={poplScore.isVerified}
-            badgeLevel={poplScore.badgeLevel}
-          />
-
-          {/* Soul Tags Card */}
-          <Card className="border-divine-gold/20 shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Sparkles className="w-5 h-5 text-divine-gold" />
-                Soul Tags
-              </CardTitle>
-              <CardDescription>
-                Những từ khóa đại diện cho linh hồn và giá trị của bạn
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SoulTagsEditor 
-                tags={soulTags} 
-                onTagsChange={async (newTags) => {
-                  setSoulTags(newTags);
-                  if (user) {
-                    await supabase
-                      .from("profiles")
-                      .update({ soul_tags: newTags })
-                      .eq("user_id", user.id);
-                  }
-                }}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Response Style Card */}
-          <Card className="border-divine-gold/20 shadow-soft bg-gradient-to-b from-background to-divine-deep/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MessageCircle className="w-5 h-5 text-divine-gold" />
-                {t("profile.responseStyle")}
-              </CardTitle>
-              <CardDescription>
-                {t("profile.responseStyleDesc")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <RadioGroup
-                value={responseStyle}
-                onValueChange={async (value) => {
-                  setResponseStyle(value);
-                  setIsSavingStyle(true);
-                  try {
-                    const { error } = await supabase
-                      .from("profiles")
-                      .update({ response_style: value })
-                      .eq("user_id", user?.id);
-                    
-                    if (error) throw error;
-                    
-                    toast({
-                      title: "✨ Đã lưu",
-                      description: `Phong cách trả lời: ${RESPONSE_STYLES.find(s => s.id === value)?.name}`,
-                    });
-                  } catch (error) {
-                    console.error("Error saving response style:", error);
-                    toast({
-                      title: "Lỗi",
-                      description: "Không thể lưu phong cách trả lời.",
-                      variant: "destructive",
-                    });
-                  } finally {
-                    setIsSavingStyle(false);
-                  }
-                }}
-                className="space-y-3"
-              >
-                {RESPONSE_STYLES.map((style) => (
-                  <div
-                    key={style.id}
-                    className={`relative flex items-start space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all duration-300 ${
-                      responseStyle === style.id
-                        ? "border-divine-gold bg-divine-gold/10 shadow-md shadow-divine-gold/20"
-                        : "border-border hover:border-divine-gold/50 hover:bg-divine-gold/5"
-                    }`}
-                  >
-                    <RadioGroupItem
-                      value={style.id}
-                      id={style.id}
-                      className="mt-1 border-divine-gold text-divine-gold"
-                    />
-                    <div className="flex-1">
-                      <label
-                        htmlFor={style.id}
-                        className="block font-medium cursor-pointer"
-                      >
-                        {style.name}
-                        {style.isDefault && (
-                          <span className="ml-2 text-xs bg-divine-gold/20 text-divine-gold px-2 py-0.5 rounded-full">
-                            Mặc định
-                          </span>
-                        )}
-                      </label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {style.description}
-                      </p>
-                    </div>
-                    {isSavingStyle && responseStyle === style.id && (
-                      <Loader2 className="w-4 h-4 animate-spin text-divine-gold absolute top-4 right-4" />
-                    )}
-                  </div>
-                ))}
-              </RadioGroup>
-            </CardContent>
-          </Card>
-
-          {/* Account Info Card */}
-          <Card className="border-divine-gold/20 shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Mail className="w-5 h-5 text-divine-gold" />
-                {t("profile.accountInfo")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-divine-gold/10">
-                <span className="text-foreground">{t("profile.email")}</span>
-                <span className="font-medium text-foreground">{user?.email}</span>
-              </div>
-
-              <div className="flex items-center justify-between py-3 border-b border-divine-gold/10">
-                <span className="text-foreground flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  {t("profile.joinDate")}
-                </span>
-                <span className="font-medium text-foreground">
-                  {user?.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : 'N/A'}
-                </span>
-              </div>
-
-              {/* Change Password Button */}
-              <div className="pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowChangePassword(true)}
-                  className="w-full border-divine-gold/30 hover:bg-divine-gold/5"
-                >
-                  <Key className="w-4 h-4 mr-2" />
-                  {t("profile.changePassword")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Social Links Editor */}
-          <SocialLinksEditor />
-
-          {/* Public Profile Settings */}
-          <PublicProfileSettingsSection />
-
-          {/* API Keys Section */}
-          <ApiKeysSection />
-
-          {/* Light Law Agreement Status */}
-          <Card className={`border-2 shadow-soft ${hasAgreedToLightLaw ? 'border-green-500/30 bg-green-50/30' : 'border-red-500/30 bg-red-50/30'}`}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Shield className={`w-5 h-5 ${hasAgreedToLightLaw ? 'text-green-600' : 'text-red-500'}`} />
-                {t("profile.lightLawStatus")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {hasAgreedToLightLaw ? (
+            {/* Profile Info Card */}
+            <Card className="border-divine-gold/20 shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <User className="w-5 h-5 text-divine-gold" />
+                  {t("profile.personalInfo")}
+                </CardTitle>
+                <CardDescription>{t("profile.personalInfoDesc")}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-green-700">
-                    <Check className="w-5 h-5" />
-                    <span className="font-medium">{t("profile.lightLawAgreed")}</span>
-                  </div>
-                  {agreedAt && (
-                    <p className="text-sm text-muted-foreground">
-                      {t("profile.lightLawAgreedDate")} {new Date(agreedAt).toLocaleDateString('vi-VN', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
+                  <Label htmlFor="displayName">{t("profile.displayNameLabel")}</Label>
+                  <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t("profile.displayNamePlaceholder")} className="border-divine-gold/20 focus:border-divine-gold" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bio">{t("profile.bioLabel")}</Label>
+                  <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder={t("profile.bioPlaceholder")} className="border-divine-gold/20 focus:border-divine-gold min-h-[100px]" />
+                </div>
+                <Button onClick={handleSaveProfile} disabled={isSaving} className="w-full bg-sapphire-gradient hover:opacity-90">
+                  {isSaving ? (
+                    <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />{t("profile.saving")}</span>
+                  ) : (
+                    <span className="flex items-center gap-2"><Check className="w-4 h-4" />{t("profile.saveChanges")}</span>
                   )}
-                  <p className="text-sm text-green-600 mt-2">
-                    {t("profile.lightLawAccess")}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-red-600">
-                    {t("profile.lightLawNotAgreed")}
-                  </p>
-                  <Link
-                    to="/auth"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-divine-gold text-white hover:bg-divine-light transition-colors"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    {t("profile.readLightLaw")}
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </Button>
+              </CardContent>
+            </Card>
 
-          {/* Sign Out Button */}
-          <Button
-            variant="outline"
-            onClick={handleSignOut}
-            className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-          >
-            {t("profile.signOut")}
-          </Button>
-        </div>
+            {/* Username / Handle */}
+            <Card id="handle-section" className="border-divine-gold/20 shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <AtSign className="w-5 h-5 text-divine-gold" />
+                  Username
+                </CardTitle>
+                <CardDescription>Chọn @username duy nhất của bạn (giống Telegram). Link hồ sơ: angel.fun.rich/username</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <HandleSelector source="settings" />
+              </CardContent>
+            </Card>
+
+            {/* Soul Tags */}
+            <Card className="border-divine-gold/20 shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Sparkles className="w-5 h-5 text-divine-gold" />
+                  Soul Tags
+                </CardTitle>
+                <CardDescription>Những từ khóa đại diện cho linh hồn và giá trị của bạn</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SoulTagsEditor 
+                  tags={soulTags} 
+                  onTagsChange={async (newTags) => {
+                    setSoulTags(newTags);
+                    if (user) {
+                      await supabase.from("profiles").update({ soul_tags: newTags }).eq("user_id", user.id);
+                    }
+                  }}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Social Links */}
+            <SocialLinksEditor />
+          </TabsContent>
+
+          {/* Tab 2: Tài sản */}
+          <TabsContent value="assets" className="space-y-6">
+            {/* Activity History Link */}
+            <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-divine-gold/5 hover:shadow-md transition-shadow cursor-pointer">
+              <Link to="/activity-history">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <History className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-foreground">Lịch Sử Hoạt Động</h3>
+                        <p className="text-sm text-foreground-muted">Xem lại các cuộc trò chuyện với Angel AI</p>
+                      </div>
+                    </div>
+                    <ArrowLeft className="w-5 h-5 text-foreground-muted rotate-180" />
+                  </div>
+                </CardContent>
+              </Link>
+            </Card>
+
+            {/* Transaction History */}
+            {user && <TransactionHistorySection userId={user.id} />}
+
+            {/* Camly Coin & Light Points */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <CamlyCoinDisplay />
+              <LightPointsDisplay />
+            </div>
+
+            {/* Coin Withdrawal */}
+            <CoinWithdrawal />
+
+            {/* Wallet Address Card */}
+            <Card className="border-blue-500/20 shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Wallet className="w-5 h-5 text-blue-500" />
+                  Địa chỉ ví Web3
+                </CardTitle>
+                <CardDescription>Nhập địa chỉ ví BSC/BNB Chain để nhận Camly Coin khi rút.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="walletAddress">Địa chỉ ví (BSC Network)</Label>
+                  <Input id="walletAddress" value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} placeholder="0x..." className="border-blue-500/20 focus:border-blue-500 font-mono text-sm" />
+                </div>
+                <Button onClick={handleSaveWalletAddress} disabled={isSavingWallet} className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600">
+                  {isSavingWallet ? (
+                    <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Đang lưu...</span>
+                  ) : (
+                    <span className="flex items-center gap-2"><Check className="w-4 h-4" />Lưu địa chỉ ví</span>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 3: Angel AI */}
+          <TabsContent value="angel" className="space-y-6">
+            {/* Response Style Card */}
+            <Card className="border-divine-gold/20 shadow-soft bg-gradient-to-b from-background to-divine-deep/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MessageCircle className="w-5 h-5 text-divine-gold" />
+                  {t("profile.responseStyle")}
+                </CardTitle>
+                <CardDescription>{t("profile.responseStyleDesc")}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <RadioGroup
+                  value={responseStyle}
+                  onValueChange={async (value) => {
+                    setResponseStyle(value);
+                    setIsSavingStyle(true);
+                    try {
+                      const { error } = await supabase.from("profiles").update({ response_style: value }).eq("user_id", user?.id);
+                      if (error) throw error;
+                      toast({ title: "✨ Đã lưu", description: `Phong cách trả lời: ${RESPONSE_STYLES.find(s => s.id === value)?.name}` });
+                    } catch (error) {
+                      console.error("Error saving response style:", error);
+                      toast({ title: "Lỗi", description: "Không thể lưu phong cách trả lời.", variant: "destructive" });
+                    } finally {
+                      setIsSavingStyle(false);
+                    }
+                  }}
+                  className="space-y-3"
+                >
+                  {RESPONSE_STYLES.map((style) => (
+                    <div
+                      key={style.id}
+                      className={`relative flex items-start space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all duration-300 ${
+                        responseStyle === style.id
+                          ? "border-divine-gold bg-divine-gold/10 shadow-md shadow-divine-gold/20"
+                          : "border-border hover:border-divine-gold/50 hover:bg-divine-gold/5"
+                      }`}
+                    >
+                      <RadioGroupItem value={style.id} id={style.id} className="mt-1 border-divine-gold text-divine-gold" />
+                      <div className="flex-1">
+                        <label htmlFor={style.id} className="block font-medium cursor-pointer">
+                          {style.name}
+                          {style.isDefault && (
+                            <span className="ml-2 text-xs bg-divine-gold/20 text-divine-gold px-2 py-0.5 rounded-full">Mặc định</span>
+                          )}
+                        </label>
+                        <p className="text-sm text-muted-foreground mt-1">{style.description}</p>
+                      </div>
+                      {isSavingStyle && responseStyle === style.id && (
+                        <Loader2 className="w-4 h-4 animate-spin text-divine-gold absolute top-4 right-4" />
+                      )}
+                    </div>
+                  ))}
+                </RadioGroup>
+              </CardContent>
+            </Card>
+
+            {/* Gratitude & Journal */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <DailyGratitude />
+              <GratitudeJournal />
+            </div>
+
+            {/* Healing Messages */}
+            <HealingMessagesPanel />
+          </TabsContent>
+
+          {/* Tab 4: Cài đặt */}
+          <TabsContent value="settings" className="space-y-6">
+            {/* Account Info Card */}
+            <Card className="border-divine-gold/20 shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Mail className="w-5 h-5 text-divine-gold" />
+                  {t("profile.accountInfo")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between py-3 border-b border-divine-gold/10">
+                  <span className="text-foreground">{t("profile.email")}</span>
+                  <span className="font-medium text-foreground">{user?.email}</span>
+                </div>
+                <div className="flex items-center justify-between py-3 border-b border-divine-gold/10">
+                  <span className="text-foreground flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    {t("profile.joinDate")}
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {user?.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : 'N/A'}
+                  </span>
+                </div>
+                <div className="pt-2">
+                  <Button variant="outline" onClick={() => setShowChangePassword(true)} className="w-full border-divine-gold/30 hover:bg-divine-gold/5">
+                    <Key className="w-4 h-4 mr-2" />
+                    {t("profile.changePassword")}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Public Profile Settings */}
+            <PublicProfileSettingsSection />
+
+            {/* PoPL Score Card */}
+            <PoPLScoreCard
+              score={poplScore.score}
+              positiveActions={poplScore.positiveActions}
+              negativeActions={poplScore.negativeActions}
+              isVerified={poplScore.isVerified}
+              badgeLevel={poplScore.badgeLevel}
+            />
+
+            {/* API Keys */}
+            <ApiKeysSection />
+
+            {/* Light Law Agreement */}
+            <Card className={`border-2 shadow-soft ${hasAgreedToLightLaw ? 'border-green-500/30 bg-green-50/30' : 'border-red-500/30 bg-red-50/30'}`}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Shield className={`w-5 h-5 ${hasAgreedToLightLaw ? 'text-green-600' : 'text-red-500'}`} />
+                  {t("profile.lightLawStatus")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {hasAgreedToLightLaw ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <Check className="w-5 h-5" />
+                      <span className="font-medium">{t("profile.lightLawAgreed")}</span>
+                    </div>
+                    {agreedAt && (
+                      <p className="text-sm text-muted-foreground">
+                        {t("profile.lightLawAgreedDate")} {new Date(agreedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    )}
+                    <p className="text-sm text-green-600 mt-2">{t("profile.lightLawAccess")}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-red-600">{t("profile.lightLawNotAgreed")}</p>
+                    <Link to="/auth" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-divine-gold text-white hover:bg-divine-light transition-colors">
+                      <Sparkles className="w-4 h-4" />
+                      {t("profile.readLightLaw")}
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Sign Out */}
+            <Button variant="outline" onClick={handleSignOut} className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700">
+              {t("profile.signOut")}
+            </Button>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Change Password Dialog */}
