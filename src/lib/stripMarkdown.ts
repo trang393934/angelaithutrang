@@ -7,6 +7,9 @@ export function stripMarkdown(text: string): string {
 
   let result = text;
 
+  // Remove Unicode replacement characters (broken multi-byte UTF-8)
+  result = result.replace(/\uFFFD/g, '');
+
   // Remove code blocks (``` ... ```)
   result = result.replace(/```[\s\S]*?```/g, (match) => {
     // Keep the content inside code blocks, just remove the backticks
