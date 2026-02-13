@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { X, ExternalLink } from "lucide-react";
+import { X } from "lucide-react";
 import { useLiXiCelebration } from "@/hooks/useLiXiCelebration";
 import camlyCoinLogo from "@/assets/camly-coin-new.png";
 import funMoneyCoinLogo from "@/assets/fun-money-coin.png";
@@ -219,82 +219,78 @@ export function UserLiXiCelebrationPopup() {
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.55 }}
-                  className="flex items-start gap-2.5"
+                  className="text-center"
                 >
-                  <span className="text-lg mt-0.5">🎁</span>
-                  <div className="text-left flex-1">
-                    <p className="leading-relaxed">
-                      Chương trình Lì xì Tết tổng giá trị
-                    </p>
-                    <p className="text-lg font-bold mt-0.5" style={{ color: "#B8860B" }}>
-                      26.000.000.000 VND,
-                    </p>
-                    <p className="text-xs mt-1" style={{ color: "#7A6530" }}>
-                      được phân phối bằng FUN Money & Camly Coin.
-                    </p>
-                  </div>
+                  <p className="leading-relaxed">
+                    🎁 Chương trình Lì xì Tết tổng giá trị
+                  </p>
+                  <p className="text-xl font-bold mt-1" style={{ color: "#B8860B" }}>
+                    26.000.000.000 VND,
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: "#7A6530" }}>
+                    được phân phối bằng FUN Money & Camly Coin.
+                  </p>
                 </motion.div>
               </div>
-            </motion.div>
 
-            {/* ── Hai nút hành động ── */}
-            <motion.div
-              initial={{ y: 25, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.65, type: "spring" }}
-              className="flex gap-3 w-full"
-            >
-              <motion.button
-                whileHover={!isDisabled ? { scale: 1.03 } : {}}
-                whileTap={!isDisabled ? { scale: 0.97 } : {}}
-                onClick={handleClaim}
-                disabled={isDisabled}
-                className="flex-1 h-12 rounded-xl text-white font-bold text-lg tracking-widest transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              {/* ── Hai nút hành động ── */}
+              <motion.div
+                initial={{ y: 25, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.65, type: "spring" }}
+                className="flex gap-3 w-full mt-4"
+              >
+                <motion.button
+                  whileHover={!isDisabled ? { scale: 1.03 } : {}}
+                  whileTap={!isDisabled ? { scale: 0.97 } : {}}
+                  onClick={handleClaim}
+                  disabled={isDisabled}
+                  className="flex-1 h-12 rounded-xl text-white font-bold text-lg tracking-widest transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{
+                    background: isDisabled
+                      ? "linear-gradient(145deg, #5a5a5a 0%, #4a4a4a 50%, #3a3a3a 100%)"
+                      : "linear-gradient(145deg, #2d7a3a 0%, #1a6b28 50%, #145a1f 100%)",
+                    border: `2px solid ${isDisabled ? '#444' : '#0f4a17'}`,
+                    boxShadow: isDisabled
+                      ? "0 4px 16px rgba(80,80,80,0.3)"
+                      : "0 4px 16px rgba(30,100,40,0.5), inset 0 1px 1px rgba(255,255,255,0.2)",
+                    textShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {alreadyClaimed ? "ĐÃ NHẬN ✓" : isClaiming ? "ĐANG XỬ LÝ..." : "CLAIM"}
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => window.open("/admin/tet-reward", "_blank")}
+                  className="flex-1 h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-1 transition-all"
+                  style={{
+                    background: "rgba(255,255,255,0.9)",
+                    border: "3px solid #b8a070",
+                    color: "#5D3A1A",
+                    fontWeight: 700,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  Thêm thông tin 👆
+                </motion.button>
+              </motion.div>
+
+              {/* Dòng thời hạn */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.75 }}
+                className="text-xs font-semibold tracking-wide text-center mt-3"
                 style={{
-                  background: isDisabled
-                    ? "linear-gradient(145deg, #5a5a5a 0%, #4a4a4a 50%, #3a3a3a 100%)"
-                    : "linear-gradient(145deg, #2d7a3a 0%, #1a6b28 50%, #145a1f 100%)",
-                  border: `2px solid ${isDisabled ? '#444' : '#0f4a17'}`,
-                  boxShadow: isDisabled
-                    ? "0 4px 16px rgba(80,80,80,0.3)"
-                    : "0 4px 16px rgba(30,100,40,0.5), inset 0 1px 1px rgba(255,255,255,0.2)",
-                  textShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                  color: "#6B3A10",
+                  textShadow: "0 0 8px rgba(255,215,0,0.5)",
                 }}
               >
-                {alreadyClaimed ? "ĐÃ NHẬN ✓" : isClaiming ? "ĐANG XỬ LÝ..." : "🧧 CLAIM"}
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => window.open("/admin/tet-reward", "_blank")}
-                className="flex-1 h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
-                style={{
-                  background: "rgba(255,255,255,0.9)",
-                  border: "3px solid #b8a070",
-                  color: "#5D3A1A",
-                  fontWeight: 700,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                }}
-              >
-                👉 Thêm thông tin
-                <ExternalLink className="w-4 h-4" style={{ color: "#8B6914" }} />
-              </motion.button>
+                Áp dụng đến 08/02/2026
+              </motion.p>
             </motion.div>
-
-            {/* Dòng thời hạn */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.75 }}
-              className="text-xs font-semibold tracking-wide"
-              style={{
-                color: "#6B3A10",
-                textShadow: "0 0 8px rgba(255,215,0,0.5)",
-              }}
-            >
-              ⏰ Áp dụng đến 08/02/2026
-            </motion.p>
           </div>
         </motion.div>
       </DialogContent>
