@@ -1,76 +1,39 @@
 
 
-## Chia trang Profile thành Tab với Sub-routes
+## Fix: Loai bo ky hieu Markdown trong cau tra loi Angel AI (giu numbered lists)
 
-### Tong quan
-Trang `/profile` se duoc chia thanh 4 tab voi cac route phu rieng biet, su dung React Router nested routes thay vi query params.
+### Van de
+Angel AI tra ve noi dung chua ky hieu Markdown nhu `**bold**`, `##`, backticks. Giao dien Chat chi render plain text nen cac ky hieu nay hien thi tho, kho doc.
 
-### Cau truc Route
+### Giai phap: 2 lop bao ve
 
-```text
-/profile          --> redirect to /profile/info
-/profile/info     --> Tab Ho so
-/profile/assets   --> Tab Tai san
-/profile/angel    --> Tab Angel AI
-/profile/settings --> Tab Cai dat
-```
+**Lop 1 - Backend: Cap nhat system prompt**
+File: `supabase/functions/angel-chat/index.ts`
 
-### Phan chia noi dung Tab
+Cap nhat FORMATTING RULES trong `BASE_SYSTEM_PROMPT`:
+- Cam triet de: `**`, `*`, `##`, `###`, backticks, `>`, `---`
+- GIU NGUYEN so thu tu dang `1. noi dung`, `2. noi dung` (numbered lists binh thuong, KHONG kem `**bold**`)
+- Khi can nhan manh, dung ngon tu manh me thay vi ky hieu
+- Viet van xuoi tu nhien, mach lac
 
-**Tab 1: `/profile/info` - Ho so**
-- Cover Photo card
-- Avatar & Username card
-- Profile Info (ten, bio)
-- Username / Handle selector
-- Soul Tags
-- Social Links Editor
+**Lop 2 - Frontend: Tao ham stripMarkdown()**
+File moi: `src/lib/stripMarkdown.ts`
 
-**Tab 2: `/profile/assets` - Tai san**
-- Activity History link
-- Transaction History section
-- Camly Coin & Light Points
-- Coin Withdrawal
-- Wallet Address card
+Ham xu ly:
+- Loai bo `**` va `*` (bold/italic markers)
+- Loai bo `##`, `###` (heading markers)
+- Loai bo backticks va code blocks
+- Loai bo `>` blockquote, `---` horizontal rule
+- GIU NGUYEN numbered lists (`1. `, `2. `, ...)
+- GIU NGUYEN noi dung van ban
 
-**Tab 3: `/profile/angel` - Angel AI**
-- Response Style (phong cach tra loi)
-- Daily Gratitude & Journal
-- Healing Messages Panel
-
-**Tab 4: `/profile/settings` - Cai dat**
-- Account Info (email, ngay tham gia, doi mat khau)
-- Public Profile Settings
-- PoPL Score Card
-- API Keys
-- Light Law Agreement
-- Sign Out button
-
-### Chi tiet ky thuat
-
-**File 1: `src/App.tsx`**
-- Thay route `/profile` thanh `/profile/*` de ho tro nested routes
-- Them 4 route con: `/profile/info`, `/profile/assets`, `/profile/angel`, `/profile/settings`
-
-**File 2: `src/pages/Profile.tsx`**
-- Import `useParams`, `useNavigate`, `Navigate` tu react-router-dom
-- Import `Tabs, TabsList, TabsTrigger, TabsContent` tu `@/components/ui/tabs`
-- Trich xuat tab hien tai tu URL path (vd: `/profile/assets` -> `assets`)
-- Neu truy cap `/profile` khong co sub-path -> redirect sang `/profile/info`
-- Su dung `Tabs` component voi `value` dong bo voi URL
-- Khi click tab -> navigate den route tuong ung (vd: `/profile/angel`)
-- TabsList se co style `sticky top-16 z-10 bg-background/95 backdrop-blur` de luon hien thi
-- Moi TabsContent boc nhom cac section tuong ung
-- Logic setup mode (onboarding profile moi) van giu nguyen o ngoai tabs
-- Cac dialog (change password, lightbox, cover editor) van giu o ngoai tabs
-
-### Uu diem
-- URL co the chia se/bookmark truc tiep den tab cu the
-- Back/Forward cua trinh duyet hoat dong dung
-- Giam cuon trang toi thieu 75%
-- Moi tab chi hien thi 4-6 section thay vi 20+
-- Khong thay doi logic hay chuc nang hien tai
+Ap dung tai:
+- `src/pages/Chat.tsx` - noi dung assistant message
+- `src/pages/AdminActivityHistory.tsx` - phan xem chi tiet answer
 
 ### Files thay doi
-1. `src/App.tsx` - Them nested routes cho `/profile/*`
-2. `src/pages/Profile.tsx` - Them Tabs layout dong bo voi URL sub-routes
+1. `supabase/functions/angel-chat/index.ts` - Cap nhat FORMATTING RULES
+2. `src/lib/stripMarkdown.ts` - Tao utility function moi
+3. `src/pages/Chat.tsx` - Ap dung stripMarkdown cho assistant content
+4. `src/pages/AdminActivityHistory.tsx` - Ap dung stripMarkdown cho view dialog
 
