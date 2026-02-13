@@ -1,32 +1,39 @@
 
-# Chinh sua thiet ke Popup Li Xi Tet theo mau
 
-## Tong quan
-Chinh sua giao dien `UserLiXiCelebrationPopup.tsx` va `Lantern.tsx` theo mau thiet ke nguoi dung gui, dong thoi thay doi dong tien thanh Camly Coin va thay chu tren den long bang hoa van trang tri.
+# Chỉnh sửa Popup Lì Xì theo đúng mẫu thiết kế
 
-## Chi tiet thay doi
+## Phân tích sự khác biệt giữa popup hiện tại và mẫu
 
-### File 1: `src/components/lixi/Lantern.tsx`
-- Xoa cac duong ke ngang (vach vang) hien tai tren than den long (dong 34-36)
-- Thay bang hoa van trang tri SVG: hoa mai nho va duong cong uon luon kieu truyen thong
-- Giu nguyen hieu ung lac (rotate animation) va kich thuoc
+Sau khi so sánh screenshot hiện tại với hình mẫu, con xác định các điểm cần sửa:
 
-### File 2: `src/components/UserLiXiCelebrationPopup.tsx`
-Tinh chinh style theo mau:
+1. **Nút CLAIM và "Thêm thông tin" hiện nằm NGOÀI khung giấy cổ** -- trong mẫu chúng nằm BÊN TRONG khung giấy cổ (parchment)
+2. **Dòng "Áp dụng đến 08/02/2026" cũng nằm ngoài** -- trong mẫu nằm bên trong khung, dưới 2 nút
+3. **Nút CLAIM có emoji 🧧** -- trong mẫu chỉ có chữ "CLAIM" không có emoji
+4. **Nút "Thêm thông tin" có 👉 và icon ExternalLink** -- trong mẫu chỉ có icon tay trỏ 👆 ở cuối, không có 👉
+5. **Nội dung phần thưởng thứ 2 căn trái** -- trong mẫu căn giữa: "Chương trình Lì xì Tết tổng giá trị" rồi số tiền lớn ở giữa
+6. **Font chữ nội dung phần thưởng** cần lớn hơn, rõ ràng hơn
 
-1. **Bao li xi do** (dong 122-138): Tang kich thuoc tu `w-16 h-16` len `w-20 h-20`, lam tron goc hon, va thay hinh tron vang o giua thanh dong Camly Coin nho (dung `camlyCoinLogo`)
+## Chi tiết thay đổi
 
-2. **Tieu de** (dong 170-182): Tang kich thuoc font tu `text-xl` len `text-2xl`, them `italic` de giong phong cach co dien trong mau
+### File: `src/components/UserLiXiCelebrationPopup.tsx`
 
-3. **So Camly Coin** (dong 196): Tang kich thuoc tu `text-lg` len `text-2xl` de noi bat hon
+1. **Di chuyển 2 nút hành động VÀO TRONG khung giấy cổ (parchment)**: Đưa block nút CLAIM + "Thêm thông tin" từ ngoài vào bên trong `motion.div` của khung giấy cổ, nằm dưới phần chi tiết phần thưởng
 
-4. **Nut CLAIM** (dong 240-258): Giu nguyen style xanh la dam, bo sung emoji 🧧 phia truoc chu "CLAIM"
+2. **Di chuyển dòng thời hạn vào trong khung giấy cổ**: Đưa "Áp dụng đến 08/02/2026" vào trong parchment, dưới 2 nút
 
-5. **Nut "Them thong tin"** (dong 260-274): Chinh border dam hon (`3px solid`), tang font weight
+3. **Nút CLAIM**: Bỏ emoji 🧧, chỉ giữ chữ "CLAIM"
 
-6. **Dong coin goc trai duoi** (CornerCoins): Giu nguyen, da dung Camly Coin
+4. **Nút "Thêm thông tin"**: Thay 👉 và icon ExternalLink bằng emoji tay trỏ 👆 ở cuối chữ. Bỏ icon ExternalLink
 
-### Phan ky thuat
-- Chi thay doi style/CSS, khong thay doi logic hook hay flow claim
-- 2 file can sua: `Lantern.tsx` va `UserLiXiCelebrationPopup.tsx`
-- Khong can them dependency moi
+5. **Phần thưởng thứ 2 (26 tỷ VND)**: Căn giữa text thay vì căn trái. Số tiền "26,000,000,000 VND" hiển thị lớn và đậm ở giữa
+
+6. **Phần thưởng thứ 1**: Giữ format "Bạn nhận được X Camly Coin, được quy đổi dựa trên Y FUN Money." nhưng gộp thành 2 dòng gọn hơn theo mẫu
+
+7. **Bỏ emoji ⏰** khỏi dòng thời hạn, giữ text đơn giản như mẫu
+
+## Phần kỹ thuật
+- Chỉ thay đổi 1 file: `UserLiXiCelebrationPopup.tsx`
+- Thay đổi thuần style/layout, không ảnh hưởng logic claim
+- Giữ nguyên chế độ preview (`?preview_lixi=true`) để kiểm tra
+- Không thêm dependency mới
+
