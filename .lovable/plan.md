@@ -1,80 +1,96 @@
 
 
-## Cai thien thong bao Li Xi Tet
+## Them tin nhan tu dong (DM) tu ANGEL AI TREASURY khi duyet thuong Li Xi Tet
 
-### Hien trang
+### Tong quan
+Khi admin duyet thuong Li Xi, ngoai thong bao va healing message, he thong se tu dong gui 1 tin nhan truc tiep (DM) tu tai khoan **ANGEL AI TREASURY** (`9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad`) den nguoi dung. Khi nguoi dung nhan vao tin nhan nay, popup Li Xi se hien thi de thao tac CLAIM.
 
-- Thong bao `tet_lixi_reward` hien thi noi dung raw tu database (vd: "Claim 86409e2e..." hoac "621,000 Camly Coin da duoc chuyen...")
-- Bam vao thong bao khong co hanh dong gi (getNotificationLink tra ve null)
-- Popup Li Xi chi hien tu dong khi load trang neu co notification chua doc va chua claim
+### Cac thay doi
 
-### Ke hoach thay doi
+**1. Database Migration - Them cot `metadata` vao `direct_messages`**
 
-**1. Hien thi noi dung thong bao dep hon**
+Them cot `metadata jsonb default null` de luu thong tin lien ket voi notification (notification_id, camly_amount, fun_amount, source).
 
-File: `src/components/layout/notifications/utils.ts`
-- Them case `tet_lixi_reward` vao `getNotificationIcon` -> icon "🧧"
-- Them case `tet_lixi_reward` vao `getNotificationActionText` -> "Angel AI Treasury da gui den ban thong bao ve Li Xi Tet"
+**2. Edge Function - Gui DM tu dong**
 
-**2. Bam vao thong bao mo popup Li Xi**
+File: `supabase/functions/distribute-fun-camly-reward/index.ts`
 
-File: `src/components/layout/NotificationDropdown.tsx`
-- Trong `handleNotificationClick`, neu notification type la `tet_lixi_reward`, thay vi navigate, se trigger mo popup Li Xi
+Sau khi insert notification `tet_lixi_reward` (dong 218-229), them logic:
+- Lay `notification_id` tu ket qua insert notification (can sua thanh `.select("id").single()`)
+- Insert vao `direct_messages` voi:
+  - `sender_id`: **ANGEL AI TREASURY** user_id (hardcode `9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad`)
+  - `receiver_id`: user_id nguoi nhan
+  - `content`: noi dung tuong tu thong bao
+  - `message_type`: `"tet_lixi"`
+  - `metadata`: `{ notification_id, camly_amount, fun_amount, source: "tet_lixi_reward" }`
 
-File: `src/hooks/useLiXiCelebration.ts`
-- Export them ham `openPopupForNotification(notificationId)` de cho phep mo popup tu ben ngoai (tu NotificationDropdown)
-- Sua logic: khi mo popup cho notification da claimed, van hien thi popup nhung voi nut CLAIM bi vo hieu hoa (disable) va hien thi "DA NHAN"
+**3. Component moi - LiXiMessageCard**
 
-**3. Tich hop vao Notification system**
+File moi: `src/components/messages/LiXiMessageCard.tsx`
 
-File: `src/components/layout/NotificationDropdown.tsx`
-- Import va su dung `useLiXiCelebration` hook
-- Khi click vao notification `tet_lixi_reward`:
-  - Dong popover thong bao
-  - Goi `openPopupForNotification` de mo popup Li Xi
-  - Popup se tu kiem tra trang thai claim va hien thi nut phu hop
+Card hien thi thong tin Li Xi voi giao dien do-vang (phong cach Tet):
+- Icon bao li xi 🧧
+- So Camly Coin va FUN Money
+- Deadline: 08/02/2026
+- Nut "Xem Li Xi" -> goi callback `onOpenLiXi(notificationId)`
 
-**4. Cap nhat Popup hien thi trang thai da claim**
+**4. Cap nhat MessageBubble**
 
-File: `src/components/UserLiXiCelebrationPopup.tsx`
-- Them trang thai `alreadyClaimed` 
-- Khi `alreadyClaimed = true`: nut CLAIM hien thi "DA NHAN" va bi disable (mau xam), nut dong van hoat dong binh thuong
+File: `src/components/messages/MessageBubble.tsx`
+
+- Them prop `onOpenLiXi?: (notificationId: string) => void`
+- Them interface field `metadata?: any` cho message
+- Khi `message_type === "tet_lixi"`, render `LiXiMessageCard` thay vi text bubble thuong
+- Truyen `metadata.notification_id` va `onOpenLiXi` xuong component
+
+**5. Tich hop vao trang Messages**
+
+File: `src/pages/Messages.tsx`
+
+- Import `useLiXiCelebration` hook va `UserLiXiCelebrationPopup`
+- Truyen `openPopupForNotification` xuong MessageBubble lam prop `onOpenLiXi`
+- Render `<UserLiXiCelebrationPopup />` trong trang Messages
 
 ### Chi tiet ky thuat
 
-**useLiXiCelebration.ts** - Sua hook:
-- Them state `alreadyClaimed: boolean`
-- Them ham `openPopupForNotification(notifId: string)`:
-  - Query notification metadata de lay camlyAmount, funAmount
-  - Query lixi_claims de kiem tra da claim chua
-  - Set `alreadyClaimed` tuong ung
-  - Set `showPopup = true`
-
-**utils.ts** - Them 2 case:
-```
-// getNotificationIcon
-case "tet_lixi_reward": return "🧧";
-
-// getNotificationActionText  
-case "tet_lixi_reward": return "Angel AI Treasury da gui den ban thong bao ve Li Xi Tet";
+**Migration SQL:**
+```text
+ALTER TABLE public.direct_messages ADD COLUMN metadata jsonb DEFAULT null;
 ```
 
-**NotificationDropdown.tsx** - Them xu ly click:
-```
-if (notif.type === "tet_lixi_reward") {
-  setOpen(false);
-  openPopupForNotification(notif.id);
-  return;
-}
+**Edge Function (distribute-fun-camly-reward):**
+Sua doan insert notification thanh `.select("id").single()` de lay notification_id, roi them:
+```text
+const TREASURY_USER_ID = "9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad";
+
+// Sau khi insert notification thanh cong
+const notifId = notifData?.id;
+await supabaseAdmin.from("direct_messages").insert({
+  sender_id: TREASURY_USER_ID,
+  receiver_id: user_id,
+  content: `🧧 Angel AI Treasury da gui den ban thong bao ve Li Xi Tet!\n\n💰 ${camlyAmount.toLocaleString("vi-VN")} Camly Coin\n📊 Dua tren ${fun_amount.toLocaleString("vi-VN")} FUN Money\n\n⏰ Ap dung den 08/02/2026`,
+  message_type: "tet_lixi",
+  metadata: { notification_id: notifId, camly_amount: camlyAmount, fun_amount, source: "tet_lixi_reward" }
+});
 ```
 
-**UserLiXiCelebrationPopup.tsx** - Them hien thi khi da claim:
-- Nut CLAIM -> "DA NHAN" (disabled, mau xam) khi `alreadyClaimed`
+**LiXiMessageCard.tsx:**
+- Gradient do-vang, icon 🧧, hien thi so Camly/FUN
+- Nut "Xem Li Xi" goi `onOpenLiXi(notificationId)`
 
-### Files thay doi
-1. `src/components/layout/notifications/utils.ts` - Icon va text cho tet_lixi_reward
-2. `src/hooks/useLiXiCelebration.ts` - Them openPopupForNotification va alreadyClaimed
-3. `src/components/layout/NotificationDropdown.tsx` - Xu ly click mo popup
-4. `src/components/UserLiXiCelebrationPopup.tsx` - Hien thi trang thai da claim
-5. `src/pages/Notifications.tsx` - Xu ly click tren trang notifications (tuong tu NotificationDropdown)
+**MessageBubble.tsx:**
+- Them case `message_type === "tet_lixi"` -> render `LiXiMessageCard`
+- Truyen metadata.notification_id va onOpenLiXi callback
+
+**Messages.tsx:**
+- Import va su dung `useLiXiCelebration`
+- Render `UserLiXiCelebrationPopup`
+- Truyen `openPopupForNotification` xuong cac `MessageBubble`
+
+### Danh sach file thay doi
+1. Migration SQL - Them cot `metadata` vao `direct_messages`
+2. `supabase/functions/distribute-fun-camly-reward/index.ts` - Gui DM tu ANGEL AI TREASURY
+3. `src/components/messages/LiXiMessageCard.tsx` (file moi) - Card hien thi Li Xi trong DM
+4. `src/components/messages/MessageBubble.tsx` - Them case render LiXiMessageCard
+5. `src/pages/Messages.tsx` - Tich hop popup Li Xi
 
