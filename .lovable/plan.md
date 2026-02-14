@@ -1,36 +1,43 @@
 
-# Bật nhạc Valentine mặc định + Sidebar trong suốt
+# Cải thiện tự động phát nhạc Valentine + Thanh chỉnh âm lượng
 
-## Tổng quan
-1. Nhạc Valentine tự động phát khi người dùng vào trang (mặc định bật). Người dùng nhấn nút để tắt khi không muốn nghe.
-2. Sidebar trang chủ có nền trong suốt hơn để nhìn thấy video nền Valentine phía sau.
+## Vấn đề hiện tại
+1. **Nhạc không tự phát**: Trình duyệt chặn autoplay khi chưa có tương tác. Hệ thống đã có fallback (listener click/touchstart) nhưng listener chỉ đăng ký 1 lần trong useEffect init -- nếu audio object chưa sẵn sàng (chưa load xong) thì lần click đầu tiên vẫn không phát được.
+2. **Nút tăng/giảm âm lượng**: Đã có nút +/- nhưng chưa có thanh trượt (slider) trực quan.
 
 ## Các thay đổi
 
-### 1. `src/components/ValentineMusicPlayer.tsx` - Mặc định bật nhạc
+### 1. `src/components/ValentineMusicPlayer.tsx` - Cải thiện autoplay + Slider âm lượng
 
-Thay đổi logic khởi tạo state `isPlaying`:
-- Hiện tại: mặc định `false`, chỉ `true` khi localStorage đã lưu `"true"`
-- Mới: mặc định `true` nếu localStorage chưa có giá trị (lần đầu vào). Chỉ `false` khi người dùng đã chủ động tắt (localStorage = `"false"`).
+**A. Autoplay đáng tin cậy hơn:**
+- Thêm sự kiện `canplaythrough` trên audio element -- chỉ gọi `.play()` sau khi audio đã load đủ dữ liệu.
+- Listener fallback (click/touchstart) sẽ kiểm tra `canplaythrough` trước khi play, và nếu chưa sẵn sàng thì đợi event rồi play.
+- Giữ listener cho đến khi thực sự play thành công (không remove quá sớm).
+
+**B. Thanh trượt âm lượng (Slider):**
+- Thay thế nút +/- bằng thanh trượt dọc (vertical slider) sử dụng component `@radix-ui/react-slider` đã có sẵn trong dự án.
+- Hiển thị phần trăm âm lượng bên cạnh thanh trượt.
+- Giữ nguyên giao diện gradient hồng-đỏ phong cách Valentine.
+
+## Chi tiết kỹ thuật
+
+### Autoplay flow cải thiện:
 
 ```text
-// Cũ:
-localStorage.getItem("valentine_music_playing") === "true"
-
-// Mới:
-localStorage.getItem("valentine_music_playing") !== "false"
+Component mount
+  -> Tạo Audio object, preload="auto"
+  -> Lắng nghe "canplaythrough"
+  -> Khi sẵn sàng: gọi .play()
+     -> Nếu bị chặn: đăng ký listener toàn cục
+        -> Khi user click/touch bất kỳ đâu -> play()
+        -> Chỉ gỡ listener sau khi play thành công
 ```
 
-Điều này có nghĩa: lần đầu truy cập -> nhạc tự bật. Nếu người dùng tắt -> localStorage lưu "false" -> lần sau vào sẽ không tự phát.
+### UI Volume Slider:
+- Sử dụng Radix Slider component (đã cài sẵn `@radix-ui/react-slider`)
+- Orientation: vertical, chiều cao khoảng 80px
+- Range: 0-100, ánh xạ sang volume 0-1
+- Màu track: gradient pink/red phù hợp theme Valentine
 
-### 2. `src/components/MainSidebar.tsx` - Nền trong suốt
-
-Thay đổi className của component `Sidebar`:
-- Hiện tại: `bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50` (nền trắng/amber đục)
-- Mới: `bg-gradient-to-b from-amber-50/40 via-white/30 to-amber-50/30 backdrop-blur-sm` (nền trong suốt hơn, có hiệu ứng blur nhẹ để vẫn đọc được chữ)
-
-Tương tự cho border-bottom của header, hover states, và footer border -- giảm opacity để hài hòa.
-
-## Tóm tắt
-- 2 file sửa: `ValentineMusicPlayer.tsx` (mặc định bật nhạc) + `MainSidebar.tsx` (nền trong suốt)
-- Không ảnh hưởng logic hoạt động
+## File thay đổi
+- `src/components/ValentineMusicPlayer.tsx` -- cập nhật logic autoplay và thay UI volume
