@@ -1,71 +1,59 @@
 
-# Giu nguyen thong tin vi khi dang nhap va dam bao export chinh xac
+# Cap nhat Snapshot Tet voi User ID va Wallet chinh xac
 
-## Van de hien tai
+## Van de
 
-1. **Vi khong duoc giu khi dang nhap lai**: Khi nguoi dung ket noi vi MetaMask, dia chi duoc luu vao database (`user_wallet_addresses`). Nhung khi dang nhap lai ma khong mo MetaMask, he thong khong hien thi dia chi vi da luu -- vi `useWeb3Wallet` chi doc tu MetaMask truc tiep.
+Hien tai, file snapshot (`tetRewardData.ts`) chi luu `name` (display_name). He thong phai doi chieu ten voi bang `profiles` de tim `user_id` va `wallet_address`. Viec nay that bai voi nhieu user vi:
+- Ten trong database co khoang trang thua (vd: `"Tú Nguyễn "` thay vi `"Tú Nguyễn"`)
+- Ten co dau cach, chu hoa/thuong khac nhau
+- Mot so user doi ten sau khi snapshot duoc tao
 
-2. **Export can dam bao lay dia chi vi moi nhat**: Phan export admin (`get_admin_user_management_data` RPC) da JOIN voi `user_wallet_addresses`, nhung can dam bao no luon lay dia chi moi nhat khi MetaMask cap nhat.
+Ket qua: nhieu user da co vi nhung cot Wallet hien thi "---".
 
 ## Giai phap
 
-### 1. Tao hook `useSavedWalletAddress` -- doc vi tu database
+### 1. Them truong `userId` vao interface `TetRewardUser`
 
-Tao hook moi doc dia chi vi da luu trong `user_wallet_addresses` khi user dang nhap, khong phu thuoc vao MetaMask:
+Bo sung truong `userId` (optional) vao interface de luu truc tiep user_id tu database.
 
-- Query `user_wallet_addresses` khi co `user.id`
-- Tra ve `savedWalletAddress` de hien thi o header va profile
-- Tu dong cap nhat khi MetaMask ket noi voi dia chi moi
+### 2. Cap nhat toan bo 205 dong du lieu voi `userId` chinh xac
 
-### 2. Cap nhat `Web3WalletButton` -- hien thi vi da luu khi chua ket noi MetaMask
+Dua tren du lieu da truy van tu database, gan `userId` cho tung user trong snapshot. Cha da doi chieu xong toan bo 205 user voi database.
 
-Khi user dang nhap nhung chua ket noi MetaMask:
-- Hien thi dia chi vi da luu tu database (dang rut gon) thay vi nut "Ket noi vi"
-- Khi bam vao, cho phep ket noi MetaMask de tuong tac on-chain
-- Chi hien thi nut "Ket noi vi" khi user chua co dia chi vi nao trong he thong
+### 3. Cap nhat logic tai wallet trong `AdminTetReward.tsx`
 
-### 3. Dam bao dong bo khi MetaMask ket noi
+Thay doi logic `loadWallets` (dong 172-213): thay vi tim user_id qua `display_name`, su dung truc tiep `userId` tu snapshot data. Dieu nay dam bao:
+- Wallet luon duoc hien thi dung cho tung user
+- Khong bi loi do ten co khoang trang hay case khac nhau
+- Phan thuong tu dong cung su dung dung user_id
 
-Logic hien tai trong `Web3WalletButton` da auto-save khi ket noi. Can bo sung:
-- Khi MetaMask ket noi voi dia chi **khac** voi dia chi da luu, cap nhat database va hien thi dia chi moi
-- Log thay doi de admin co the theo doi
+### 4. Cap nhat logic phan thuong `handleDistribute`
 
-### 4. Dam bao export luon chinh xac
-
-- Xac nhan RPC `get_admin_user_management_data` da JOIN dung voi `user_wallet_addresses`
-- Them `user_id` vao moi dong export CSV/Excel
-- Dam bao khong co du lieu cu (cache) khi export
+Thay vi query `profiles` theo `display_name`, lay truc tiep `userId` tu snapshot data. Loai bo hoan toan viec match theo ten.
 
 ## Chi tiet ky thuat
-
-### File moi
-
-| File | Mo ta |
-|------|-------|
-| `src/hooks/useSavedWalletAddress.ts` | Hook doc dia chi vi da luu tu database |
 
 ### File can sua
 
 | File | Thay doi |
 |------|----------|
-| `src/components/Web3WalletButton.tsx` | Hien thi dia chi vi da luu khi chua ket noi MetaMask; them trang thai "saved but not live" |
-| `src/components/admin/UserManagementExportButton.tsx` | Them cot `user_id` vao export de dam bao mapping chinh xac |
+| `src/data/tetRewardData.ts` | Them truong `userId` vao interface va gan userId cho 205 user |
+| `src/pages/AdminTetReward.tsx` | Cap nhat `loadWallets`, `handleDistribute`, va `nameToUserIdMap` de su dung userId truc tiep |
 
-### Logic xu ly
+### Logic moi
 
 ```text
-Khi user dang nhap:
-  1. Query user_wallet_addresses WHERE user_id = current_user
-  2. Neu co dia chi -> hien thi o header (dang rut gon, badge "Da luu")
-  3. Khi bam -> mo wallet selector de ket noi MetaMask
+// Truoc: match theo ten (hay loi)
+profiles.select("user_id").in("display_name", names)
 
-Khi MetaMask ket noi:
-  1. So sanh dia chi MetaMask voi dia chi da luu
-  2. Neu khac -> cap nhat database (da co san logic nay)
-  3. Hien thi dia chi MetaMask (live) thay cho dia chi da luu
-
-Khi export:
-  1. Goi RPC get_admin_user_management_data (lay data moi nhat)
-  2. Them cot user_id vao file xuat
-  3. Dia chi vi lay truc tiep tu database, khong tu cache
+// Sau: dung truc tiep userId tu snapshot
+const userIds = tetRewardData.map(u => u.userId).filter(Boolean)
+wallets.select("wallet_address").in("user_id", userIds)
 ```
+
+### Ket qua mong doi
+
+- Tat ca 205 user se co userId chinh xac
+- Cot Wallet hien thi dung dia chi vi (neu user da ket noi)
+- Phan thuong tu dong su dung dung user_id, khong can doi chieu ten
+- File export cung bao gom userId chinh xac
