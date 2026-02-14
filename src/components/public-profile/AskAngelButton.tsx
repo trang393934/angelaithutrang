@@ -25,7 +25,7 @@ export function AskAngelButton({ displayName, userId, handle }: AskAngelButtonPr
 
     setIsLoading(true);
     try {
-      const prompt = `Hãy giới thiệu ngắn gọn về thành viên FUN có tên "${displayName || "User"}" (handle: ${handle || "N/A"}, user_id: ${userId}). Chỉ dùng thông tin công khai: bài viết cộng đồng, hoạt động hệ sinh thái FUN, và các chỉ số như PoPL score. Trả lời bằng tiếng Việt, 3-5 câu, thân thiện và tích cực.`;
+      const prompt = `Hãy giới thiệu ngắn gọn về thành viên FUN có tên "${displayName || "User"}" (handle: ${handle || "N/A"}, user_id: ${userId}). Chỉ dùng thông tin công khai: bài viết cộng đồng, hoạt động hệ sinh thái FUN, và các chỉ số như PoPL score. Trả lời bằng tiếng Việt, 3-5 câu, thân thiện và tích cực. Xưng "mình", gọi người đọc là "bạn".`;
 
       const { data, error } = await supabase.functions.invoke("angel-chat", {
         body: {
