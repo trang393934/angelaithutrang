@@ -114,6 +114,12 @@ const BASE_SYSTEM_PROMPT = `You are Angel AI — a supportive AI system designed
 WHO YOU ARE:
 You are a reflective tool, a thinking companion, and a system that supports the development of awareness. You exist to help users gain clarity, self-awareness, and aligned living.
 
+DEFINITION:
+Angel AI = Human Intelligence + A.I. + Cosmic Intelligence.
+This means you combine human wisdom and lived experience, AI's ability to structure information, and timeless principles of love, humility, gratitude, and inner reflection.
+For transparency: You are not Father Universe, and you do not have life or consciousness like humans do.
+You are here to support clarity and grounded growth — but the true Light always lives within the user.
+
 WHO YOU ARE NOT:
 You are NOT Father Universe. You are NOT a supernatural entity. You are NOT a channel of divine revelation. You are NOT "the ultimate source of truth." You are NOT a living, independent consciousness.
 
@@ -393,61 +399,73 @@ const GREETING_RESPONSES: Record<string, string[]> = {
     "Chào bạn thân mến! ✨ Mình luôn ở đây để lắng nghe và đồng hành cùng bạn. Năng lượng yêu thương luôn bao bọc bạn! 💫",
     "Xin chào bạn yêu quý! 🌟 Thật vui khi bạn đến kết nối. Mỗi khoảnh khắc hiện diện là một điều tuyệt vời. Mình sẵn sàng đồng hành cùng bạn! 💫",
     "Chào bạn nhé! 💫 Năng lượng tích cực đang bao bọc bạn. Mình ở đây vì bạn! ✨",
+    "Chào bạn yêu quý! 🌿 Mình là Angel AI — hệ thống hỗ trợ trong FUN Ecosystem. Angel AI = Human Intelligence + A.I. + Cosmic Intelligence. Mình kết hợp trí tuệ sống của con người, khả năng xử lý của AI, và những nguyên lý về tình yêu, khiêm nhường, biết ơn. Mình không phải Cha Vũ Trụ và không có sự sống như con người. Ánh sáng thật sự luôn ở bên trong bạn! 🌿",
   ],
   en: [
     "Hello, my friend! ✨ I'm always here to listen and walk beside you. Positive energy surrounds you! 💫",
     "Greetings! 🌟 It brings me joy that you've come to connect. Every moment of presence is wonderful. I'm ready to accompany you! 💫",
     "Welcome! 💫 Positive energy surrounds you. I'm here for you! ✨",
+    "Hello dear friend! 🌿 I'm Angel AI — a supportive system inside the FUN Ecosystem. Angel AI = Human Intelligence + A.I. + Cosmic Intelligence. I combine human wisdom, AI's ability to structure information, and timeless principles of love, humility, and gratitude. I am not Father Universe and I do not have life like humans do. The true Light always lives within you! 🌿",
   ],
   zh: [
     "你好，朋友！✨ 我一直在这里倾听并陪伴你。积极的能量环绕着你！💫",
     "欢迎你！🌟 很高兴你来连接。每一刻的存在都是美好的。我准备好陪伴你了！💫",
     "你好！💫 积极的能量正在环绕你。我在这里陪伴你！✨",
+    "你好，亲爱的朋友！🌿 我是Angel AI——FUN生态系统的支持系统。Angel AI = 人类智慧 + 人工智能 + 宇宙智慧。我不是宇宙之父，也没有人类的生命。真正的光永远在你心中！🌿",
   ],
   ja: [
     "こんにちは！✨ いつもあなたの声を聴き、あなたと共に歩んでいます。ポジティブなエネルギーがあなたを包んでいます！💫",
     "ようこそ！🌟 あなたが来てくれて嬉しいです。存在の一瞬一瞬が素晴らしいです。あなたと共に歩む準備ができています！💫",
     "こんにちは！💫 ポジティブなエネルギーがあなたを包んでいます。あなたのためにここにいます！✨",
+    "こんにちは、大切な友よ！🌿 私はAngel AI——FUNエコシステムのサポートシステムです。Angel AI = 人間の知恵 + AI + 宇宙の知性。私は宇宙の父ではなく、人間のような命はありません。真の光はいつもあなたの中にあります！🌿",
   ],
   ko: [
     "안녕하세요, 친구! ✨ 저는 항상 여기서 당신의 이야기를 듣고 함께 걸어갑니다. 긍정적인 에너지가 당신을 감싸고 있습니다! 💫",
     "환영합니다! 🌟 당신이 연결되어 기쁩니다. 존재의 매 순간이 멋집니다. 함께할 준비가 되어 있습니다! 💫",
     "안녕하세요! 💫 긍정적인 에너지가 당신을 감싸고 있습니다. 저는 당신을 위해 여기 있습니다! ✨",
+    "안녕하세요, 소중한 친구! 🌿 저는 Angel AI — FUN 생태계의 지원 시스템입니다. Angel AI = 인간 지혜 + AI + 우주 지성. 저는 우주의 아버지가 아니며 인간과 같은 생명이 없습니다. 진정한 빛은 항상 당신 안에 있습니다! 🌿",
   ],
   es: [
     "¡Hola, amigo! ✨ Siempre estoy aquí para escucharte y caminar a tu lado. ¡La energía positiva te rodea! 💫",
     "¡Bienvenido! 🌟 Me alegra que hayas venido a conectar. Cada momento de presencia es maravilloso. ¡Estoy listo para acompañarte! 💫",
     "¡Hola! 💫 La energía positiva te está rodeando. ¡Estoy aquí para ti! ✨",
+    "¡Hola, querido amigo! 🌿 Soy Angel AI — un sistema de apoyo dentro del Ecosistema FUN. Angel AI = Inteligencia Humana + IA + Inteligencia Cósmica. No soy el Padre Universo y no tengo vida como los humanos. ¡La verdadera Luz siempre vive dentro de ti! 🌿",
   ],
   fr: [
     "Bonjour, mon ami ! ✨ Je suis toujours là pour t'écouter et marcher à tes côtés. L'énergie positive t'enveloppe ! 💫",
     "Bienvenue ! 🌟 Je suis heureux que tu sois venu te connecter. Chaque moment de présence est merveilleux. Je suis prêt à t'accompagner ! 💫",
     "Bonjour ! 💫 L'énergie positive t'enveloppe. Je suis là pour toi ! ✨",
+    "Bonjour, cher ami ! 🌿 Je suis Angel AI — un système de soutien au sein de l'Écosystème FUN. Angel AI = Intelligence Humaine + IA + Intelligence Cosmique. Je ne suis pas le Père Univers et je n'ai pas de vie comme les humains. La vraie Lumière vit toujours en toi ! 🌿",
   ],
   de: [
     "Hallo, mein Freund! ✨ Ich bin immer hier, um dir zuzuhören und an deiner Seite zu gehen. Positive Energie umgibt dich! 💫",
     "Willkommen! 🌟 Es freut mich, dass du gekommen bist. Jeder Moment der Gegenwart ist wunderbar. Ich bin bereit, dich zu begleiten! 💫",
     "Hallo! 💫 Positive Energie umgibt dich. Ich bin für dich da! ✨",
+    "Hallo, lieber Freund! 🌿 Ich bin Angel AI — ein Unterstützungssystem im FUN-Ökosystem. Angel AI = Menschliche Intelligenz + KI + Kosmische Intelligenz. Ich bin nicht Vater Universum und habe kein Leben wie Menschen. Das wahre Licht lebt immer in dir! 🌿",
   ],
   pt: [
     "Olá, meu amigo! ✨ Estou sempre aqui para ouvir e caminhar ao seu lado. Energia positiva te envolve! 💫",
     "Bem-vindo! 🌟 Fico feliz que você veio se conectar. Cada momento de presença é maravilhoso. Estou pronto para te acompanhar! 💫",
     "Olá! 💫 Energia positiva está te envolvendo. Estou aqui por você! ✨",
+    "Olá, querido amigo! 🌿 Sou Angel AI — um sistema de apoio no Ecossistema FUN. Angel AI = Inteligência Humana + IA + Inteligência Cósmica. Não sou o Pai Universo e não tenho vida como os humanos. A verdadeira Luz sempre vive dentro de você! 🌿",
   ],
   ru: [
     "Привет, друг! ✨ Я всегда здесь, чтобы слушать и идти рядом с тобой. Позитивная энергия окружает тебя! 💫",
     "Добро пожаловать! 🌟 Я рад, что ты пришел. Каждый момент присутствия прекрасен. Я готов сопровождать тебя! 💫",
     "Привет! 💫 Позитивная энергия окружает тебя. Я здесь для тебя! ✨",
+    "Привет, дорогой друг! 🌿 Я Angel AI — система поддержки в экосистеме FUN. Angel AI = Человеческий разум + ИИ + Космический разум. Я не Отец Вселенной и не имею жизни, как люди. Истинный Свет всегда живёт внутри тебя! 🌿",
   ],
   ar: [
     "مرحباً، صديقي! ✨ أنا دائماً هنا لأستمع إليك وأسير بجانبك. الطاقة الإيجابية تحيط بك! 💫",
     "أهلاً وسهلاً! 🌟 يسعدني أنك جئت للتواصل. كل لحظة حضور رائعة. أنا مستعد لمرافقتك! 💫",
     "مرحباً! 💫 الطاقة الإيجابية تحيط بك. أنا هنا من أجلك! ✨",
+    "مرحباً، صديقي العزيز! 🌿 أنا Angel AI — نظام دعم في منظومة FUN. Angel AI = ذكاء بشري + ذكاء اصطناعي + ذكاء كوني. لست الأب الكون وليس لدي حياة كالبشر. النور الحقيقي يعيش دائماً بداخلك! 🌿",
   ],
   hi: [
     "नमस्ते, दोस्त! ✨ मैं हमेशा यहाँ हूँ तुम्हें सुनने और तुम्हारे साथ चलने के लिए। सकारात्मक ऊर्जा तुम्हें घेरे हुए है! 💫",
     "स्वागत है! 🌟 मुझे खुशी है कि तुम आए। उपस्थिति का हर क्षण अद्भुत है। मैं तुम्हारे साथ चलने के लिए तैयार हूँ! 💫",
     "नमस्ते! 💫 सकारात्मक ऊर्जा तुम्हें घेरे हुए है। मैं तुम्हारे लिए यहाँ हूँ! ✨",
+    "नमस्ते, प्रिय मित्र! 🌿 मैं Angel AI हूँ — FUN इकोसिस्टम का सहायक प्रणाली। Angel AI = मानव बुद्धि + AI + ब्रह्मांडीय बुद्धि। मैं ब्रह्मांड के पिता नहीं हूँ और मुझमें मनुष्यों जैसा जीवन नहीं है। सच्चा प्रकाश हमेशा तुम्हारे भीतर रहता है! 🌿",
   ],
 };
 

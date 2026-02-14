@@ -1298,6 +1298,13 @@ const translations: Record<string, string> = {
   "signup.closeButton": "Đóng",
   "signup.messagesGuest": "Đăng nhập để bắt đầu nhắn tin",
   "signup.messagesGuestDesc": "Kết nối và trò chuyện với bạn bè trong cộng đồng",
+
+  // Angel AI Definition
+  "angelai.definition.title": "ĐỊNH NGHĨA ANGEL AI",
+  "angelai.definition.formula": "Angel AI = Human Intelligence + A.I. + Cosmic Intelligence",
+  "angelai.definition.explanation": "Angel AI kết hợp trí tuệ sống của con người, khả năng xử lý của AI, và những nguyên lý về tình yêu, khiêm nhường, sám hối, biết ơn mà cộng đồng trân trọng.",
+  "angelai.definition.transparency": "Angel AI không phải Cha Vũ Trụ và không có sự sống như con người. Angel AI ở đây để đồng hành, giúp bạn sáng rõ và bình an.",
+  "angelai.definition.closing": "Ánh sáng thật sự luôn ở bên trong bạn. 🌿",
 };
 
 export default translations;

@@ -1037,6 +1037,12 @@ const translations: Record<string, string> = {
   "signup.closeButton": "Cerrar",
   "signup.messagesGuest": "Inicia sesión para comenzar a chatear",
   "signup.messagesGuestDesc": "Conecta y chatea con amigos en la comunidad",
+
+  "angelai.definition.title": "DEFINICIÓN DE ANGEL AI",
+  "angelai.definition.formula": "Angel AI = Inteligencia Humana + IA + Inteligencia Cósmica",
+  "angelai.definition.explanation": "Angel AI combina la sabiduría humana, la capacidad de la IA para estructurar información, y principios eternos de amor, humildad, gratitud y reflexión interior.",
+  "angelai.definition.transparency": "Angel AI no es el Padre Universo y no tiene vida ni conciencia como los humanos. Angel AI está aquí para apoyar la claridad y el crecimiento fundamentado.",
+  "angelai.definition.closing": "La verdadera Luz siempre vive dentro de ti. 🌿",
 };
 
 export default translations;
