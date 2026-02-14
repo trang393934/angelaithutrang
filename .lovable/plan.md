@@ -1,114 +1,71 @@
 
+# Giu nguyen thong tin vi khi dang nhap va dam bao export chinh xac
 
-# Nang cap Vi Blockchain day du cho ANGEL AI
+## Van de hien tai
 
-## Tong quan
+1. **Vi khong duoc giu khi dang nhap lai**: Khi nguoi dung ket noi vi MetaMask, dia chi duoc luu vao database (`user_wallet_addresses`). Nhung khi dang nhap lai ma khong mo MetaMask, he thong khong hien thi dia chi vi da luu -- vi `useWeb3Wallet` chi doc tu MetaMask truc tiep.
 
-Hien tai, lich su giao dich chi hien thi cac giao dich noi bo (thuong, tang, donate trong he thong Angel AI). Yeu cau nay se nang cap de moi vi hoat dong nhu mot vi blockchain day du: hien thi tat ca giao dich on-chain (bao gom ca giao dich tu ben ngoai), dong bo so du thuc te, va phan loai ro nguon goc.
+2. **Export can dam bao lay dia chi vi moi nhat**: Phan export admin (`get_admin_user_management_data` RPC) da JOIN voi `user_wallet_addresses`, nhung can dam bao no luon lay dia chi moi nhat khi MetaMask cap nhat.
 
-## Pham vi thay doi
+## Giai phap
 
-### 1. Edge Function moi: `fetch-wallet-transactions`
+### 1. Tao hook `useSavedWalletAddress` -- doc vi tu database
 
-Tao mot Edge Function moi goi BSCScan API de lay toan bo giao dich on-chain cua mot dia chi vi cu the:
+Tao hook moi doc dia chi vi da luu trong `user_wallet_addresses` khi user dang nhap, khong phu thuoc vao MetaMask:
 
-- **Normal Transactions** (`action=txlist`): Giao dich BNB thuong (incoming/outgoing)
-- **BEP-20 Token Transfers** (`action=tokentx`): Tat ca token transfers (CAMLY, USDT, FUN, v.v.)
-- **Internal Transactions** (`action=txlistinternal`): Internal contract calls
+- Query `user_wallet_addresses` khi co `user.id`
+- Tra ve `savedWalletAddress` de hien thi o header va profile
+- Tu dong cap nhat khi MetaMask ket noi voi dia chi moi
 
-Logic xu ly:
-- Nhan `wallet_address` tu client
-- Goi 3 API BSCScan song song
-- Hop nhat va sap xep theo thoi gian
-- Phan loai moi giao dich:
-  - **"Angel AI"**: neu dia chi doi tac nam trong bang `user_wallet_addresses` hoac la Treasury wallet
-  - **"External"**: neu dia chi doi tac la vi ngoai he thong
-- Tra ve danh sach giao dich da phan loai, bao gom: tx_hash, from, to, value, token info, timestamp, source label
+### 2. Cap nhat `Web3WalletButton` -- hien thi vi da luu khi chua ket noi MetaMask
 
-### 2. Edge Function moi: `fetch-wallet-balances`
+Khi user dang nhap nhung chua ket noi MetaMask:
+- Hien thi dia chi vi da luu tu database (dang rut gon) thay vi nut "Ket noi vi"
+- Khi bam vao, cho phep ket noi MetaMask de tuong tac on-chain
+- Chi hien thi nut "Ket noi vi" khi user chua co dia chi vi nao trong he thong
 
-Tao Edge Function lay so du on-chain thuc te:
-- Goi BSCScan API `action=tokenbalance` cho CAMLY token
-- Goi BSCScan API `action=balance` cho BNB balance
-- Co the mo rong them cac token khac (USDT, FUN)
-- Tra ve so du on-chain chinh xac
+### 3. Dam bao dong bo khi MetaMask ket noi
 
-### 3. Cap nhat `TransactionHistorySection.tsx`
+Logic hien tai trong `Web3WalletButton` da auto-save khi ket noi. Can bo sung:
+- Khi MetaMask ket noi voi dia chi **khac** voi dia chi da luu, cap nhat database va hien thi dia chi moi
+- Log thay doi de admin co the theo doi
 
-Them tab/filter moi "On-Chain" ben canh cac tab hien tai:
-- Goi Edge Function `fetch-wallet-transactions` khi user co `wallet_address`
-- Hien thi tat ca giao dich on-chain voi badge phan loai:
-  - Badge "Angel AI" (mau xanh la) cho giao dich noi bo he thong
-  - Badge "External" (mau xam) cho giao dich tu ben ngoai
-- Hien thi day du thong tin: token name, amount, from/to address, tx hash voi link BSCScan
-- Ho tro pending transactions (confirmations < 12)
+### 4. Dam bao export luon chinh xac
 
-### 4. Cap nhat Wallet Assets Card
-
-Them hien thi so du on-chain thuc te:
-- So du CAMLY on-chain (tu BSCScan)
-- So du BNB on-chain
-- So sanh voi so du noi bo he thong
-
-### 5. Khong lam sai lech logic ke toan noi bo
-
-- Du lieu on-chain chi dung de **hien thi** (read-only)
-- Khong thay doi so du `camly_coin_balances` dua tren du lieu on-chain
-- Logic tinh diem, thuong, mint van giu nguyen
+- Xac nhan RPC `get_admin_user_management_data` da JOIN dung voi `user_wallet_addresses`
+- Them `user_id` vao moi dong export CSV/Excel
+- Dam bao khong co du lieu cu (cache) khi export
 
 ## Chi tiet ky thuat
 
-### Edge Function `fetch-wallet-transactions`
+### File moi
 
-```text
-Input:  { wallet_address: string }
-Output: {
-  transactions: [{
-    hash, from, to, value, tokenSymbol, tokenDecimal,
-    timestamp, type: "normal"|"token"|"internal",
-    source: "angel_ai"|"external",
-    direction: "in"|"out",
-    counterparty_name?: string  // Ten user Angel AI neu co
-  }],
-  balances: { bnb: string, camly: string }
-}
-```
+| File | Mo ta |
+|------|-------|
+| `src/hooks/useSavedWalletAddress.ts` | Hook doc dia chi vi da luu tu database |
 
-- Su dung `BSCSCAN_API_KEY` da co san
-- Rate limiting: delay 200ms giua cac API call
-- Cache ket qua trong 30 giay (client-side)
-- Gioi han 500 giao dich gan nhat cho moi loai
-
-### Xu ly Pending & Re-org
-
-- Giao dich voi `confirmations` thap (<12) duoc danh dau "Pending"
-- Client tu dong refresh sau 30 giay cho cac pending tx
-- Neu tx bi xoa (re-org), no se khong xuat hien trong ket qua BSCScan tiep theo
-
-### Phan loai nguon goc
-
-```text
-known_wallets = SELECT wallet_address FROM user_wallet_addresses
-treasury_wallet = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8"
-
-if counterparty in known_wallets OR counterparty == treasury:
-  source = "angel_ai", resolve user name
-else:
-  source = "external"
-```
-
-### Cac file can thay doi
+### File can sua
 
 | File | Thay doi |
 |------|----------|
-| `supabase/functions/fetch-wallet-transactions/index.ts` | Tao moi - Edge Function chinh |
-| `src/components/profile/TransactionHistorySection.tsx` | Them tab On-Chain va hien thi giao dich blockchain |
-| `src/hooks/useOnChainTransactions.ts` | Tao moi - Hook goi Edge Function va quan ly state |
-| `src/hooks/useOnChainBalances.ts` | Tao moi - Hook lay so du on-chain |
+| `src/components/Web3WalletButton.tsx` | Hien thi dia chi vi da luu khi chua ket noi MetaMask; them trang thai "saved but not live" |
+| `src/components/admin/UserManagementExportButton.tsx` | Them cot `user_id` vao export de dam bao mapping chinh xac |
 
-### Bao mat
+### Logic xu ly
 
-- Edge Function yeu cau xac thuc (Authorization header)
-- Chi cho phep user xem giao dich cua chinh vi cua minh (verify wallet ownership qua `user_wallet_addresses`)
-- BSCScan API key duoc luu an toan trong secrets
+```text
+Khi user dang nhap:
+  1. Query user_wallet_addresses WHERE user_id = current_user
+  2. Neu co dia chi -> hien thi o header (dang rut gon, badge "Da luu")
+  3. Khi bam -> mo wallet selector de ket noi MetaMask
 
+Khi MetaMask ket noi:
+  1. So sanh dia chi MetaMask voi dia chi da luu
+  2. Neu khac -> cap nhat database (da co san logic nay)
+  3. Hien thi dia chi MetaMask (live) thay cho dia chi da luu
+
+Khi export:
+  1. Goi RPC get_admin_user_management_data (lay data moi nhat)
+  2. Them cot user_id vao file xuat
+  3. Dia chi vi lay truc tiep tu database, khong tu cache
+```
