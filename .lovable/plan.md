@@ -1,67 +1,59 @@
 
+# Fix Lịch Sử Giao Dịch — Thống Kê Chính Xác Theo Chế Độ Xem
 
-# Cập Nhật Lịch Sử Giao Dịch — Chỉ Hiển Thị Giao Dịch Của Người Dùng
+## Van De
 
-## Vấn Đề Hiện Tại
+Trang "Lich Su Giao Dich" (/activity-history) dang tron lan so lieu ca nhan vao che do xem "Tat ca":
+- "Tong gui: 19" va "Tong nhan: 4" la so giao dich CÁ NHÂN cua nguoi dung dang dang nhap, nhung hien thi trong tab "Tat ca" (toan he thong)
+- Dung ra, khi o che do "Tat ca", cac so lieu phai phan anh TOAN BO giao dich cua he sinh thai
 
-Component `GiftTransactionHistory` trên trang Community đang hiển thị **tất cả** giao dịch của **mọi người dùng** (fetch toàn bộ `coin_gifts` và `project_donations` không lọc theo user). Người dùng muốn chỉ thấy giao dịch **liên quan đến chính họ**.
+## Giai Phap
 
-## Giải Pháp
+### File thay doi: `src/pages/ActivityHistory.tsx`
 
-Cập nhật `GiftTransactionHistory` để:
-1. Thêm `useAuth` để lấy user hiện tại
-2. Lọc `coin_gifts` theo `sender_id = user.id` HOẶC `receiver_id = user.id`
-3. Lọc `project_donations` theo `donor_id = user.id`
-4. Thêm hiển thị hướng giao dịch (Gửi/Nhận) cho rõ ràng
-5. Nếu chưa đăng nhập, hiển thị thông báo yêu cầu đăng nhập
+**Sua logic tinh stats (dong 501-513):**
 
-## Chi Tiết Kỹ Thuật
-
-### File thay đổi: `src/components/community/GiftTransactionHistory.tsx`
-
-**1. Thêm import và auth:**
-- Import `useAuth` từ `@/hooks/useAuth`
-- Lấy `user` từ `useAuth()`
-
-**2. Cập nhật `fetchTransactions`:**
-
-Thay vì fetch toàn bộ:
+Hien tai:
 ```
-// Hiện tại (SAI - lấy tất cả)
-.from("coin_gifts").select(...).order(...).limit(100)
+sentCount = user ? data.filter(tx => tx.sender_id === user.id).length : ...
+receivedCount = user ? data.filter(tx => tx.receiver_id === user.id).length : ...
 ```
 
-Sửa thành 2 query riêng cho gifts (gửi + nhận):
+Sua thanh phan biet theo `viewMode`:
+- **Che do "Tat ca"**: 
+  - "Tong gui" = tong so gift transactions (type === "gift") = 218
+  - "Tong nhan" = tong so donations (type === "donation") = 61
+  - Doi nhan "Tong nhan" thanh "Donate" cho ro nghia
+- **Che do "Ca nhan"**:
+  - "Tong gui" = giao dich ma user la sender
+  - "Tong nhan" = giao dich ma user la receiver
+
+Cu the:
+```typescript
+const sentCount = viewMode === "personal" && user
+  ? data.filter(tx => tx.sender_id === user.id).length
+  : data.filter(tx => tx.type === "gift").length;
+
+const receivedCount = viewMode === "personal" && user
+  ? data.filter(tx => tx.receiver_id === user.id).length
+  : data.filter(tx => tx.type === "donation").length;
 ```
-// Query gifts user GỬI
-.from("coin_gifts").select(...)
-.eq("sender_id", user.id)
 
-// Query gifts user NHẬN
-.from("coin_gifts").select(...)
-.eq("receiver_id", user.id)
+**Cap nhat labels cho stat cards (dong 614-621):**
 
-// Query donations của user
-.from("project_donations").select(...)
-.eq("donor_id", user.id)
-```
+Khi o che do "Tat ca":
+- "Tong gui" doi thanh "Tang thuong" (so luong gift)
+- "Tong nhan" doi thanh "Donate" (so luong donation)
 
-**3. Cập nhật TransactionRow:**
-- Thêm prop `currentUserId` để xác định hướng giao dịch
-- Hiển thị icon mũi tên lên (gửi) hoặc mũi tên xuống (nhận) tùy theo hướng
-- Với gift: nếu sender = user thì hiển thị "Bạn -> [receiver]", ngược lại "[sender] -> Bạn"
+Khi o che do "Ca nhan":
+- Giu nguyen "Tong gui" va "Tong nhan"
 
-**4. Cập nhật header và stats:**
-- Đổi tiêu đề thành "Giao Dịch Của Bạn" thay vì "Lịch Sử Thưởng & Tặng" chung
-- Stats tách rõ: Đã gửi vs Đã nhận vs Đã donate
+### Tom tat
 
-**5. Trường hợp chưa đăng nhập:**
-- Hiển thị thông báo "Đăng nhập để xem lịch sử giao dịch"
-
-### Tổng kết
-| File | Thay đổi |
+| Thay doi | Chi tiet |
 |---|---|
-| `src/components/community/GiftTransactionHistory.tsx` | Thêm useAuth, lọc theo user ID, cập nhật UI hướng giao dịch |
+| Stats logic | Phan biet viewMode khi tinh sentCount/receivedCount |
+| Stat card labels | Hien thi dung nhan theo che do xem |
+| File | `src/pages/ActivityHistory.tsx` — chi 1 file |
 
-Chỉ thay đổi 1 file, không ảnh hưởng đến các component khác.
-
+Sau khi fix, tab "Tat ca" se hien thi: Tang thuong: 218, Donate: 61 thay vi so ca nhan 19/4.
