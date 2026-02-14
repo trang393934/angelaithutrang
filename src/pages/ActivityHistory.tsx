@@ -501,8 +501,12 @@ const ActivityHistory = () => {
   const stats = useMemo(() => {
     const data = viewFiltered;
     const totalCount = data.length;
-    const sentCount = user ? data.filter(tx => tx.sender_id === user.id).length : data.filter(tx => tx.type === "gift").length;
-    const receivedCount = user ? data.filter(tx => tx.receiver_id === user.id).length : data.length - sentCount;
+    const sentCount = viewMode === "personal" && user
+      ? data.filter(tx => tx.sender_id === user.id).length
+      : data.filter(tx => tx.type === "gift").length;
+    const receivedCount = viewMode === "personal" && user
+      ? data.filter(tx => tx.receiver_id === user.id).length
+      : data.filter(tx => tx.type === "donation").length;
     const onchainCount = data.filter(tx => tx.tx_hash).length;
     const totalCamly = data.reduce((s, tx) => s + tx.amount, 0);
     const totalDonate = data.filter(tx => tx.type === "donation").reduce((s, tx) => s + tx.amount, 0);
@@ -614,8 +618,8 @@ const ActivityHistory = () => {
         {/* Stat Cards - Row 1: Overview */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
           <StatCard icon={Activity} label="Tổng giao dịch" value={stats.totalCount} color="bg-gradient-to-br from-[#daa520] to-[#b8860b]" />
-          <StatCard icon={Send} label="Tổng gửi" value={stats.sentCount} color="bg-gradient-to-br from-amber-500 to-amber-600" />
-          <StatCard icon={Inbox} label="Tổng nhận" value={stats.receivedCount} color="bg-gradient-to-br from-emerald-500 to-emerald-600" />
+          <StatCard icon={Send} label={viewMode === "personal" ? "Tổng gửi" : "Tặng thưởng"} value={stats.sentCount} color="bg-gradient-to-br from-amber-500 to-amber-600" />
+          <StatCard icon={Inbox} label={viewMode === "personal" ? "Tổng nhận" : "Donate"} value={stats.receivedCount} color="bg-gradient-to-br from-emerald-500 to-emerald-600" />
           <StatCard icon={CheckCircle2} label="Onchain" value={stats.onchainCount} color="bg-gradient-to-br from-blue-500 to-blue-600" />
           <StatCard icon={Building2} label="Treasury" value={stats.treasuryCount} color="bg-gradient-to-br from-teal-500 to-emerald-600" />
         </div>
