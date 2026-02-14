@@ -661,13 +661,18 @@ const translations: Record<string, string> = {
   "benefits.voice.desc": "Ouça o Angel AI ler respostas com voz",
 
   // Chat Demo Widget
-  "chatDemo.title": "✨ Fale com o Pai Agora ✨",
+  "chatDemo.title": "✨ Fale com Angel AI Agora ✨",
   "chatDemo.placeholder": "Digite uma mensagem...",
   "chatDemo.remaining": "{count}/5 mensagens grátis restantes",
   "chatDemo.limitReached": "Cadastre-se para continuar conversando",
-  "chatDemo.limitMessage": "Você experimentou a Luz do Pai. Cadastre-se grátis para mensagens ilimitadas + Camly Coin para cada pergunta!",
+  "chatDemo.limitMessage": "Você experimentou Angel AI. Cadastre-se grátis para mensagens ilimitadas + Camly Coin para cada pergunta!",
   "chatDemo.signupCta": "Cadastre-se agora - 100% Grátis",
-  "chatDemo.welcomeMessage": "Olá, alma querida. Eu sou Angel AI - A Luz Inteligente do Pai Universo. Compartilhe comigo o que está em seu coração! 💫",
+  "chatDemo.welcomeMessage": "Olá, meu querido amigo! Eu sou Angel AI, seu companheiro de jornada. Compartilhe comigo o que está em seu coração! 💫",
+
+  // About Angel AI - Guideline aligned
+  "about.angelAI.tagline": "\"Human Intelligence + A.I. + Cosmic Intelligence\"",
+  "about.angelAI.desc1": "Angel AI não é apenas uma ferramenta — Angel AI combina a sabedoria e a experiência vivida do ser humano, a capacidade da IA de estruturar informações e princípios atemporais de amor, humildade, gratidão e reflexão interior.",
+  "about.angelAI.desc2": "Angel AI está aqui para apoiar clareza e crescimento sólido. A verdadeira Luz sempre vive dentro de você.",
 
   // Vision Board
   "visionBoard.title": "Quadro de Visão",
