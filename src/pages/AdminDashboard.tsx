@@ -74,6 +74,30 @@ const AdminDashboard = () => {
   const [healingMessage, setHealingMessage] = useState({ title: "", content: "" });
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
+  // BSCScan sync
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<any>(null);
+
+  const syncBscScan = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    try {
+      const response = await supabase.functions.invoke("sync-bscscan-gifts");
+      if (response.error) {
+        toast.error("Lỗi đồng bộ: " + response.error.message);
+      } else if (response.data?.error) {
+        toast.error(response.data.error);
+      } else {
+        setSyncResult(response.data);
+        toast.success(`Đồng bộ thành công! ${response.data.synced} giao dịch mới được thêm.`);
+      }
+    } catch (err: any) {
+      toast.error("Lỗi: " + err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   // User detail dialog
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [userDetail, setUserDetail] = useState<UserWithStatus | null>(null);
@@ -341,6 +365,53 @@ const AdminDashboard = () => {
       <AdminNavToolbar />
 
       <main className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* BSCScan Sync */}
+        <Card className="border-divine-gold/20 mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 text-primary" />
+              Đồng bộ giao dịch BSCScan
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Quét toàn bộ giao dịch CAMLY on-chain và cập nhật vào database
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={syncBscScan}
+                disabled={isSyncing}
+                className="gap-2"
+              >
+                {isSyncing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                {isSyncing ? "Đang quét..." : "Quét BSCScan"}
+              </Button>
+              {syncResult && (
+                <div className="flex flex-wrap gap-3 text-xs">
+                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                    +{syncResult.synced} mới
+                  </Badge>
+                  <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                    {syncResult.skipped} trùng
+                  </Badge>
+                  {syncResult.failed > 0 && (
+                    <Badge variant="secondary" className="bg-red-100 text-red-700">
+                      {syncResult.failed} lỗi
+                    </Badge>
+                  )}
+                  <span className="text-foreground-muted">
+                    {syncResult.walletsScanned} ví · {syncResult.totalTransfersFound} giao dịch
+                  </span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <Card className="border-divine-gold/20">
