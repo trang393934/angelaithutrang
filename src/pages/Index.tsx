@@ -17,7 +17,7 @@ import Leaderboard from "@/components/Leaderboard";
 import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
 import { MasterCharterBanner } from "@/components/MasterCharterBanner";
 import { BackToTopButton } from "@/components/BackToTopButton";
-import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
+
 
 const Index = () => {
   const { user } = useAuth();
@@ -51,8 +51,6 @@ const Index = () => {
           <div ref={headerRef}>
             <Header />
           </div>
-          
-          <ValentineVideoBackground headerRef={headerRef} />
           
           {/* Daily Login Reward - shows popup when user logs in */}
           {user && <DailyLoginReward />}

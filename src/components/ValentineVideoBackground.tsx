@@ -1,4 +1,4 @@
-import { useState, useCallback, RefObject } from "react";
+import { useState, useCallback } from "react";
 
 const VALENTINE_VIDEOS = [
   "/videos/valentine-1.mp4",
@@ -6,33 +6,65 @@ const VALENTINE_VIDEOS = [
   "/videos/valentine-3.mp4",
 ];
 
-interface Props {
-  headerRef: RefObject<HTMLDivElement>;
-}
+export const ValentineVideoBackground = () => {
+  const [leftIndex, setLeftIndex] = useState(0);
+  const [rightIndex, setRightIndex] = useState(1);
 
-export const ValentineVideoBackground = ({ headerRef }: Props) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const handleEnded = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % VALENTINE_VIDEOS.length);
+  const handleLeftEnded = useCallback(() => {
+    setLeftIndex((prev) => (prev + 1) % VALENTINE_VIDEOS.length);
   }, []);
 
+  const handleRightEnded = useCallback(() => {
+    setRightIndex((prev) => (prev + 1) % VALENTINE_VIDEOS.length);
+  }, []);
+
+  const videoStyle: React.CSSProperties = {
+    position: "fixed",
+    top: 0,
+    bottom: 0,
+    width: "38%",
+    height: "100vh",
+    objectFit: "cover",
+    pointerEvents: "none",
+    zIndex: 1,
+    filter: "saturate(1.3) contrast(1.1)",
+  };
+
   return (
-    <video
-      key={currentIndex}
-      autoPlay
-      muted
-      playsInline
-      onEnded={handleEnded}
-      className="fixed left-0 right-0 bottom-0 w-full object-contain object-top z-[1] pointer-events-none transition-opacity duration-1000"
-      style={{
-        opacity: 1,
-        filter: "saturate(1.3) contrast(1.1)",
-        top: "var(--index-header-h, 3.5rem)",
-        height: "calc(100vh - var(--index-header-h, 3.5rem))",
-      }}
-    >
-      <source src={VALENTINE_VIDEOS[currentIndex]} type="video/mp4" />
-    </video>
+    <>
+      {/* Left video */}
+      <video
+        key={`left-${leftIndex}`}
+        autoPlay
+        muted
+        playsInline
+        onEnded={handleLeftEnded}
+        style={{
+          ...videoStyle,
+          left: 0,
+          maskImage: "linear-gradient(to right, black 50%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to right, black 50%, transparent 100%)",
+        }}
+      >
+        <source src={VALENTINE_VIDEOS[leftIndex]} type="video/mp4" />
+      </video>
+
+      {/* Right video */}
+      <video
+        key={`right-${rightIndex}`}
+        autoPlay
+        muted
+        playsInline
+        onEnded={handleRightEnded}
+        style={{
+          ...videoStyle,
+          right: 0,
+          maskImage: "linear-gradient(to left, black 50%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to left, black 50%, transparent 100%)",
+        }}
+      >
+        <source src={VALENTINE_VIDEOS[rightIndex]} type="video/mp4" />
+      </video>
+    </>
   );
 };

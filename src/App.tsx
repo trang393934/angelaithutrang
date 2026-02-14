@@ -13,6 +13,7 @@ import { UserLiXiCelebrationPopup } from "@/components/UserLiXiCelebrationPopup"
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { BackToTopButton } from "@/components/BackToTopButton";
 import { ValentineMusicPlayer } from "@/components/ValentineMusicPlayer";
+import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
 import Index from "./pages/Index";
 import Chat from "./pages/Chat";
 import About from "./pages/About";
@@ -78,7 +79,8 @@ const App = () => (
           <BrowserRouter>
             <ScrollToTop />
             <BackToTopButton />
-            <ValentineMusicPlayer />
+             <ValentineVideoBackground />
+             <ValentineMusicPlayer />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/chat" element={<Chat />} />
