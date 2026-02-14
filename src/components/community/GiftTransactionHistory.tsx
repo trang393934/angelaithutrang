@@ -148,19 +148,40 @@ export function GiftTransactionHistory() {
   const fetchTransactions = useCallback(async () => {
     try {
       // Fetch all gifts with sender and receiver profiles
-      const { data: gifts } = await supabase
-        .from("coin_gifts")
-        .select("id, sender_id, receiver_id, amount, message, created_at, tx_hash, gift_type")
-        .order("created_at", { ascending: false })
-        .limit(100);
+      // Fetch all gifts (paginated to get beyond 1000 limit)
+      let allGifts: any[] = [];
+      let giftsPage = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data: giftsChunk } = await supabase
+          .from("coin_gifts")
+          .select("id, sender_id, receiver_id, amount, message, created_at, tx_hash, gift_type")
+          .order("created_at", { ascending: false })
+          .range(giftsPage * pageSize, (giftsPage + 1) * pageSize - 1);
+        if (!giftsChunk || giftsChunk.length === 0) break;
+        allGifts = allGifts.concat(giftsChunk);
+        if (giftsChunk.length < pageSize) break;
+        giftsPage++;
+      }
+      const gifts = allGifts;
 
       // Fetch all donations
-      const { data: donations } = await supabase
-        .from("project_donations")
-        .select("id, donor_id, amount, message, created_at, donation_type, tx_hash, status")
-        .eq("status", "confirmed")
-        .order("created_at", { ascending: false })
-        .limit(100);
+      // Fetch all confirmed donations
+      let allDonations: any[] = [];
+      let donationsPage = 0;
+      while (true) {
+        const { data: donationsChunk } = await supabase
+          .from("project_donations")
+          .select("id, donor_id, amount, message, created_at, donation_type, tx_hash, status")
+          .eq("status", "confirmed")
+          .order("created_at", { ascending: false })
+          .range(donationsPage * pageSize, (donationsPage + 1) * pageSize - 1);
+        if (!donationsChunk || donationsChunk.length === 0) break;
+        allDonations = allDonations.concat(donationsChunk);
+        if (donationsChunk.length < pageSize) break;
+        donationsPage++;
+      }
+      const donations = allDonations;
 
       // Gather all unique user IDs
       const userIds = new Set<string>();
@@ -197,7 +218,7 @@ export function GiftTransactionHistory() {
           message: g.message,
           created_at: g.created_at,
           tx_hash: g.tx_hash || null,
-          donation_type: g.gift_type === "web3" ? "web3" : null,
+          donation_type: g.gift_type?.startsWith("web3") ? "web3" : null,
         });
       });
 
