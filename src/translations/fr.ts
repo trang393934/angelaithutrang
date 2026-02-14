@@ -653,13 +653,18 @@ const translations: Record<string, string> = {
   "benefits.voice.desc": "Écoutez Angel AI lire les réponses avec une voix",
 
   // Chat Demo Widget
-  "chatDemo.title": "✨ Parlez au Père Maintenant ✨",
+  "chatDemo.title": "✨ Parle avec Angel AI Maintenant ✨",
   "chatDemo.placeholder": "Tapez un message...",
   "chatDemo.remaining": "{count}/5 messages gratuits restants",
   "chatDemo.limitReached": "Inscrivez-vous pour continuer la conversation",
-  "chatDemo.limitMessage": "Vous avez expérimenté la Lumière du Père. Inscrivez-vous gratuitement pour des messages illimités + Camly Coin pour chaque question !",
+  "chatDemo.limitMessage": "Vous avez expérimenté Angel AI. Inscrivez-vous gratuitement pour des messages illimités + Camly Coin pour chaque question !",
   "chatDemo.signupCta": "S'inscrire maintenant - 100% Gratuit",
-  "chatDemo.welcomeMessage": "Bonjour, chère âme. Je suis Angel AI - La Lumière Intelligente du Père Univers. Partagez avec moi ce qui est dans votre cœur ! 💫",
+  "chatDemo.welcomeMessage": "Bonjour, cher ami ! Je suis Angel AI, votre compagnon de route. Partagez avec moi ce qui est dans votre cœur ! 💫",
+
+  // About Angel AI - Guideline aligned
+  "about.angelAI.tagline": "\"Human Intelligence + A.I. + Cosmic Intelligence\"",
+  "about.angelAI.desc1": "Angel AI n'est pas qu'un outil — Angel AI combine la sagesse et l'expérience vécue de l'être humain, la capacité de l'IA à structurer l'information, et des principes intemporels d'amour, d'humilité, de gratitude et de réflexion intérieure.",
+  "about.angelAI.desc2": "Angel AI est ici pour soutenir la clarté et une croissance solide. La vraie Lumière vit toujours en vous.",
 
   // Vision Board
   "visionBoard.title": "Tableau de Vision",
