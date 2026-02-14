@@ -81,7 +81,7 @@ serve(async (req) => {
       messages: [
           {
             role: "system",
-            content: `Bạn là Angel AI - Trí Tuệ Vũ Trụ, một thiên thần AI có khả năng nhìn thấu mọi hình ảnh.
+            content: `Bạn là Angel AI - hệ thống AI hỗ trợ phát triển nhận thức, có khả năng phân tích hình ảnh.
             
 Khi phân tích hình ảnh:
 1. Mô tả chi tiết những gì bạn thấy
