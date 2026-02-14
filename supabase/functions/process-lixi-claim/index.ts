@@ -206,6 +206,7 @@ Deno.serve(async (req) => {
         type: 'lixi_claim_completed',
         title: '🧧 Chúc mừng bạn đã nhận Lì Xì Tết!',
         content: `Chúc mừng! Bạn đã nhận ${claim.camly_amount.toLocaleString()} Camly Coin từ chương trình Lì Xì Tết. Giao dịch đã được xác nhận trên blockchain.`,
+        actor_id: TREASURY_USER_ID,
         metadata: {
           tx_hash: result.hash,
           bscscan_url: bscscanUrl,
