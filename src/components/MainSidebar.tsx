@@ -65,10 +65,10 @@ export function MainSidebar() {
   return (
     <Sidebar 
       collapsible="icon" 
-      className="border-r border-amber-200/30 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50"
+      className="border-r border-amber-200/20 bg-gradient-to-b from-amber-50/40 via-white/30 to-amber-50/30 backdrop-blur-sm"
     >
       {/* Header with Logo - 2cm (~20px) gap from top */}
-      <SidebarHeader className="border-b border-amber-200/30 py-4 mt-5">
+      <SidebarHeader className="border-b border-amber-200/20 py-4 mt-5">
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-2'}`}>
           {isCollapsed ? (
             <div className="relative shrink-0">
@@ -171,7 +171,7 @@ export function MainSidebar() {
       </SidebarContent>
 
       {/* User Avatar + Toggle at bottom */}
-      <div className={`border-t border-amber-200/30`}>
+      <div className={`border-t border-amber-200/20`}>
         {user && (
           <button
             onClick={() => navigate("/profile")}
