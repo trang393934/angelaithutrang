@@ -1,42 +1,32 @@
 
 
-# Sửa lỗi Popup Lì xì hiện liên tục trên tài khoản Preview
+# Thay logo coin ở popup Lì xì và thêm hiệu ứng xoay
 
-## Nguyên nhân
+## Tổng quan
+Thay thế 2 logo coin ở góc dưới popup Lì xì bằng logo mới và thêm hiệu ứng xoay liên tục.
 
-URL đang có tham số `?preview_lixi=true` -- đây là chế độ xem trước dùng để kiểm tra giao diện popup Lì xì. Mỗi lần tải trang với tham số này, popup sẽ tự động mở lại vì state `previewOpen` luôn được khởi tạo là `true`.
+## Chi tiết thay đổi
 
-## Ảnh hưởng các tài khoản khác
+### 1. Copy 2 logo mới vào project
+- `user-uploads://13-2.png` -> `src/assets/camly-coin-3d.png` (Camly Coin logo mới)
+- `user-uploads://12.png` -> `src/assets/fun-money-3d.png` (FUN Money logo mới)
 
-Tất cả thông báo Lì xì trong hệ thống đều đã được đọc và đã claim xong. Do đó **KHÔNG có tài khoản nào khác bị hiện popup** khi truy cập bình thường (không có `?preview_lixi=true` trong URL).
+### 2. Sửa file `src/components/UserLiXiCelebrationPopup.tsx`
 
-## Giải pháp
-
-### File: `src/components/UserLiXiCelebrationPopup.tsx`
-
-1. **Khi đóng popup preview, tự xóa tham số URL**: Sau khi người dùng nhấn đóng hoặc Claim trong chế độ preview, tự động xóa `?preview_lixi=true` khỏi URL bằng `window.history.replaceState` để không bị hiện lại khi refresh trang.
-
-2. **Giới hạn preview chỉ dành cho admin** (tùy chọn): Thêm kiểm tra quyền admin trước khi cho phép chế độ preview hoạt động.
-
-### Chi tiết kỹ thuật
-
-Sửa hàm `setPreviewOpen` tại dòng 242-244:
-
-```text
-// Hiện tại:
-const [previewOpen, setPreviewOpen] = useState(isPreview);
-
-// Sau khi sửa: wrap setPreviewOpen để xóa URL param khi đóng
-const [previewOpen, setPreviewOpenRaw] = useState(isPreview);
-const setPreviewOpen = (open: boolean) => {
-  setPreviewOpenRaw(open);
-  if (!open && isPreview) {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("preview_lixi");
-    window.history.replaceState({}, "", url.toString());
-  }
-};
+**Import thêm logo FUN Money mới:**
+```typescript
+import camlyCoin3D from "@/assets/camly-coin-3d.png";
+import funMoney3D from "@/assets/fun-money-3d.png";
 ```
 
-Thay đổi nhỏ, không ảnh hưởng logic chính, chỉ sửa 1 file duy nhất.
+**Góc trái dưới (dòng 574-599):** Thay 3 hình `camlyCoinNew` chồng nhau bằng 1 logo Camly Coin mới (`camly-coin-3d.png`) với hiệu ứng xoay 360 độ liên tục bằng framer-motion `animate={{ rotate: 360 }}`.
 
+**Góc phải dưới (dòng 601-614):** Thay hình `camlyCoinNew` bằng logo FUN Money mới (`fun-money-3d.png`) với hiệu ứng xoay tương tự.
+
+Cả 2 coin sẽ có:
+- Xoay liên tục 360 độ (duration ~4-5s)
+- Hiệu ứng lên xuống nhẹ (y bobbing)
+- Drop-shadow vàng
+- Kích thước ~56-60px
+
+Chỉ sửa 1 file, không ảnh hưởng logic.
