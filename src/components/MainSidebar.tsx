@@ -68,18 +68,19 @@ export function MainSidebar() {
       className="border-r border-amber-200/30 !z-20"
     >
       {/* Header with Logo - 2cm (~20px) gap from top */}
-      <SidebarHeader className="border-b border-amber-200/20 py-4 mt-5">
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-2'}`}>
+      <SidebarHeader className="border-b border-amber-200/20 py-3 mt-5">
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-2'}`}>
           {isCollapsed ? (
-            <div className="relative shrink-0">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-b from-yellow-200 via-amber-300 to-yellow-400 p-0.5 shadow-[0_0_15px_rgba(255,215,0,0.4)]">
-                <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                  <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 object-contain" />
-                </div>
-              </div>
-            </div>
+            <SidebarTrigger className="hover:bg-amber-100/70 rounded-md p-1.5">
+              <PanelLeft className="w-5 h-5 text-primary" />
+            </SidebarTrigger>
           ) : (
-            <span className="text-brand-golden text-2xl">Angel AI</span>
+            <>
+              <span className="text-brand-golden text-2xl">Angel AI</span>
+              <SidebarTrigger className="hover:bg-amber-100/70 rounded-md p-1.5">
+                <PanelLeft className="w-5 h-5 text-primary" />
+              </SidebarTrigger>
+            </>
           )}
         </div>
       </SidebarHeader>
@@ -190,9 +191,7 @@ export function MainSidebar() {
             )}
           </button>
         )}
-        <div className={`p-3 ${isCollapsed ? 'flex justify-center' : ''}`}>
-          <SidebarTrigger className="w-full justify-center hover:bg-amber-100/70" />
-        </div>
+        
       </div>
 
       {/* Gift Dialog */}
