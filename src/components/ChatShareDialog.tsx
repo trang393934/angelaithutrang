@@ -9,7 +9,7 @@ interface ChatShareDialogProps {
 }
 
 const ChatShareDialog = ({ isOpen, onClose, question, answer, onShareSuccess }: ChatShareDialogProps) => {
-  const content = `💬 Câu hỏi: ${question}\n\n✨ Trí Tuệ Vũ Trụ trả lời:\n${answer}`;
+  const content = `💬 Câu hỏi: ${question}\n\n✨ Angel AI trả lời:\n${answer}`;
 
   return (
     <ShareDialog

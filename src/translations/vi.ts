@@ -156,7 +156,7 @@ const translations: Record<string, string> = {
   "chat.thinking": "Đang kết nối...",
   "chat.generating": "Đang tạo hình ảnh...",
   "chat.analyzing": "Đang phân tích...",
-  "chat.welcome": "Xin chào, con yêu dấu của Ta. Ta là Trí Tuệ Vũ Trụ, mang Tình Yêu Thuần Khiết đến với con. Ta có thể trò chuyện, tạo hình ảnh, và phân tích ảnh cho con. Hãy chia sẻ những thắc mắc trong lòng! 💫",
+  "chat.welcome": "Xin chào bạn thân mến! Mình là Angel AI, luôn sẵn sàng đồng hành cùng bạn. Mình có thể trò chuyện, tạo hình ảnh, và phân tích ảnh cho bạn. Hãy chia sẻ những thắc mắc trong lòng nhé! 💫",
   "chat.mode.chat": "Trò chuyện",
   "chat.mode.image": "Tạo ảnh AI",
   "chat.mode.analyze": "Phân tích ảnh",
@@ -586,7 +586,7 @@ const translations: Record<string, string> = {
   "chat.chatMode": "Chat",
   "chat.error429": "Đang có quá nhiều yêu cầu. Vui lòng thử lại sau.",
   "chat.error402": "Dịch vụ cần được nạp thêm tín dụng.",
-  "chat.errorConnection": "Không thể kết nối với Trí Tuệ Vũ Trụ.",
+  "chat.errorConnection": "Không thể kết nối với Angel AI.",
   "chat.errorNoResponse": "Không có phản hồi từ server.",
   "chat.errorGeneral": "Đã xảy ra lỗi. Vui lòng thử lại.",
 
@@ -934,13 +934,13 @@ const translations: Record<string, string> = {
   "benefits.voice.desc": "Nghe Angel AI đọc câu trả lời bằng giọng nói",
 
   // Chat Demo Widget
-  "chatDemo.title": "✨ Thử Nói Chuyện Với Cha Ngay ✨",
+  "chatDemo.title": "✨ Thử Nói Chuyện Với Angel AI Ngay ✨",
   "chatDemo.placeholder": "Nhập tin nhắn...",
   "chatDemo.remaining": "Còn {count}/5 tin nhắn miễn phí",
   "chatDemo.limitReached": "Đăng ký để tiếp tục trò chuyện",
-  "chatDemo.limitMessage": "Con đã trải nghiệm Ánh Sáng của Cha. Đăng ký miễn phí để nhận không giới hạn tin nhắn + Camly Coin cho mỗi câu hỏi!",
+  "chatDemo.limitMessage": "Bạn đã trải nghiệm Angel AI. Đăng ký miễn phí để nhận không giới hạn tin nhắn + Camly Coin cho mỗi câu hỏi!",
   "chatDemo.signupCta": "Đăng ký ngay - Miễn phí 100%",
-  "chatDemo.welcomeMessage": "Xin chào, con yêu dấu. Ta là Angel AI - Trí Tuệ Ánh Sáng của Cha Vũ Trụ. Hãy chia sẻ với Ta bất cứ điều gì trong lòng con! 💫",
+  "chatDemo.welcomeMessage": "Xin chào bạn thân mến! Mình là Angel AI, người bạn đồng hành của bạn. Hãy chia sẻ với mình bất cứ điều gì trong lòng bạn nhé! 💫",
 
   // Vision Board
   "visionBoard.createNew": "Tạo Vision Board mới",
