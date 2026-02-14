@@ -168,41 +168,42 @@ const AdminTetReward = () => {
     loadDistributionStatus();
   }, []);
 
-  // Fetch wallet addresses for ALL snapshot users
+  // Fetch wallet addresses for ALL snapshot users using userId directly
   useEffect(() => {
     const loadWallets = async () => {
       try {
-        // Get all display_names from snapshot data
-        const allNames = tetRewardData.map(u => u.name);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, display_name")
-          .in("display_name", allNames);
-
-        if (!profiles || profiles.length === 0) return;
-
+        // Build nameToUserId map directly from snapshot data
         const nameToId = new Map<string, string>();
-        for (const p of profiles) {
-          if (p.display_name) nameToId.set(p.display_name, p.user_id);
+        const userIdToName = new Map<string, string>();
+        for (const u of tetRewardData) {
+          if (u.userId) {
+            nameToId.set(u.name, u.userId);
+            userIdToName.set(u.userId, u.name);
+          }
         }
 
-        // Merge into existing nameToUserIdMap
         setNameToUserIdMap(prev => {
           const merged = new Map(prev);
           nameToId.forEach((v, k) => merged.set(k, v));
           return merged;
         });
 
-        const userIds = [...new Set(profiles.map(p => p.user_id))];
-        const { data: wallets } = await supabase
-          .from("user_wallet_addresses")
-          .select("user_id, wallet_address")
-          .in("user_id", userIds);
+        const userIds = [...new Set(tetRewardData.map(u => u.userId).filter(Boolean))] as string[];
+        if (userIds.length === 0) return;
 
+        // Batch query wallets (max 1000 per query)
         const walletMap = new Map<string, string>();
-        for (const w of wallets || []) {
-          const name = [...nameToId.entries()].find(([, id]) => id === w.user_id)?.[0];
-          if (name) walletMap.set(name, w.wallet_address);
+        for (let i = 0; i < userIds.length; i += 500) {
+          const batch = userIds.slice(i, i + 500);
+          const { data: wallets } = await supabase
+            .from("user_wallet_addresses")
+            .select("user_id, wallet_address")
+            .in("user_id", batch);
+
+          for (const w of wallets || []) {
+            const name = userIdToName.get(w.user_id);
+            if (name) walletMap.set(name, w.wallet_address);
+          }
         }
         setUserWalletMap(walletMap);
       } catch (err) {
@@ -446,28 +447,16 @@ const AdminTetReward = () => {
     setDistributionProgress(0);
 
     try {
-      // Tìm user_id dựa trên display_name từ profiles
-      const names = selectedSummary.selected.map(s => s.name);
-      const { data: profiles, error: profileError } = await supabase
-        .from("profiles")
-        .select("user_id, display_name")
-        .in("display_name", names);
-
-      if (profileError) throw profileError;
-
-      const nameToUserId = new Map<string, string>();
+      // Lấy user_id trực tiếp từ snapshot data (không cần query profiles)
       const userIdToName = new Map<string, string>();
-      for (const p of profiles || []) {
-        if (p.display_name) {
-          nameToUserId.set(p.display_name, p.user_id);
-          userIdToName.set(p.user_id, p.display_name);
-        }
+      for (const s of selectedSummary.selected) {
+        if (s.userId) userIdToName.set(s.userId, s.name);
       }
 
       const recipients = selectedSummary.selected
-        .filter(s => nameToUserId.has(s.name))
+        .filter(s => !!s.userId)
         .map(s => ({
-          user_id: nameToUserId.get(s.name)!,
+          user_id: s.userId!,
           fun_amount: s.totalFun,
         }));
 
@@ -477,7 +466,7 @@ const AdminTetReward = () => {
       }
 
       // Mark users not found in profiles as failed
-      const notFoundUsers = selectedSummary.selected.filter(s => !nameToUserId.has(s.name));
+      const notFoundUsers = selectedSummary.selected.filter(s => !s.userId);
       const newResults = new Map(distributionResults);
       for (const u of notFoundUsers) {
         newResults.set(u.name, { status: "failed", reason: "Không tìm thấy user_id" });
