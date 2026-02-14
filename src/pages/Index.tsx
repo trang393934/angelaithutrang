@@ -17,6 +17,7 @@ import Leaderboard from "@/components/Leaderboard";
 import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
 import { MasterCharterBanner } from "@/components/MasterCharterBanner";
 import { BackToTopButton } from "@/components/BackToTopButton";
+import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
 
 const Index = () => {
   const { user } = useAuth();
@@ -51,22 +52,7 @@ const Index = () => {
             <Header />
           </div>
           
-          {/* Tết Background Video - starts 1/3 down from header */}
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="fixed left-0 right-0 bottom-0 w-full object-contain object-top z-[1] pointer-events-none"
-            style={{ 
-              opacity: 1,
-              filter: 'saturate(1.3) contrast(1.1)',
-              top: 'var(--index-header-h, 3.5rem)',
-              height: 'calc(100vh - var(--index-header-h, 3.5rem))'
-            }}
-          >
-            <source src="/videos/tet-background.mp4" type="video/mp4" />
-          </video>
+          <ValentineVideoBackground headerRef={headerRef} />
           
           {/* Daily Login Reward - shows popup when user logs in */}
           {user && <DailyLoginReward />}
