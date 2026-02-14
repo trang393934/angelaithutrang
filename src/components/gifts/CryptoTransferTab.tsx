@@ -76,6 +76,28 @@ export function CryptoTransferTab({
   const [walletOwner, setWalletOwner] = useState<UserSearchResult | null>(null);
   const [isLookingUpWallet, setIsLookingUpWallet] = useState(false);
 
+  // Retry pending gift records from localStorage on mount
+  useEffect(() => {
+    if (!user) return;
+    const retryPendingGifts = async () => {
+      const pending = JSON.parse(localStorage.getItem("pending_gift_records") || "[]");
+      if (pending.length === 0) return;
+      
+      console.log(`[Gift Recovery] Retrying ${pending.length} pending gifts`);
+      const { error } = await supabase.functions.invoke("record-gift", {
+        body: { gifts: pending },
+      });
+      
+      if (!error) {
+        localStorage.removeItem("pending_gift_records");
+        console.log("[Gift Recovery] All pending gifts recorded successfully");
+      } else {
+        console.warn("[Gift Recovery] Retry failed, will try again later:", error.message);
+      }
+    };
+    retryPendingGifts();
+  }, [user]);
+
   // Look up wallet owner when address is pasted/typed (address mode only)
   useEffect(() => {
     if (cryptoRecipient !== "address") {
@@ -266,17 +288,26 @@ export function CryptoTransferTab({
           message: giftMessage || `[Web3] ${tokenSymbol} transfer to ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
           tx_hash: result.txHash || null,
           gift_type: `web3_${tokenSymbol}`,
+          context_type: "direct",
         };
 
-        const { error: dbError } = await supabase.from("coin_gifts").insert(giftRecord);
-        if (dbError) {
-          console.error(`[Web3 Gift ${tokenSymbol}] DB insert failed:`, dbError.message);
-          setTimeout(async () => {
-            const { error: retryError } = await supabase.from("coin_gifts").insert(giftRecord);
-            if (retryError) {
-              console.error(`[Web3 Gift ${tokenSymbol}] Retry failed:`, retryError.message);
-            }
-          }, 2000);
+        // Use edge function with service role for reliable insert
+        const { data: { session } } = await supabase.auth.getSession();
+        const { error: fnError } = await supabase.functions.invoke("record-gift", {
+          body: { gifts: [giftRecord] },
+        });
+
+        if (fnError) {
+          console.error(`[Web3 Gift ${tokenSymbol}] Edge fn failed, trying direct insert:`, fnError.message);
+          // Fallback to direct insert
+          const { error: dbError } = await supabase.from("coin_gifts").insert(giftRecord);
+          if (dbError) {
+            console.error(`[Web3 Gift ${tokenSymbol}] Direct insert also failed, saving to localStorage:`, dbError.message);
+            // Save to localStorage for recovery
+            const pendingGifts = JSON.parse(localStorage.getItem("pending_gift_records") || "[]");
+            pendingGifts.push({ ...giftRecord, created_at: new Date().toISOString() });
+            localStorage.setItem("pending_gift_records", JSON.stringify(pendingGifts));
+          }
         }
 
         onSuccess(result, receiverUser, walletAddress, numAmount, giftMessage || undefined);
