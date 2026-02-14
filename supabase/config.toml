@@ -175,3 +175,9 @@ verify_jwt = false
 
 [functions.process-lixi-claim]
 verify_jwt = false
+
+[functions.sync-bscscan-gifts]
+verify_jwt = false
+
+[functions.record-gift]
+verify_jwt = false
