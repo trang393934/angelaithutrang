@@ -239,7 +239,15 @@ export function UserLiXiCelebrationPopup() {
   const isPreview = new URLSearchParams(window.location.search).get("preview_lixi") === "true";
   const hook = useLiXiCelebration();
 
-  const [previewOpen, setPreviewOpen] = useState(isPreview);
+  const [previewOpen, setPreviewOpenRaw] = useState(isPreview);
+  const setPreviewOpen = (open: boolean) => {
+    setPreviewOpenRaw(open);
+    if (!open && isPreview) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("preview_lixi");
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
   const showPopup = isPreview ? previewOpen : hook.showPopup;
   const setShowPopup = isPreview ? setPreviewOpen : hook.setShowPopup;
   const pendingLiXi = isPreview
