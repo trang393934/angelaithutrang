@@ -32,6 +32,7 @@ interface UserRow {
 }
 
 const COLUMNS = [
+  { header: "User ID", key: "user_id", width: 38 },
   { header: "Tên", key: "display_name", width: 20 },
   { header: "Handle", key: "handle", width: 15 },
   { header: "Ngày tham gia", key: "joined_at", width: 14 },
@@ -62,6 +63,7 @@ export function UserManagementExportButton({ users }: Props) {
   const [isExporting, setIsExporting] = useState(false);
 
   const mapRow = (u: UserRow) => ({
+    user_id: u.user_id,
     display_name: u.display_name || "Ẩn danh",
     handle: u.handle || "",
     joined_at: u.joined_at ? new Date(u.joined_at).toLocaleDateString("vi-VN") : "",
