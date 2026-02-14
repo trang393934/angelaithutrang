@@ -7,7 +7,8 @@ import { useLiXiCelebration } from "@/hooks/useLiXiCelebration";
 import { FireworkBurst } from "@/components/lixi/FireworkBurst";
 import { LiXiEffects } from "@/components/lixi/LiXiEffects";
 import { Lantern } from "@/components/lixi/Lantern";
-import camlyCoinNew from "@/assets/camly-coin-new.png";
+import camlyCoin3D from "@/assets/camly-coin-3d.png";
+import funMoney3D from "@/assets/fun-money-3d.png";
 
 /* ── Inline keyframes ── */
 const inlineStyles = `
@@ -571,45 +572,37 @@ export function UserLiXiCelebrationPopup() {
                 </motion.div>
               </div>
 
-              {/* ── Đồng Camly Coin góc trái dưới (3 coins chồng, glow mạnh) ── */}
+              {/* ── Camly Coin góc trái dưới ── */}
               <motion.div
                 className="absolute bottom-4 left-4 z-30"
                 initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.75, type: "spring", stiffness: 180 }}
+                animate={{ scale: 1, opacity: 1, y: [0, -8, 0] }}
+                transition={{ scale: { delay: 0.75, type: "spring", stiffness: 180 }, y: { duration: 3, repeat: Infinity, ease: "easeInOut" } }}
               >
-                <img
-                  src={camlyCoinNew}
-                  alt=""
-                  className="absolute rounded-full"
-                  style={{ width: 36, height: 36, bottom: 24, left: 28, filter: "drop-shadow(0 2px 6px rgba(255,215,0,0.3))", opacity: 0.6 }}
-                />
-                <img
-                  src={camlyCoinNew}
-                  alt=""
-                  className="absolute rounded-full"
-                  style={{ width: 46, height: 46, bottom: 14, left: 12, filter: "drop-shadow(0 3px 10px rgba(255,215,0,0.45))", opacity: 0.8 }}
-                />
-                <img
-                  src={camlyCoinNew}
+                <motion.img
+                  src={camlyCoin3D}
                   alt="Camly Coin"
-                  className="relative rounded-full"
+                  className="rounded-full"
                   style={{ width: 58, height: 58, filter: "drop-shadow(0 4px 14px rgba(255,215,0,0.6))" }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
                 />
               </motion.div>
 
-              {/* ── Đồng coin nhỏ góc phải dưới ── */}
+              {/* ── FUN Money góc phải dưới ── */}
               <motion.div
-                className="absolute bottom-5 right-5 z-30"
+                className="absolute bottom-4 right-4 z-30"
                 initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.9, type: "spring", stiffness: 180 }}
+                animate={{ scale: 1, opacity: 1, y: [0, -8, 0] }}
+                transition={{ scale: { delay: 0.9, type: "spring", stiffness: 180 }, y: { duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 } }}
               >
-                <img
-                  src={camlyCoinNew}
-                  alt=""
+                <motion.img
+                  src={funMoney3D}
+                  alt="FUN Money"
                   className="rounded-full"
-                  style={{ width: 38, height: 38, filter: "drop-shadow(0 3px 8px rgba(255,215,0,0.4))", opacity: 0.7 }}
+                  style={{ width: 52, height: 52, filter: "drop-shadow(0 4px 14px rgba(255,215,0,0.5))" }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                 />
               </motion.div>
             </motion.div>
