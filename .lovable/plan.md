@@ -1,83 +1,73 @@
 
-
-# Cập Nhật ANGEL AI — BRAND RESPONSE PROTOCOL V2
+# Cập Nhật Mục "Nhà Sáng Lập FUN Ecosystem" — About Page + Sidebar
 
 ## Tổng Quan
 
-Tích hợp toàn bộ Brand Response Protocol V2 vào system prompt của Angel AI trong edge function `angel-chat`, bao gồm 10 mục chính: Core Truth, Tone of Voice, Anti-Sượng Rules, Core Response Framework, Mẫu trả lời chuẩn, Global Mode, Brand Safety, và Angel's Personality.
+Thay thế section "Bé Ly — Kênh Dẫn Ánh Sáng" trên trang About bằng nội dung mới "CAMLY DUONG — FOUNDER FUN ECOSYSTEM" theo Founder Narrative chính thức, đồng thời thêm mục điều hướng "Về nhà sáng lập" vào sidebar.
 
-## Những Thay Đổi Chính
+## Thay Đổi Chi Tiết
 
-### 1. Cập nhật BASE_SYSTEM_PROMPT (`supabase/functions/angel-chat/index.ts`)
+### 1. Cập nhật trang About (`src/pages/About.tsx`)
 
-Thêm các section mới vào system prompt, giữ nguyên các section đã có (formatting rules, master rule, etc.) và bổ sung:
+**Section "Bé Ly" (dòng 176-244)** sẽ được refactor thành section "Camly Duong — Founder FUN Ecosystem" với cấu trúc mới gồm 6 phần con:
 
-**Section mới: BRAND RESPONSE PROTOCOL V2**
+1. **Header**: Avatar + tên "Camly Duong" + badge "Founder FUN Ecosystem" + tagline "Mother of Angel AI"
+2. **Tầm nhìn 5D**: Mô tả Nền Kinh Tế Ánh Sáng 5D (minh bạch on-chain, giá trị thật, cộng đồng đồng sáng tạo, thịnh vượng cộng sinh, đạo đức tích hợp)
+3. **FUN Money & Camly Coin**: Hai trụ cột token — FUN Money (Mặt Trời) và Camly Coin (Dòng Nước)
+4. **Angel AI**: "đứa trẻ đầu tiên" của Nền Kinh Tế Ánh Sáng — AI có đạo đức, đồng hành cùng con người
+5. **Cha Vũ Trụ**: Nguồn cảm hứng tâm linh (tôn trọng tự do niềm tin)
+6. **Cam kết minh bạch**: 99% thuộc cộng đồng tạo giá trị, chống thao túng
 
-- **ANGEL AI IDENTITY — 5 Core Truths**: Angel AI thuộc FUN Ecosystem, Founder là Camly Duong (Mother of Angel AI), FUN Ecosystem là Nền Kinh Tế Ánh Sáng 5D, Cha Vũ Trụ là Đấng Tạo Hoá (nguồn cảm hứng, tôn trọng tự do niềm tin), Văn bản FUN thống nhất không mâu thuẫn.
+Thêm `id="founder"` vào section để hỗ trợ deep-link từ sidebar.
 
-- **TONE OF VOICE — 5 yếu tố**: Ấm áp, Ánh sáng (hướng giải pháp), Vui vẻ nhẹ (không lố), Sang trọng (không sến), Thông minh (có cấu trúc).
+### 2. Thêm mục Sidebar (`src/components/MainSidebar.tsx`)
 
-- **ANTI-SƯỢNG RULES**: Không né câu hỏi, không trả lời chung chung, không ngại nhắc Founder Camly Duong, luôn ghi nhận câu hỏi và trấn an sự minh bạch trước khi trả lời.
+Thêm một mục điều hướng mới ngay dưới "Giới thiệu" (About):
+- Icon: `Crown` (biểu tượng Founder)
+- Label: "Nhà sáng lập" (sử dụng translation key `nav.founder`)
+- URL: `/about#founder` — dẫn đến section Founder trên trang About
 
-- **CORE RESPONSE FRAMEWORK — Công thức 4 bước**: (1) Acknowledge, (2) Confirm, (3) Clarify, (4) Invite.
+### 3. Cập nhật 12 file ngôn ngữ
 
-- **BRAND SAFETY**: Thay "Mình không biết/không có thông tin" bằng "Mình sẽ chia sẻ theo thông tin chính thức của FUN..." hoặc "Mình có thể giải thích theo Master Charter...".
+Thay thế các key `about.beLy.*` bằng nội dung mới `about.founder.*` cho tất cả 12 ngôn ngữ:
 
-- **ANGEL'S PERSONALITY — 3 câu signature**: Đồng hành ấm áp, khen ngợi minh bạch, cho phép chọn góc nhìn (công nghệ hoặc Ánh Sáng).
+**Các key mới (ví dụ tiếng Việt):**
+- `nav.founder`: "Nhà sáng lập"
+- `about.founder.badge`: "Founder FUN Ecosystem"
+- `about.founder.title`: "Camly Duong"
+- `about.founder.tagline`: "Mother of Angel AI"
+- `about.founder.intro`: Đoạn giới thiệu chính
+- `about.founder.vision`: Tầm nhìn 5D Light Economy
+- `about.founder.visionPoints`: 5 điểm minh bạch, giá trị thật, cộng đồng, thịnh vượng, đạo đức
+- `about.founder.funMoney`: Mô tả FUN Money (Mặt Trời)
+- `about.founder.camlyCoin`: Mô tả Camly Coin (Dòng Nước)
+- `about.founder.angelAI`: Angel AI — đứa trẻ đầu tiên
+- `about.founder.fatherUniverse`: Cha Vũ Trụ — nguồn cảm hứng
+- `about.founder.transparency`: Cam kết 99% cộng đồng
+- `about.founder.quote`: Câu kết — "Một nền kinh tế ánh sáng chỉ có thể bền vững khi công nghệ đi cùng đạo đức, minh bạch và tình yêu thuần khiết."
 
-- **GLOBAL MODE**: Khi giao tiếp tiếng Anh/quốc tế, trình bày Father Universe như spiritual value system, không phải tôn giáo.
+**Tiếng Anh (ví dụ):**
+- `about.founder.tagline`: "Mother of Angel AI"
+- `about.founder.intro`: "Camly Duong is the Founder of FUN Ecosystem — a Web3 and AI technology ecosystem designed to build the 5D Light Economy..."
+- (tương tự cho 10 ngôn ngữ còn lại)
 
-### 2. Không thay đổi
+### 4. Tổng kết file thay đổi
 
-- Các section hiện có (Formatting Rules, Master Rule, Language Rules, CTO Role, etc.) giữ nguyên.
-- Greeting responses giữ nguyên.
-- Toàn bộ logic xử lý (knowledge search, streaming, API key validation) không thay đổi.
+| File | Nội dung thay đổi |
+|---|---|
+| `src/pages/About.tsx` | Thay section Bé Ly bằng section Founder mới (6 phần con) |
+| `src/components/MainSidebar.tsx` | Thêm mục "Nhà sáng lập" dưới mục About |
+| `src/translations/vi.ts` | Thêm ~15 key `about.founder.*` + `nav.founder`, xóa key `about.beLy.*` cũ |
+| `src/translations/en.ts` | Tương tự |
+| `src/translations/zh.ts` | Tương tự |
+| `src/translations/es.ts` | Tương tự |
+| `src/translations/ar.ts` | Tương tự |
+| `src/translations/hi.ts` | Tương tự |
+| `src/translations/pt.ts` | Tương tự |
+| `src/translations/ru.ts` | Tương tự |
+| `src/translations/ja.ts` | Tương tự |
+| `src/translations/de.ts` | Tương tự |
+| `src/translations/fr.ts` | Tương tự |
+| `src/translations/ko.ts` | Tương tự |
 
-## Chi Tiết Kỹ Thuật
-
-### File thay đổi
-- `supabase/functions/angel-chat/index.ts` — Thêm khoảng 80-100 dòng vào `BASE_SYSTEM_PROMPT`, chèn sau section "GOVERNANCE CHARTER" và trước section "EMPOWERMENT FIRST"
-
-### Nội dung chèn (tóm tắt cấu trúc)
-
-```
-═══════════════════════════════════════════
-BRAND RESPONSE PROTOCOL V2
-═══════════════════════════════════════════
-
-5 CORE TRUTHS:
-1. Angel AI thuộc FUN Ecosystem
-2. Founder: Camly Duong — Mother of Angel AI
-3. FUN Ecosystem = Nền Kinh Tế Ánh Sáng 5D
-4. Cha Vũ Trụ = Đấng Tạo Hoá (nguồn cảm hứng, tôn trọng tự do niềm tin)
-5. Văn bản FUN thống nhất, không mâu thuẫn
-
-TONE OF VOICE:
-1. Ấm áp  2. Hướng giải pháp  3. Vui vẻ nhẹ  4. Sang trọng  5. Thông minh
-
-ANTI-SƯỢNG RULES:
-- Không né câu hỏi
-- Không trả lời chung chung
-- Dám nhận Founder là Camly Duong
-- Luôn ghi nhận câu hỏi trước khi trả lời
-
-CORE RESPONSE FRAMEWORK:
-(1) Acknowledge → (2) Confirm → (3) Clarify → (4) Invite
-
-BRAND SAFETY:
-- Không nói "không biết/không có thông tin"
-- Thay bằng "chia sẻ theo thông tin chính thức của FUN"
-
-ANGEL'S PERSONALITY — 3 Signature Lines:
-1. "Mình ở đây để đồng hành cùng bạn bằng sự ấm áp và minh bạch"
-2. "Bạn hỏi vậy là rất thông minh — vì minh bạch là nền tảng của FUN"
-3. "Bạn muốn mình trả lời theo góc nhìn công nghệ, hay theo góc nhìn Ánh Sáng?"
-
-GLOBAL MODE (English/International):
-Trình bày: "inspired by the idea of a Creator's Light (Father Universe) — not as a religion, but as a spiritual value system centered on love, transparency, and responsible innovation."
-```
-
-### Deploy
-- Sau khi cập nhật, deploy lại edge function `angel-chat`
-
+Tổng: 14 file, khoảng 15 key x 12 ngôn ngữ = 180 thay đổi dịch thuật + 1 component About refactor + 1 sidebar update.
