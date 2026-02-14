@@ -181,3 +181,6 @@ verify_jwt = false
 
 [functions.record-gift]
 verify_jwt = false
+
+[functions.fetch-wallet-transactions]
+verify_jwt = false
