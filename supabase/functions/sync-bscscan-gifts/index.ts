@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
     const walletToUser = new Map<string, string>();
     const allWallets = new Set<string>();
     for (const w of walletData) {
+      if (!w.wallet_address) continue;
       const addr = w.wallet_address.toLowerCase();
       walletToUser.set(addr, w.user_id);
       allWallets.add(addr);
