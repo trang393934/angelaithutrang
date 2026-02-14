@@ -30,6 +30,7 @@ import { BackToTopButton } from "@/components/BackToTopButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
 
 const Community = () => {
   const { user } = useAuth();
@@ -152,22 +153,8 @@ const Community = () => {
           <CommunityHeader />
         </div>
 
-        {/* Tết Background Video - starts right below the header */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-           className="fixed left-0 right-0 bottom-0 w-full object-cover object-top z-[1] pointer-events-none"
-          style={{ 
-            opacity: 1, 
-            filter: 'saturate(1.3) contrast(1.1)',
-            top: 'var(--community-header-h, 0px)',
-            height: 'calc(100vh - var(--community-header-h, 0px))'
-          }}
-        >
-          <source src="/videos/tet-background.mp4" type="video/mp4" />
-        </video>
+        {/* Valentine Background Videos - left & right */}
+        <ValentineVideoBackground />
 
         {/* Content area - fills remaining height, above video */}
         <div className="flex-1 flex overflow-hidden relative z-10">
