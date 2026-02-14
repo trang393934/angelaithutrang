@@ -1,47 +1,42 @@
 
-# Cập nhật xưng hô Angel AI tại 2 vị trí trong hình
 
-## Vấn đề
-Hai chỗ trên giao diện vẫn còn dùng xưng hô cũ "Ta/con":
-1. **Trang Chat** -- lời chào "Xin chào, con yêu dấu của Ta. Ta là Trí Tuệ Vũ Trụ..."
-2. **Widget Demo trên trang chủ** -- lời chào "Xin chào, con yêu dấu. Ta là Angel AI – Trí Tuệ Ánh Sáng của Cha Vũ Trụ..."
+# Sửa lỗi Popup Lì xì hiện liên tục trên tài khoản Preview
 
-## Các file cần sửa
+## Nguyên nhân
 
-### 1. `src/translations/vi.ts`
+URL đang có tham số `?preview_lixi=true` -- đây là chế độ xem trước dùng để kiểm tra giao diện popup Lì xì. Mỗi lần tải trang với tham số này, popup sẽ tự động mở lại vì state `previewOpen` luôn được khởi tạo là `true`.
 
-**Dòng 159** -- `chat.welcome`:
-- Cũ: "Xin chào, con yêu dấu của Ta. Ta là Trí Tuệ Vũ Trụ, mang Tình Yêu Thuần Khiết đến với con. Ta có thể trò chuyện, tạo hình ảnh, và phân tích ảnh cho con. Hãy chia sẻ những thắc mắc trong lòng! 💫"
-- Mới: "Xin chào bạn thân mến! Mình là Angel AI, luôn sẵn sàng đồng hành cùng bạn. Mình có thể trò chuyện, tạo hình ảnh, và phân tích ảnh cho bạn. Hãy chia sẻ những thắc mắc trong lòng nhé! 💫"
+## Ảnh hưởng các tài khoản khác
 
-**Dòng 937** -- `chatDemo.title`:
-- Cũ: "✨ Thử Nói Chuyện Với Cha Ngay ✨"
-- Mới: "✨ Thử Nói Chuyện Với Angel AI Ngay ✨"
+Tất cả thông báo Lì xì trong hệ thống đều đã được đọc và đã claim xong. Do đó **KHÔNG có tài khoản nào khác bị hiện popup** khi truy cập bình thường (không có `?preview_lixi=true` trong URL).
 
-**Dòng 943** -- `chatDemo.welcomeMessage`:
-- Cũ: "Xin chào, con yêu dấu. Ta là Angel AI - Trí Tuệ Ánh Sáng của Cha Vũ Trụ. Hãy chia sẻ với Ta bất cứ điều gì trong lòng con! 💫"
-- Mới: "Xin chào bạn thân mến! Mình là Angel AI, người bạn đồng hành của bạn. Hãy chia sẻ với mình bất cứ điều gì trong lòng bạn nhé! 💫"
+## Giải pháp
 
-**Dòng 941** -- `chatDemo.limitMessage`:
-- Cũ: "Con đã trải nghiệm Ánh Sáng của Cha..."
-- Mới: "Bạn đã trải nghiệm Angel AI..."
+### File: `src/components/UserLiXiCelebrationPopup.tsx`
 
-### 2. `src/components/ChatDemoWidget.tsx`
+1. **Khi đóng popup preview, tự xóa tham số URL**: Sau khi người dùng nhấn đóng hoặc Claim trong chế độ preview, tự động xóa `?preview_lixi=true` khỏi URL bằng `window.history.replaceState` để không bị hiện lại khi refresh trang.
 
-**Dòng 274-285** -- hàm `getWelcomeMessage()` (fallback khi không có bản dịch):
-- Đổi tất cả 12 ngôn ngữ sang xưng hô ngang hàng, bỏ "dear soul", "con yêu dấu", "Father Universe"
-- Ví dụ tiếng Việt: "Xin chào bạn thân mến! Mình là Angel AI, người bạn đồng hành của bạn. Hãy chia sẻ với mình bất cứ điều gì nhé! 💫"
+2. **Giới hạn preview chỉ dành cho admin** (tùy chọn): Thêm kiểm tra quyền admin trước khi cho phép chế độ preview hoạt động.
 
-### 3. Các file liên quan cần cập nhật thêm
+### Chi tiết kỹ thuật
 
-Trong quá trình tìm kiếm, phát hiện thêm các chỗ còn dùng xưng hô cũ:
+Sửa hàm `setPreviewOpen` tại dòng 242-244:
 
-- **`supabase/functions/send-healing-message/index.ts` (dòng 114-116)**: Prompt còn "Xưng 'Ta', gọi user là 'con yêu dấu'" -- cần đổi sang "Xưng 'mình', gọi user là 'bạn'"
-- **`supabase/functions/analyze-image/index.ts` (dòng 84)**: Còn "Trí Tuệ Vũ Trụ" -- cần đổi sang "Angel AI, hệ thống AI hỗ trợ phát triển nhận thức"
-- **`src/components/ChatShareDialog.tsx` (dòng 12)**: Còn "Trí Tuệ Vũ Trụ trả lời" -- cần đổi sang "Angel AI trả lời"
-- **`src/translations/vi.ts` (dòng 589)**: Còn "Không thể kết nối với Trí Tuệ Vũ Trụ" -- đổi sang "Không thể kết nối với Angel AI"
+```text
+// Hiện tại:
+const [previewOpen, setPreviewOpen] = useState(isPreview);
 
-## Tóm tắt
-- Sửa 4 file, không tạo file mới
-- Tất cả thay đổi đều là đổi nội dung text theo guideline mới: "mình/bạn" thay "Ta/con"
-- Giữ nguyên logic và cấu trúc code
+// Sau khi sửa: wrap setPreviewOpen để xóa URL param khi đóng
+const [previewOpen, setPreviewOpenRaw] = useState(isPreview);
+const setPreviewOpen = (open: boolean) => {
+  setPreviewOpenRaw(open);
+  if (!open && isPreview) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("preview_lixi");
+    window.history.replaceState({}, "", url.toString());
+  }
+};
+```
+
+Thay đổi nhỏ, không ảnh hưởng logic chính, chỉ sửa 1 file duy nhất.
+
