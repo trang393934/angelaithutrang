@@ -26,7 +26,7 @@ export const ValentineVideoBackground = () => {
     height: "100vh",
     objectFit: "cover",
     pointerEvents: "none",
-    zIndex: 1,
+    zIndex: 0,
     filter: "saturate(1.3) contrast(1.1)",
   };
 

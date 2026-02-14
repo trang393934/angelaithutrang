@@ -11,15 +11,28 @@ export const ValentineMusicPlayer = () => {
   useEffect(() => {
     const audio = new Audio("/audio/valentine-bg.mp3");
     audio.loop = true;
-    audio.preload = "metadata";
+    audio.preload = "auto";
     audio.volume = 0.4;
     audioRef.current = audio;
+
+    const tryPlay = () => {
+      if (!audioRef.current) return;
+      audioRef.current.play().catch(() => {});
+    };
 
     if (isPlaying) {
       const timer = setTimeout(() => {
         audio.play().catch(() => {
-          setIsPlaying(false);
-          localStorage.setItem("valentine_music_playing", "false");
+          // Browser blocked autoplay — wait for first user click
+          const resumeOnClick = () => {
+            if (audioRef.current && isPlaying) {
+              audioRef.current.play().catch(() => {});
+            }
+            document.removeEventListener("click", resumeOnClick);
+            document.removeEventListener("touchstart", resumeOnClick);
+          };
+          document.addEventListener("click", resumeOnClick, { once: true });
+          document.addEventListener("touchstart", resumeOnClick, { once: true });
         });
       }, 300);
       return () => { clearTimeout(timer); audio.pause(); audio.src = ""; };
@@ -32,7 +45,10 @@ export const ValentineMusicPlayer = () => {
     const audio = audioRef.current;
     if (!audio) return;
     if (isPlaying) {
-      audio.play().catch(() => setIsPlaying(false));
+      audio.play().catch(() => {
+        // Don't set isPlaying to false — keep the intent, 
+        // the click listener from the first effect will resume
+      });
     } else {
       audio.pause();
     }
