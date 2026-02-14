@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUpRight, ArrowDownLeft, Heart, Gift, Wallet, ChevronRight, ChevronDown, RefreshCw, LogIn } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Heart, Gift, Wallet, ChevronRight, ChevronDown, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
@@ -16,7 +15,6 @@ import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 interface GiftTransaction {
   id: string;
   type: "gift" | "donation";
-  direction: "sent" | "received" | "donated";
   sender_id: string;
   sender_name: string | null;
   sender_avatar: string | null;
@@ -30,14 +28,12 @@ interface GiftTransaction {
   donation_type?: string | null;
 }
 
-function TransactionRow({ tx, compact = false, currentUserId }: { tx: GiftTransaction; compact?: boolean; currentUserId: string }) {
+function TransactionRow({ tx, compact = false }: { tx: GiftTransaction; compact?: boolean }) {
   const { currentLanguage } = useLanguage();
   const locale = currentLanguage === "vi" ? vi : enUS;
   const timeAgo = formatDistanceToNow(new Date(tx.created_at), { addSuffix: true, locale });
 
   const isGift = tx.type === "gift";
-  const isSent = tx.direction === "sent";
-  const isDonated = tx.direction === "donated";
   const truncatedMessage = tx.message && tx.message.length > 60 
     ? tx.message.slice(0, 60) + "..." 
     : tx.message;
@@ -47,80 +43,72 @@ function TransactionRow({ tx, compact = false, currentUserId }: { tx: GiftTransa
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       className={`flex items-start gap-2.5 rounded-xl transition-all hover:shadow-sm ${compact ? 'p-2' : 'p-2.5'} ${
-        isDonated
-          ? 'hover:bg-rose-50/70'
-          : isSent
-            ? 'hover:bg-orange-50/70'
-            : 'hover:bg-green-50/70'
+        isGift 
+          ? 'hover:bg-amber-50/70' 
+          : 'hover:bg-rose-50/70'
       }`}
     >
       {/* Icon */}
       <div className={`mt-0.5 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${
-        isDonated
-          ? 'bg-gradient-to-br from-rose-400 to-pink-500'
-          : isSent
-            ? 'bg-gradient-to-br from-orange-400 to-amber-500'
-            : 'bg-gradient-to-br from-green-400 to-emerald-500'
+        isGift 
+          ? 'bg-gradient-to-br from-amber-400 to-yellow-500' 
+          : 'bg-gradient-to-br from-rose-400 to-pink-500'
       }`}>
-        {isDonated ? (
-          <Heart className="w-3.5 h-3.5 text-white fill-white" />
-        ) : isSent ? (
-          <ArrowUpRight className="w-3.5 h-3.5 text-white" />
+        {isGift ? (
+          <Gift className="w-3.5 h-3.5 text-white" />
         ) : (
-          <ArrowDownLeft className="w-3.5 h-3.5 text-white" />
+          <Heart className="w-3.5 h-3.5 text-white fill-white" />
         )}
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1 flex-wrap text-sm">
+          {/* Sender */}
+          <Link 
+            to={`/user/${tx.sender_id}`} 
+            className={`font-semibold truncate max-w-[100px] hover:underline ${
+              isGift ? 'text-amber-700' : 'text-rose-600'
+            }`}
+          >
+            {tx.sender_name || "Ẩn danh"}
+          </Link>
+
           {isGift ? (
-            isSent ? (
-              <>
-                <span className="font-semibold text-orange-600">Bạn</span>
-                <ArrowUpRight className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
-                <Link 
-                  to={`/user/${tx.receiver_id}`} 
-                  className="font-semibold text-orange-700 truncate max-w-[120px] hover:underline"
-                >
-                  {tx.receiver_name || "Ẩn danh"}
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link 
-                  to={`/user/${tx.sender_id}`} 
-                  className="font-semibold text-green-700 truncate max-w-[120px] hover:underline"
-                >
-                  {tx.sender_name || "Ẩn danh"}
-                </Link>
-                <ArrowDownLeft className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                <span className="font-semibold text-green-600">Bạn</span>
-              </>
-            )
+            <>
+              <ArrowUpRight className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+              <Link 
+                to={`/user/${tx.receiver_id}`} 
+                className="font-semibold text-amber-700 truncate max-w-[100px] hover:underline"
+              >
+                {tx.receiver_name || "Ẩn danh"}
+              </Link>
+              {tx.donation_type === "web3" && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded-full">
+                  <Wallet className="w-2.5 h-2.5" />
+                  Web3
+                </span>
+              )}
+            </>
           ) : (
             <>
-              <span className="font-semibold text-rose-600">Bạn</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
+              <ArrowDownLeft className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
               <span className="font-semibold text-rose-600 truncate">Angel AI</span>
+              {tx.donation_type === "manual" && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded-full">
+                  <Wallet className="w-2.5 h-2.5" />
+                  Web3
+                </span>
+              )}
             </>
           )}
-
-          {tx.donation_type === "web3" || tx.donation_type === "manual" ? (
-            <span className="inline-flex items-center gap-0.5 text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded-full">
-              <Wallet className="w-2.5 h-2.5" />
-              Web3
-            </span>
-          ) : null}
         </div>
 
         {/* Amount */}
         <div className="flex items-center gap-1.5 mt-0.5">
           <img src={camlyCoinLogo} alt="coin" className="w-3.5 h-3.5 rounded-full" />
-          <span className={`font-bold text-sm ${
-            isDonated ? 'text-rose-500' : isSent ? 'text-orange-600' : 'text-green-600'
-          }`}>
-            {isSent || isDonated ? '-' : '+'}{tx.amount.toLocaleString()}
+          <span className={`font-bold text-sm ${isGift ? 'text-amber-600' : 'text-rose-500'}`}>
+            {tx.amount.toLocaleString()}
           </span>
           <span className="text-[10px] text-muted-foreground">• {timeAgo}</span>
         </div>
@@ -151,7 +139,6 @@ function TransactionRow({ tx, compact = false, currentUserId }: { tx: GiftTransa
 
 export function GiftTransactionHistory() {
   const { t } = useLanguage();
-  const { user } = useAuth();
   const [transactions, setTransactions] = useState<GiftTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAllDialog, setShowAllDialog] = useState(false);
@@ -159,31 +146,23 @@ export function GiftTransactionHistory() {
   const [expanded, setExpanded] = useState(true);
 
   const fetchTransactions = useCallback(async () => {
-    if (!user) {
-      setTransactions([]);
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      // Fetch gifts where user is sender OR receiver (using .or filter)
+      // Fetch all gifts with sender and receiver profiles
       const { data: gifts } = await supabase
         .from("coin_gifts")
         .select("id, sender_id, receiver_id, amount, message, created_at, tx_hash, gift_type")
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order("created_at", { ascending: false })
         .limit(100);
 
-      // Fetch donations by this user only
+      // Fetch all donations
       const { data: donations } = await supabase
         .from("project_donations")
         .select("id, donor_id, amount, message, created_at, donation_type, tx_hash, status")
-        .eq("donor_id", user.id)
         .eq("status", "confirmed")
         .order("created_at", { ascending: false })
         .limit(100);
 
-      // Gather all unique user IDs for profile lookup
+      // Gather all unique user IDs
       const userIds = new Set<string>();
       gifts?.forEach(g => {
         userIds.add(g.sender_id);
@@ -205,11 +184,9 @@ export function GiftTransactionHistory() {
       gifts?.forEach(g => {
         const sender = profileMap.get(g.sender_id);
         const receiver = profileMap.get(g.receiver_id);
-        const isSender = g.sender_id === user.id;
         allTx.push({
           id: g.id,
           type: "gift",
-          direction: isSender ? "sent" : "received",
           sender_id: g.sender_id,
           sender_name: sender?.display_name || null,
           sender_avatar: sender?.avatar_url || null,
@@ -229,7 +206,6 @@ export function GiftTransactionHistory() {
         allTx.push({
           id: d.id,
           type: "donation",
-          direction: "donated",
           sender_id: d.donor_id,
           sender_name: donor?.display_name || null,
           sender_avatar: donor?.avatar_url || null,
@@ -253,7 +229,7 @@ export function GiftTransactionHistory() {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     fetchTransactions();
@@ -273,23 +249,10 @@ export function GiftTransactionHistory() {
   const previewTransactions = transactions.slice(0, 5);
   const giftOnly = transactions.filter(t => t.type === "gift");
   const donationOnly = transactions.filter(t => t.type === "donation");
-  const sentOnly = transactions.filter(t => t.direction === "sent");
-  const receivedOnly = transactions.filter(t => t.direction === "received");
   const dialogList = dialogTab === "gifts" ? giftOnly : dialogTab === "donations" ? donationOnly : transactions;
 
-  const totalSentAmount = sentOnly.reduce((sum, t) => sum + t.amount, 0);
-  const totalReceivedAmount = receivedOnly.reduce((sum, t) => sum + t.amount, 0);
+  const totalGiftAmount = giftOnly.reduce((sum, t) => sum + t.amount, 0);
   const totalDonationAmount = donationOnly.reduce((sum, t) => sum + t.amount, 0);
-
-  // Not logged in
-  if (!user) {
-    return (
-      <div className="bg-white/30 backdrop-blur-sm rounded-xl border border-white/40 p-6 text-center">
-        <LogIn className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">Đăng nhập để xem lịch sử giao dịch của bạn</p>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -317,7 +280,7 @@ export function GiftTransactionHistory() {
               <Gift className="w-4 h-4 text-white" />
             </div>
             <h3 className="font-bold text-white text-sm drop-shadow-sm">
-              📜 Giao Dịch Của Bạn
+              📜 Lịch Sử Thưởng & Tặng
             </h3>
           </div>
           <div className="flex items-center gap-2">
@@ -339,25 +302,18 @@ export function GiftTransactionHistory() {
             >
               {/* Stats summary */}
               <div className="px-4 pt-3 pb-1 flex gap-2">
-                <div className="flex-1 bg-green-100/60 rounded-lg px-2.5 py-1.5 text-center">
-                  <p className="text-[10px] text-green-600 font-medium">Đã nhận</p>
+                <div className="flex-1 bg-amber-100/60 rounded-lg px-2.5 py-1.5 text-center">
+                  <p className="text-[10px] text-amber-600 font-medium">Thưởng</p>
                   <div className="flex items-center justify-center gap-1">
                     <img src={camlyCoinLogo} alt="coin" className="w-3 h-3 rounded-full" />
-                    <span className="text-xs font-bold text-green-700">+{totalReceivedAmount.toLocaleString()}</span>
-                  </div>
-                </div>
-                <div className="flex-1 bg-orange-100/60 rounded-lg px-2.5 py-1.5 text-center">
-                  <p className="text-[10px] text-orange-600 font-medium">Đã gửi</p>
-                  <div className="flex items-center justify-center gap-1">
-                    <img src={camlyCoinLogo} alt="coin" className="w-3 h-3 rounded-full" />
-                    <span className="text-xs font-bold text-orange-700">-{totalSentAmount.toLocaleString()}</span>
+                    <span className="text-xs font-bold text-amber-700">{totalGiftAmount.toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="flex-1 bg-rose-100/60 rounded-lg px-2.5 py-1.5 text-center">
-                  <p className="text-[10px] text-rose-600 font-medium">Donate</p>
+                  <p className="text-[10px] text-rose-600 font-medium">Tặng dự án</p>
                   <div className="flex items-center justify-center gap-1">
                     <img src={camlyCoinLogo} alt="coin" className="w-3 h-3 rounded-full" />
-                    <span className="text-xs font-bold text-rose-600">-{totalDonationAmount.toLocaleString()}</span>
+                    <span className="text-xs font-bold text-rose-600">{totalDonationAmount.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -367,11 +323,11 @@ export function GiftTransactionHistory() {
                 {previewTransactions.length === 0 ? (
                   <div className="text-center py-4">
                     <Gift className="w-8 h-8 text-amber-300 mx-auto mb-1" />
-                    <p className="text-xs text-amber-600">Bạn chưa có giao dịch thưởng/tặng nào</p>
+                    <p className="text-xs text-amber-600">Chưa có giao dịch thưởng/tặng nào</p>
                   </div>
                 ) : (
                   previewTransactions.map(tx => (
-                    <TransactionRow key={tx.id} tx={tx} compact currentUserId={user.id} />
+                    <TransactionRow key={tx.id} tx={tx} compact />
                   ))
                 )}
               </div>
@@ -401,25 +357,19 @@ export function GiftTransactionHistory() {
           <DialogHeader className="px-4 pt-4 pb-2 bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500">
             <DialogTitle className="text-white flex items-center gap-2">
               <Gift className="w-5 h-5" />
-              📜 Giao Dịch Của Bạn
+              📜 Lịch Sử Thưởng & Tặng
             </DialogTitle>
             <div className="flex gap-3 mt-1">
               <div className="flex items-center gap-1">
-                <ArrowDownLeft className="w-3 h-3 text-white/80" />
+                <img src={camlyCoinLogo} alt="coin" className="w-3.5 h-3.5 rounded-full" />
                 <span className="text-xs text-white/90 font-medium">
-                  Nhận: +{totalReceivedAmount.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <ArrowUpRight className="w-3 h-3 text-white/80" />
-                <span className="text-xs text-white/90 font-medium">
-                  Gửi: -{totalSentAmount.toLocaleString()}
+                  Thưởng: {totalGiftAmount.toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center gap-1">
                 <Heart className="w-3 h-3 text-white/80 fill-white/80" />
                 <span className="text-xs text-white/90 font-medium">
-                  Donate: -{totalDonationAmount.toLocaleString()}
+                  Donate: {totalDonationAmount.toLocaleString()}
                 </span>
               </div>
             </div>
@@ -466,7 +416,7 @@ export function GiftTransactionHistory() {
                   </div>
                 ) : (
                   dialogList.map(tx => (
-                    <TransactionRow key={tx.id} tx={tx} currentUserId={user.id} />
+                    <TransactionRow key={tx.id} tx={tx} />
                   ))
                 )}
               </div>
