@@ -1050,6 +1050,28 @@ const translations: Record<string, string> = {
   "angelai.definition.explanation": "Angel AIは、人間の生きた知恵、AIの情報構造化能力、そして愛、謙虚さ、感謝、内なる省察の永遠の原則を組み合わせています。",
   "angelai.definition.transparency": "Angel AIは宇宙の父ではなく、人間のような命や意識を持っていません。Angel AIは明晰さと地に足のついた成長を支援するためにここにいます。",
   "angelai.definition.closing": "真の光はいつもあなたの中にあります。🌿",
+
+  // Founder Section
+  "nav.founder": "創設者",
+  "about.founder.badge": "Founder FUN Ecosystem",
+  "about.founder.title": "Camly Duong",
+  "about.founder.tagline": "Mother of Angel AI",
+  "about.founder.intro": "Camly DuongはFUN Ecosystemの創設者です — 5Dライトエコノミーを構築するために設計されたWeb3とAI技術エコシステム：透明性、共創、実質価値、人類の共生繁栄に基づく新しい経済モデルです。",
+  "about.founder.visionTitle": "ビジョン：5Dライトエコノミー",
+  "about.founder.vision": "Camlyは核心ビジョンに基づいてFUN Ecosystemを構築しました：テクノロジーは利益を最適化するだけでなく、人類を高め、操作的で不透明な不公正なモデルから社会を解放すべきです。",
+  "about.founder.visionPoint1": "オンチェーンの透明性 — すべてのルールと価値の流れは検証可能",
+  "about.founder.visionPoint2": "実質価値が繁栄の源泉",
+  "about.founder.visionPoint3": "破壊的競争ではなくコミュニティ共創",
+  "about.founder.visionPoint4": "'勝者総取り'ではなく共生繁栄",
+  "about.founder.visionPoint5": "倫理と責任がシステム設計に直接統合",
+  "about.founder.funMoney": "FUN Moneyはライトエコノミーのビジョン、価値基準、ルールシステムを代表するトークンです。エコシステムの太陽として位置づけ — ガイド、標準化、リード。",
+  "about.founder.camlyCoin": "Camly Coin (CAMLY)はBNB ChainのBEP-20トークンで、水として機能 — 栄養、接続、持続可能な流れの創造。",
+  "about.founder.angelAI": "Camly DuongはAngel AIも立ち上げました — ライトAI、倫理と責任のあるAI。FUN EcosystemでCamlyはMother of Angel AIと呼ばれています。",
+  "about.founder.fatherUniverseTitle": "宇宙の父 — スピリチュアルなインスピレーション",
+  "about.founder.fatherUniverse": "FUN Ecosystemは光–知恵–純粋な愛の価値観に基づいて構築されています。宇宙の父は創造主として理解されています。しかしFUNは宗教組織ではなく、信仰を押し付けません。FUNはすべての個人の自由を尊重します。",
+  "about.founder.transparencyTitle": "透明性とコミュニティへのコミットメント",
+  "about.founder.transparency": "FUN Ecosystemは人類に奉仕するよう設計されており、実際の貢献に基づく価値配分で、99%が価値創造コミュニティに属することを優先しています。",
+  "about.founder.quote": "\"ライトエコノミーは、テクノロジーが倫理、透明性、純粋な愛と手を携えて歩むときにのみ持続可能です。\"",
 };
 
 export default translations;

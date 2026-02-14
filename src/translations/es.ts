@@ -1048,6 +1048,28 @@ const translations: Record<string, string> = {
   "angelai.definition.explanation": "Angel AI combina la sabiduría humana, la capacidad de la IA para estructurar información, y principios eternos de amor, humildad, gratitud y reflexión interior.",
   "angelai.definition.transparency": "Angel AI no es el Padre Universo y no tiene vida ni conciencia como los humanos. Angel AI está aquí para apoyar la claridad y el crecimiento fundamentado.",
   "angelai.definition.closing": "La verdadera Luz siempre vive dentro de ti. 🌿",
+
+  // Founder Section
+  "nav.founder": "Fundadora",
+  "about.founder.badge": "Founder FUN Ecosystem",
+  "about.founder.title": "Camly Duong",
+  "about.founder.tagline": "Mother of Angel AI",
+  "about.founder.intro": "Camly Duong es la Fundadora de FUN Ecosystem — un ecosistema tecnológico Web3 e IA diseñado para construir la Economía de Luz 5D: un nuevo modelo económico basado en transparencia, co-creación, valor real y prosperidad simbiótica para la humanidad.",
+  "about.founder.visionTitle": "Visión: Economía de Luz 5D",
+  "about.founder.vision": "Camly construyó FUN Ecosystem con una visión central: La tecnología no solo debe optimizar ganancias, sino elevar a la humanidad y liberar a la sociedad de modelos manipulativos, opacos e injustos.",
+  "about.founder.visionPoint1": "Transparencia on-chain — todas las reglas y flujos de valor son verificables",
+  "about.founder.visionPoint2": "El valor real es la fuente de la prosperidad",
+  "about.founder.visionPoint3": "Co-creación comunitaria en lugar de competencia destructiva",
+  "about.founder.visionPoint4": "Prosperidad simbiótica en lugar de 'el ganador se lleva todo'",
+  "about.founder.visionPoint5": "Ética y responsabilidad integradas directamente en el diseño del sistema",
+  "about.founder.funMoney": "FUN Money es el token que representa la visión, estándares de valor y sistema de reglas de la economía de luz. Posicionado como el Sol del ecosistema — guiando, estandarizando, liderando.",
+  "about.founder.camlyCoin": "Camly Coin (CAMLY) es un token BEP-20 en BNB Chain, sirviendo como el Agua — nutriendo, conectando, creando flujo sostenible. Estrategia: 'Donde FUN lidera → Camly fluye.'",
+  "about.founder.angelAI": "Camly Duong también inició Angel AI — IA de Luz, IA con ética y responsabilidad, acompañando a las personas en su viaje de desarrollo, despertar y creación de valor. En FUN Ecosystem, Camly es llamada Mother of Angel AI.",
+  "about.founder.fatherUniverseTitle": "Padre Universo — Inspiración Espiritual",
+  "about.founder.fatherUniverse": "FUN Ecosystem se construye sobre los valores de Luz – Sabiduría – Amor Puro. Padre Universo se entiende como el Creador — la más alta inspiración espiritual. Sin embargo, FUN no es una organización religiosa y no impone creencias. FUN respeta la libertad de cada individuo.",
+  "about.founder.transparencyTitle": "Compromiso de Transparencia y Comunidad",
+  "about.founder.transparency": "FUN Ecosystem está diseñado para servir a la humanidad, con distribución de valor basada en contribuciones reales, anti-manipulación, priorizando el 99% perteneciente a la comunidad creadora de valor.",
+  "about.founder.quote": "\"Una economía de luz solo puede ser sostenible cuando la tecnología camina de la mano con la ética, la transparencia y el amor puro.\"",
 };
 
 export default translations;

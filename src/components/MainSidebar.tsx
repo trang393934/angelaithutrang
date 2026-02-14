@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { 
   Home, Info, BookOpen, MessageCircle, Users, 
-  PenLine, ArrowRightLeft, Star, PanelLeft, Gift, History, Shield, User
+  PenLine, ArrowRightLeft, Star, PanelLeft, Gift, History, Shield, User, Crown
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { NavLink } from "@/components/NavLink";
@@ -54,6 +54,7 @@ export function MainSidebar() {
   const navItems = [
     { label: t("nav.home"), href: "/", icon: Home },
     { label: t("nav.about"), href: "/about", icon: Info },
+    { label: t("nav.founder") || "Nhà sáng lập", href: "/about#founder", icon: Crown },
     { label: t("nav.knowledge"), href: "/knowledge", icon: BookOpen },
     { label: t("nav.connect"), href: "/chat", icon: MessageCircle },
     { label: t("nav.community") || "Cộng đồng", href: "/community", icon: Users },
