@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 export const ValentineMusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(() =>
-    localStorage.getItem("valentine_music_playing") === "true"
+    localStorage.getItem("valentine_music_playing") !== "false"
   );
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
