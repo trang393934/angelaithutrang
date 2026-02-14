@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
-import { Music, VolumeX, Volume2, Minus, Plus } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Music, VolumeX, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Slider } from "@/components/ui/slider";
 
 export const ValentineMusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(() =>
@@ -13,6 +14,33 @@ export const ValentineMusicPlayer = () => {
   const [showVolume, setShowVolume] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasInitRef = useRef(false);
+  const isReadyRef = useRef(false);
+
+  const tryPlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const doPlay = () => {
+      audio.play().then(() => {
+        // Successfully playing — remove global listeners
+        document.removeEventListener("click", onInteraction, true);
+        document.removeEventListener("touchstart", onInteraction, true);
+      }).catch(() => {
+        // Still blocked — keep listeners active
+      });
+    };
+
+    if (isReadyRef.current) {
+      doPlay();
+    } else {
+      audio.addEventListener("canplaythrough", () => doPlay(), { once: true });
+    }
+  }, []);
+
+  const onInteraction = useCallback(() => {
+    if (audioRef.current && !audioRef.current.paused) return; // already playing
+    tryPlay();
+  }, [tryPlay]);
 
   // Initialize audio once
   useEffect(() => {
@@ -25,25 +53,24 @@ export const ValentineMusicPlayer = () => {
     audio.volume = volume;
     audioRef.current = audio;
 
+    audio.addEventListener("canplaythrough", () => {
+      isReadyRef.current = true;
+    }, { once: true });
+
     if (isPlaying) {
+      // Wait a tick for audio to start loading
       const timer = setTimeout(() => {
-        audio.play().catch(() => {
-          // Browser blocked autoplay — resume on first user interaction
-          const resumeOnClick = () => {
-            if (audioRef.current) {
-              audioRef.current.play().catch(() => {});
-            }
-            document.removeEventListener("click", resumeOnClick);
-            document.removeEventListener("touchstart", resumeOnClick);
-          };
-          document.addEventListener("click", resumeOnClick, { once: true });
-          document.addEventListener("touchstart", resumeOnClick, { once: true });
-        });
+        tryPlay();
+        // Register global interaction fallback
+        document.addEventListener("click", onInteraction, { capture: true });
+        document.addEventListener("touchstart", onInteraction, { capture: true });
       }, 300);
       return () => clearTimeout(timer);
     }
 
     return () => {
+      document.removeEventListener("click", onInteraction, true);
+      document.removeEventListener("touchstart", onInteraction, true);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
@@ -56,9 +83,13 @@ export const ValentineMusicPlayer = () => {
     const audio = audioRef.current;
     if (!audio) return;
     if (isPlaying) {
-      audio.play().catch(() => {});
+      tryPlay();
+      document.addEventListener("click", onInteraction, { capture: true });
+      document.addEventListener("touchstart", onInteraction, { capture: true });
     } else {
       audio.pause();
+      document.removeEventListener("click", onInteraction, true);
+      document.removeEventListener("touchstart", onInteraction, true);
     }
     localStorage.setItem("valentine_music_playing", String(isPlaying));
   }, [isPlaying]);
@@ -71,32 +102,25 @@ export const ValentineMusicPlayer = () => {
     localStorage.setItem("valentine_music_volume", String(volume));
   }, [volume]);
 
-  const adjustVolume = (delta: number) => {
-    setVolume((v) => Math.min(1, Math.max(0, +(v + delta).toFixed(2))));
-  };
-
   return (
     <div className="fixed bottom-6 right-20 z-50 flex flex-col items-center gap-2">
-      {/* Volume controls */}
+      {/* Volume slider */}
       {showVolume && (
-        <div className="flex flex-col items-center gap-1 bg-black/60 backdrop-blur-md rounded-xl p-2 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <button
-            onClick={() => adjustVolume(0.1)}
-            className="p-1.5 rounded-full hover:bg-white/20 text-white transition-colors"
-            title="Tăng âm lượng"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-          <span className="text-white text-xs font-medium min-w-[2ch] text-center">
-            {Math.round(volume * 100)}
+        <div className="flex flex-col items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-xl p-3 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <span className="text-white text-[10px] font-medium">
+            {Math.round(volume * 100)}%
           </span>
-          <button
-            onClick={() => adjustVolume(-0.1)}
-            className="p-1.5 rounded-full hover:bg-white/20 text-white transition-colors"
-            title="Giảm âm lượng"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
+          <div className="h-20 flex items-center justify-center">
+            <Slider
+              orientation="vertical"
+              min={0}
+              max={100}
+              step={1}
+              value={[Math.round(volume * 100)]}
+              onValueChange={([v]) => setVolume(v / 100)}
+              className="h-full [&_[data-orientation=vertical]]:w-2 [&_[data-orientation=vertical]_.relative]:bg-white/20 [&_[data-orientation=vertical]_[role=slider]]:h-4 [&_[data-orientation=vertical]_[role=slider]]:w-4 [&_[data-orientation=vertical]_[role=slider]]:border-pink-400 [&_[data-orientation=vertical]_[role=slider]]:bg-white [&_[data-orientation=vertical]_span.absolute]:bg-gradient-to-t [&_[data-orientation=vertical]_span.absolute]:from-pink-500 [&_[data-orientation=vertical]_span.absolute]:to-red-400"
+            />
+          </div>
         </div>
       )}
 
