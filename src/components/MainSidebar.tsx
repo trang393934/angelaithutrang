@@ -65,7 +65,7 @@ export function MainSidebar() {
   return (
     <Sidebar 
       collapsible="icon" 
-      className="border-r border-amber-200/20 bg-gradient-to-b from-amber-50/40 via-white/30 to-amber-50/30 backdrop-blur-sm"
+      className="border-r border-amber-200/30 !z-20"
     >
       {/* Header with Logo - 2cm (~20px) gap from top */}
       <SidebarHeader className="border-b border-amber-200/20 py-4 mt-5">
