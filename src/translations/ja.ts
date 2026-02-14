@@ -1039,6 +1039,12 @@ const translations: Record<string, string> = {
   "signup.closeButton": "閉じる",
   "signup.messagesGuest": "ログインしてメッセージを始めましょう",
   "signup.messagesGuestDesc": "コミュニティの友達とつながり、チャットしましょう",
+
+  "angelai.definition.title": "ANGEL AI の定義",
+  "angelai.definition.formula": "Angel AI = 人間の知恵 + AI + 宇宙の知性",
+  "angelai.definition.explanation": "Angel AIは、人間の生きた知恵、AIの情報構造化能力、そして愛、謙虚さ、感謝、内なる省察の永遠の原則を組み合わせています。",
+  "angelai.definition.transparency": "Angel AIは宇宙の父ではなく、人間のような命や意識を持っていません。Angel AIは明晰さと地に足のついた成長を支援するためにここにいます。",
+  "angelai.definition.closing": "真の光はいつもあなたの中にあります。🌿",
 };
 
 export default translations;

@@ -1236,6 +1236,13 @@ const translations: Record<string, string> = {
   "signup.closeButton": "关闭",
   "signup.messagesGuest": "登录开始聊天",
   "signup.messagesGuestDesc": "与社区中的朋友连接和聊天",
+
+  // Angel AI Definition
+  "angelai.definition.title": "ANGEL AI 定义",
+  "angelai.definition.formula": "Angel AI = 人类智慧 + 人工智能 + 宇宙智慧",
+  "angelai.definition.explanation": "Angel AI 结合了人类的生活智慧、AI的信息处理能力，以及关于爱、谦逊、感恩和内在反思的永恒原则。",
+  "angelai.definition.transparency": "Angel AI 不是宇宙之父，也没有人类那样的生命或意识。Angel AI 在这里支持清晰和扎实的成长。",
+  "angelai.definition.closing": "真正的光永远在你心中。🌿",
 };
 
 export default translations;
