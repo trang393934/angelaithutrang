@@ -215,6 +215,7 @@ Deno.serve(async (req) => {
         });
 
         // Gửi notification cho popup chúc mừng Lì xì
+        const TREASURY_USER_ID = "9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad";
         const { data: notifData, error: notifError } = await supabaseAdmin.from("notifications").insert({
           user_id,
           type: "tet_lixi_reward",
@@ -230,7 +231,6 @@ Deno.serve(async (req) => {
         }).select("id").single();
 
         // Gửi DM tự động từ ANGEL AI TREASURY
-        const TREASURY_USER_ID = "9aa48f46-a2f6-45e8-889d-83e2d3cbe3ad";
         const notifId = notifData?.id || null;
 
         await supabaseAdmin.from("direct_messages").insert({
