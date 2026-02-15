@@ -1,52 +1,57 @@
 
 
-# Them che do Fast/Spiritual cho tao anh
+# Sua loi mat luot tao anh khi that bai
 
-## Van de hien tai
+## Van de
 
-Nhu con thay trong anh chup man hinh, UI chi hien thi dropdown **style** (Spiritual, Realistic, Artistic) - day la phong cach anh, KHONG phai che do tao anh (Fast vs Spiritual).
-
-Hook `useImageGeneration.ts` da co tham so `mode` mac dinh la `"fast"`, nhung trang Chat.tsx **khong truyen** tham so `mode` khi goi `generateImage(prompt, imageStyle)`. Ket qua la backend luon nhan mode mac dinh tu hook (fast), nhung UI khong cho user chon.
+Ham `check_and_increment_ai_usage` trong database tang bo dem (`usage_count`) TRUOC khi anh duoc tao thanh cong. Neu qua trinh tao anh bi loi (Fal.ai timeout, loi mang, Google API loi...), bo dem van bi tang. User mat luot ma khong nhan duoc anh.
 
 ## Giai phap
 
-### 1. Them state `imageMode` trong Chat.tsx
+Tach logic thanh 2 buoc:
+1. **Kiem tra** gioi han truoc (KHONG tang bo dem)
+2. **Tang bo dem** CHI SAU KHI anh duoc tao thanh cong
 
-Them state moi `imageMode` voi gia tri mac dinh `"fast"`, doc lap voi `imageStyle`.
+### Thay doi cu the
 
-### 2. Them toggle Fast/Spiritual trong thanh cong cu tao anh
+#### 1. Tao ham database moi: `check_ai_usage_only`
 
-Trong phan header cua che do "Generate Image" (dong 1162-1171), them mot toggle/select cho user chon giua:
-- **Sieu toc** (Fast) - mac dinh, dung Fal.ai Flux
-- **Tam linh** (Spiritual) - dung Google Gemini
+Ham nay chi kiem tra gioi han, KHONG tang bo dem:
+- Neu `usage_count >= daily_limit` -> tra ve `allowed = false`
+- Neu chua dat gioi han -> tra ve `allowed = true` (khong increment)
 
-Toggle nay nam ben canh dropdown style hien tai.
+#### 2. Tao ham database moi: `increment_ai_usage`
 
-### 3. Truyen mode xuong generateImage
+Ham nay chi tang bo dem, goi SAU KHI thanh cong:
+- Tang `usage_count + 1`
+- Tra ve count moi
 
-Cap nhat `handleGenerateImage` (dong 554):
+#### 3. Cap nhat Edge Function `generate-image/index.ts`
+
+Thay doi flow:
+
+```text
+Truoc:
+  check_and_increment (tang luon) -> tao anh (co the loi) -> tra ve
+
+Sau:
+  check_ai_usage_only (chi kiem tra) -> tao anh -> NEU thanh cong -> increment_ai_usage
 ```
-// Truoc
-const result = await generateImage(prompt, imageStyle);
 
-// Sau  
-const result = await generateImage(prompt, imageStyle, imageMode);
-```
-
-### 4. An dropdown style khi mode = "fast"
-
-Khi user chon Fast mode, dropdown style (Spiritual/Realistic/Artistic) khong can thiet vi Flux khong phan biet style. Chi hien dropdown style khi mode = "spiritual".
+Cu the:
+- Dong 37-56: Thay `check_and_increment_ai_usage` bang `check_ai_usage_only`
+- Them logic goi `increment_ai_usage` SAU dong 236 (sau khi anh da tao thanh cong)
 
 ## File can sua
 
-| File | Thay doi |
-|------|----------|
-| `src/pages/Chat.tsx` | Them state `imageMode`, them toggle UI, truyen `mode` vao `generateImage`, an style dropdown khi Fast |
+| File/Doi tuong | Thay doi |
+|----------------|----------|
+| Database migration | Tao 2 ham moi: `check_ai_usage_only` va `increment_ai_usage` |
+| `supabase/functions/generate-image/index.ts` | Doi flow: check truoc, increment sau khi thanh cong |
 
 ## Ket qua mong doi
 
-- Mac dinh la **Sieu toc (Fast)** - tao anh nhanh 1-2s
-- User co the chuyen sang **Tam linh (Spiritual)** khi can anh phuc tap, tieng Viet
-- Dropdown style chi hien khi chon Spiritual
-- Trai nghiem UI ro rang, de hieu
+- User chi bi tru luot khi THUC SU nhan duoc anh
+- Neu tao anh that bai, luot khong bi mat
+- Gioi han 3 anh/ngay van duoc dam bao
 
