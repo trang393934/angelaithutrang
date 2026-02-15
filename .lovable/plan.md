@@ -1,53 +1,23 @@
 
 
-# Them buoc toi uu hoa prompt bang AI cho che do Sieu toc
+# Tang gioi han tao anh len 5 anh/ngay
 
-## Y tuong
+## Thay doi
 
-Khi user go prompt tieng Viet (vd: "thien than bay tren troi"), he thong se dung Gemini 2.5 Flash de dich va nang cap thanh prompt tieng Anh chuyen sau cho Flux (vd: "An ethereal angel soaring across a vast heavenly sky, detailed feathered wings, ethereal lighting, high resolution, cinematic composition").
+Co 2 noi can cap nhat:
 
-## Flow moi
+### 1. Edge Function `supabase/functions/generate-image/index.ts`
+- Dong 10: Doi `DAILY_IMAGE_LIMIT = 3` thanh `DAILY_IMAGE_LIMIT = 5`
 
-```text
-User prompt (tieng Viet/Anh)
-    |
-    v
-[Gemini 2.5 Flash] -- Dich + toi uu hoa prompt --> optimized English prompt
-    |
-    v
-[Fal.ai Flux Schnell] -- Tao anh tu prompt da toi uu
-    |
-    v
-Upload Storage --> Tra ve user
-```
+### 2. Database function `get_daily_ai_usage`
+- Ham nay tra ve `daily_limit` cho frontend hien thi thanh tien trinh (progress bar)
+- Hien tai tra ve `3` cho `generate_image` va `edit_image`
+- Doi thanh `5` cho ca hai
 
-## Thay doi cu the
+| File | Thay doi |
+|------|----------|
+| `supabase/functions/generate-image/index.ts` | `DAILY_IMAGE_LIMIT = 3` -> `5` |
+| Database migration | Cap nhat ham `get_daily_ai_usage`: tra ve `5` thay vi `3` |
 
-### File: `supabase/functions/generate-image/index.ts`
-
-Them mot buoc moi **chi trong che do "fast"** (dong 78-145), TRUOC khi goi Fal.ai:
-
-1. Goi Gemini 2.5 Flash qua Cloudflare Gateway (hoac Google AI Studio truc tiep) voi system prompt yeu cau:
-   - Dich prompt sang tieng Anh neu la tieng Viet
-   - Them cac tu khoa nang cao chat luong: ethereal lighting, detailed, cinematic, v.v.
-   - Giu nguyen y nghia goc cua user
-   - Tra ve CHI prompt tieng Anh da toi uu (khong giai thich)
-
-2. Dung ket qua lam `enhancedPrompt` truyen vao Fal.ai
-
-3. Secret `GOOGLE_AI_API_KEY` da co san, khong can them secret moi
-
-4. Neu buoc toi uu that bai (timeout, loi API), fallback ve prompt goc + quality boost nhu hien tai de khong lam gian doan trai nghiem
-
-### Khong thay doi gi o:
-- Che do Spiritual (van dung Google Gemini truc tiep de tao anh)
-- Logic check/increment usage
-- Frontend
-
-## Ket qua mong doi
-
-- User Viet Nam go "con meo dang ngoi thien" -> Flux nhan "A serene cat sitting in deep meditation pose, zen garden background, soft ethereal lighting, high resolution, 8K UHD, detailed fur texture"
-- Chat luong anh tang dang ke nho prompt tieng Anh chuyen nghiep
-- Khong anh huong toc do nhieu (Gemini Flash rat nhanh, ~0.5-1s)
-- Neu Gemini loi, van fallback ve prompt goc
+Thay doi nho, khong anh huong logic khac.
 
