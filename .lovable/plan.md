@@ -1,23 +1,29 @@
 
+# Chinh xac Model ID va kich thuoc anh cho che do Fast
 
-# Tang gioi han tao anh len 5 anh/ngay
+## Van de hien tai
+
+| Thuoc tinh | Hien tai | Can doi |
+|-----------|---------|--------|
+| Model ID (URL) | `fal-ai/flux/schnell` | `fal-ai/flux-1/schnell` |
+| Image size | `"square_hd"` (co the > 1MP) | `{ width: 1024, height: 1024 }` (chinh xac 1MP = $0.003) |
 
 ## Thay doi
 
-Co 2 noi can cap nhat:
+### File: `supabase/functions/generate-image/index.ts`
 
-### 1. Edge Function `supabase/functions/generate-image/index.ts`
-- Dong 10: Doi `DAILY_IMAGE_LIMIT = 3` thanh `DAILY_IMAGE_LIMIT = 5`
+**Dong 134**: Doi URL endpoint
+- Tu: `https://fal.run/fal-ai/flux/schnell`
+- Thanh: `https://fal.run/fal-ai/flux-1/schnell`
 
-### 2. Database function `get_daily_ai_usage`
-- Ham nay tra ve `daily_limit` cho frontend hien thi thanh tien trinh (progress bar)
-- Hien tai tra ve `3` cho `generate_image` va `edit_image`
-- Doi thanh `5` cho ca hai
+**Dong 142**: Doi `image_size`
+- Tu: `"square_hd"`
+- Thanh: `{ "width": 1024, "height": 1024 }`
 
-| File | Thay doi |
-|------|----------|
-| `supabase/functions/generate-image/index.ts` | `DAILY_IMAGE_LIMIT = 3` -> `5` |
-| Database migration | Cap nhat ham `get_daily_ai_usage`: tra ve `5` thay vi `3` |
+Chi 2 dong thay doi, khong anh huong logic khac.
 
-Thay doi nho, khong anh huong logic khac.
+## Ket qua
 
+- Model ID chinh xac: `fal-ai/flux-1/schnell`
+- Kich thuoc co dinh 1024x1024 (1 Megapixel)
+- Gia: $0.003/anh (muc thap nhat cua Fal.ai Flux Schnell)
