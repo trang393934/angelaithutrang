@@ -141,6 +141,7 @@ const Chat = () => {
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageStyle, setImageStyle] = useState<"spiritual" | "realistic" | "artistic">("spiritual");
+  const [imageMode, setImageMode] = useState<"fast" | "spiritual">("fast");
   const [showImageActionDialog, setShowImageActionDialog] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
@@ -551,7 +552,7 @@ const Chat = () => {
     setMessages(prev => [...prev, { role: "assistant", content: t("chat.creatingImage"), type: "text" }]);
     
     try {
-      const result = await generateImage(prompt, imageStyle);
+      const result = await generateImage(prompt, imageStyle, imageMode);
       
       setMessages(prev => {
         const updated = [...prev];
@@ -1160,15 +1161,31 @@ const Chat = () => {
                 </span>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <select
-                  value={imageStyle}
-                  onChange={(e) => setImageStyle(e.target.value as any)}
-                  className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white dark:bg-gray-800 border border-border"
-                >
-                  <option value="spiritual">{t("chat.styleSpiritual")}</option>
-                  <option value="realistic">{t("chat.styleRealistic")}</option>
-                  <option value="artistic">{t("chat.styleArtistic")}</option>
-                </select>
+                <div className="flex items-center gap-1 bg-white dark:bg-gray-800 border border-border rounded px-1 py-0.5">
+                  <button
+                    onClick={() => setImageMode("fast")}
+                    className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded transition-colors ${imageMode === "fast" ? "bg-purple-500 text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    ⚡ Siêu tốc
+                  </button>
+                  <button
+                    onClick={() => setImageMode("spiritual")}
+                    className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded transition-colors ${imageMode === "spiritual" ? "bg-purple-500 text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    🔮 Tâm linh
+                  </button>
+                </div>
+                {imageMode === "spiritual" && (
+                  <select
+                    value={imageStyle}
+                    onChange={(e) => setImageStyle(e.target.value as any)}
+                    className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white dark:bg-gray-800 border border-border"
+                  >
+                    <option value="spiritual">{t("chat.styleSpiritual")}</option>
+                    <option value="realistic">{t("chat.styleRealistic")}</option>
+                    <option value="artistic">{t("chat.styleArtistic")}</option>
+                  </select>
+                )}
                 <button
                   onClick={() => setChatMode("chat")}
                   className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground px-1.5 sm:px-2 py-1 rounded hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
