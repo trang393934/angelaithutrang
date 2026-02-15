@@ -131,7 +131,7 @@ serve(async (req) => {
       const FAL_KEY = Deno.env.get("FAL_KEY");
       if (!FAL_KEY) throw new Error("FAL_KEY is not configured");
 
-      const falResponse = await fetch("https://fal.run/fal-ai/flux/schnell", {
+      const falResponse = await fetch("https://fal.run/fal-ai/flux-1/schnell", {
         method: "POST",
         headers: {
           Authorization: `Key ${FAL_KEY}`,
@@ -139,7 +139,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           prompt: aiEnhancedPrompt,
-          image_size: "square_hd",
+          image_size: { width: 1024, height: 1024 },
           num_images: 1,
         }),
       });
