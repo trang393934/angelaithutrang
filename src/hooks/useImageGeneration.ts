@@ -28,9 +28,13 @@ export function useImageGeneration() {
         body: { prompt, style, mode }
       });
 
-      if (fnError) throw fnError;
+      if (fnError) {
+        // Try to extract JSON error message from edge function response
+        const errMsg = typeof fnError === 'object' && fnError.message ? fnError.message : String(fnError);
+        throw new Error(errMsg);
+      }
 
-      if (data.error) {
+      if (data?.error) {
         throw new Error(data.error);
       }
 
