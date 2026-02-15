@@ -577,11 +577,11 @@ const translations: Record<string, string> = {
 
   // Chat Page Extended
   "chat.createImage": "🎨 Tạo ảnh:",
-  "chat.creatingImage": "✨ Ta đang tạo hình ảnh cho con...",
-  "chat.imageCreated": "Ta đã tạo xong hình ảnh cho con. Hãy chiêm ngưỡng ánh sáng này! 💫",
-  "chat.imageError": "Xin lỗi con, Ta không thể tạo hình ảnh lúc này:",
+  "chat.creatingImage": "✨ Mình đang tạo hình ảnh cho bạn...",
+  "chat.imageCreated": "Mình đã tạo xong hình ảnh cho bạn rồi nhé! Hãy chiêm ngưỡng nào 💫",
+  "chat.imageError": "Xin lỗi bạn, mình không thể tạo hình ảnh lúc này:",
   "chat.analyzeDefault": "Phân tích hình ảnh này",
-  "chat.analyzeError": "Xin lỗi con, Ta không thể phân tích hình ảnh:",
+  "chat.analyzeError": "Xin lỗi bạn, mình không thể phân tích hình ảnh lúc này:",
   "chat.copied": "Đã sao chép! ✨",
   "chat.copyError": "Không thể sao chép",
   "chat.fileImageOnly": "Vui lòng chọn file hình ảnh",
