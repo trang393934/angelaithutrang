@@ -3466,6 +3466,15 @@ export type Database = {
         Args: { _base_reward: number; _i: number; _k: number; _q: number }
         Returns: number
       }
+      check_ai_usage_only: {
+        Args: { _daily_limit?: number; _usage_type: string; _user_id: string }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          daily_limit: number
+          message: string
+        }[]
+      }
       check_and_increment_ai_usage: {
         Args: { _daily_limit?: number; _usage_type: string; _user_id: string }
         Returns: {
@@ -3678,6 +3687,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_ai_usage: {
+        Args: { _usage_type: string; _user_id: string }
+        Returns: number
       }
       increment_api_key_usage: {
         Args: { _api_key_id: string; _tokens_used?: number }
