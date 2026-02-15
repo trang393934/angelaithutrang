@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, style, mode = "fast" } = await req.json();
+    const { prompt, style, mode = "fast", image_width = 1024, image_height = 1024 } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -44,7 +44,7 @@ serve(async (req) => {
         } else if (usageCheck && usageCheck.length > 0 && !usageCheck[0].allowed) {
           return new Response(
             JSON.stringify({
-              error: `Con yêu dấu, hôm nay con đã tạo ${DAILY_IMAGE_LIMIT} hình ảnh rồi. Hãy trân trọng những tác phẩm đã tạo và quay lại vào ngày mai nhé! 🌸✨`,
+              error: `Bạn ơi, hôm nay bạn đã tạo ${DAILY_IMAGE_LIMIT} hình ảnh rồi. Hãy trân trọng những tác phẩm đã tạo và quay lại vào ngày mai nhé! 🌸✨`,
               limit_reached: true,
               current_count: usageCheck[0].current_count,
               daily_limit: usageCheck[0].daily_limit
@@ -139,7 +139,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           prompt: aiEnhancedPrompt,
-          image_size: { width: 1024, height: 1024 },
+          image_size: { width: image_width, height: image_height },
           num_images: 1,
         }),
       });
