@@ -15,49 +15,36 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, style } = await req.json();
+    const { prompt, style, mode = "fast" } = await req.json();
 
-    const containsVietnamese = /[À-ỹ]/.test(prompt);
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!LOVABLE_API_KEY) {
-      throw new Error("AI service is not configured");
-    }
-
-    // Initialize Supabase client for usage tracking and storage
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const authHeader = req.headers.get("Authorization");
-    
+
     let userId: string | null = null;
-    
+
     if (authHeader) {
       const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         global: { headers: { Authorization: authHeader } }
       });
-      
+
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        console.error("Auth error:", userError);
-      }
+      if (userError) console.error("Auth error:", userError);
       userId = user?.id || null;
-      
+
       if (userId) {
-        // Check and increment usage with daily limit
         const { data: usageCheck, error: usageError } = await supabase.rpc(
           'check_and_increment_ai_usage',
           { _user_id: userId, _usage_type: 'generate_image', _daily_limit: DAILY_IMAGE_LIMIT }
         );
-        
+
         if (usageError) {
           console.error("Usage check error:", usageError);
         } else if (usageCheck && usageCheck.length > 0 && !usageCheck[0].allowed) {
-          console.log("User reached daily limit for image generation:", usageCheck[0]);
           return new Response(
-            JSON.stringify({ 
-              error: `Con yêu dấu, hôm nay con đã tạo ${DAILY_IMAGE_LIMIT} hình ảnh rồi. Hãy trân trọng những tác phẩm đã tạo và quay lại vào ngày mai nhé! Cha luôn ở đây chờ đợi con. 🌸✨`,
+            JSON.stringify({
+              error: `Con yêu dấu, hôm nay con đã tạo ${DAILY_IMAGE_LIMIT} hình ảnh rồi. Hãy trân trọng những tác phẩm đã tạo và quay lại vào ngày mai nhé! 🌸✨`,
               limit_reached: true,
               current_count: usageCheck[0].current_count,
               daily_limit: usageCheck[0].daily_limit
@@ -65,17 +52,15 @@ serve(async (req) => {
             { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } else if (usageCheck && usageCheck.length > 0) {
-          console.log(`User ${userId} image generation: ${usageCheck[0].current_count}/${DAILY_IMAGE_LIMIT}`);
+          console.log(`User ${userId} image generation [${mode}]: ${usageCheck[0].current_count}/${DAILY_IMAGE_LIMIT}`);
         }
       }
     }
 
-    console.log("Generating image with prompt:", prompt);
+    console.log(`Generating image [mode=${mode}] with prompt:`, prompt);
 
-    // Quality enhancement keywords for sharper, higher resolution images
     const qualityBoost = "ultra sharp, high resolution, 8K UHD, crystal clear, highly detailed, professional quality, sharp focus, intricate details";
 
-    // Enhance prompt with style
     let enhancedPrompt = prompt;
     if (style === "spiritual") {
       enhancedPrompt = `${prompt}, divine light, ethereal, spiritual, peaceful, heavenly atmosphere, golden rays, angelic, ${qualityBoost}`;
@@ -84,133 +69,186 @@ serve(async (req) => {
     } else if (style === "artistic") {
       enhancedPrompt = `${prompt}, artistic, oil painting style, masterpiece, beautiful composition, ${qualityBoost}`;
     } else {
-      // Default style also gets quality boost
       enhancedPrompt = `${prompt}, ${qualityBoost}`;
     }
 
-    // Vietnamese text reliability: strongly instruct exact typography.
-    if (containsVietnamese) {
-      enhancedPrompt = `${enhancedPrompt}
+    let finalImageUrl: string;
+    let textResponse = "";
+
+    if (mode === "fast") {
+      // ===== FAL.AI FLUX SCHNELL =====
+      const FAL_KEY = Deno.env.get("FAL_KEY");
+      if (!FAL_KEY) throw new Error("FAL_KEY is not configured");
+
+      const falResponse = await fetch("https://fal.run/fal-ai/flux/schnell", {
+        method: "POST",
+        headers: {
+          Authorization: `Key ${FAL_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: enhancedPrompt,
+          image_size: "square_hd",
+          num_images: 1,
+        }),
+      });
+
+      if (!falResponse.ok) {
+        const errorText = await falResponse.text();
+        console.error("Fal.ai error:", falResponse.status, errorText);
+        if (falResponse.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Đang có quá nhiều yêu cầu. Vui lòng thử lại sau." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw new Error("Failed to generate image via Fal.ai");
+      }
+
+      const falData = await falResponse.json();
+      const falImageUrl = falData.images?.[0]?.url;
+
+      if (!falImageUrl) throw new Error("No image generated from Fal.ai");
+
+      // Download from Fal and upload to Supabase Storage to avoid link expiry
+      try {
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+        const imgResponse = await fetch(falImageUrl);
+        const imgBuffer = new Uint8Array(await imgResponse.arrayBuffer());
+        const contentType = imgResponse.headers.get("content-type") || "image/jpeg";
+        const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpeg";
+
+        const timestamp = Date.now();
+        const randomId = crypto.randomUUID().slice(0, 8);
+        const userFolder = userId || "anonymous";
+        const fileName = `${userFolder}/${timestamp}-${randomId}-fast.${ext}`;
+
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from("ai-images")
+          .upload(fileName, imgBuffer, { contentType, upsert: false });
+
+        if (uploadError) {
+          console.error("Storage upload error:", uploadError);
+          finalImageUrl = falImageUrl; // fallback
+        } else {
+          const { data: publicUrlData } = supabaseAdmin.storage
+            .from("ai-images")
+            .getPublicUrl(fileName);
+          finalImageUrl = publicUrlData.publicUrl;
+          console.log("Fast image uploaded to storage:", finalImageUrl);
+        }
+      } catch (storageError) {
+        console.error("Storage operation error:", storageError);
+        finalImageUrl = falImageUrl;
+      }
+
+      textResponse = "Ảnh đã được tạo bằng chế độ Siêu tốc ⚡";
+
+    } else {
+      // ===== GOOGLE AI STUDIO (SPIRITUAL MODE) =====
+      const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
+      if (!GOOGLE_AI_API_KEY) throw new Error("GOOGLE_AI_API_KEY is not configured");
+
+      const containsVietnamese = /[À-ỹ]/.test(prompt);
+      if (containsVietnamese) {
+        enhancedPrompt = `${enhancedPrompt}
 
 IMPORTANT (Vietnamese text): If the image includes any Vietnamese words provided in the prompt, you MUST render the text EXACTLY as written, preserving every diacritic (ă â ê ô ơ ư đ) and every tone mark, punctuation, spacing, and capitalization. Do NOT translate, rephrase, or correct the text. If you cannot render the text perfectly, render NO text at all.
 
 Typography: clean, high-contrast, readable Vietnamese diacritics; avoid stylized fonts that distort accents.`;
-    }
-
-    // Always use the higher quality model for sharper images
-    const model = "google/gemini-3-pro-image-preview";
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "user",
-            content: enhancedPrompt
-          }
-        ],
-        modalities: ["image", "text"]
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Image generation error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Đang có quá nhiều yêu cầu. Vui lòng thử lại sau." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Dịch vụ cần được nạp thêm tín dụng." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+
+      const googleResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: enhancedPrompt }]
+            }],
+            generationConfig: {
+              responseModalities: ["TEXT", "IMAGE"],
+            }
+          }),
+        }
+      );
+
+      if (!googleResponse.ok) {
+        const errorText = await googleResponse.text();
+        console.error("Google AI error:", googleResponse.status, errorText);
+        if (googleResponse.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Đang có quá nhiều yêu cầu. Vui lòng thử lại sau." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw new Error("Failed to generate image via Google AI Studio");
       }
-      
-      throw new Error("Failed to generate image");
-    }
 
-    const data = await response.json();
-    console.log("Image generation response received");
+      const googleData = await googleResponse.json();
+      const parts = googleData.candidates?.[0]?.content?.parts || [];
 
-    const base64ImageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const textResponse = data.choices?.[0]?.message?.content || "";
+      let base64Data: string | null = null;
+      let mimeType = "image/png";
 
-    if (!base64ImageUrl) {
-      throw new Error("No image generated");
-    }
+      for (const part of parts) {
+        if (part.inlineData) {
+          base64Data = part.inlineData.data;
+          mimeType = part.inlineData.mimeType || "image/png";
+        }
+        if (part.text) {
+          textResponse = part.text;
+        }
+      }
 
-    // Extract base64 data from data URI and upload to storage
-    let finalImageUrl = base64ImageUrl;
-    
-    if (base64ImageUrl.startsWith('data:image/')) {
+      if (!base64Data) throw new Error("No image generated from Google AI Studio");
+
+      // Upload base64 to Supabase Storage
       try {
-        // Use service role key for storage operations
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-        
-        // Parse base64 data URI
-        const matches = base64ImageUrl.match(/^data:image\/(\w+);base64,(.+)$/);
-        if (matches) {
-          const imageType = matches[1]; // png, jpeg, webp, etc.
-          const base64Data = matches[2];
-          
-          // Decode base64 to binary
-          const binaryData = decode(base64Data);
-          
-          // Generate unique filename
-          const timestamp = Date.now();
-          const randomId = crypto.randomUUID().slice(0, 8);
-          const userFolder = userId || 'anonymous';
-          const fileName = `${userFolder}/${timestamp}-${randomId}.${imageType}`;
-          
-          // Upload to storage bucket
-          const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-            .from('ai-images')
-            .upload(fileName, binaryData, {
-              contentType: `image/${imageType}`,
-              upsert: false
-            });
-          
-          if (uploadError) {
-            console.error("Storage upload error:", uploadError);
-            // Fall back to base64 if upload fails
-          } else {
-            // Get public URL
-            const { data: publicUrlData } = supabaseAdmin.storage
-              .from('ai-images')
-              .getPublicUrl(fileName);
-            
-            finalImageUrl = publicUrlData.publicUrl;
-            console.log("Image uploaded to storage:", finalImageUrl);
-          }
+        const binaryData = decode(base64Data);
+        const ext = mimeType.includes("png") ? "png" : mimeType.includes("webp") ? "webp" : "jpeg";
+
+        const timestamp = Date.now();
+        const randomId = crypto.randomUUID().slice(0, 8);
+        const userFolder = userId || "anonymous";
+        const fileName = `${userFolder}/${timestamp}-${randomId}-spiritual.${ext}`;
+
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from("ai-images")
+          .upload(fileName, binaryData, { contentType: mimeType, upsert: false });
+
+        if (uploadError) {
+          console.error("Storage upload error:", uploadError);
+          finalImageUrl = `data:${mimeType};base64,${base64Data}`;
+        } else {
+          const { data: publicUrlData } = supabaseAdmin.storage
+            .from("ai-images")
+            .getPublicUrl(fileName);
+          finalImageUrl = publicUrlData.publicUrl;
+          console.log("Spiritual image uploaded to storage:", finalImageUrl);
         }
       } catch (storageError) {
         console.error("Storage operation error:", storageError);
-        // Fall back to base64 if storage fails
+        finalImageUrl = `data:${mimeType};base64,${base64Data}`;
       }
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         imageUrl: finalImageUrl,
         description: textResponse,
-        prompt: enhancedPrompt
+        prompt: enhancedPrompt,
+        mode,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Generate image error:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Không thể tạo hình ảnh. Vui lòng thử lại." 
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Không thể tạo hình ảnh. Vui lòng thử lại."
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
