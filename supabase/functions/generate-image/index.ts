@@ -76,7 +76,58 @@ serve(async (req) => {
     let textResponse = "";
 
     if (mode === "fast") {
-      // ===== FAL.AI FLUX SCHNELL =====
+      // ===== STEP 1: ENHANCE PROMPT WITH GEMINI 2.5 FLASH =====
+      const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
+      let aiEnhancedPrompt = enhancedPrompt;
+
+      if (GOOGLE_AI_API_KEY) {
+        try {
+          console.log("Enhancing prompt with Gemini 2.5 Flash...");
+          const geminiResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_AI_API_KEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{ text: prompt }]
+                }],
+                systemInstruction: {
+                  parts: [{ text: `You are an expert AI image prompt engineer for Flux (a text-to-image model). Your job:
+1. If the input is in Vietnamese (or any non-English language), translate it to English accurately.
+2. Enhance the prompt with professional photography/art keywords to maximize image quality: detailed textures, cinematic composition, ethereal lighting, high resolution, 8K UHD, sharp focus, vivid colors, dramatic atmosphere, intricate details.
+3. Keep the original meaning and intent of the user's request intact. Do NOT add elements the user didn't ask for.
+4. Return ONLY the enhanced English prompt. No explanations, no quotes, no prefixes like "Here is...". Just the prompt text.
+5. Keep it concise but powerful (under 200 words).` }]
+                },
+                generationConfig: {
+                  temperature: 0.7,
+                  maxOutputTokens: 300,
+                }
+              }),
+            }
+          );
+
+          if (geminiResponse.ok) {
+            const geminiData = await geminiResponse.json();
+            const enhanced = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+            if (enhanced && enhanced.length > 10) {
+              aiEnhancedPrompt = enhanced;
+              console.log("Prompt enhanced successfully:", aiEnhancedPrompt.substring(0, 100) + "...");
+            } else {
+              console.warn("Gemini returned empty/short response, using fallback prompt");
+            }
+          } else {
+            console.warn("Gemini enhancement failed:", geminiResponse.status, await geminiResponse.text());
+          }
+        } catch (geminiError) {
+          console.warn("Gemini enhancement error (using fallback):", geminiError);
+        }
+      } else {
+        console.log("GOOGLE_AI_API_KEY not set, skipping prompt enhancement");
+      }
+
+      // ===== STEP 2: FAL.AI FLUX SCHNELL =====
       const FAL_KEY = Deno.env.get("FAL_KEY");
       if (!FAL_KEY) throw new Error("FAL_KEY is not configured");
 
@@ -87,7 +138,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt: enhancedPrompt,
+          prompt: aiEnhancedPrompt,
           image_size: "square_hd",
           num_images: 1,
         }),
