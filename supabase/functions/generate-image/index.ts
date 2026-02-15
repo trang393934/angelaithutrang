@@ -35,7 +35,7 @@ serve(async (req) => {
 
       if (userId) {
         const { data: usageCheck, error: usageError } = await supabase.rpc(
-          'check_and_increment_ai_usage',
+          'check_ai_usage_only',
           { _user_id: userId, _usage_type: 'generate_image', _daily_limit: DAILY_IMAGE_LIMIT }
         );
 
@@ -52,7 +52,7 @@ serve(async (req) => {
             { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } else if (usageCheck && usageCheck.length > 0) {
-          console.log(`User ${userId} image generation [${mode}]: ${usageCheck[0].current_count}/${DAILY_IMAGE_LIMIT}`);
+          console.log(`User ${userId} image generation check [${mode}]: ${usageCheck[0].current_count}/${DAILY_IMAGE_LIMIT} (not incremented yet)`);
         }
       }
     }
@@ -232,6 +232,22 @@ Typography: clean, high-contrast, readable Vietnamese diacritics; avoid stylized
       } catch (storageError) {
         console.error("Storage operation error:", storageError);
         finalImageUrl = `data:${mimeType};base64,${base64Data}`;
+      }
+    }
+
+    // Increment usage count ONLY after successful image generation
+    if (userId) {
+      const supabaseForIncrement = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader! } }
+      });
+      const { error: incError } = await supabaseForIncrement.rpc(
+        'increment_ai_usage',
+        { _user_id: userId, _usage_type: 'generate_image' }
+      );
+      if (incError) {
+        console.error("Usage increment error:", incError);
+      } else {
+        console.log(`User ${userId} image usage incremented after successful generation`);
       }
     }
 
