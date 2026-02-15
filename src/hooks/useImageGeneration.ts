@@ -5,20 +5,27 @@ interface GeneratedImage {
   imageUrl: string;
   description: string;
   prompt: string;
+  mode?: "fast" | "spiritual";
 }
+
+export type ImageGenerationMode = "fast" | "spiritual";
 
 export function useImageGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<GeneratedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const generateImage = useCallback(async (prompt: string, style: "spiritual" | "realistic" | "artistic" = "spiritual") => {
+  const generateImage = useCallback(async (
+    prompt: string,
+    style: "spiritual" | "realistic" | "artistic" = "spiritual",
+    mode: ImageGenerationMode = "fast"
+  ) => {
     setIsGenerating(true);
     setError(null);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("generate-image", {
-        body: { prompt, style }
+        body: { prompt, style, mode }
       });
 
       if (fnError) throw fnError;

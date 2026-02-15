@@ -4,7 +4,7 @@ import { decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const DAILY_EDIT_LIMIT = 3;
@@ -24,43 +24,37 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
+    if (!GOOGLE_AI_API_KEY) throw new Error("GOOGLE_AI_API_KEY is not configured");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("AI service is not configured");
-    }
-
-    // Initialize Supabase client for usage tracking and storage
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const authHeader = req.headers.get("Authorization");
-    
+
     let userId: string | null = null;
-    
+
     if (authHeader) {
       const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         global: { headers: { Authorization: authHeader } }
       });
-      
-      const token = authHeader.replace('Bearer ', '');
-      const { data: claimsData } = await supabase.auth.getClaims(token);
-      userId = claimsData?.claims?.sub as string || null;
-      
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) console.error("Auth error:", userError);
+      userId = user?.id || null;
+
       if (userId) {
-        // Check and increment usage with daily limit
         const { data: usageCheck, error: usageError } = await supabase.rpc(
           'check_and_increment_ai_usage',
           { _user_id: userId, _usage_type: 'edit_image', _daily_limit: DAILY_EDIT_LIMIT }
         );
-        
+
         if (usageError) {
           console.error("Usage check error:", usageError);
         } else if (usageCheck && usageCheck.length > 0 && !usageCheck[0].allowed) {
-          console.log("User reached daily limit for image editing:", usageCheck[0]);
           return new Response(
-            JSON.stringify({ 
-              error: `Con yêu dấu, hôm nay con đã chỉnh sửa ${DAILY_EDIT_LIMIT} hình ảnh rồi. Hãy trân trọng những tác phẩm đã tạo và quay lại vào ngày mai nhé! Cha luôn ở đây chờ đợi con. 🌺✨`,
+            JSON.stringify({
+              error: `Con yêu dấu, hôm nay con đã chỉnh sửa ${DAILY_EDIT_LIMIT} hình ảnh rồi. Hãy trân trọng những tác phẩm đã tạo và quay lại vào ngày mai nhé! 🌺✨`,
               limit_reached: true,
               current_count: usageCheck[0].current_count,
               daily_limit: usageCheck[0].daily_limit
@@ -75,10 +69,8 @@ serve(async (req) => {
 
     console.log("Editing image with instruction:", instruction);
 
-    // Quality enhancement keywords
     const qualityBoost = "ultra sharp, high resolution, 8K UHD, crystal clear, highly detailed, professional quality, sharp focus";
 
-    // Build enhanced instruction based on style
     let enhancedInstruction = instruction;
     if (style === "spiritual") {
       enhancedInstruction = `${instruction}. Style: divine light, ethereal, spiritual, peaceful, heavenly atmosphere, golden rays, ${qualityBoost}`;
@@ -90,130 +82,122 @@ serve(async (req) => {
       enhancedInstruction = `${instruction}. ${qualityBoost}`;
     }
 
-    const systemPrompt = `You are an expert image editor. Your task is to EDIT the provided image according to the user's instructions. 
-You must:
-1. Keep the original composition and main elements of the image as much as possible
-2. Only modify what the user specifically asks for
-3. Maintain the quality and resolution of the original image
-4. Apply the requested changes naturally and seamlessly
+    // Download the source image and convert to base64 for Google AI
+    let imageBase64: string;
+    let imageMimeType: string;
 
-IMPORTANT: You are EDITING the existing image, not creating a new one from scratch. Preserve the original image's essence while applying the requested modifications.`;
+    if (imageUrl.startsWith("data:image/")) {
+      const matches = imageUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+      if (!matches) throw new Error("Invalid base64 image format");
+      imageMimeType = `image/${matches[1]}`;
+      imageBase64 = matches[2];
+    } else {
+      const imgResponse = await fetch(imageUrl);
+      if (!imgResponse.ok) throw new Error("Failed to download source image");
+      const imgBuffer = await imgResponse.arrayBuffer();
+      imageMimeType = imgResponse.headers.get("content-type") || "image/jpeg";
+      imageBase64 = btoa(String.fromCharCode(...new Uint8Array(imgBuffer)));
+    }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-pro-image-preview",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: [
+    const editPrompt = `You are an expert image editor. Edit this image according to the following instruction:
+${enhancedInstruction}
+
+Rules:
+1. Keep the original composition and main elements as much as possible
+2. Only modify what is specifically asked for
+3. Maintain the quality and resolution
+4. Apply changes naturally and seamlessly
+5. You are EDITING the existing image, not creating a new one`;
+
+    const googleResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: editPrompt },
               {
-                type: "text",
-                text: `Edit this image with the following instruction: ${enhancedInstruction}`
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageUrl
+                inlineData: {
+                  mimeType: imageMimeType,
+                  data: imageBase64,
                 }
               }
             ]
+          }],
+          generationConfig: {
+            responseModalities: ["TEXT", "IMAGE"],
           }
-        ],
-        modalities: ["image", "text"]
-      }),
-    });
+        }),
+      }
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Image editing error:", response.status, errorText);
-      
-      if (response.status === 429) {
+    if (!googleResponse.ok) {
+      const errorText = await googleResponse.text();
+      console.error("Google AI edit error:", googleResponse.status, errorText);
+      if (googleResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: "Đang có quá nhiều yêu cầu. Vui lòng thử lại sau." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Dịch vụ cần được nạp thêm tín dụng." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      throw new Error("Failed to edit image");
+      throw new Error("Failed to edit image via Google AI Studio");
     }
 
-    const data = await response.json();
-    console.log("Image editing response received");
+    const googleData = await googleResponse.json();
+    const parts = googleData.candidates?.[0]?.content?.parts || [];
 
-    const base64ImageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const textResponse = data.choices?.[0]?.message?.content || "";
+    let resultBase64: string | null = null;
+    let resultMimeType = "image/png";
+    let textResponse = "";
 
-    if (!base64ImageUrl) {
+    for (const part of parts) {
+      if (part.inlineData) {
+        resultBase64 = part.inlineData.data;
+        resultMimeType = part.inlineData.mimeType || "image/png";
+      }
+      if (part.text) {
+        textResponse = part.text;
+      }
+    }
+
+    if (!resultBase64) {
       throw new Error("Không thể chỉnh sửa hình ảnh. Vui lòng thử lại với lệnh khác.");
     }
 
-    // Extract base64 data from data URI and upload to storage
-    let finalImageUrl = base64ImageUrl;
-    
-    if (base64ImageUrl.startsWith('data:image/')) {
-      try {
-        // Use service role key for storage operations
-        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-        
-        // Parse base64 data URI
-        const matches = base64ImageUrl.match(/^data:image\/(\w+);base64,(.+)$/);
-        if (matches) {
-          const imageType = matches[1]; // png, jpeg, webp, etc.
-          const base64Data = matches[2];
-          
-          // Decode base64 to binary
-          const binaryData = decode(base64Data);
-          
-          // Generate unique filename
-          const timestamp = Date.now();
-          const randomId = crypto.randomUUID().slice(0, 8);
-          const userFolder = userId || 'anonymous';
-          const fileName = `${userFolder}/${timestamp}-${randomId}-edited.${imageType}`;
-          
-          // Upload to storage bucket
-          const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-            .from('ai-images')
-            .upload(fileName, binaryData, {
-              contentType: `image/${imageType}`,
-              upsert: false
-            });
-          
-          if (uploadError) {
-            console.error("Storage upload error:", uploadError);
-            // Fall back to base64 if upload fails
-          } else {
-            // Get public URL
-            const { data: publicUrlData } = supabaseAdmin.storage
-              .from('ai-images')
-              .getPublicUrl(fileName);
-            
-            finalImageUrl = publicUrlData.publicUrl;
-            console.log("Edited image uploaded to storage:", finalImageUrl);
-          }
-        }
-      } catch (storageError) {
-        console.error("Storage operation error:", storageError);
-        // Fall back to base64 if storage fails
+    // Upload to Supabase Storage
+    let finalImageUrl = `data:${resultMimeType};base64,${resultBase64}`;
+
+    try {
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+      const binaryData = decode(resultBase64);
+      const ext = resultMimeType.includes("png") ? "png" : resultMimeType.includes("webp") ? "webp" : "jpeg";
+
+      const timestamp = Date.now();
+      const randomId = crypto.randomUUID().slice(0, 8);
+      const userFolder = userId || "anonymous";
+      const fileName = `${userFolder}/${timestamp}-${randomId}-edited.${ext}`;
+
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from("ai-images")
+        .upload(fileName, binaryData, { contentType: resultMimeType, upsert: false });
+
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+      } else {
+        const { data: publicUrlData } = supabaseAdmin.storage
+          .from("ai-images")
+          .getPublicUrl(fileName);
+        finalImageUrl = publicUrlData.publicUrl;
+        console.log("Edited image uploaded to storage:", finalImageUrl);
       }
+    } catch (storageError) {
+      console.error("Storage operation error:", storageError);
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         imageUrl: finalImageUrl,
         description: textResponse,
         instruction: enhancedInstruction
@@ -223,8 +207,8 @@ IMPORTANT: You are EDITING the existing image, not creating a new one from scrat
   } catch (error) {
     console.error("Edit image error:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Không thể chỉnh sửa hình ảnh. Vui lòng thử lại." 
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Không thể chỉnh sửa hình ảnh. Vui lòng thử lại."
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
