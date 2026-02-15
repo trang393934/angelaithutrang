@@ -1,59 +1,52 @@
 
-# Cap nhat Snapshot Tet voi User ID va Wallet chinh xac
 
-## Van de
+# Them che do Fast/Spiritual cho tao anh
 
-Hien tai, file snapshot (`tetRewardData.ts`) chi luu `name` (display_name). He thong phai doi chieu ten voi bang `profiles` de tim `user_id` va `wallet_address`. Viec nay that bai voi nhieu user vi:
-- Ten trong database co khoang trang thua (vd: `"Tú Nguyễn "` thay vi `"Tú Nguyễn"`)
-- Ten co dau cach, chu hoa/thuong khac nhau
-- Mot so user doi ten sau khi snapshot duoc tao
+## Van de hien tai
 
-Ket qua: nhieu user da co vi nhung cot Wallet hien thi "---".
+Nhu con thay trong anh chup man hinh, UI chi hien thi dropdown **style** (Spiritual, Realistic, Artistic) - day la phong cach anh, KHONG phai che do tao anh (Fast vs Spiritual).
+
+Hook `useImageGeneration.ts` da co tham so `mode` mac dinh la `"fast"`, nhung trang Chat.tsx **khong truyen** tham so `mode` khi goi `generateImage(prompt, imageStyle)`. Ket qua la backend luon nhan mode mac dinh tu hook (fast), nhung UI khong cho user chon.
 
 ## Giai phap
 
-### 1. Them truong `userId` vao interface `TetRewardUser`
+### 1. Them state `imageMode` trong Chat.tsx
 
-Bo sung truong `userId` (optional) vao interface de luu truc tiep user_id tu database.
+Them state moi `imageMode` voi gia tri mac dinh `"fast"`, doc lap voi `imageStyle`.
 
-### 2. Cap nhat toan bo 205 dong du lieu voi `userId` chinh xac
+### 2. Them toggle Fast/Spiritual trong thanh cong cu tao anh
 
-Dua tren du lieu da truy van tu database, gan `userId` cho tung user trong snapshot. Cha da doi chieu xong toan bo 205 user voi database.
+Trong phan header cua che do "Generate Image" (dong 1162-1171), them mot toggle/select cho user chon giua:
+- **Sieu toc** (Fast) - mac dinh, dung Fal.ai Flux
+- **Tam linh** (Spiritual) - dung Google Gemini
 
-### 3. Cap nhat logic tai wallet trong `AdminTetReward.tsx`
+Toggle nay nam ben canh dropdown style hien tai.
 
-Thay doi logic `loadWallets` (dong 172-213): thay vi tim user_id qua `display_name`, su dung truc tiep `userId` tu snapshot data. Dieu nay dam bao:
-- Wallet luon duoc hien thi dung cho tung user
-- Khong bi loi do ten co khoang trang hay case khac nhau
-- Phan thuong tu dong cung su dung dung user_id
+### 3. Truyen mode xuong generateImage
 
-### 4. Cap nhat logic phan thuong `handleDistribute`
+Cap nhat `handleGenerateImage` (dong 554):
+```
+// Truoc
+const result = await generateImage(prompt, imageStyle);
 
-Thay vi query `profiles` theo `display_name`, lay truc tiep `userId` tu snapshot data. Loai bo hoan toan viec match theo ten.
+// Sau  
+const result = await generateImage(prompt, imageStyle, imageMode);
+```
 
-## Chi tiet ky thuat
+### 4. An dropdown style khi mode = "fast"
 
-### File can sua
+Khi user chon Fast mode, dropdown style (Spiritual/Realistic/Artistic) khong can thiet vi Flux khong phan biet style. Chi hien dropdown style khi mode = "spiritual".
+
+## File can sua
 
 | File | Thay doi |
 |------|----------|
-| `src/data/tetRewardData.ts` | Them truong `userId` vao interface va gan userId cho 205 user |
-| `src/pages/AdminTetReward.tsx` | Cap nhat `loadWallets`, `handleDistribute`, va `nameToUserIdMap` de su dung userId truc tiep |
+| `src/pages/Chat.tsx` | Them state `imageMode`, them toggle UI, truyen `mode` vao `generateImage`, an style dropdown khi Fast |
 
-### Logic moi
+## Ket qua mong doi
 
-```text
-// Truoc: match theo ten (hay loi)
-profiles.select("user_id").in("display_name", names)
+- Mac dinh la **Sieu toc (Fast)** - tao anh nhanh 1-2s
+- User co the chuyen sang **Tam linh (Spiritual)** khi can anh phuc tap, tieng Viet
+- Dropdown style chi hien khi chon Spiritual
+- Trai nghiem UI ro rang, de hieu
 
-// Sau: dung truc tiep userId tu snapshot
-const userIds = tetRewardData.map(u => u.userId).filter(Boolean)
-wallets.select("wallet_address").in("user_id", userIds)
-```
-
-### Ket qua mong doi
-
-- Tat ca 205 user se co userId chinh xac
-- Cot Wallet hien thi dung dia chi vi (neu user da ket noi)
-- Phan thuong tu dong su dung dung user_id, khong can doi chieu ten
-- File export cung bao gom userId chinh xac
