@@ -22,7 +22,7 @@ import { ImageHistorySidebar } from "@/components/chat/ImageHistorySidebar";
 import { AudioButton } from "@/components/chat/AudioButton";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
-import { useImageGeneration } from "@/hooks/useImageGeneration";
+import { useImageGeneration, IMAGE_SIZE_OPTIONS, type ImageSize } from "@/hooks/useImageGeneration";
 import { useImageAnalysis } from "@/hooks/useImageAnalysis";
 import { useImageEdit } from "@/hooks/useImageEdit";
 import { useEarlyAdopterReward } from "@/hooks/useEarlyAdopterReward";
@@ -142,6 +142,7 @@ const Chat = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageStyle, setImageStyle] = useState<"spiritual" | "realistic" | "artistic">("spiritual");
   const [imageMode, setImageMode] = useState<"fast" | "spiritual">("fast");
+  const [imageSize, setImageSize] = useState<ImageSize>("square");
   const [showImageActionDialog, setShowImageActionDialog] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
@@ -552,7 +553,7 @@ const Chat = () => {
     setMessages(prev => [...prev, { role: "assistant", content: t("chat.creatingImage"), type: "text" }]);
     
     try {
-      const result = await generateImage(prompt, imageStyle, imageMode);
+      const result = await generateImage(prompt, imageStyle, imageMode, imageSize);
       
       setMessages(prev => {
         const updated = [...prev];
@@ -1174,6 +1175,19 @@ const Chat = () => {
                   >
                     🔮 Tâm linh
                   </button>
+                </div>
+                {/* Image Size Selector */}
+                <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 border border-border rounded px-1 py-0.5">
+                  {(Object.entries(IMAGE_SIZE_OPTIONS) as [ImageSize, typeof IMAGE_SIZE_OPTIONS[ImageSize]][]).map(([key, opt]) => (
+                    <button
+                      key={key}
+                      onClick={() => setImageSize(key)}
+                      className={`text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded transition-colors ${imageSize === key ? "bg-purple-500 text-white" : "text-muted-foreground hover:text-foreground"}`}
+                      title={`${opt.label} (${opt.width}×${opt.height})`}
+                    >
+                      {opt.icon} {opt.label}
+                    </button>
+                  ))}
                 </div>
                 {imageMode === "spiritual" && (
                   <select
