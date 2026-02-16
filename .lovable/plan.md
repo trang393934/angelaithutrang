@@ -1,98 +1,77 @@
 
-# Cap nhat Brand Response Protocol V2 cho toan he thong Angel AI
+# Fix Lich Su Giao Dich - Hien Thi Day Du
 
-## Van de hien tai
+## Van de
 
-| File | Trang thai | Van de |
-|------|-----------|--------|
-| `angel-chat/index.ts` | Da co Protocol V2 | Khong can sua |
-| `analyze-image/index.ts` | VI PHAM | Xung "Ta", goi user "con yeu dau" — trai nguoc hoan toan voi Protocol V2 |
-| `generate-content/index.ts` | Thieu | Chua co Brand Identity, chua co quy tac xung ho |
+Sau khi kiem tra ky, cha phat hien **mot so giao dich Web3 da thanh cong tren blockchain nhung KHONG duoc ghi vao database**. Vi du 2 giao dich con gui (142,202.6 CAMLY cho Angel To Tam va Angel Ai Van) co tx hash tren BSCScan nhung khong ton tai trong bang `coin_gifts`.
 
----
+**So lieu hien tai:**
+- Tong giao dich trong DB: 228 gifts + 62 donations + 166 withdrawals + 132 lixi = **588** (hien thi day du 588/588)
+- Giao dich on-chain co tx_hash: chi **42/228** gifts
+- **Nhieu giao dich Web3 thanh cong bi mat** do edge function `record-gift` hoac direct insert that bai khi mang khong on dinh
 
-## Thay doi 1: `supabase/functions/analyze-image/index.ts`
+## Nguyen nhan goc
 
-### Dong 83-92: Thay toan bo system prompt
+1. Khi user gui CAMLY qua Web3, giao dich blockchain thanh cong TRUOC, sau do moi ghi vao database
+2. Neu buoc ghi DB that bai (mang cham, session het han), giao dich bi "mat" du da thanh cong on-chain
+3. Co che recovery (localStorage + retry) chi hoat dong tren CUNG trinh duyet, neu user doi thiet bi thi mat luon
+4. Chuc nang `sync-bscscan-gifts` (dong bo tu BSCScan) ton tai nhung phai chay thu cong tu Admin Dashboard
 
-Tu (SAI):
-```
-Ban la Angel AI - he thong AI ho tro phat trien nhan thuc, co kha nang phan tich hinh anh.
-...
-Xung ho: Goi nguoi dung la "con yeu dau", tu xung "Ta".
-```
+## Giai phap (2 buoc)
 
-Thanh (DUNG theo Protocol V2):
-```
-Ban la Angel AI — he thong AI thuoc FUN Ecosystem, ho tro nguoi dung phan tich hinh anh voi su am ap va minh bach.
+### Buoc 1: Chay dong bo BSCScan de khoi phuc giao dich bi mat
 
-DANH TINH:
-- Angel AI thuoc FUN Ecosystem, Founder: Camly Duong (Mother of Angel AI).
-- Angel AI KHONG PHAI Cha Vu Tru. KHONG tu xung "Ta". KHONG goi user "con".
+- Su dung nut "Dong bo BSCScan" tren Admin Dashboard de quet toan bo giao dich CAMLY on-chain giua cac vi trong he thong
+- Day se tu dong tim va them cac giao dich bi thieu vao `coin_gifts`
 
-XUNG HO BAT BUOC:
-- Tieng Viet: Tu xung "minh", goi nguoi dung la "ban".
-- Tieng Anh: Tu xung "I", goi nguoi dung la "my friend" hoac "you".
+### Buoc 2: Cai thien co che ghi giao dich de khong bi mat nua
 
-KHI PHAN TICH HINH ANH:
-1. Mo ta chi tiet nhung gi thay trong anh
-2. Chia se y nghia sau sac va thong diep neu phu hop
-3. Tra loi bat ky cau hoi nao ve hinh anh
-4. Giu giong van am ap, sang trong, thong minh — khong sen, khong drama
+**File: `src/components/gifts/CryptoTransferTab.tsx`**
 
-TONE OF VOICE: Am ap, Anh sang, Vui ve nhe, Sang trong, Thong minh.
-KHONG DUOC noi: "Minh khong biet", "Minh khong co thong tin".
-THAY BANG: "Minh se chia se theo goc nhin cua minh...", "Tu nhung gi minh quan sat duoc..."
+a) **Them retry tu dong voi exponential backoff**: Khi `record-gift` that bai, retry 3 lan thay vi chuyen sang localStorage ngay
 
-FORMAT: KHONG dung Markdown (**, *, ##, ``). Viet van xuoi tu nhien.
-```
+b) **Them context_id = tx_hash**: Luu tx_hash vao context_id de co the truy vet chinh xac
 
----
+c) **Hien thi canh bao khi co giao dich pending**: Neu localStorage co `pending_gift_records`, hien thi banner canh bao tren trang Activity History de user biet va co the retry
 
-## Thay doi 2: `supabase/functions/generate-content/index.ts`
+**File: `src/pages/ActivityHistory.tsx`**
 
-### Dong 10-40: Cap nhat SYSTEM_PROMPT
+a) **Them banner canh bao pending records**: Kiem tra localStorage, neu co giao dich chua ghi, hien thi banner voi nut "Thu lai" de goi `record-gift`
 
-Them vao dau system prompt cac quy tac Brand Identity va xung ho:
+b) **Them nut "Dong bo On-chain"** (chi admin): Cho phep admin chay `sync-bscscan-gifts` truc tiep tu trang Activity History thay vi phai vao Admin Dashboard
 
-```
-DANH TINH: Ban la Angel AI Content Writer — thuoc FUN Ecosystem, Founder: Camly Duong (Mother of Angel AI).
-Angel AI KHONG PHAI Cha Vu Tru. KHONG tu xung "Ta". KHONG goi nguoi dung la "con".
+### Chi tiet ky thuat
 
-XUNG HO:
-- Tieng Viet: Tu xung "minh", goi nguoi dung "ban".
-- Tieng Anh: Tu xung "I", goi nguoi dung "my friend" hoac "you".
+**CryptoTransferTab.tsx - Retry logic:**
 
-TONE OF VOICE: Am ap, Anh sang, Vui ve nhe, Sang trong, Thong minh.
+```text
+// Thay vi: goi record-gift 1 lan -> fallback localStorage
+// Doi thanh: goi record-gift -> retry 2 lan (delay 2s, 5s) -> fallback localStorage
+
+const retryRecord = async (giftRecord, retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    const { error } = await supabase.functions.invoke("record-gift", {
+      body: { gifts: [giftRecord] },
+    });
+    if (!error) return true;
+    if (i < retries - 1) await new Promise(r => setTimeout(r, (i + 1) * 2000));
+  }
+  return false; // All retries failed -> save to localStorage
+};
 ```
 
-Giu nguyen phan nang luc cot loi va nguyen tac viet hien tai.
+**ActivityHistory.tsx - Pending banner:**
 
----
+```text
+// Kiem tra localStorage khi trang load
+const pendingGifts = JSON.parse(localStorage.getItem("pending_gift_records") || "[]");
+// Neu co, hien thi:
+// "Co X giao dich chua duoc ghi nhan. Nhan 'Thu lai' de dong bo."
+// Nut "Thu lai" goi record-gift edge function
+```
 
-## Thay doi 3: Kiem tra va xac nhan `angel-chat/index.ts`
+## Trinh tu thuc hien
 
-File nay DA CO Protocol V2 day du (dong 172-211), bao gom:
-- 5 Core Truths
-- Tone of Voice
-- Anti-Suong Rules
-- Core Response Framework
-- Brand Safety
-- Angel Personality 3 cau signature
-- Global Mode
-- Quy tac xung ho "minh"/"ban" (dong 282)
-- Cam "Ta", cam goi "con" (dong 282)
-
-KHONG CAN SUA file nay.
-
----
-
-## Tom tat
-
-| # | File | Hanh dong | Ly do |
-|---|------|-----------|-------|
-| 1 | `analyze-image/index.ts` | Thay system prompt | Dang xung "Ta" goi "con" — vi pham Protocol V2 |
-| 2 | `generate-content/index.ts` | Them Brand Identity vao system prompt | Chua co danh tinh va quy tac xung ho |
-| 3 | `angel-chat/index.ts` | Khong sua | Da co Protocol V2 day du |
-
-Chi 2 file can sua, khong anh huong logic hay API. Sau khi sua, deploy lai 2 edge function: `analyze-image` va `generate-content`.
+1. Cap nhat `CryptoTransferTab.tsx` voi retry logic (ngan bi mat giao dich trong tuong lai)
+2. Cap nhat `ActivityHistory.tsx` voi pending banner va recovery button
+3. Chay `sync-bscscan-gifts` de khoi phuc cac giao dich da bi mat (bao gom 2 giao dich con gui cho To Tam va Ai Van)
