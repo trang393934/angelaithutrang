@@ -31,7 +31,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
-import { VideoThemeSelector } from "@/components/VideoThemeSelector";
+
 
 const Community = () => {
   const { user } = useAuth();
@@ -362,7 +362,7 @@ const Community = () => {
           </div>
         </div>
         <BackToTopButton scrollRef={mainRef} />
-        <VideoThemeSelector />
+        
 
         {/* Gift & Donate Dialogs */}
         <GiftCoinDialog 

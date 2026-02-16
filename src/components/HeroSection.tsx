@@ -20,54 +20,6 @@ export const HeroSection = () => {
       {/* Main content - Centered branding */}
       <div className="relative z-10 container mx-auto px-4 sm:px-6">
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
-          {/* Valentine Title - Metallic Red-Gold - ABOVE avatar */}
-          <div className="mb-2 opacity-0 animate-fade-in animate-delay-100">
-            <div className="relative inline-block">
-              <span
-                className="absolute inset-0 font-black text-2xl sm:text-3xl md:text-4xl tracking-wider uppercase whitespace-nowrap select-none"
-                style={{
-                  WebkitTextStroke: "1px rgba(0,0,0,0.12)",
-                  color: "transparent",
-                  transform: "translate(2px, 2px)",
-                  filter: "blur(1px)",
-                }}
-                aria-hidden
-              >
-                ❤️ HAPPY VALENTINE'S DAY ❤️
-              </span>
-              <motion.span
-                className="relative font-black text-2xl sm:text-3xl md:text-4xl tracking-wider uppercase whitespace-nowrap"
-                style={{
-                  backgroundImage: "linear-gradient(90deg, #dc2626, #fbbf24, #dc2626, #fbbf24)",
-                  backgroundSize: "200% 100%",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  filter: "drop-shadow(0 1px 3px rgba(255,215,0,0.5)) drop-shadow(0 0 10px rgba(220,38,38,0.3))",
-                  fontFamily: "'Impact', 'Arial Black', sans-serif",
-                }}
-                animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              >
-                ❤️ HAPPY VALENTINE'S DAY ❤️
-              </motion.span>
-              <motion.span
-                className="absolute inset-0 font-black text-2xl sm:text-3xl md:text-4xl tracking-wider uppercase whitespace-nowrap pointer-events-none"
-                style={{
-                  backgroundImage: "linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.9) 50%, transparent 70%)",
-                  backgroundSize: "200% 100%",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  fontFamily: "'Impact', 'Arial Black', sans-serif",
-                }}
-                animate={{ backgroundPosition: ["-100% 50%", "200% 50%"] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }}
-                aria-hidden
-              >
-                ❤️ HAPPY VALENTINE'S DAY ❤️
-              </motion.span>
-            </div>
-          </div>
-
           {/* Angel Avatar - Centered */}
           <div className="mb-6 sm:mb-8 opacity-0 animate-fade-in">
             <div className="animate-glow-pulse rounded-full">
