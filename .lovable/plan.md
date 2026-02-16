@@ -1,41 +1,67 @@
 
-# Cai thien Username section trong Profile
 
-## Thay doi 1: Tach "angel.fun.rich/" thanh label rieng, input chi chua username
+# Fix: Hien thi day du giao dich Web3 trong Lich su giao dich
 
-**File:** `src/components/profile/HandleSelector.tsx`
+## Nguyen nhan goc
 
-Hien tai prefix "angel.fun.rich/" nam ben trong input (dung `pl-[5.5rem]`). Thay doi:
-- Bo prefix ra khoi input, hien thi thanh dong text rieng phia tren input (co the click de mo link)
-- Input chi con phan username, placeholder "your_name"
-- Khi da co `currentHandle`, dong "angel.fun.rich/username" la link clickable (`<a>` tag) mo tab moi den `https://angel.fun.rich/@{handle}` hoac `/@{handle}` tren cung domain
+Chuc nang dong bo BSCScan (`sync-bscscan-gifts`) co 2 loi khien nhieu giao dich on-chain khong duoc ghi nhan:
 
-## Thay doi 2: Link username hoat dong khi click va khi share
+1. **Filter qua chat**: Chi tim user "active" dua tren `gift_type = 'web3'` (exact match), nhung cac giao dich moi dung `web3_CAMLY`, `web3_FUN`, `web3_USDT`... nen bi bo qua
+2. **Chi scan CAMLY token**: Chi query BSCScan cho CAMLY contract, bo qua cac token khac (USDT, BNB, FUN...)
 
-**File:** `src/components/profile/HandleSelector.tsx`
+Ket qua: Nhieu giao dich on-chain thanh cong (nhu 142,202.6 CAMLY trong hinh) da xay ra nhung khong duoc luu vao database.
 
-- Hien thi dong `angel.fun.rich/{currentHandle}` nhu mot link `<a href>` co the click
-- Click vao se mo trang ho so cong khai (`/@{handle}`)
-- Khi chua co handle: hien thi text tinh "angel.fun.rich/" khong click duoc
+## Giai phap
 
-**File:** `src/pages/Profile.tsx` (dong 92-97 - UsernameDisplay)
+### Thay doi 1: Fix sync-bscscan-gifts Edge Function
 
-- Cap nhat ham copy de copy full URL thay vi chi `@handle`
-- Them kha nang click vao `@username` de navigate den trang ho so cong khai
+**File:** `supabase/functions/sync-bscscan-gifts/index.ts`
+
+- Sua filter `gift_type = 'web3'` thanh `gift_type LIKE 'web3%'` de bao gom tat ca cac loai web3_CAMLY, web3_FUN, web3_USDT, v.v.
+- Them scan cho cac token pho bien khac ngoai CAMLY:
+  - USDT (BSC): `0x55d398326f99059fF775485246999027B3197955`
+  - FUN Money contract (neu co)
+- Scan TAT CA wallet da dang ky (262 wallets) thay vi chi "active users" - vi user co the nhan CAMLY tu nguoi ngoai he thong
+
+### Thay doi 2: Mo rong ActivityHistory.tsx
+
+**File:** `src/pages/ActivityHistory.tsx`
+
+- Tang limit query `coin_gifts` tu 500 len 1000 de dam bao lay het tat ca giao dich (hien co 235, se tang sau khi sync)
+- Khong can thay doi logic hien thi vi form hien tai da ho tro hien thi tat ca loai gift_type
 
 ## Chi tiet ky thuat
 
-### HandleSelector.tsx
-- Xoa `<div>` chua prefix "angel.fun.rich/" ben trong input (dong 74-77)
-- Xoa `pl-[5.5rem]` khoi Input className, doi thanh padding thuong
-- Them dong text/link phia tren input:
-  - Neu co `currentHandle`: `<a href="/@{currentHandle}" target="_blank">angel.fun.rich/{currentHandle}</a>` (clickable, mau vang/primary)
-  - Neu chua co: text tinh "angel.fun.rich/" mau xam
-- Input ben duoi chi chua phan username nguoi dung nhap
+### sync-bscscan-gifts/index.ts
 
-### Profile.tsx - UsernameDisplay (dong 80-113)
-- Click vao `@username` -> navigate den `/@{currentHandle}` (dung `useNavigate` hoac `<Link>`)
-- Copy van giu nguyen chuc nang hien tai
+Dong 82 hien tai:
+```text
+.eq("gift_type", "web3");
+```
+Doi thanh:
+```text
+.like("gift_type", "web3%");
+```
 
-### HandleSelector suggestions
-- Cac Badge goi y van giu format "angel.fun.rich/{suggestion}" nhung chi thay doi gia tri input khi click
+Dong 78-96 - Mo rong "active users" de bao gom tat ca user co wallet:
+- Bo gioi han chi scan wallet cua "active users"
+- Scan tat ca wallet trong `user_wallet_addresses` (262 wallets)
+- Them rate limiting tot hon (delay 3s moi 3 requests thay vi 2s)
+
+Them scan cho USDT token tren BSC:
+```text
+const USDT_CONTRACT = "0x55d398326f99059fF775485246999027B3197955";
+```
+- Lap qua walletsToScan 2 lan: 1 lan cho CAMLY, 1 lan cho USDT
+- Khi insert USDT transfer, set `gift_type = "web3_USDT"`
+
+### ActivityHistory.tsx
+
+Dong 402: Doi `.limit(500)` thanh `.limit(1000)` cho coin_gifts query.
+
+## Ket qua mong doi
+
+- Tat ca giao dich CAMLY on-chain (bao gom 142,202.6 CAMLY trong hinh) se duoc dong bo va hien thi
+- Giao dich USDT on-chain cung se duoc dong bo
+- Trang Lich su giao dich se hien thi day du: tang thuong (noi bo + Web3 multi-token), donate, rut thuong, li xi
+
