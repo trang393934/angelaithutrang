@@ -1013,9 +1013,19 @@ const AdminTetReward = () => {
                                 <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                                   <Users className="w-3 h-3 text-primary" />
                                 </div>
-                                <span className="font-medium truncate max-w-[120px]" title={row.name}>
-                                  {row.name}
-                                </span>
+                                {row.userId ? (
+                                  <Link
+                                    to={`/user/${row.userId}`}
+                                    className="font-medium truncate max-w-[120px] text-primary hover:underline"
+                                    title={row.name}
+                                  >
+                                    {row.name}
+                                  </Link>
+                                ) : (
+                                  <span className="font-medium truncate max-w-[120px] text-muted-foreground" title={row.name}>
+                                    {row.name}
+                                  </span>
+                                )}
                               </div>
                             </td>
                             {ACTION_COLS.map((col) => {
@@ -1457,9 +1467,19 @@ const AdminTetReward = () => {
                                       <Users className="w-3 h-3 text-primary" />
                                     </div>
                                     <div className="min-w-0">
-                                      <span className="font-medium truncate block max-w-[120px]" title={row.display_name || "Ẩn danh"}>
-                                        {row.display_name || "Ẩn danh"}
-                                      </span>
+                                      {row.user_id ? (
+                                        <Link
+                                          to={`/user/${row.user_id}`}
+                                          className="font-medium truncate block max-w-[120px] text-primary hover:underline"
+                                          title={row.display_name || "Ẩn danh"}
+                                        >
+                                          {row.display_name || "Ẩn danh"}
+                                        </Link>
+                                      ) : (
+                                        <span className="font-medium truncate block max-w-[120px] text-muted-foreground" title={row.display_name || "Ẩn danh"}>
+                                          {row.display_name || "Ẩn danh"}
+                                        </span>
+                                      )}
                                       {row.handle && (
                                         <span className="text-[10px] text-muted-foreground">@{row.handle}</span>
                                       )}
