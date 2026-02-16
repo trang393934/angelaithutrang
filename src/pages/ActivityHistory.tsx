@@ -5,8 +5,9 @@ import {
   ArrowUpRight, ArrowDownLeft, Copy, ExternalLink, Check,
   Clock, TrendingUp, Activity, CheckCircle2, Loader2,
   ArrowLeft, Users, User, Send, Inbox, Filter, Sparkles,
-  ShieldCheck, Building2
+  ShieldCheck, Building2, AlertTriangle, RotateCcw
 } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -292,6 +293,66 @@ const ActivityHistory = () => {
   const [viewMode, setViewMode] = useState<"all" | "personal">("all");
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationData, setCelebrationData] = useState<CelebrationData | null>(null);
+  const [displayCount, setDisplayCount] = useState(50);
+
+  // Pending gift records recovery
+  const [pendingGifts, setPendingGifts] = useState<any[]>([]);
+  const [isRetryingPending, setIsRetryingPending] = useState(false);
+  const [isSyncingOnchain, setIsSyncingOnchain] = useState(false);
+
+  // Check admin role
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle()
+      .then(({ data }) => setIsAdmin(!!data));
+  }, [user]);
+
+  // Load pending gifts from localStorage
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("pending_gift_records") || "[]");
+    setPendingGifts(stored);
+  }, []);
+
+  const handleRetryPending = async () => {
+    if (pendingGifts.length === 0) return;
+    setIsRetryingPending(true);
+    try {
+      const { error } = await supabase.functions.invoke("record-gift", {
+        body: { gifts: pendingGifts },
+      });
+      if (!error) {
+        localStorage.removeItem("pending_gift_records");
+        setPendingGifts([]);
+        toast.success(`Đã đồng bộ ${pendingGifts.length} giao dịch thành công!`);
+        fetchTransactions();
+      } else {
+        toast.error("Đồng bộ thất bại. Vui lòng thử lại sau.");
+      }
+    } catch {
+      toast.error("Lỗi kết nối. Vui lòng thử lại.");
+    } finally {
+      setIsRetryingPending(false);
+    }
+  };
+
+  const handleSyncOnchain = async () => {
+    setIsSyncingOnchain(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-bscscan-gifts");
+      if (error) {
+        toast.error("Đồng bộ BSCScan thất bại: " + error.message);
+      } else {
+        const result = data;
+        toast.success(`Đồng bộ BSCScan hoàn tất: ${result.synced} giao dịch mới, ${result.skipped} đã có`);
+        if (result.synced > 0) fetchTransactions();
+      }
+    } catch {
+      toast.error("Lỗi kết nối BSCScan.");
+    } finally {
+      setIsSyncingOnchain(false);
+    }
+  };
 
   const handleViewCard = (tx: Transaction) => {
     setCelebrationData({
@@ -497,6 +558,13 @@ const ActivityHistory = () => {
     });
   }, [viewFiltered, searchQuery, typeFilter, timeFilter, onchainOnly, tokenFilter, statusFilter]);
 
+  // Reset displayCount when filters change
+  useEffect(() => {
+    setDisplayCount(50);
+  }, [searchQuery, typeFilter, timeFilter, onchainOnly, tokenFilter, statusFilter, viewMode]);
+
+  const displayedTransactions = useMemo(() => filtered.slice(0, displayCount), [filtered, displayCount]);
+
   // Stats based on viewFiltered
   const stats = useMemo(() => {
     const data = viewFiltered;
@@ -607,6 +675,43 @@ const ActivityHistory = () => {
             Cá nhân
           </button>
         </div>
+
+        {/* Pending gifts recovery banner */}
+        {pendingGifts.length > 0 && (
+          <Alert className="border-amber-400 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800">Có {pendingGifts.length} giao dịch chưa được ghi nhận</AlertTitle>
+            <AlertDescription className="text-amber-700 text-xs">
+              Các giao dịch blockchain đã thành công nhưng chưa đồng bộ vào hệ thống. Nhấn "Thử lại" để đồng bộ.
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRetryPending}
+                disabled={isRetryingPending}
+                className="ml-3 h-7 text-xs border-amber-400 text-amber-800 hover:bg-amber-100"
+              >
+                {isRetryingPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RotateCcw className="w-3 h-3 mr-1" />}
+                Thử lại
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Admin: Sync on-chain button */}
+        {isAdmin && (
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleSyncOnchain}
+              disabled={isSyncingOnchain}
+              className="h-8 text-xs border-[#daa520]/40 text-[#8B6914] hover:bg-[#ffd700]/10"
+            >
+              {isSyncingOnchain ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
+              Đồng bộ On-chain (BSCScan)
+            </Button>
+          </div>
+        )}
 
         {/* Personal mode login prompt */}
         {viewMode === "personal" && !user && (
@@ -735,7 +840,8 @@ const ActivityHistory = () => {
         {/* Results count */}
         <div className="flex items-center justify-between">
           <p className="text-xs text-[#8B7355]">
-            Hiển thị <span className="font-bold text-[#3D2800]">{filtered.length}</span> / {transactions.length} giao dịch
+            Hiển thị <span className="font-bold text-[#3D2800]">{Math.min(displayCount, filtered.length)}</span> / {filtered.length} giao dịch
+            {filtered.length !== transactions.length && <span> (lọc từ {transactions.length})</span>}
           </p>
         </div>
 
@@ -754,9 +860,21 @@ const ActivityHistory = () => {
           </div>
         ) : (
           <div className="space-y-2">
-            {filtered.map(tx => (
+            {displayedTransactions.map(tx => (
               <TransactionItem key={tx.id} tx={tx} onViewCard={handleViewCard} />
             ))}
+            {displayCount < filtered.length && (
+              <div className="text-center pt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDisplayCount(prev => prev + 50)}
+                  className="border-[#daa520]/40 text-[#8B6914] hover:bg-[#ffd700]/10"
+                >
+                  Tải thêm ({filtered.length - displayCount} còn lại)
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </main>
