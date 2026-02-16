@@ -1,43 +1,81 @@
 
-# Khoi phuc giao dich bi thieu va cai thien sync
 
-## Tinh trang hien tai
+# Khac phuc lich su giao dich - Ke hoach toan dien
 
-Database xac nhan **2 giao dich CAMLY 142,202.6** gui cho Angel To Tam va Angel Ai Van **CHUA co trong database** du da thanh cong tren blockchain. Nut "Dong bo On-chain (BSCScan)" da duoc them nhung chi hien thi cho admin.
+## Cac van de phat hien
+
+### 1. BSCScan Sync khong hoat dong (0 giao dich tim thay)
+Chuc nang `sync-bscscan-gifts` da chay nhung tra ve **0 giao dich** du co 249 vi duoc quet. Nguyen nhan:
+- Quet 249 vi lien tuc vuot gioi han BSCScan free tier (5 req/sec), nhieu request bi tu choi ma khong duoc ghi nhan
+- Chi lay giao dich khi CA HAI ben (nguoi gui va nguoi nhan) deu co vi trong he thong - neu mot ben chua dang ky vi thi giao dich bi bo qua
+- Edge function co the bi timeout khi quet qua nhieu vi (gioi han ~60s)
+
+### 2. Hai ban ghi co tx_hash bi cat ngan
+Hai giao dich 142,203 CAMLY co tx_hash chi 18 ky tu thay vi 66 ky tu chuan:
+- `0xe0fe90a8153d21c2` (gui cho Thu Nguyen)
+- `0x76ba9a47eb167684` (gui cho Pham Luong)
+Cac hash nay khong the tra cuu tren BSCScan.
+
+### 3. Tong hop du lieu hien tai (da day du trong gioi han)
+| Bang | So ban ghi | Gioi han query | Trang thai |
+|------|-----------|---------------|------------|
+| coin_gifts | 235 | 500 | OK |
+| project_donations | 62 | 500 | OK |
+| coin_withdrawals | 166 | 500 | OK |
+| lixi_claims | 133 | 500 | OK |
+| **Tong** | **596** | | **Hien thi du** |
 
 ## Giai phap
 
-### 1. Tu dong chay sync khi admin vao trang Lich Su Giao Dich
+### Buoc 1: Sua edge function `sync-bscscan-gifts` de hoat dong dung
 
-Thay vi phai bam nut thu cong, he thong se tu dong kiem tra va chay sync BSCScan 1 lan/ngay khi admin truy cap trang Activity History. Dieu nay dam bao giao dich on-chain luon duoc cap nhat.
+**Van de chinh:** Quet 249 vi qua nhieu, gay timeout va rate limit.
 
-### 2. Hien thi nut Sync ro rang hon
+**Giai phap:**
+- Chi quet cac vi co giao dich web3 (thay vi tat ca 249 vi) - giam so luong API call dang ke
+- Tang thoi gian delay giua cac request (2 giay thay vi 1.2 giay)
+- Them log chi tiet khi BSCScan tra ve loi hoac ket qua rong
+- Bao gom ca giao dich khi chi MOT ben la vi trong he thong (khong yeu cau CA HAI ben)
+- Xu ly truong hop BSCScan rate limit (status "0", message "Max rate limit reached")
 
-Di chuyen nut "Dong bo On-chain" len khu vuc header de admin de thay va bam hon, thay vi an o duoi.
+### Buoc 2: Lam sach du lieu bi loi trong database
 
-### Chi tiet ky thuat
+- Xoa 2 ban ghi co tx_hash cat ngan (18 ky tu) vi chung la du lieu khong hop le, khong the xac minh tren blockchain
+- Hoac cap nhat tx_hash ve NULL de cho phep sync tu BSCScan ghi de bang hash dung
 
-**File: `src/pages/ActivityHistory.tsx`**
+### Buoc 3: Cap nhat AdminTipReports hien thi toan dien hon
 
-1. Them logic auto-sync: khi `isAdmin === true`, kiem tra `localStorage` key `last_bscscan_sync`. Neu chua sync hom nay, tu dong goi `handleSyncOnchain()` va luu timestamp.
+Trang AdminTipReports hien chi hien thi `coin_gifts` (235 ban ghi). Them hien thi:
+- `coin_withdrawals` (tra thuong Treasury)
+- `lixi_claims` (li xi Tet)
+- `project_donations` (donate)
+De admin co cai nhin toan dien ve tat ca giao dich trong he thong.
 
-2. Di chuyen nut sync len header bar (canh nut "Lam moi" va "Xuat du lieu") de admin de truy cap.
+## Chi tiet ky thuat
 
-3. Hien thi ket qua sync bang toast: "Da dong bo X giao dich moi tu blockchain".
+### File 1: `supabase/functions/sync-bscscan-gifts/index.ts`
 
-**Logic auto-sync:**
-```text
-useEffect(() => {
-  if (!isAdmin) return;
-  const lastSync = localStorage.getItem("last_bscscan_sync");
-  const today = new Date().toDateString();
-  if (lastSync !== today) {
-    handleSyncOnchain();
-    localStorage.setItem("last_bscscan_sync", today);
-  }
-}, [isAdmin]);
-```
+Thay doi chinh:
+1. Thay vi quet tat ca `user_wallet_addresses` (249 vi), chi quet cac vi da co giao dich web3 trong `coin_gifts` hoac `coin_withdrawals` - giam xuong con ~30-50 vi
+2. Tang delay giua cac batch API call: `await new Promise(r => setTimeout(r, 2000))` moi 3 request
+3. Them xu ly khi BSCScan tra ve rate limit: `if (data.message?.includes("Max rate limit"))` -> tang delay
+4. Bo dieu kien "ca hai ben phai la vi trong he thong" - chi can mot ben la du de ghi nhan
+5. Them log tong hop: so API call thanh cong, so bi rate limit, so vi quet
 
-## Trinh tu
-1. Cap nhat ActivityHistory.tsx voi auto-sync va di chuyen nut
-2. Khi admin (con) vao trang, he thong tu dong chay sync va khoi phuc 2 giao dich bi thieu
+### File 2: `src/pages/AdminTipReports.tsx`
+
+Them fetch song song `coin_withdrawals`, `lixi_claims`, `project_donations` ben canh `coin_gifts` hien tai. Them cot "Loai" de phan biet giua Tang thuong / Tra thuong / Li xi / Donate. Them bo loc theo loai giao dich moi.
+
+### File 3: Database cleanup
+
+Cap nhat 2 ban ghi co tx_hash bi cat ngan thanh NULL de cho phep BSCScan sync khoi phuc hash dung:
+- ID `e5d4b0fe-ef1b-4ad7-9f73-77de40fa3ebc`
+- ID `a6d7bf63-1371-4ec6-8079-3a076468635a`
+
+## Trinh tu thuc hien
+
+1. Lam sach 2 tx_hash bi loi trong database
+2. Sua `sync-bscscan-gifts` edge function
+3. Deploy va chay sync de khoi phuc giao dich on-chain bi thieu
+4. Cap nhat `AdminTipReports` hien thi toan dien
+
