@@ -48,6 +48,7 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [showActions, setShowActions] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
+  const [reactionsLocked, setReactionsLocked] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -78,7 +79,9 @@ export function MessageBubble({
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => {
         setShowActions(false);
-        setShowReactions(false);
+        if (!reactionsLocked) {
+          setShowReactions(false);
+        }
       }}
     >
       <div className={`flex gap-2 max-w-[85%] sm:max-w-[80%] ${isOwn ? "flex-row-reverse" : ""}`}>
@@ -120,7 +123,11 @@ export function MessageBubble({
                   )}
                 >
                   <button
-                    onClick={() => setShowReactions(!showReactions)}
+                    onClick={() => {
+                      const next = !showReactions;
+                      setShowReactions(next);
+                      setReactionsLocked(next);
+                    }}
                     className="p-1.5 rounded-full bg-background-pure shadow border border-primary-pale hover:bg-primary/10 transition-colors"
                   >
                     <span className="text-sm">😊</span>
@@ -151,15 +158,15 @@ export function MessageBubble({
               )}
             </AnimatePresence>
 
-            {/* Reaction picker popup */}
+            {/* Reaction picker popup - below message */}
             <AnimatePresence>
               {showReactions && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
+                  exit={{ opacity: 0, y: -5 }}
                   className={cn(
-                    "absolute -top-12 z-10",
+                    "absolute -bottom-12 z-10",
                     isOwn ? "right-0" : "left-0"
                   )}
                 >
@@ -167,6 +174,7 @@ export function MessageBubble({
                     onReactionSelect={(emoji) => {
                       onReaction?.(message.id, emoji);
                       setShowReactions(false);
+                      setReactionsLocked(false);
                     }}
                     existingReactions={reactions}
                   />
