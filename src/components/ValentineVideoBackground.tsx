@@ -11,24 +11,12 @@ const THEME_VIDEOS: Record<VideoTheme, string[]> = {
 
 export const ValentineVideoBackground = () => {
   const [theme, setTheme] = useState<VideoTheme>(getVideoTheme);
-  const [leftIndex, setLeftIndex] = useState(0);
-  const [rightIndex, setRightIndex] = useState(1);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 1023px)");
-    const onChange = () => setIsMobile(mql.matches);
-    onChange();
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
+  const [videoIndex, setVideoIndex] = useState(0);
 
   useEffect(() => {
     const handler = () => {
-      const newTheme = getVideoTheme();
-      setTheme(newTheme);
-      setLeftIndex(0);
-      setRightIndex(1);
+      setTheme(getVideoTheme());
+      setVideoIndex(0);
     };
     window.addEventListener("video-theme-change", handler);
     return () => window.removeEventListener("video-theme-change", handler);
@@ -36,25 +24,21 @@ export const ValentineVideoBackground = () => {
 
   const videos = THEME_VIDEOS[theme] || [];
 
-  const handleLeftEnded = useCallback(() => {
-    setLeftIndex((prev) => (prev + 1) % (videos.length || 1));
-  }, [videos.length]);
-
-  const handleRightEnded = useCallback(() => {
-    setRightIndex((prev) => (prev + 1) % (videos.length || 1));
+  const handleEnded = useCallback(() => {
+    setVideoIndex((prev) => (prev + 1) % (videos.length || 1));
   }, [videos.length]);
 
   if (videos.length === 0) return null;
 
-  const leftSrc = videos[leftIndex % videos.length];
+  const src = videos[videoIndex % videos.length];
 
   return (
     <video
-      key={`bg-${theme}-${leftIndex}`}
+      key={`bg-${theme}-${videoIndex}`}
       autoPlay
       muted
       playsInline
-      onEnded={handleLeftEnded}
+      onEnded={handleEnded}
       style={{
         position: "fixed",
         top: 0,
@@ -64,11 +48,11 @@ export const ValentineVideoBackground = () => {
         objectFit: "cover",
         pointerEvents: "none",
         zIndex: 0,
-        opacity: isMobile ? 0.25 : 0.35,
+        opacity: 0.3,
         filter: "saturate(1.3) contrast(1.1)",
       }}
     >
-      <source src={leftSrc} type="video/mp4" />
+      <source src={src} type="video/mp4" />
     </video>
   );
 };
