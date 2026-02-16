@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X, Image, Video, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,7 +74,7 @@ export function CreateStoryModal({ isOpen, onClose, onSubmit }: CreateStoryModal
 
   const isVideo = selectedFile?.type.startsWith("video/");
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -204,6 +205,7 @@ export function CreateStoryModal({ isOpen, onClose, onSubmit }: CreateStoryModal
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
