@@ -399,7 +399,7 @@ const ActivityHistory = () => {
           .from("coin_gifts")
           .select("id, sender_id, receiver_id, amount, message, created_at, tx_hash, gift_type, receipt_public_id")
           .order("created_at", { ascending: false })
-          .limit(500),
+          .limit(1000),
         supabase
           .from("project_donations")
           .select("id, donor_id, amount, message, created_at, donation_type, tx_hash, status")
