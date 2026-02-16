@@ -48,7 +48,6 @@ export const ValentineVideoBackground = () => {
         objectFit: "cover",
         pointerEvents: "none",
         zIndex: 0,
-        opacity: 0.3,
         filter: "saturate(1.3) contrast(1.1)",
       }}
     >
