@@ -91,24 +91,29 @@ function UsernameDisplay() {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(`@${currentHandle}`);
+      const fullUrl = `${window.location.origin}/@${currentHandle}`;
+      await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {}
   };
 
   return (
-    <button
-      onClick={handleCopy}
-      className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors group"
-    >
-      <span className="font-medium">@{currentHandle}</span>
-      {copied ? (
-        <Check className="w-3.5 h-3.5 text-green-500" />
-      ) : (
-        <Copy className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-      )}
-    </button>
+    <div className="flex items-center gap-1.5 text-sm text-primary">
+      <a
+        href={`/@${currentHandle}`}
+        className="font-medium hover:underline"
+      >
+        @{currentHandle}
+      </a>
+      <button onClick={handleCopy} className="hover:text-primary/80 transition-colors group">
+        {copied ? (
+          <Check className="w-3.5 h-3.5 text-green-500" />
+        ) : (
+          <Copy className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        )}
+      </button>
+    </div>
   );
 }
 

@@ -70,17 +70,30 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
         </p>
       )}
 
+      {/* Clickable profile link */}
+      <div className="text-sm mb-1">
+        {currentHandle ? (
+          <a
+            href={`/@${currentHandle}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-divine-gold hover:underline font-medium"
+          >
+            angel.fun.rich/{currentHandle}
+          </a>
+        ) : (
+          <span className="text-muted-foreground">angel.fun.rich/</span>
+        )}
+      </div>
+
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none select-none">
-            angel.fun.rich/
-          </div>
           <Input
             value={handle}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="your_name"
             className={cn(
-              "pl-[5.5rem] pr-10",
+              "pr-10",
               checkResult?.available === true && "border-primary/50 focus-visible:ring-primary/30",
               checkResult?.available === false && "border-destructive/50 focus-visible:ring-destructive/30",
               validationError && "border-destructive/50"
