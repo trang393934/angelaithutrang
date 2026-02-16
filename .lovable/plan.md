@@ -1,51 +1,63 @@
 
-# Them he thong chon chu de video nen
+# Xoa tieu de Valentine va cai thien video nen + nut chon theme
 
-## Tong quan
-Them 4 video thien nhien moi va tao nut cho user chon video nen yeu thich. Chi hien thi 4 video moi de user chon, cac video cu (Valentine, Tet) van giu trong code nhung khong hien thi trong menu lua chon.
+## Thay doi 1: Xoa tieu de "HAPPY VALENTINE'S DAY"
 
-## Cac buoc thuc hien
+**File:** `src/components/HeroSection.tsx`
 
-### 1. Copy 4 video moi vao `public/videos/`
-- `IMG_3973.mp4` -> `nature-1.mp4`
-- `IMG_3975.mp4` -> `nature-2.mp4`
-- `IMG_5200.mp4` -> `nature-3.mp4`
-- `IMG_5202.mp4` -> `nature-4.mp4`
+Xoa toan bo khoi `div` chua tieu de Valentine (dong 23-69), bao gom ca 3 lop text (shadow, gradient, shimmer). Phan avatar se tro thanh phan tu dau tien trong HeroSection.
 
-### 2. Tao component `VideoThemeSelector.tsx`
-- Nut nho co dinh (icon Film) o goc duoi phai man hinh
-- Khi click mo Popover hien thi 4 lua chon video thien nhien + 1 lua chon "Tat video"
-- Luu lua chon vao `localStorage` key `video-theme`
-- Dispatch custom event de `ValentineVideoBackground` cap nhat ngay
+## Thay doi 2: Chuyen nut VideoThemeSelector len Header
 
-### 3. Cap nhat `ValentineVideoBackground.tsx`
-- Doc `localStorage` key `video-theme` de xac dinh danh sach video
-- Mac dinh: video nature (thay vi valentine)
-- Lang nghe custom event `video-theme-change` de cap nhat khi user doi
-- Neu theme = "none" -> return null (tat video)
+**File:** `src/components/VideoThemeSelector.tsx`
 
-Dinh nghia video theo theme:
-```text
-nature-1: nature-1.mp4, nature-2.mp4
-nature-2: nature-3.mp4, nature-4.mp4
-nature-3: nature-1.mp4, nature-3.mp4
-nature-4: nature-2.mp4, nature-4.mp4
-none: [] (tat video)
-```
+- Bo style `fixed bottom-20 right-4` khoi nut trigger
+- Chuyen thanh nut nho inline (khong co dinh) de dat trong Header
+- Doi mau icon Film thanh gradient vang noi bat (text-amber-500) de user de nhan thay
+- Them export prop `compact` de Header dung
 
-### 4. Tich hop vao Index.tsx va Community.tsx
-- Them `<VideoThemeSelector />` vao ca 2 trang (noi co video nen)
+**File:** `src/components/Header.tsx`
+
+- Import va them `VideoThemeSelector` vao thanh header, dat canh nut Language Selector (truoc GiftButton) tren desktop
+- Tren mobile, them vao phan mobile actions
+
+**File:** `src/pages/Index.tsx` va `src/pages/Community.tsx`
+
+- Xoa `<VideoThemeSelector />` o cuoi trang vi da chuyen len Header
+
+## Thay doi 3: Video responsive cho dien thoai va may tinh
+
+**File:** `src/components/ValentineVideoBackground.tsx`
+
+Hien tai video co `width: 38%` co dinh, khong phu hop voi man hinh nho. Thay doi:
+- **Desktop (lg+):** Giu nguyen 2 video trai-phai, moi ben 38%
+- **Dien thoai (< lg):** Chi hien thi 1 video duy nhat lam nen toan man hinh voi do mo thap (opacity ~0.3) de khong che noi dung text. Video se co `width: 100%` va khong can mask gradient trai/phai
+
+Cach lam: Dung CSS media query hoac `window.innerWidth` de xac dinh layout. Cu the:
+- Them state `isMobile` dung `matchMedia("(max-width: 1023px)")`
+- Neu mobile: render 1 video `width: 100%` voi `opacity: 0.25`
+- Neu desktop: giu nguyen 2 video nhu hien tai
 
 ## Chi tiet ky thuat
 
-### VideoThemeSelector
-- Su dung Radix Popover
-- 5 lua chon: 4 video thien nhien (moi cai la 1 cap video trai-phai) + "Tat video"
-- Hien thi ten + icon check cho lua chon dang active
-- Khi chon -> luu localStorage -> dispatch event `video-theme-change`
+### HeroSection.tsx
+- Xoa dong 23-69 (toan bo khoi Valentine title)
+- Khong anh huong gi den cac phan khac
 
-### ValentineVideoBackground
-- Them `useState` cho theme, doc tu localStorage
-- Them `useEffect` lang nghe event `video-theme-change`
-- Map theme sang danh sach video tuong ung
-- Neu danh sach rong (none) -> return null
+### VideoThemeSelector.tsx
+- Them prop `variant?: "header" | "floating"` (mac dinh "floating")
+- Khi `variant="header"`: render nut nho inline, icon mau vang amber-500, khong fixed position
+- Khi `variant="floating"`: giu style cu (fallback)
+- Popover `side="bottom"` khi o header
+
+### Header.tsx
+- Them `<VideoThemeSelector variant="header" />` vao dong 171 (truoc LanguageSelector) tren desktop
+- Them vao phan mobile actions (dong 314-327)
+
+### ValentineVideoBackground.tsx
+- Them hook `useMediaQuery` hoac `useState` + `matchMedia` de detect mobile
+- Mobile: 1 video full-width, opacity thap, khong mask
+- Desktop: 2 video trai-phai nhu cu
+
+### Index.tsx va Community.tsx
+- Xoa dong `<VideoThemeSelector />` (da chuyen len Header)
