@@ -199,7 +199,7 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
   return (
     <Card 
       ref={containerRef}
-      className="border-primary/10 bg-white/90 backdrop-blur-sm w-full max-w-full overflow-hidden shadow-sm"
+      className="border-primary/10 bg-white/90 backdrop-blur-sm w-full max-w-full overflow-hidden shadow-sm relative z-30"
     >
       <CardContent className="p-3 sm:p-4">
         <AnimatePresence mode="wait">
