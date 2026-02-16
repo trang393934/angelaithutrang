@@ -47,81 +47,28 @@ export const ValentineVideoBackground = () => {
   if (videos.length === 0) return null;
 
   const leftSrc = videos[leftIndex % videos.length];
-  const rightSrc = videos[rightIndex % videos.length] || videos[0];
-
-  // Mobile: single full-width video with low opacity
-  if (isMobile) {
-    return (
-      <video
-        key={`mobile-${theme}-${leftIndex}`}
-        autoPlay
-        muted
-        playsInline
-        onEnded={handleLeftEnded}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100vh",
-          objectFit: "cover",
-          pointerEvents: "none",
-          zIndex: 0,
-          opacity: 0.25,
-          filter: "saturate(1.3) contrast(1.1)",
-        }}
-      >
-        <source src={leftSrc} type="video/mp4" />
-      </video>
-    );
-  }
-
-  // Desktop: dual side videos
-  const videoStyle: React.CSSProperties = {
-    position: "fixed",
-    top: 0,
-    bottom: 0,
-    width: "38%",
-    height: "100vh",
-    objectFit: "cover",
-    pointerEvents: "none",
-    zIndex: 0,
-    filter: "saturate(1.3) contrast(1.1)",
-  };
 
   return (
-    <>
-      <video
-        key={`left-${theme}-${leftIndex}`}
-        autoPlay
-        muted
-        playsInline
-        onEnded={handleLeftEnded}
-        style={{
-          ...videoStyle,
-          left: 0,
-          maskImage: "linear-gradient(to right, black 50%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to right, black 50%, transparent 100%)",
-        }}
-      >
-        <source src={leftSrc} type="video/mp4" />
-      </video>
-
-      <video
-        key={`right-${theme}-${rightIndex}`}
-        autoPlay
-        muted
-        playsInline
-        onEnded={handleRightEnded}
-        style={{
-          ...videoStyle,
-          right: 0,
-          maskImage: "linear-gradient(to left, black 50%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to left, black 50%, transparent 100%)",
-        }}
-      >
-        <source src={rightSrc} type="video/mp4" />
-      </video>
-    </>
+    <video
+      key={`bg-${theme}-${leftIndex}`}
+      autoPlay
+      muted
+      playsInline
+      onEnded={handleLeftEnded}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100vh",
+        objectFit: "cover",
+        pointerEvents: "none",
+        zIndex: 0,
+        opacity: isMobile ? 0.25 : 0.35,
+        filter: "saturate(1.3) contrast(1.1)",
+      }}
+    >
+      <source src={leftSrc} type="video/mp4" />
+    </video>
   );
 };
