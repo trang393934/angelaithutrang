@@ -289,25 +289,33 @@ export function CryptoTransferTab({
           tx_hash: result.txHash || null,
           gift_type: `web3_${tokenSymbol}`,
           context_type: "direct",
+          context_id: result.txHash || null, // Store tx_hash as context_id for traceability
         };
 
-        // Use edge function with service role for reliable insert
-        const { data: { session } } = await supabase.auth.getSession();
-        const { error: fnError } = await supabase.functions.invoke("record-gift", {
-          body: { gifts: [giftRecord] },
-        });
-
-        if (fnError) {
-          console.error(`[Web3 Gift ${tokenSymbol}] Edge fn failed, trying direct insert:`, fnError.message);
-          // Fallback to direct insert
-          const { error: dbError } = await supabase.from("coin_gifts").insert(giftRecord);
-          if (dbError) {
-            console.error(`[Web3 Gift ${tokenSymbol}] Direct insert also failed, saving to localStorage:`, dbError.message);
-            // Save to localStorage for recovery
-            const pendingGifts = JSON.parse(localStorage.getItem("pending_gift_records") || "[]");
-            pendingGifts.push({ ...giftRecord, created_at: new Date().toISOString() });
-            localStorage.setItem("pending_gift_records", JSON.stringify(pendingGifts));
+        // Retry with exponential backoff (3 attempts: 0s, 2s, 5s)
+        let recorded = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (attempt > 0) {
+            await new Promise(r => setTimeout(r, attempt * 2500));
+            console.log(`[Web3 Gift ${tokenSymbol}] Retry attempt ${attempt + 1}/3`);
           }
+          const { error: fnError } = await supabase.functions.invoke("record-gift", {
+            body: { gifts: [giftRecord] },
+          });
+          if (!fnError) {
+            recorded = true;
+            console.log(`[Web3 Gift ${tokenSymbol}] Recorded successfully on attempt ${attempt + 1}`);
+            break;
+          }
+          console.warn(`[Web3 Gift ${tokenSymbol}] Attempt ${attempt + 1} failed:`, fnError.message);
+        }
+
+        if (!recorded) {
+          console.error(`[Web3 Gift ${tokenSymbol}] All retries failed, saving to localStorage for recovery`);
+          const pendingGifts = JSON.parse(localStorage.getItem("pending_gift_records") || "[]");
+          pendingGifts.push({ ...giftRecord, created_at: new Date().toISOString() });
+          localStorage.setItem("pending_gift_records", JSON.stringify(pendingGifts));
+          toast.warning("Giao dịch blockchain thành công nhưng chưa ghi nhận vào hệ thống. Sẽ tự động đồng bộ sau.");
         }
 
         onSuccess(result, receiverUser, walletAddress, numAmount, giftMessage || undefined);
