@@ -61,6 +61,8 @@ const AdminTetReward = () => {
   const [sortAsc, setSortAsc] = useState(false);
   const [activeTab, setActiveTab] = useState("snapshot");
   const [claimFilter, setClaimFilter] = useState<"all" | "completed" | "failed" | "pending" | "unclaimed">("all");
+  const [walletFilter, setWalletFilter] = useState<"all" | "has_wallet" | "no_wallet">("all");
+  const [lixiFilter, setLixiFilter] = useState<"all" | "success" | "skipped" | "failed" | "not_sent">("all");
 
   // Real-time tab state
   const [rtData, setRtData] = useState<any[]>([]);
@@ -378,6 +380,28 @@ const AdminTetReward = () => {
       return r.name.toLowerCase().includes(searchQuery.toLowerCase());
     });
 
+    // Wallet filter
+    if (walletFilter !== "all") {
+      result = result.filter(r => {
+        const hasWallet = !!userWalletMap.get(r.name);
+        return walletFilter === "has_wallet" ? hasWallet : !hasWallet;
+      });
+    }
+
+    // Lì xì distribution filter
+    if (lixiFilter !== "all") {
+      result = result.filter(r => {
+        const distResult = distributionResults.get(r.name);
+        switch (lixiFilter) {
+          case "success": return distResult?.status === "success";
+          case "skipped": return distResult?.status === "skipped";
+          case "failed": return distResult?.status === "failed";
+          case "not_sent": return !distResult;
+          default: return true;
+        }
+      });
+    }
+
     // Claim filter
     if (claimFilter !== "all") {
       result = result.filter(r => {
@@ -405,7 +429,7 @@ const AdminTetReward = () => {
     });
 
     return result;
-  }, [searchQuery, sortKey, sortAsc, claimFilter, nameToUserIdMap, lixiClaims]);
+  }, [searchQuery, sortKey, sortAsc, walletFilter, lixiFilter, claimFilter, nameToUserIdMap, lixiClaims, userWalletMap, distributionResults]);
 
   // ─── Checkbox logic ────────────────────────────────────────
   const eligibleRows = useMemo(() => filteredRows.filter(r => r.totalFun > 0), [filteredRows]);
@@ -659,10 +683,10 @@ const AdminTetReward = () => {
 
           {/* ═══ Tab 1: Snapshot ═══ */}
           <TabsContent value="snapshot">
-            {/* Search + Claim Filter */}
+            {/* Search + Filters */}
             <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-              <div className="flex items-center gap-3 flex-1">
-                <div className="relative flex-1 max-w-sm">
+              <div className="flex items-center gap-3 flex-1 flex-wrap">
+                <div className="relative flex-1 min-w-[200px] max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="Tìm user..."
@@ -671,13 +695,37 @@ const AdminTetReward = () => {
                     className="pl-10"
                   />
                 </div>
+                <Select value={walletFilter} onValueChange={(v: typeof walletFilter) => setWalletFilter(v)}>
+                  <SelectTrigger className="w-[150px]">
+                    <Wallet className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                    <SelectValue placeholder="Lọc Ví" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả Ví</SelectItem>
+                    <SelectItem value="has_wallet">👛 Có ví</SelectItem>
+                    <SelectItem value="no_wallet">⬜ Chưa có ví</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={lixiFilter} onValueChange={(v: typeof lixiFilter) => setLixiFilter(v)}>
+                  <SelectTrigger className="w-[160px]">
+                    <Gift className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                    <SelectValue placeholder="Lọc Lì xì" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả Lì xì</SelectItem>
+                    <SelectItem value="success">✅ Đã chuyển</SelectItem>
+                    <SelectItem value="skipped">⏭️ Đã nhận trước</SelectItem>
+                    <SelectItem value="failed">❌ Thất bại</SelectItem>
+                    <SelectItem value="not_sent">⬜ Chưa chuyển</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Select value={claimFilter} onValueChange={(v: typeof claimFilter) => setClaimFilter(v)}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[160px]">
                     <Filter className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
                     <SelectValue placeholder="Lọc Claim" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="all">Tất cả Claim</SelectItem>
                     <SelectItem value="completed">✅ Đã claim</SelectItem>
                     <SelectItem value="failed">❌ Thất bại</SelectItem>
                     <SelectItem value="pending">⏳ Đang chờ</SelectItem>
@@ -686,7 +734,7 @@ const AdminTetReward = () => {
                 </Select>
               </div>
               <p className="text-xs text-foreground-muted">
-                📸 Snapshot: {TET_REWARD_SNAPSHOT_DATE} · {overview.totalUsers} users
+                📸 Snapshot: {TET_REWARD_SNAPSHOT_DATE} · {filteredRows.length}/{overview.totalUsers} users
               </p>
             </div>
 
