@@ -2,7 +2,6 @@ import { Film, Check, VideoOff, Trees, Waves, Mountain, Flower2 } from "lucide-r
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 export type VideoTheme = "nature-1" | "nature-2" | "nature-3" | "nature-4" | "none";
 
@@ -18,7 +17,11 @@ export const getVideoTheme = (): VideoTheme => {
   return (localStorage.getItem("video-theme") as VideoTheme) || "nature-1";
 };
 
-export const VideoThemeSelector = () => {
+interface VideoThemeSelectorProps {
+  variant?: "header" | "floating";
+}
+
+export const VideoThemeSelector = ({ variant = "floating" }: VideoThemeSelectorProps) => {
   const [theme, setTheme] = useState<VideoTheme>(getVideoTheme);
   const [open, setOpen] = useState(false);
 
@@ -35,19 +38,31 @@ export const VideoThemeSelector = () => {
     setOpen(false);
   };
 
+  const isHeader = variant === "header";
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-primary/20 hover:bg-white/90"
-          aria-label="Chọn video nền"
-        >
-          <Film className="w-5 h-5 text-primary" />
-        </Button>
+        {isHeader ? (
+          <button
+            className="flex items-center gap-1 px-2 lg:px-2.5 py-1 lg:py-1.5 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
+            aria-label="Chọn video nền"
+            type="button"
+          >
+            <Film className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-amber-500" />
+          </button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-primary/20 hover:bg-white/90"
+            aria-label="Chọn video nền"
+          >
+            <Film className="w-5 h-5 text-amber-500" />
+          </Button>
+        )}
       </PopoverTrigger>
-      <PopoverContent side="top" align="end" className="w-52 p-2">
+      <PopoverContent side={isHeader ? "bottom" : "top"} align="end" className="w-52 p-2">
         <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Video nền</p>
         {THEME_OPTIONS.map(({ value, icon: Icon, labelKey }) => (
           <button

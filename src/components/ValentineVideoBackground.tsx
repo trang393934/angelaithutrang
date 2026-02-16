@@ -9,14 +9,19 @@ const THEME_VIDEOS: Record<VideoTheme, string[]> = {
   "none": [],
 };
 
-// Keep old themes available in code for future use
-// const VALENTINE_VIDEOS = ["/videos/valentine-1.mp4", "/videos/valentine-2.mp4", "/videos/valentine-3.mp4"];
-// const TET_VIDEOS = ["/videos/tet-background.mp4"];
-
 export const ValentineVideoBackground = () => {
   const [theme, setTheme] = useState<VideoTheme>(getVideoTheme);
   const [leftIndex, setLeftIndex] = useState(0);
   const [rightIndex, setRightIndex] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const onChange = () => setIsMobile(mql.matches);
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     const handler = () => {
@@ -44,6 +49,34 @@ export const ValentineVideoBackground = () => {
   const leftSrc = videos[leftIndex % videos.length];
   const rightSrc = videos[rightIndex % videos.length] || videos[0];
 
+  // Mobile: single full-width video with low opacity
+  if (isMobile) {
+    return (
+      <video
+        key={`mobile-${theme}-${leftIndex}`}
+        autoPlay
+        muted
+        playsInline
+        onEnded={handleLeftEnded}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100vh",
+          objectFit: "cover",
+          pointerEvents: "none",
+          zIndex: 0,
+          opacity: 0.25,
+          filter: "saturate(1.3) contrast(1.1)",
+        }}
+      >
+        <source src={leftSrc} type="video/mp4" />
+      </video>
+    );
+  }
+
+  // Desktop: dual side videos
   const videoStyle: React.CSSProperties = {
     position: "fixed",
     top: 0,
