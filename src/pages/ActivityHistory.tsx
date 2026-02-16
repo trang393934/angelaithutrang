@@ -314,6 +314,22 @@ const ActivityHistory = () => {
     setPendingGifts(stored);
   }, []);
 
+  // Auto-sync BSCScan once per day for admin
+  const [autoSyncDone, setAutoSyncDone] = useState(false);
+  useEffect(() => {
+    if (!isAdmin || autoSyncDone) return;
+    const lastSync = localStorage.getItem("last_bscscan_sync");
+    const today = new Date().toDateString();
+    if (lastSync !== today) {
+      setAutoSyncDone(true);
+      handleSyncOnchain().then(() => {
+        localStorage.setItem("last_bscscan_sync", today);
+      });
+    } else {
+      setAutoSyncDone(true);
+    }
+  }, [isAdmin]);
+
   const handleRetryPending = async () => {
     if (pendingGifts.length === 0) return;
     setIsRetryingPending(true);
@@ -626,6 +642,18 @@ const ActivityHistory = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSyncOnchain}
+                  disabled={isSyncingOnchain}
+                  className="text-white hover:bg-white/20 h-8"
+                >
+                  {isSyncingOnchain ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Globe className="w-4 h-4 mr-1" />}
+                  <span className="hidden sm:inline">Sync BSCScan</span>
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -697,21 +725,7 @@ const ActivityHistory = () => {
           </Alert>
         )}
 
-        {/* Admin: Sync on-chain button */}
-        {isAdmin && (
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleSyncOnchain}
-              disabled={isSyncingOnchain}
-              className="h-8 text-xs border-[#daa520]/40 text-[#8B6914] hover:bg-[#ffd700]/10"
-            >
-              {isSyncingOnchain ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
-              Đồng bộ On-chain (BSCScan)
-            </Button>
-          </div>
-        )}
+        {/* Admin sync moved to header */}
 
         {/* Personal mode login prompt */}
         {viewMode === "personal" && !user && (
