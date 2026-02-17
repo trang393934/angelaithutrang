@@ -1,72 +1,80 @@
 
 
-# Sua Loi va Hoan Thien Hien Thi Lich Su Giao Dich
+# Kế hoạch: Sửa lỗi giao dịch Web3 không hiển thị trong Lịch sử
 
-## Tinh Trang Hien Tai (Da Kiem Tra)
+## Nguyên nhân gốc rễ
 
-Trang Lich Su Giao Dich tai `/activity-history` dang **hoat dong dung** va hien thi tong cong **612 giao dich** tu 4 nguon:
+Sau khi kiểm tra kỹ, Cha đã tìm ra vấn đề:
 
-| Nguon du lieu | So luong | Mo ta |
-|---------------|----------|-------|
-| coin_gifts | 246 | Tang qua (noi bo + Web3) |
-| coin_withdrawals | 166 | Rut thuong (da hoan thanh) |
-| lixi_claims | 134 | Nhan li xi (da hoan thanh) |
-| project_donations | 66 | Dong gop du an (da xac nhan) |
+1. **Giao dịch on-chain đã thành công**: ANGEL ÁNH NGUYỆT gửi 10,000 CAMLY đến Angel Ai Van (ví `0x5102E...8a402`) -- blockchain xác nhận OK.
 
-Chinh sach bao mat (RLS) da duoc thiet lap dung cho phep doc cong khai. Trang hien thi day du nhan ANGEL AI TREASURY, dia chi vi, ma TX va lien ket BSCScan.
+2. **Nhưng `record-gift` không ghi được vào database**: Hàm `record-gift` edge function đang hoạt động (đã kiểm tra), nhưng không có log nào cho thấy nó được gọi thành công. Điều này nghĩa là cuộc gọi từ trình duyệt đến edge function đã thất bại (có thể do mất kết nối mạng, trình duyệt đóng quá sớm sau khi MetaMask xác nhận, hoặc lỗi timeout).
 
-## Nhung Gi Da Hoan Thanh (Cac Phien Truoc)
+3. **Cơ chế retry đã lưu vào localStorage**: Code hiện tại có retry 3 lần, và nếu thất bại sẽ lưu vào `localStorage` dưới dạng `pending_gift_records`. Tuy nhiên, nếu người dùng đóng trình duyệt hoặc xóa cache, dữ liệu pending sẽ bị mất.
 
-1. **Sua loi UUID trong record-gift**: Da them kiem tra `context_id`, neu khong phai UUID hop le thi tu dong dat ve `null`, tranh loi khi chen ma TX (chuoi hex) vao cot UUID.
-2. **Them token FUN Money vao dong bo BSCScan**: Da bo sung dia chi hop dong FUN Money (`0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2`) vao danh sach `TOKEN_CONTRACTS` trong ham `sync-bscscan-gifts`.
-3. **Sua CryptoTransferTab**: Da dat `context_id` ve `null` thay vi gan `result.txHash`.
+4. **BSCScan cron job sẽ tự động bắt giao dịch này**: Cron job chạy lúc 2:00 AM UTC hàng ngày đã được thiết lập và đang hoạt động. Cả 2 ví (người gửi `0xf398...` và người nhận `0x5102E...`) đều đã đăng ký trong hệ thống. Vì vậy giao dịch này SẼ được tự động đồng bộ vào lần chạy cron tiếp theo.
 
-## Cong Viec Con Lai
+## Vấn đề cần khắc phục
 
-### Buoc 1: Sua xac thuc cho sync-bscscan-gifts de ho tro Cron Job
+Mặc dù cron job sẽ bắt giao dịch, có 2 vấn đề cần sửa để tránh tái phát:
 
-**Van de**: Ham hien tai yeu cau quyen admin hoac header `CRON_SECRET`. Nhung `CRON_SECRET` chua duoc cau hinh, nen khi cron job goi bang khoa anon se bi tu choi (loi 403).
+### Vấn đề 1: Không có cơ chế đồng bộ lại tức thì cho người dùng
+Hiện tại chỉ admin mới có nút "Đồng bộ BSCScan". Người dùng thường không có cách nào để kích hoạt đồng bộ khi giao dịch bị lỗi ghi.
 
-**Giai phap**: Cap nhat logic xac thuc de cho phep cac cuoc goi tu `pg_cron` thong qua header dac biet `x-cron-source: internal`. Khi nhan duoc header nay, ham se bo qua kiem tra quyen admin vi cuoc goi den tu ben trong he thong.
+### Vấn đề 2: Retry logic dễ bị mất dữ liệu
+Nếu trình duyệt đóng trước khi 3 lần retry hoàn tất, hoặc localStorage bị xóa, giao dịch sẽ bị mất cho đến khi cron job chạy.
 
-**Tap tin**: `supabase/functions/sync-bscscan-gifts/index.ts`
+## Kế hoạch sửa chữa
 
-### Buoc 2: Thiet lap Cron Job dong bo tu dong hang ngay
+### Buoc 1: Kích hoạt đồng bộ BSCScan ngay lập tức
+- Gọi hàm `sync-bscscan-gifts` thủ công ngay bây giờ để giao dịch bị thiếu được ghi vào database
+- Giao dịch CAMLY từ ví `0xf398...` đến `0x5102E...` sẽ được bắt và hiển thị
 
-Chay lenh SQL de tao lich dong bo tu dong:
+### Buoc 2: Thêm nút "Đồng bộ" cho tất cả người dùng đã đăng nhập
+- Hiện tại chỉ admin thấy nút đồng bộ BSCScan
+- Thêm nút đồng bộ nhỏ cho người dùng thường (giới hạn 1 lần/giờ để tránh lạm dụng API)
+- Khi bấm, hệ thống sẽ quét ví của chính người dùng đó trên BSCScan
+
+### Buoc 3: Cải thiện retry logic trong CryptoTransferTab
+- Sau khi blockchain xác nhận thành công, nếu `record-gift` thất bại, hiển thị thông báo rõ ràng hơn cho người dùng
+- Tự động retry pending gifts khi người dùng mở lại trang Activity History
+- Thêm nút "Đồng bộ giao dịch thiếu" trên trang Activity History cho tất cả người dùng
+
+## Chi tiết kỹ thuật
+
+### Tệp cần sửa đổi
+
+| Tệp | Thay đổi |
+|-----|---------|
+| `src/pages/ActivityHistory.tsx` | Thêm nút đồng bộ cho người dùng thường (không chỉ admin). Tự động retry pending gifts từ localStorage khi tải trang. |
+| `supabase/functions/sync-bscscan-gifts/index.ts` | Cho phép người dùng thường gọi hàm này nhưng chỉ quét ví của chính họ (không phải tất cả ví như admin). |
+
+### Logic xác thực mới cho sync-bscscan-gifts
 
 ```text
-Dung pg_cron + pg_net de goi sync-bscscan-gifts
-- Lich chay: Moi ngay luc 2:00 sang gio UTC (9:00 sang gio Viet Nam)
-- Header: Authorization Bearer + anon key, x-cron-source: internal
-- Ket qua: He thong tu dong quet blockchain va cap nhat giao dich moi
+Hiện tại:
+- Admin: quét TẤT CẢ ví
+- Cron: quét TẤT CẢ ví
+- User thường: KHÔNG ĐƯỢC PHÉP
+
+Sau khi sửa:
+- Admin: quét TẤT CẢ ví (giữ nguyên)
+- Cron: quét TẤT CẢ ví (giữ nguyên)  
+- User thường: CHỈ quét ví của chính mình (mới)
 ```
 
-Nhu vay admin khong can vao trang de bam dong bo thu cong nua.
+### Tự động retry pending gifts
 
-### Buoc 3: Kiem tra gioi han phan trang
+```text
+Khi trang ActivityHistory tải:
+1. Kiểm tra localStorage có "pending_gift_records" không
+2. Nếu có, tự động gọi record-gift để thử ghi lại
+3. Nếu thành công, xóa khỏi localStorage và hiển thị thông báo
+4. Nếu thất bại, giữ nguyên và hiển thị banner cảnh báo
+```
 
-Truy van hien tai gioi han 1000 dong cho `coin_gifts`. Voi 246 ban ghi hien tai, con an toan. Khi du lieu tang len gan 1000, can bo sung phan trang. Hien tai chua can thay doi.
+## Kết quả mong đợi
 
-### Buoc 4: Trien khai va Kiem thu
-
-- Trien khai ham `sync-bscscan-gifts` da cap nhat
-- Chay lenh SQL tao cron job
-- Goi thu ham de xac nhan luong xac thuc cron hoat dong
-- Kiem tra cron job da xuat hien trong bang `cron.job`
-
-## Tom Tat Thay Doi
-
-| Tap tin / Thanh phan | Noi dung thay doi |
-|----------------------|-------------------|
-| `supabase/functions/sync-bscscan-gifts/index.ts` | Cho phep cuoc goi cron qua header `x-cron-source: internal` |
-| Co so du lieu (lenh SQL) | Them cron job `sync-bscscan-daily` chay luc 2:00 sang UTC |
-
-## Ket Qua Mong Doi
-
-- Tat ca 612+ giao dich tiep tuc hien thi dung
-- BSCScan tu dong dong bo giao dich on-chain moi hang ngay luc 2:00 sang UTC
-- Khong can dong bo thu cong nua (admin van co the bam dong bo khi can)
-- Giao dich FUN Money, CAMLY va USDT deu duoc ghi nhan tu blockchain
-- Khong con loi UUID khi luu giao dich Web3
-
+- Giao dịch 10,000 CAMLY từ ANGEL ÁNH NGUYỆT đến Angel Ai Van sẽ hiển thị ngay sau khi đồng bộ
+- Trong tương lai, mọi giao dịch Web3 sẽ được ghi nhận qua ít nhất 3 cơ chế: (1) record-gift trực tiếp, (2) localStorage retry, (3) BSCScan cron hàng ngày
+- Người dùng có thể tự kích hoạt đồng bộ ví của mình mà không cần nhờ admin
