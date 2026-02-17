@@ -88,7 +88,9 @@ Deno.serve(async (req) => {
 
     // Verify admin OR cron job caller
     const cronSecret = Deno.env.get("CRON_SECRET");
-    const isCronCall = cronSecret && req.headers.get("x-cron-secret") === cronSecret;
+    const isCronCall =
+      (cronSecret && req.headers.get("x-cron-secret") === cronSecret) ||
+      req.headers.get("x-cron-source") === "internal";
 
     if (!isCronCall) {
       const authHeader = req.headers.get("Authorization");
@@ -124,7 +126,7 @@ Deno.serve(async (req) => {
         );
       }
     } else {
-      console.log("Cron job caller verified via CRON_SECRET");
+      console.log("Cron job caller verified via internal header or CRON_SECRET");
     }
 
     // 1. Get ALL wallets (scan all registered wallets, not just "active" ones)
