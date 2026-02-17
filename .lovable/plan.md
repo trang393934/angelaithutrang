@@ -1,93 +1,72 @@
 
 
-# Plan: Fix and Improve Transaction History Display
+# Sua Loi va Hoan Thien Hien Thi Lich Su Giao Dich
 
-## Current Status
+## Tinh Trang Hien Tai (Da Kiem Tra)
 
-After thorough investigation, the transaction history page is technically loading data correctly (612 transactions from 4 tables). However, there are several issues that could cause "missing" or "not updating" behavior:
+Trang Lich Su Giao Dich tai `/activity-history` dang **hoat dong dung** va hien thi tong cong **612 giao dich** tu 4 nguon:
 
-## Issues Found
+| Nguon du lieu | So luong | Mo ta |
+|---------------|----------|-------|
+| coin_gifts | 246 | Tang qua (noi bo + Web3) |
+| coin_withdrawals | 166 | Rut thuong (da hoan thanh) |
+| lixi_claims | 134 | Nhan li xi (da hoan thanh) |
+| project_donations | 66 | Dong gop du an (da xac nhan) |
 
-### Issue 1: Wallet addresses not loading for non-logged-in users
-The `user_wallet_addresses` table requires authentication (`auth.uid() IS NOT NULL`) for SELECT. When users are not logged in, wallet addresses return empty, which may make the page look incomplete.
+Chinh sach bao mat (RLS) da duoc thiet lap dung cho phep doc cong khai. Trang hien thi day du nhan ANGEL AI TREASURY, dia chi vi, ma TX va lien ket BSCScan.
 
-**Fix**: The page should still work without wallets. No change needed unless we want public wallet visibility.
+## Nhung Gi Da Hoan Thanh (Cac Phien Truoc)
 
-### Issue 2: No automated BSCScan sync (Cron Job missing)
-The `sync-bscscan-gifts` function only runs:
-- Manually when admin clicks the sync button
-- Once per day when an admin visits the Activity History page (auto-sync via localStorage)
+1. **Sua loi UUID trong record-gift**: Da them kiem tra `context_id`, neu khong phai UUID hop le thi tu dong dat ve `null`, tranh loi khi chen ma TX (chuoi hex) vao cot UUID.
+2. **Them token FUN Money vao dong bo BSCScan**: Da bo sung dia chi hop dong FUN Money (`0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2`) vao danh sach `TOKEN_CONTRACTS` trong ham `sync-bscscan-gifts`.
+3. **Sua CryptoTransferTab**: Da dat `context_id` ve `null` thay vi gan `result.txHash`.
 
-New on-chain transactions are NOT being synced automatically in the background.
+## Cong Viec Con Lai
 
-**Fix**: Set up a `pg_cron` job to call `sync-bscscan-gifts` daily at 2:00 AM UTC.
+### Buoc 1: Sua xac thuc cho sync-bscscan-gifts de ho tro Cron Job
 
-### Issue 3: `record-gift` edge function has UUID type error
-Logs show: `"invalid input syntax for type uuid"` when trying to insert a tx_hash as a UUID field. This means some Web3 gift records are failing to save.
+**Van de**: Ham hien tai yeu cau quyen admin hoac header `CRON_SECRET`. Nhung `CRON_SECRET` chua duoc cau hinh, nen khi cron job goi bang khoa anon se bi tu choi (loi 403).
 
-**Fix**: Investigate and fix the `record-gift` function to handle tx_hash correctly (it should be stored as TEXT, not UUID).
+**Giai phap**: Cap nhat logic xac thuc de cho phep cac cuoc goi tu `pg_cron` thong qua header dac biet `x-cron-source: internal`. Khi nhan duoc header nay, ham se bo qua kiem tra quyen admin vi cuoc goi den tu ben trong he thong.
 
-### Issue 4: FUN Money contract not in BSCScan sync
-The `sync-bscscan-gifts` function only scans CAMLY and USDT contracts. FUN Money transactions from blockchain are not being synced.
+**Tap tin**: `supabase/functions/sync-bscscan-gifts/index.ts`
 
-**Fix**: Add the FUN Money contract address to `TOKEN_CONTRACTS` in `sync-bscscan-gifts`.
+### Buoc 2: Thiet lap Cron Job dong bo tu dong hang ngay
 
-## Implementation Steps
-
-### Step 1: Fix `record-gift` edge function
-- Review and fix the UUID type mismatch error
-- Ensure `tx_hash` is stored as TEXT, not attempted as UUID
-
-### Step 2: Add FUN Money contract to BSCScan sync
-- Update `supabase/functions/sync-bscscan-gifts/index.ts`
-- Add FUN Money contract: `{ address: "<FUN_CONTRACT>", giftType: "web3_FUN" }`
-
-### Step 3: Set up automated daily Cron Job
-- Enable `pg_cron` and `pg_net` extensions (if not already)
-- Create a cron schedule to call `sync-bscscan-gifts` every day at 2:00 AM UTC
-- This ensures new blockchain transactions are always synced without admin intervention
-
-### Step 4: Verify frontend display
-- Confirm all 4 data sources render correctly
-- Ensure realtime subscriptions are working for live updates
-- Test with both authenticated and unauthenticated users
-
-## Technical Details
-
-### Cron Job SQL (to be run via SQL editor)
+Chay lenh SQL de tao lich dong bo tu dong:
 
 ```text
--- Enable extensions
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
-
--- Schedule daily sync at 2:00 AM UTC
-SELECT cron.schedule(
-  'sync-bscscan-daily',
-  '0 2 * * *',
-  $$ SELECT net.http_post(
-    url := 'https://ssjoetiitctqzapymtzl.supabase.co/functions/v1/sync-bscscan-gifts',
-    headers := '{"Content-Type":"application/json","Authorization":"Bearer <anon_key>"}'::jsonb,
-    body := '{}'::jsonb
-  ) $$
-);
+Dung pg_cron + pg_net de goi sync-bscscan-gifts
+- Lich chay: Moi ngay luc 2:00 sang gio UTC (9:00 sang gio Viet Nam)
+- Header: Authorization Bearer + anon key, x-cron-source: internal
+- Ket qua: He thong tu dong quet blockchain va cap nhat giao dich moi
 ```
 
-### record-gift fix
-The error `invalid input syntax for type uuid: "0x8ffa..."` indicates the function is trying to insert a blockchain tx_hash (hex string) into a UUID column. Need to review the `record-gift` function and fix the column mapping.
+Nhu vay admin khong can vao trang de bam dong bo thu cong nua.
 
-### sync-bscscan-gifts update
-Add to `TOKEN_CONTRACTS`:
-```text
-FUN: {
-  address: "<FUN_Money_contract_address>",
-  giftType: "web3_FUN"
-}
-```
+### Buoc 3: Kiem tra gioi han phan trang
 
-## Expected Outcome
-- All historical and new transactions display correctly
-- Blockchain transactions sync automatically every day
-- No more UUID errors when recording Web3 gifts
-- FUN Money on-chain transfers are captured alongside CAMLY and USDT
+Truy van hien tai gioi han 1000 dong cho `coin_gifts`. Voi 246 ban ghi hien tai, con an toan. Khi du lieu tang len gan 1000, can bo sung phan trang. Hien tai chua can thay doi.
+
+### Buoc 4: Trien khai va Kiem thu
+
+- Trien khai ham `sync-bscscan-gifts` da cap nhat
+- Chay lenh SQL tao cron job
+- Goi thu ham de xac nhan luong xac thuc cron hoat dong
+- Kiem tra cron job da xuat hien trong bang `cron.job`
+
+## Tom Tat Thay Doi
+
+| Tap tin / Thanh phan | Noi dung thay doi |
+|----------------------|-------------------|
+| `supabase/functions/sync-bscscan-gifts/index.ts` | Cho phep cuoc goi cron qua header `x-cron-source: internal` |
+| Co so du lieu (lenh SQL) | Them cron job `sync-bscscan-daily` chay luc 2:00 sang UTC |
+
+## Ket Qua Mong Doi
+
+- Tat ca 612+ giao dich tiep tuc hien thi dung
+- BSCScan tu dong dong bo giao dich on-chain moi hang ngay luc 2:00 sang UTC
+- Khong can dong bo thu cong nua (admin van co the bam dong bo khi can)
+- Giao dich FUN Money, CAMLY va USDT deu duoc ghi nhan tu blockchain
+- Khong con loi UUID khi luu giao dich Web3
 
