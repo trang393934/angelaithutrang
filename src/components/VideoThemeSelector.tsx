@@ -49,7 +49,7 @@ export const VideoThemeSelector = ({ variant = "floating" }: VideoThemeSelectorP
             aria-label="Chọn video nền"
             type="button"
           >
-            <Film className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-amber-500" />
+            <Film className="w-5 h-5 text-amber-500" />
           </button>
         ) : (
           <Button
