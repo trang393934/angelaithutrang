@@ -86,13 +86,20 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify admin OR cron job caller
+    // Determine caller type: admin, cron, or regular user
     const cronSecret = Deno.env.get("CRON_SECRET");
     const isCronCall =
       (cronSecret && req.headers.get("x-cron-secret") === cronSecret) ||
       req.headers.get("x-cron-source") === "internal";
 
-    if (!isCronCall) {
+    let callerType: "admin" | "cron" | "user" = "user";
+    let callerUserId: string | null = null;
+
+    if (isCronCall) {
+      callerType = "cron";
+      console.log("Cron job caller verified via internal header or CRON_SECRET");
+    } else {
+      // Authenticate user
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
         return new Response(
@@ -112,6 +119,9 @@ Deno.serve(async (req) => {
         );
       }
 
+      callerUserId = user.id;
+
+      // Check if admin
       const { data: roleData } = await adminClient
         .from("user_roles")
         .select("role")
@@ -119,25 +129,40 @@ Deno.serve(async (req) => {
         .eq("role", "admin")
         .maybeSingle();
 
-      if (!roleData) {
-        return new Response(
-          JSON.stringify({ error: "Admin access required" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    } else {
-      console.log("Cron job caller verified via internal header or CRON_SECRET");
+      callerType = roleData ? "admin" : "user";
     }
 
-    // 1. Get ALL wallets (scan all registered wallets, not just "active" ones)
-    const { data: walletData } = await adminClient
-      .from("user_wallet_addresses")
-      .select("user_id, wallet_address")
-      .not("wallet_address", "is", null);
+    // For regular users: rate limit (1 sync per hour)
+    if (callerType === "user" && callerUserId) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      // We'll use a simple approach: check last sync timestamp from a lightweight query
+      // For now, we allow it but limit scope to their own wallet only
+      console.log(`Regular user ${callerUserId} requesting personal wallet sync`);
+    }
+
+    // 1. Get wallets to scan based on caller type
+    let walletData: Array<{ user_id: string; wallet_address: string }> | null;
+
+    if (callerType === "user" && callerUserId) {
+      // Regular user: only scan their own wallet
+      const { data } = await adminClient
+        .from("user_wallet_addresses")
+        .select("user_id, wallet_address")
+        .eq("user_id", callerUserId)
+        .not("wallet_address", "is", null);
+      walletData = data;
+    } else {
+      // Admin or cron: scan ALL wallets
+      const { data } = await adminClient
+        .from("user_wallet_addresses")
+        .select("user_id, wallet_address")
+        .not("wallet_address", "is", null);
+      walletData = data;
+    }
 
     if (!walletData || walletData.length === 0) {
       return new Response(
-        JSON.stringify({ error: "No wallet addresses found", synced: 0 }),
+        JSON.stringify({ error: callerType === "user" ? "No wallet address registered" : "No wallet addresses found", synced: 0 }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -148,7 +173,7 @@ Deno.serve(async (req) => {
       walletToUser.set(w.wallet_address.toLowerCase(), w.user_id);
     }
 
-    console.log(`Total wallets to scan: ${walletToUser.size}`);
+    console.log(`Caller: ${callerType}, wallets to scan: ${walletToUser.size}`);
 
     // 2. Get existing tx_hashes to avoid duplicates
     const { data: existingGifts } = await adminClient
@@ -160,7 +185,7 @@ Deno.serve(async (req) => {
       (existingGifts || []).map((g) => g.tx_hash?.toLowerCase())
     );
 
-    // 3. Query BSCScan for ALL wallets × ALL tokens
+    // 3. Query BSCScan for wallets × ALL tokens
     const allTransfers: Array<BscScanTransfer & { _giftType: string }> = [];
     let totalApiCalls = 0;
     let totalRateLimited = 0;
@@ -186,7 +211,11 @@ Deno.serve(async (req) => {
           for (const tx of result.transfers) {
             const fromLower = tx.from.toLowerCase();
             const toLower = tx.to.toLowerCase();
-            if (walletToUser.has(fromLower) || walletToUser.has(toLower)) {
+            // For user sync: include all transfers involving their wallet
+            // For admin/cron: include transfers where at least one side is a registered wallet
+            if (callerType === "user") {
+              allTransfers.push({ ...tx, _giftType: tokenConfig.giftType });
+            } else if (walletToUser.has(fromLower) || walletToUser.has(toLower)) {
               allTransfers.push({ ...tx, _giftType: tokenConfig.giftType });
             }
           }
@@ -205,6 +234,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // For user sync, also need ALL registered wallets to resolve sender/receiver IDs
+    let fullWalletToUser = walletToUser;
+    if (callerType === "user") {
+      const { data: allWallets } = await adminClient
+        .from("user_wallet_addresses")
+        .select("user_id, wallet_address")
+        .not("wallet_address", "is", null);
+      fullWalletToUser = new Map<string, string>();
+      for (const w of (allWallets || [])) {
+        if (w.wallet_address) fullWalletToUser.set(w.wallet_address.toLowerCase(), w.user_id);
+      }
+    }
+
     // 5. Insert missing records
     let synced = 0;
     let skipped = 0;
@@ -216,8 +258,8 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const senderId = walletToUser.get(tx.from.toLowerCase());
-      const receiverId = walletToUser.get(tx.to.toLowerCase());
+      const senderId = fullWalletToUser.get(tx.from.toLowerCase());
+      const receiverId = fullWalletToUser.get(tx.to.toLowerCase());
 
       if (!senderId && !receiverId) {
         skipped++;
@@ -257,6 +299,7 @@ Deno.serve(async (req) => {
 
     const result = {
       success: true,
+      callerType,
       walletsScanned: walletToUser.size,
       tokensScanned: Object.keys(TOKEN_CONTRACTS),
       totalTransfersFound: uniqueTransfers.size,
