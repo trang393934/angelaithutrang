@@ -10,6 +10,38 @@ import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
 import bitcoinLogo from "@/assets/bitcoin-logo.png";
 
+// Firework burst for receipt dialog
+const FireworkBurst = ({ delay, x, y }: { delay: number; x: number; y: number }) => {
+  const colors = ["#FFD700", "#FF6B6B", "#4ECDC4", "#FF9FF3", "#54A0FF", "#FFEAA7"];
+  return (
+    <>
+      {Array.from({ length: 8 }).map((_, i) => {
+        const angle = (i / 8) * Math.PI * 2;
+        const dist = 40 + Math.random() * 30;
+        return (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 rounded-full"
+            style={{
+              left: `${x}%`,
+              top: `${y}%`,
+              backgroundColor: colors[i % colors.length],
+            }}
+            initial={{ scale: 0, x: 0, y: 0, opacity: 0 }}
+            animate={{
+              scale: [0, 1.5, 0],
+              x: [0, Math.cos(angle) * dist],
+              y: [0, Math.sin(angle) * dist],
+              opacity: [0, 1, 0],
+            }}
+            transition={{ duration: 1.2, delay: delay + i * 0.03, ease: "easeOut", repeat: Infinity, repeatDelay: 1.5 }}
+          />
+        );
+      })}
+    </>
+  );
+};
+
 export interface TipReceiptData {
   receipt_public_id: string;
   sender_id: string;
@@ -70,7 +102,7 @@ const ConfettiPiece = ({ delay, left, color, size }: { delay: number; left: numb
       scale: [0, 1.2, 1, 0.8, 0.3],
       x: [0, Math.random() > 0.5 ? 30 : -30, Math.random() > 0.5 ? -20 : 20],
     }}
-    transition={{ duration: 4 + Math.random() * 2, delay, ease: "easeOut" }}
+    transition={{ duration: 4 + Math.random() * 2, delay, ease: "easeOut", repeat: Infinity, repeatDelay: 0.5 }}
   />
 );
 
@@ -85,7 +117,7 @@ const FallingCoin = ({ delay, left, size, logo }: { delay: number; left: number;
       rotate: [0, 360, 720, 1080],
       x: [0, Math.random() > 0.5 ? 15 : -15],
     }}
-    transition={{ duration: 3.5 + Math.random() * 2, delay, ease: "easeIn" }}
+    transition={{ duration: 3.5 + Math.random() * 2, delay, ease: "easeIn", repeat: Infinity, repeatDelay: 0.5 }}
   >
     <img src={logo} alt="" className="w-full h-full drop-shadow-md rounded-full" />
   </motion.div>
@@ -110,13 +142,13 @@ const CONFETTI_COLORS = [
 ];
 
 export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrationReceiptProps) {
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [showEffects, setShowEffects] = useState(false);
 
   useEffect(() => {
     if (open && data) {
-      setShowConfetti(true);
-      const timer = setTimeout(() => setShowConfetti(false), 8000);
-      return () => clearTimeout(timer);
+      setShowEffects(true);
+    } else {
+      setShowEffects(false);
     }
   }, [open, data]);
 
@@ -151,6 +183,10 @@ export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrati
     id: i, delay: Math.random() * 2, x: Math.random() * 100, y: Math.random() * 100,
   }));
 
+  const fireworks = Array.from({ length: 5 }, (_, i) => ({
+    id: i, delay: i * 0.6 + Math.random() * 0.3, x: 10 + Math.random() * 80, y: 10 + Math.random() * 40,
+  }));
+
   // Extract clean message (strip [Web3] prefix)
   const displayMessage = data.message?.replace(/^\[Web3\]\s*\S+\s*transfer.*$/i, "").trim() || null;
 
@@ -167,10 +203,16 @@ export function TipCelebrationReceipt({ open, onOpenChange, data }: TipCelebrati
             backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 30%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.2) 70%, rgba(255,255,255,0) 100%), linear-gradient(135deg, #b8860b 0%, #daa520 15%, #ffd700 35%, #ffec8b 50%, #ffd700 65%, #daa520 85%, #b8860b 100%)`,
           }}
         >
-          {/* Effects */}
+          {/* Effects - continuous loop */}
           <AnimatePresence>
-            {showConfetti && (
+            {showEffects && (
               <>
+                {/* Fireworks */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
+                  {fireworks.map((fw) => (
+                    <FireworkBurst key={`fw-${fw.id}`} delay={fw.delay} x={fw.x} y={fw.y} />
+                  ))}
+                </div>
                 <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
                   {confettiPieces.map((piece) => (
                     <ConfettiPiece key={`c-${piece.id}`} delay={piece.delay} left={piece.left} color={piece.color} size={piece.size} />
