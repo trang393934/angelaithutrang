@@ -76,6 +76,13 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Validate context_id is a valid UUID (not a tx_hash hex string)
+      let contextId = gift.context_id || null;
+      if (contextId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(contextId)) {
+        console.warn(`Invalid UUID for context_id: ${contextId}, setting to null`);
+        contextId = null;
+      }
+
       const record = {
         sender_id: gift.sender_id,
         receiver_id: gift.receiver_id,
@@ -84,7 +91,7 @@ Deno.serve(async (req) => {
         tx_hash: gift.tx_hash || null,
         gift_type: gift.gift_type || "web3",
         context_type: gift.context_type || "direct",
-        context_id: gift.context_id || null,
+        context_id: contextId,
       };
 
       const { error: insertError } = await adminClient

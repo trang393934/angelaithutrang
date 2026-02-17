@@ -15,6 +15,10 @@ const TOKEN_CONTRACTS: Record<string, { address: string; giftType: string }> = {
     address: "0x55d398326f99059fF775485246999027B3197955",
     giftType: "web3_USDT",
   },
+  FUN: {
+    address: "0x1aa8DE8B1E4465C6d729E8564893f8EF823a5ff2",
+    giftType: "web3_FUN",
+  },
 };
 
 const BSCSCAN_API_URL = "https://api.bscscan.com/api";
@@ -80,40 +84,47 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify admin
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authError } = await anonClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: roleData } = await adminClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
+    // Verify admin OR cron job caller
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const isCronCall = cronSecret && req.headers.get("x-cron-secret") === cronSecret;
 
-    if (!roleData) {
-      return new Response(
-        JSON.stringify({ error: "Admin access required" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!isCronCall) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user }, error: authError } = await anonClient.auth.getUser();
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: roleData } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (!roleData) {
+        return new Response(
+          JSON.stringify({ error: "Admin access required" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else {
+      console.log("Cron job caller verified via CRON_SECRET");
     }
 
     // 1. Get ALL wallets (scan all registered wallets, not just "active" ones)

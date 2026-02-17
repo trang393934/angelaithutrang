@@ -289,7 +289,7 @@ export function CryptoTransferTab({
           tx_hash: result.txHash || null,
           gift_type: `web3_${tokenSymbol}`,
           context_type: "direct",
-          context_id: result.txHash || null, // Store tx_hash as context_id for traceability
+          context_id: null,
         };
 
         // Retry with exponential backoff (3 attempts: 0s, 2s, 5s)
