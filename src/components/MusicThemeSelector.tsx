@@ -1,19 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Music, Check, VolumeX, Heart, PartyPopper, Sparkles } from "lucide-react";
+import { Music, Check, VolumeX, PartyPopper, Sparkles } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 
-export type MusicTrack = "valentine" | "tet-1" | "tet-2" | "none";
+export type MusicTrack = "tet-1" | "tet-2" | "none";
 
 const TRACK_OPTIONS: { value: MusicTrack; icon: React.ElementType; label: string; src: string }[] = [
-  { value: "valentine", icon: Heart, label: "Valentine", src: "/audio/valentine-bg.mp3" },
   { value: "tet-1", icon: PartyPopper, label: "Tết Vui Vẻ 1", src: "/audio/tet-vui-ve-1.mp3" },
   { value: "tet-2", icon: Sparkles, label: "Tết Vui Vẻ 2", src: "/audio/tet-vui-ve-2.mp3" },
   { value: "none", icon: VolumeX, label: "Tắt nhạc", src: "" },
 ];
 
-const getStoredTrack = (): MusicTrack =>
-  (localStorage.getItem("bg-music-track") as MusicTrack) || "valentine";
+const getStoredTrack = (): MusicTrack => {
+  const stored = localStorage.getItem("bg-music-track") as MusicTrack;
+  return stored === "tet-1" || stored === "tet-2" || stored === "none" ? stored : "tet-1";
+};
 
 const getStoredVolume = (): number => {
   const v = localStorage.getItem("bg-music-volume");
