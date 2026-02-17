@@ -35,51 +35,55 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
   const [open, setOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasInitRef = useRef(false);
-  const isReadyRef = useRef(false);
 
-  const tryPlay = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || !audio.src) return;
-    audio.play().then(() => {
-      document.removeEventListener("click", onInteraction, true);
-      document.removeEventListener("touchstart", onInteraction, true);
-    }).catch(() => {});
-  }, []);
-
-  const onInteraction = useCallback(() => {
-    if (audioRef.current && !audioRef.current.paused) return;
-    tryPlay();
-  }, [tryPlay]);
-
-  // Init audio once
-  useEffect(() => {
-    if (hasInitRef.current) return;
-    hasInitRef.current = true;
-
-    const currentTrack = TRACK_OPTIONS.find((t) => t.value === track);
-    if (!currentTrack || currentTrack.value === "none") return;
-
-    const audio = new Audio(currentTrack.src);
+  // Create or get audio element, ensuring only one exists
+  const getOrCreateAudio = useCallback((src: string): HTMLAudioElement => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+    }
+    const audio = new Audio(src);
     audio.loop = true;
     audio.preload = "auto";
     audio.volume = volume;
     audioRef.current = audio;
+    return audio;
+  }, [volume]);
 
-    audio.addEventListener("canplaythrough", () => { isReadyRef.current = true; }, { once: true });
-
-    if (isPlaying) {
-      const timer = setTimeout(() => {
-        tryPlay();
-        document.addEventListener("click", onInteraction, { capture: true });
-        document.addEventListener("touchstart", onInteraction, { capture: true });
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-
-    return () => {
-      document.removeEventListener("click", onInteraction, true);
-      document.removeEventListener("touchstart", onInteraction, true);
+  const playAudio = useCallback((audio: HTMLAudioElement) => {
+    const attempt = () => {
+      audio.play().catch(() => {
+        // Browser blocked autoplay, wait for interaction
+        const handler = () => {
+          audio.play().catch(() => {});
+          document.removeEventListener("click", handler, true);
+          document.removeEventListener("touchstart", handler, true);
+        };
+        document.addEventListener("click", handler, { capture: true, once: false });
+        document.addEventListener("touchstart", handler, { capture: true, once: false });
+      });
     };
+
+    if (audio.readyState >= 3) {
+      attempt();
+    } else {
+      audio.addEventListener("canplaythrough", attempt, { once: true });
+    }
+  }, []);
+
+  // Init audio on mount
+  useEffect(() => {
+    if (hasInitRef.current) return;
+    hasInitRef.current = true;
+
+    if (track === "none" || !isPlaying) return;
+
+    const currentTrack = TRACK_OPTIONS.find((t) => t.value === track);
+    if (!currentTrack) return;
+
+    const audio = getOrCreateAudio(currentTrack.src);
+    setTimeout(() => playAudio(audio), 300);
   }, []);
 
   // Volume sync
@@ -92,10 +96,14 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
     setTrack(value);
     localStorage.setItem("bg-music-track", value);
 
-    const audio = audioRef.current;
-
     if (value === "none") {
-      if (audio) audio.pause();
+      // Stop and destroy audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current.load();
+        audioRef.current = null;
+      }
       setIsPlaying(false);
       localStorage.setItem("bg-music-playing", "false");
       setOpen(false);
@@ -105,30 +113,25 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
     const selected = TRACK_OPTIONS.find((t) => t.value === value);
     if (!selected) return;
 
-    if (!audio) {
-      const newAudio = new Audio(selected.src);
-      newAudio.loop = true;
-      newAudio.preload = "auto";
-      newAudio.volume = volume;
-      audioRef.current = newAudio;
-      newAudio.addEventListener("canplaythrough", () => {
-        newAudio.play().catch(() => {});
-      }, { once: true });
-    } else {
-      audio.pause();
-      audio.src = selected.src;
-      audio.load();
-      audio.addEventListener("canplaythrough", () => {
-        audio.play().catch(() => {});
-      }, { once: true });
-    }
+    // Always create fresh audio for new track
+    const audio = getOrCreateAudio(selected.src);
+    playAudio(audio);
 
     setIsPlaying(true);
     localStorage.setItem("bg-music-playing", "true");
-    document.addEventListener("click", onInteraction, { capture: true });
-    document.addEventListener("touchstart", onInteraction, { capture: true });
     setOpen(false);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const isHeader = variant === "header";
 
