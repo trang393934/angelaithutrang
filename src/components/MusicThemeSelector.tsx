@@ -14,7 +14,7 @@ const TRACK_OPTIONS: { value: MusicTrack; icon: React.ElementType; label: string
 
 const getStoredTrack = (): MusicTrack => {
   const stored = localStorage.getItem("bg-music-track") as MusicTrack;
-  return stored === "tet-1" || stored === "tet-2" || stored === "rich-4" || stored === "none" ? stored : "tet-1";
+  return stored === "tet-1" || stored === "tet-2" || stored === "rich-4" || stored === "none" ? stored : "rich-4";
 };
 
 const getStoredVolume = (): number => {
