@@ -1,15 +1,16 @@
-import { Film, Check, VideoOff, Trees, Waves, Mountain, Flower2 } from "lucide-react";
+import { Film, Check, VideoOff, Trees, Waves, Mountain, Flower2, Sunrise } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
-export type VideoTheme = "nature-1" | "nature-2" | "nature-3" | "nature-4" | "none";
+export type VideoTheme = "nature-1" | "nature-2" | "nature-3" | "nature-4" | "nature-5" | "none";
 
 const THEME_OPTIONS: { value: VideoTheme; icon: React.ElementType; labelKey: string }[] = [
   { value: "nature-1", icon: Trees, labelKey: "Rừng & Suối" },
   { value: "nature-2", icon: Waves, labelKey: "Biển & Sóng" },
   { value: "nature-3", icon: Mountain, labelKey: "Núi & Rừng" },
   { value: "nature-4", icon: Flower2, labelKey: "Hoa & Biển" },
+  { value: "nature-5", icon: Sunrise, labelKey: "Thiên nhiên 5" },
   { value: "none", icon: VideoOff, labelKey: "Tắt video" },
 ];
 
