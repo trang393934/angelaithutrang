@@ -170,42 +170,72 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
 
         {/* Receiver (right) + Amount */}
         <div className="flex flex-col items-end min-w-0 flex-shrink">
-          {(isGift || isTreasury) && tx.receiver_id ? (
-            <>
-              <Link to={`/user/${tx.receiver_id}`} className="flex items-center gap-2 hover:opacity-80">
-                <div className="flex flex-col items-end min-w-0">
-                  <span className="font-bold text-sm text-[#3D2800] truncate">{tx.receiver_name || "Ẩn danh"}</span>
-                  {tx.receiver_wallet && (
+          {tx.receiver_id ? (
+            tx.receiver_id === TREASURY_SENDER_ID ? (
+              /* Treasury as receiver (donations) */
+              <>
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col items-end min-w-0">
+                    <span className="font-bold text-sm text-[#3D2800]">ANGEL AI TREASURY</span>
                     <div className="flex items-center gap-1 text-[10px] text-[#8B7355]">
-                      <span className="font-mono text-[#daa520]">{truncateWallet(tx.receiver_wallet)}</span>
-                      <button onClick={(e) => { e.preventDefault(); copyWallet(tx.receiver_wallet!); }} className="hover:text-[#b8860b]">
-                        {copiedWallet === tx.receiver_wallet ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
+                      <span className="font-mono text-[#daa520]">{truncateWallet(TREASURY_WALLET)}</span>
+                      <button onClick={() => copyWallet(TREASURY_WALLET)} className="hover:text-[#b8860b]">
+                        {copiedWallet === TREASURY_WALLET ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
                       </button>
-                      <a href={`https://bscscan.com/address/${tx.receiver_wallet}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                      <a href={`https://bscscan.com/address/${TREASURY_WALLET}`} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="w-2.5 h-2.5 text-[#8B7355] hover:text-[#b8860b]" />
                       </a>
                     </div>
-                  )}
+                  </div>
+                  <Avatar className="w-10 h-10 border-2 border-[#daa520]/40">
+                    <AvatarImage src={angelAiLogo} />
+                    <AvatarFallback className="text-xs bg-[#ffd700]/20 text-[#b8860b]">AI</AvatarFallback>
+                  </Avatar>
                 </div>
-                <Avatar className="w-10 h-10 border-2 border-[#ffd700]/30 flex-shrink-0">
-                  <AvatarImage src={tx.receiver_avatar || ""} />
-                  <AvatarFallback className="text-xs bg-[#ffd700]/20 text-[#b8860b]">
-                    {(tx.receiver_name || "?")[0]}
-                  </AvatarFallback>
-                </Avatar>
-              </Link>
-              {/* Amount */}
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className={`font-extrabold text-xl ${isTreasury ? 'text-[#b8860b]' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
-                  {tx.amount.toLocaleString()}
-                </span>
-                <span className={`font-bold text-sm ${isTreasury ? 'text-[#b8860b]' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
-                  {tokenDisplay.symbol}
-                </span>
-              </div>
-            </>
-          ) : !isTreasury ? (
-            <span className="font-bold text-sm text-rose-600">Angel AI</span>
+                {/* Amount */}
+                <div className="flex items-center gap-1.5 mt-1">
+                  <img src={tokenDisplay.logo} alt="" className="w-5 h-5 rounded-full" />
+                  <span className="font-extrabold text-xl text-rose-500">{tx.amount.toLocaleString()}</span>
+                  <span className="font-bold text-sm text-rose-500">{tokenDisplay.symbol}</span>
+                </div>
+              </>
+            ) : (
+              /* Normal user as receiver */
+              <>
+                <Link to={`/user/${tx.receiver_id}`} className="flex items-center gap-2 hover:opacity-80">
+                  <div className="flex flex-col items-end min-w-0">
+                    <span className="font-bold text-sm text-[#3D2800] truncate">{tx.receiver_name || "Ẩn danh"}</span>
+                    {tx.receiver_wallet && (
+                      <div className="flex items-center gap-1 text-[10px] text-[#8B7355]">
+                        <span className="font-mono text-[#daa520]">{truncateWallet(tx.receiver_wallet)}</span>
+                        <button onClick={(e) => { e.preventDefault(); copyWallet(tx.receiver_wallet!); }} className="hover:text-[#b8860b]">
+                          {copiedWallet === tx.receiver_wallet ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
+                        </button>
+                        <a href={`https://bscscan.com/address/${tx.receiver_wallet}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                          <ExternalLink className="w-2.5 h-2.5 text-[#8B7355] hover:text-[#b8860b]" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  <Avatar className="w-10 h-10 border-2 border-[#ffd700]/30 flex-shrink-0">
+                    <AvatarImage src={tx.receiver_avatar || ""} />
+                    <AvatarFallback className="text-xs bg-[#ffd700]/20 text-[#b8860b]">
+                      {(tx.receiver_name || "?")[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
+                {/* Amount */}
+                <div className="flex items-center gap-1.5 mt-1">
+                  <img src={tokenDisplay.logo} alt="" className="w-5 h-5 rounded-full" />
+                  <span className={`font-extrabold text-xl ${isTreasury ? 'text-[#b8860b]' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
+                    {tx.amount.toLocaleString()}
+                  </span>
+                  <span className={`font-bold text-sm ${isTreasury ? 'text-[#b8860b]' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
+                    {tokenDisplay.symbol}
+                  </span>
+                </div>
+              </>
+            )
           ) : null}
         </div>
       </div>
@@ -471,13 +501,15 @@ const ActivityHistory = () => {
 
       donations?.forEach(d => {
         const donor = profileMap.get(d.donor_id);
+        const donationToken = d.donation_type === "manual" ? "web3" : null;
         allTx.push({
           id: d.id, type: "donation",
           sender_id: d.donor_id, sender_name: donor?.display_name || null,
           sender_avatar: donor?.avatar_url || null, sender_wallet: walletMap.get(d.donor_id) || null,
-          receiver_id: null, receiver_name: "Angel AI", receiver_avatar: null, receiver_wallet: null,
+          receiver_id: TREASURY_SENDER_ID, receiver_name: "ANGEL AI TREASURY", 
+          receiver_avatar: angelAiLogo, receiver_wallet: TREASURY_WALLET,
           amount: d.amount, message: d.message, created_at: d.created_at,
-          tx_hash: d.tx_hash, gift_type: null, donation_type: d.donation_type,
+          tx_hash: d.tx_hash, gift_type: donationToken, donation_type: d.donation_type,
           receipt_public_id: null,
         });
       });
