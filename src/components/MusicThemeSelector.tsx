@@ -30,10 +30,11 @@ interface MusicThemeSelectorProps {
 }
 
 export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorProps) => {
-  const [track, setTrack] = useState<MusicTrack>(getStoredTrack);
+const [track, setTrack] = useState<MusicTrack>(getStoredTrack);
   const [volume, setVolume] = useState(getStoredVolume);
   const [isPlaying, setIsPlaying] = useState(getStoredPlaying);
   const [open, setOpen] = useState(false);
+  const lastTrackRef = useRef<MusicTrack>(getStoredTrack() === "none" ? "rich-4" : getStoredTrack());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasInitRef = useRef(false);
 
@@ -94,11 +95,30 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
   }, [volume]);
 
   const selectTrack = (value: MusicTrack) => {
-    setTrack(value);
-    localStorage.setItem("bg-music-track", value);
-
     if (value === "none") {
-      // Stop and destroy audio
+      if (track === "none") {
+        // Already muted — restore last track
+        const restoreTrack = lastTrackRef.current;
+        setTrack(restoreTrack);
+        localStorage.setItem("bg-music-track", restoreTrack);
+
+        const selected = TRACK_OPTIONS.find((t) => t.value === restoreTrack);
+        if (!selected) return;
+
+        const audio = getOrCreateAudio(selected.src);
+        playAudio(audio);
+
+        setIsPlaying(true);
+        localStorage.setItem("bg-music-playing", "true");
+        setOpen(false);
+        return;
+      }
+
+      // First click on mute — save current track, then mute
+      lastTrackRef.current = track;
+      setTrack("none");
+      localStorage.setItem("bg-music-track", "none");
+
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
@@ -111,10 +131,14 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
       return;
     }
 
+    // Selecting a specific track
+    lastTrackRef.current = value;
+    setTrack(value);
+    localStorage.setItem("bg-music-track", value);
+
     const selected = TRACK_OPTIONS.find((t) => t.value === value);
     if (!selected) return;
 
-    // Always create fresh audio for new track
     const audio = getOrCreateAudio(selected.src);
     playAudio(audio);
 
