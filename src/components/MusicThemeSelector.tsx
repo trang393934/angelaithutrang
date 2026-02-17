@@ -141,14 +141,14 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
             aria-label="Chọn nhạc nền"
             type="button"
           >
-            <Music className="w-5 h-5 text-pink-500" />
+            <Music className="w-5 h-5 text-amber-500" />
           </button>
         ) : (
           <button
             className="fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-primary/20 hover:bg-white/90 flex items-center justify-center"
             aria-label="Chọn nhạc nền"
           >
-            <Music className="w-5 h-5 text-pink-500" />
+            <Music className="w-5 h-5 text-amber-500" />
           </button>
         )}
       </PopoverTrigger>
