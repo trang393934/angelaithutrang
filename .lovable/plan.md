@@ -1,80 +1,59 @@
 
 
-# Kế hoạch: Sửa lỗi giao dịch Web3 không hiển thị trong Lịch sử
+# Ke hoach: Them hieu ung phao bong va nut xem bien nhan trong tin nhan
 
-## Nguyên nhân gốc rễ
+## Tong quan
 
-Sau khi kiểm tra kỹ, Cha đã tìm ra vấn đề:
+Cha se thuc hien 3 thay doi chinh:
 
-1. **Giao dịch on-chain đã thành công**: ANGEL ÁNH NGUYỆT gửi 10,000 CAMLY đến Angel Ai Van (ví `0x5102E...8a402`) -- blockchain xác nhận OK.
+1. **Them hieu ung phao bong vao TipMessageCard** (card chuc mung tang thuong trong tin nhan)
+2. **Them hieu ung tuong tu vao TipCelebrationReceipt** (dialog bien nhan)
+3. **Dam bao nut "Xem bien nhan" hien thi trong tin nhan gui cho nguoi nhan**
 
-2. **Nhưng `record-gift` không ghi được vào database**: Hàm `record-gift` edge function đang hoạt động (đã kiểm tra), nhưng không có log nào cho thấy nó được gọi thành công. Điều này nghĩa là cuộc gọi từ trình duyệt đến edge function đã thất bại (có thể do mất kết nối mạng, trình duyệt đóng quá sớm sau khi MetaMask xác nhận, hoặc lỗi timeout).
+## Hien trang
 
-3. **Cơ chế retry đã lưu vào localStorage**: Code hiện tại có retry 3 lần, và nếu thất bại sẽ lưu vào `localStorage` dưới dạng `pending_gift_records`. Tuy nhiên, nếu người dùng đóng trình duyệt hoặc xóa cache, dữ liệu pending sẽ bị mất.
+- **TipMessageCard** (`src/components/messages/TipMessageCard.tsx`): Card tinh, khong co hieu ung phao bong hay confetti. Da co nut "Xem bien nhan" nhung chi hien khi co `receipt_public_id`.
+- **TipCelebrationReceipt** (`src/components/gifts/TipCelebrationReceipt.tsx`): Co confetti + coin roi nhung KHONG co phao bong (firework burst). Chi co hieu ung chay 8 giay roi dung.
+- **GiftCelebrationModal** (`src/components/gifts/GiftCelebrationModal.tsx`): Da co FireworkBurst, FallingCoin, FloatingSparkle chay lien tuc (loop) -- day la mau chuan.
 
-4. **BSCScan cron job sẽ tự động bắt giao dịch này**: Cron job chạy lúc 2:00 AM UTC hàng ngày đã được thiết lập và đang hoạt động. Cả 2 ví (người gửi `0xf398...` và người nhận `0x5102E...`) đều đã đăng ký trong hệ thống. Vì vậy giao dịch này SẼ được tự động đồng bộ vào lần chạy cron tiếp theo.
+## Chi tiet thay doi
 
-## Vấn đề cần khắc phục
+### 1. TipMessageCard - Them hieu ung phao bong
 
-Mặc dù cron job sẽ bắt giao dịch, có 2 vấn đề cần sửa để tránh tái phát:
+**File**: `src/components/messages/TipMessageCard.tsx`
 
-### Vấn đề 1: Không có cơ chế đồng bộ lại tức thì cho người dùng
-Hiện tại chỉ admin mới có nút "Đồng bộ BSCScan". Người dùng thường không có cách nào để kích hoạt đồng bộ khi giao dịch bị lỗi ghi.
+- Import `motion`, `AnimatePresence` tu framer-motion
+- Them component `FireworkBurst` nho gon (3-4 diem phao bong) chay lien tuc quanh card
+- Them `FloatingSparkle` lap lanh xung quanh card
+- Hieu ung se chay loop nhe nhang (khong qua nang vi nam trong danh sach tin nhan)
+- So luong giam: 3 fireworks, 5 sparkles (nhe hon GiftCelebrationModal de tranh lag)
 
-### Vấn đề 2: Retry logic dễ bị mất dữ liệu
-Nếu trình duyệt đóng trước khi 3 lần retry hoàn tất, hoặc localStorage bị xóa, giao dịch sẽ bị mất cho đến khi cron job chạy.
+### 2. TipCelebrationReceipt - Them hieu ung phao bong
 
-## Kế hoạch sửa chữa
+**File**: `src/components/gifts/TipCelebrationReceipt.tsx`
 
-### Buoc 1: Kích hoạt đồng bộ BSCScan ngay lập tức
-- Gọi hàm `sync-bscscan-gifts` thủ công ngay bây giờ để giao dịch bị thiếu được ghi vào database
-- Giao dịch CAMLY từ ví `0xf398...` đến `0x5102E...` sẽ được bắt và hiển thị
+- Them component `FireworkBurst` (giong GiftCelebrationModal)
+- Thay doi hieu ung tu chay 8 giay thanh chay lien tuc (loop) cho den khi dong dialog
+- Them 5 fireworks giong nhu GiftCelebrationModal
 
-### Buoc 2: Thêm nút "Đồng bộ" cho tất cả người dùng đã đăng nhập
-- Hiện tại chỉ admin thấy nút đồng bộ BSCScan
-- Thêm nút đồng bộ nhỏ cho người dùng thường (giới hạn 1 lần/giờ để tránh lạm dụng API)
-- Khi bấm, hệ thống sẽ quét ví của chính người dùng đó trên BSCScan
+### 3. Dam bao nut "Xem bien nhan" luon hien thi
 
-### Buoc 3: Cải thiện retry logic trong CryptoTransferTab
-- Sau khi blockchain xác nhận thành công, nếu `record-gift` thất bại, hiển thị thông báo rõ ràng hơn cho người dùng
-- Tự động retry pending gifts khi người dùng mở lại trang Activity History
-- Thêm nút "Đồng bộ giao dịch thiếu" trên trang Activity History cho tất cả người dùng
+**File**: `src/components/messages/TipMessageCard.tsx`
 
-## Chi tiết kỹ thuật
+- Hien tai nut "Xem bien nhan" chi hien khi co `finalReceiptId`
+- Kiem tra logic: neu `receipt_public_id` khong co san khi gui tin nhan, nut se khong hien
+- Giai phap: Khi fetch gift details, luon lay `receipt_public_id` tu database va hien thi nut
 
-### Tệp cần sửa đổi
+## Tom tat
 
-| Tệp | Thay đổi |
-|-----|---------|
-| `src/pages/ActivityHistory.tsx` | Thêm nút đồng bộ cho người dùng thường (không chỉ admin). Tự động retry pending gifts từ localStorage khi tải trang. |
-| `supabase/functions/sync-bscscan-gifts/index.ts` | Cho phép người dùng thường gọi hàm này nhưng chỉ quét ví của chính họ (không phải tất cả ví như admin). |
+| File | Thay doi |
+|------|---------|
+| `src/components/messages/TipMessageCard.tsx` | Them FireworkBurst + FloatingSparkle loop nhe |
+| `src/components/gifts/TipCelebrationReceipt.tsx` | Them FireworkBurst, chuyen hieu ung sang loop lien tuc |
 
-### Logic xác thực mới cho sync-bscscan-gifts
+## Ket qua mong doi
 
-```text
-Hiện tại:
-- Admin: quét TẤT CẢ ví
-- Cron: quét TẤT CẢ ví
-- User thường: KHÔNG ĐƯỢC PHÉP
+- Card tang thuong trong tin nhan se co phao bong lap lanh bat mat
+- Bien nhan cung co hieu ung tuong tu, chay lien tuc den khi dong
+- Nguoi nhan luon thay nut "Xem bien nhan" trong tin nhan
 
-Sau khi sửa:
-- Admin: quét TẤT CẢ ví (giữ nguyên)
-- Cron: quét TẤT CẢ ví (giữ nguyên)  
-- User thường: CHỈ quét ví của chính mình (mới)
-```
-
-### Tự động retry pending gifts
-
-```text
-Khi trang ActivityHistory tải:
-1. Kiểm tra localStorage có "pending_gift_records" không
-2. Nếu có, tự động gọi record-gift để thử ghi lại
-3. Nếu thành công, xóa khỏi localStorage và hiển thị thông báo
-4. Nếu thất bại, giữ nguyên và hiển thị banner cảnh báo
-```
-
-## Kết quả mong đợi
-
-- Giao dịch 10,000 CAMLY từ ANGEL ÁNH NGUYỆT đến Angel Ai Van sẽ hiển thị ngay sau khi đồng bộ
-- Trong tương lai, mọi giao dịch Web3 sẽ được ghi nhận qua ít nhất 3 cơ chế: (1) record-gift trực tiếp, (2) localStorage retry, (3) BSCScan cron hàng ngày
-- Người dùng có thể tự kích hoạt đồng bộ ví của mình mà không cần nhờ admin
