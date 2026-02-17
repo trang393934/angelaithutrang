@@ -125,7 +125,7 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
                 <AvatarFallback className="text-xs bg-[#ffd700]/20 text-[#b8860b]">AI</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
-                <span className="font-bold text-sm text-[#3D2800]">@fun profile treasury</span>
+                <span className="font-bold text-sm text-[#3D2800]">ANGEL AI TREASURY</span>
                 <div className="flex items-center gap-1 text-[10px] text-[#8B7355]">
                   <span className="font-mono text-[#daa520]">{truncateWallet(treasuryWallet)}</span>
                   <button onClick={() => copyWallet(treasuryWallet)} className="hover:text-[#b8860b]">
@@ -146,7 +146,7 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col min-w-0">
-                <span className="font-bold text-sm text-[#3D2800] truncate">@{tx.sender_name || "Ẩn danh"}</span>
+                <span className="font-bold text-sm text-[#3D2800] truncate">{tx.sender_name || "Ẩn danh"}</span>
                 {tx.sender_wallet && (
                   <div className="flex items-center gap-1 text-[10px] text-[#8B7355]">
                     <span className="font-mono text-[#daa520]">{truncateWallet(tx.sender_wallet)}</span>
@@ -174,7 +174,7 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
             <>
               <Link to={`/user/${tx.receiver_id}`} className="flex items-center gap-2 hover:opacity-80">
                 <div className="flex flex-col items-end min-w-0">
-                  <span className="font-bold text-sm text-[#3D2800] truncate">@{tx.receiver_name || "Ẩn danh"}</span>
+                  <span className="font-bold text-sm text-[#3D2800] truncate">{tx.receiver_name || "Ẩn danh"}</span>
                   {tx.receiver_wallet && (
                     <div className="flex items-center gap-1 text-[10px] text-[#8B7355]">
                       <span className="font-mono text-[#daa520]">{truncateWallet(tx.receiver_wallet)}</span>
