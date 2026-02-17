@@ -1,12 +1,70 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, ArrowRight, ExternalLink, Copy, Loader2, ArrowLeft, MessageCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Gift, ArrowRight, ExternalLink, Copy, Loader2, ArrowLeft, MessageCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+import funMoneyLogo from "@/assets/fun-money-logo.png";
+import bitcoinLogo from "@/assets/bitcoin-logo.png";
+
+const USDT_LOGO = "https://cryptologos.cc/logos/tether-usdt-logo.png?v=040";
+const BNB_LOGO = "https://cryptologos.cc/logos/bnb-bnb-logo.png?v=040";
+
+function getTokenDisplay(giftType?: string) {
+  if (!giftType) return { logo: camlyCoinLogo, label: "Camly Coin" };
+  if (giftType === "web3_FUN" || giftType === "fun_money") return { logo: funMoneyLogo, label: "FUN Money" };
+  if (giftType === "web3_CAMLY" || giftType === "camly_web3") return { logo: camlyCoinLogo, label: "CAMLY" };
+  if (giftType === "web3_USDT" || giftType === "usdt") return { logo: USDT_LOGO, label: "USDT" };
+  if (giftType === "web3_BNB" || giftType === "bnb") return { logo: BNB_LOGO, label: "BNB" };
+  if (giftType === "web3_BTC" || giftType === "bitcoin") return { logo: bitcoinLogo, label: "BTC" };
+  if (giftType.startsWith("web3")) return { logo: camlyCoinLogo, label: "CAMLY" };
+  return { logo: camlyCoinLogo, label: "Camly Coin" };
+}
+
+// Firework burst
+const FireworkBurst = ({ delay, x, y }: { delay: number; x: number; y: number }) => {
+  const colors = ["#FFD700", "#FF6B6B", "#4ECDC4", "#FF9FF3", "#54A0FF", "#FFEAA7"];
+  return (
+    <>
+      {Array.from({ length: 8 }).map((_, i) => {
+        const angle = (i / 8) * Math.PI * 2;
+        const dist = 40 + Math.random() * 30;
+        return (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 rounded-full"
+            style={{ left: `${x}%`, top: `${y}%`, backgroundColor: colors[i % colors.length] }}
+            initial={{ scale: 0, x: 0, y: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.5, 0], x: [0, Math.cos(angle) * dist], y: [0, Math.sin(angle) * dist], opacity: [0, 1, 0] }}
+            transition={{ duration: 1.2, delay: delay + i * 0.03, ease: "easeOut", repeat: Infinity, repeatDelay: 2 }}
+          />
+        );
+      })}
+    </>
+  );
+};
+
+const FallingCoin = ({ delay, left, size, logo }: { delay: number; left: number; size: number; logo: string }) => (
+  <motion.div
+    className="absolute z-10"
+    style={{ left: `${left}%`, width: size, height: size }}
+    initial={{ y: -60, opacity: 0, rotate: 0 }}
+    animate={{ y: ["0%", "130vh"], opacity: [0, 1, 1, 1, 0], rotate: [0, 360, 720, 1080], x: [0, Math.random() > 0.5 ? 15 : -15] }}
+    transition={{ duration: 3.5 + Math.random() * 2, delay, ease: "easeIn", repeat: Infinity, repeatDelay: 0.5 }}
+  >
+    <img src={logo} alt="" className="w-full h-full drop-shadow-md rounded-full" />
+  </motion.div>
+);
+
+const FloatingSparkle = ({ delay, x, y }: { delay: number; x: number; y: number }) => (
+  <motion.div className="absolute" style={{ left: `${x}%`, top: `${y}%` }} initial={{ scale: 0, opacity: 0 }} animate={{ scale: [0, 1.8, 0], opacity: [0, 1, 0] }} transition={{ duration: 1.5, delay, repeat: Infinity, repeatDelay: 0.8 }}>
+    <Sparkles className="w-4 h-4 text-yellow-300 drop-shadow-lg" />
+  </motion.div>
+);
 
 interface ReceiptData {
   id: string;
@@ -40,12 +98,10 @@ export default function Receipt() {
       const response = await supabase.functions.invoke("get-tip-receipt", {
         body: { receipt_id: receiptId },
       });
-
       if (response.error || response.data?.error) {
         setError(response.data?.error || "Không tìm thấy biên nhận");
         return;
       }
-
       setReceipt(response.data.receipt);
     } catch (err) {
       setError("Lỗi tải biên nhận");
@@ -65,7 +121,6 @@ export default function Receipt() {
   };
 
   const truncateWallet = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-
   const formatAmount = (amount: number) => new Intl.NumberFormat("vi-VN").format(amount);
 
   if (loading) {
@@ -95,9 +150,35 @@ export default function Receipt() {
     );
   }
 
+  const tokenDisplay = getTokenDisplay(receipt.gift_type);
+
+  // Effects data
+  const fireworks = Array.from({ length: 5 }, (_, i) => ({
+    id: i, delay: i * 0.6 + Math.random() * 0.3, x: 10 + Math.random() * 80, y: 10 + Math.random() * 40,
+  }));
+  const fallingCoins = Array.from({ length: 15 }, (_, i) => ({
+    id: i, delay: Math.random() * 3, left: Math.random() * 100, size: 14 + Math.random() * 14,
+  }));
+  const sparkles = Array.from({ length: 10 }, (_, i) => ({
+    id: i, delay: Math.random() * 2, x: Math.random() * 100, y: Math.random() * 100,
+  }));
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-amber-50/30 py-8 px-4">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-amber-50/30 py-8 px-4 relative overflow-hidden">
+      {/* Celebration effects */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {fireworks.map((fw) => (
+          <FireworkBurst key={`fw-${fw.id}`} delay={fw.delay} x={fw.x} y={fw.y} />
+        ))}
+        {fallingCoins.map((coin) => (
+          <FallingCoin key={`coin-${coin.id}`} delay={coin.delay} left={coin.left} size={coin.size} logo={tokenDisplay.logo} />
+        ))}
+        {sparkles.map((s) => (
+          <FloatingSparkle key={`s-${s.id}`} delay={s.delay} x={s.x} y={s.y} />
+        ))}
+      </div>
+
+      <div className="max-w-lg mx-auto relative z-10">
         {/* Back */}
         <Link to="/" className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 mb-6">
           <ArrowLeft className="w-4 h-4" />
@@ -111,7 +192,7 @@ export default function Receipt() {
           }}>
             <div className="flex items-center justify-center gap-2 mb-1">
               <Gift className="w-6 h-6 text-amber-900" />
-              <h1 className="text-xl font-bold text-amber-900 drop-shadow-sm">Biên Nhận Tặng Thưởng</h1>
+              <h1 className="text-xl font-bold text-amber-900 drop-shadow-sm">🎉 Biên Nhận Tặng Thưởng 🎉</h1>
             </div>
             <p className="text-amber-800/80 text-sm">Angel AI • Lan tỏa yêu thương</p>
           </div>
@@ -138,7 +219,7 @@ export default function Receipt() {
 
               <div className="flex flex-col items-center shrink-0">
                 <ArrowRight className="w-6 h-6 text-amber-400" />
-                <img src={camlyCoinLogo} alt="coin" className="w-8 h-8 mt-1 rounded-full" />
+                <img src={tokenDisplay.logo} alt="coin" className="w-8 h-8 mt-1 rounded-full" />
               </div>
 
               <Link to={`/user/${receipt.receiver.user_id}`} className="flex flex-col items-center gap-2 flex-1 hover:opacity-80">
@@ -159,13 +240,13 @@ export default function Receipt() {
               </Link>
             </div>
 
-            {/* Amount */}
+            {/* Amount - dynamic token */}
             <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-4 text-center border border-amber-200">
               <div className="flex items-center justify-center gap-2">
-                <img src={camlyCoinLogo} alt="coin" className="w-8 h-8 rounded-full" />
+                <img src={tokenDisplay.logo} alt="coin" className="w-8 h-8 rounded-full" />
                 <span className="text-3xl font-bold text-amber-700">{formatAmount(receipt.amount)}</span>
               </div>
-              <p className="text-sm text-amber-600 mt-1">Camly Coin</p>
+              <p className="text-sm text-amber-600 mt-1">{tokenDisplay.label}</p>
             </div>
 
             {/* Message */}
@@ -181,10 +262,7 @@ export default function Receipt() {
 
             {/* Post link */}
             {receipt.post && (
-              <Link
-                to={`/community`}
-                className="block bg-blue-50 border border-blue-200 rounded-lg p-3 hover:bg-blue-100 transition-colors"
-              >
+              <Link to={`/community`} className="block bg-blue-50 border border-blue-200 rounded-lg p-3 hover:bg-blue-100 transition-colors">
                 <p className="text-xs text-blue-500 font-medium mb-1">Tặng trên bài viết</p>
                 <p className="text-sm text-blue-700 line-clamp-2">{receipt.post.content_preview}</p>
               </Link>

@@ -6,7 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+import funMoneyLogo from "@/assets/fun-money-logo.png";
+import bitcoinLogo from "@/assets/bitcoin-logo.png";
 import angelAvatar from "@/assets/angel-avatar.png";
+
+const USDT_LOGO = "https://cryptologos.cc/logos/tether-usdt-logo.png?v=040";
+const BNB_LOGO = "https://cryptologos.cc/logos/bnb-bnb-logo.png?v=040";
+
+function getTokenDisplay(giftType?: string) {
+  if (!giftType) return { logo: camlyCoinLogo, label: "Camly Coin" };
+  if (giftType === "web3_FUN" || giftType === "fun_money") return { logo: funMoneyLogo, label: "FUN Money" };
+  if (giftType === "web3_CAMLY" || giftType === "camly_web3") return { logo: camlyCoinLogo, label: "CAMLY" };
+  if (giftType === "web3_USDT" || giftType === "usdt") return { logo: USDT_LOGO, label: "USDT" };
+  if (giftType === "web3_BNB" || giftType === "bnb") return { logo: BNB_LOGO, label: "BNB" };
+  if (giftType === "web3_BTC" || giftType === "bitcoin") return { logo: bitcoinLogo, label: "BTC" };
+  if (giftType.startsWith("web3")) return { logo: camlyCoinLogo, label: "CAMLY" };
+  return { logo: camlyCoinLogo, label: "Camly Coin" };
+}
 
 interface TipMessageCardProps {
   content: string;
@@ -18,6 +34,7 @@ interface GiftDetails {
   amount: number;
   message: string | null;
   receipt_public_id: string | null;
+  gift_type: string;
   sender_id: string;
   receiver_id: string;
   sender_name: string;
@@ -26,7 +43,7 @@ interface GiftDetails {
   receiver_avatar: string | null;
 }
 
-// Lightweight firework for message card (fewer particles to avoid lag)
+// Lightweight firework for message card
 const MiniFireworkBurst = ({ delay, x, y }: { delay: number; x: number; y: number }) => {
   const colors = ["#FFD700", "#FF6B6B", "#FF69B4", "#FFA500", "#4ECDC4"];
   return (
@@ -39,20 +56,12 @@ const MiniFireworkBurst = ({ delay, x, y }: { delay: number; x: number; y: numbe
             key={i}
             className="absolute rounded-full"
             style={{
-              left: `${x}%`,
-              top: `${y}%`,
-              width: 3,
-              height: 3,
+              left: `${x}%`, top: `${y}%`, width: 3, height: 3,
               backgroundColor: colors[i % colors.length],
               boxShadow: `0 0 4px ${colors[i % colors.length]}`,
             }}
             initial={{ scale: 0, x: 0, y: 0, opacity: 0 }}
-            animate={{
-              scale: [0, 1.2, 0],
-              x: [0, Math.cos(angle) * dist],
-              y: [0, Math.sin(angle) * dist],
-              opacity: [0, 1, 0],
-            }}
+            animate={{ scale: [0, 1.2, 0], x: [0, Math.cos(angle) * dist], y: [0, Math.sin(angle) * dist], opacity: [0, 1, 0] }}
             transition={{ duration: 1, delay: delay + i * 0.03, ease: "easeOut", repeat: Infinity, repeatDelay: 2.5 }}
           />
         );
@@ -62,13 +71,7 @@ const MiniFireworkBurst = ({ delay, x, y }: { delay: number; x: number; y: numbe
 };
 
 const MiniSparkle = ({ delay, x, y }: { delay: number; x: number; y: number }) => (
-  <motion.div
-    className="absolute"
-    style={{ left: `${x}%`, top: `${y}%` }}
-    initial={{ scale: 0, opacity: 0 }}
-    animate={{ scale: [0, 1.3, 0], opacity: [0, 1, 0] }}
-    transition={{ duration: 1.2, delay, repeat: Infinity, repeatDelay: 1.5 }}
-  >
+  <motion.div className="absolute" style={{ left: `${x}%`, top: `${y}%` }} initial={{ scale: 0, opacity: 0 }} animate={{ scale: [0, 1.3, 0], opacity: [0, 1, 0] }} transition={{ duration: 1.2, delay, repeat: Infinity, repeatDelay: 1.5 }}>
     <Sparkles className="w-3 h-3 text-yellow-400 drop-shadow-md" />
   </motion.div>
 );
@@ -82,7 +85,7 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
     const fetchGiftDetails = async () => {
       const { data: gift } = await supabase
         .from("coin_gifts")
-        .select("amount, message, receipt_public_id, sender_id, receiver_id")
+        .select("amount, message, receipt_public_id, gift_type, sender_id, receiver_id")
         .eq("id", tipGiftId)
         .maybeSingle();
 
@@ -100,6 +103,7 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
         amount: gift.amount,
         message: gift.message,
         receipt_public_id: gift.receipt_public_id,
+        gift_type: gift.gift_type,
         sender_id: gift.sender_id,
         receiver_id: gift.receiver_id,
         sender_name: senderProfile?.display_name || "Ẩn danh",
@@ -113,9 +117,9 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
   }, [tipGiftId]);
 
   const finalReceiptId = giftDetails?.receipt_public_id || receiptPublicId;
+  const tokenDisplay = getTokenDisplay(giftDetails?.gift_type);
   const formatAmount = (amount: number) => new Intl.NumberFormat("vi-VN").format(amount);
 
-  // Firework + sparkle data for celebration card
   const fireworks = [
     { id: 0, delay: 0, x: 15, y: 20 },
     { id: 1, delay: 0.8, x: 85, y: 15 },
@@ -129,7 +133,6 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
     { id: 4, delay: 2.0, x: 50, y: 60 },
   ];
 
-  // Enhanced celebration card when gift details are available
   if (giftDetails) {
     return (
       <div className="relative bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border border-amber-200 rounded-2xl p-4 space-y-3 max-w-[320px] shadow-sm overflow-hidden">
@@ -153,7 +156,7 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
             <Gift className="w-4 h-4 text-white" />
           </motion.div>
           <span className="text-sm font-bold text-amber-700">🎉 Chúc mừng!</span>
-          <img src={camlyCoinLogo} alt="coin" className="w-5 h-5 rounded-full" />
+          <img src={tokenDisplay.logo} alt="coin" className="w-5 h-5 rounded-full" />
         </div>
 
         {/* Sender -> Receiver */}
@@ -187,12 +190,12 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
           </Link>
         </div>
 
-        {/* Amount */}
+        {/* Amount - dynamic token */}
         <div className="bg-gradient-to-r from-amber-100 to-yellow-100 rounded-lg p-2 text-center border border-amber-200/60 relative z-10">
           <div className="flex items-center justify-center gap-1.5">
-            <img src={camlyCoinLogo} alt="coin" className="w-5 h-5 rounded-full" />
+            <img src={tokenDisplay.logo} alt="coin" className="w-5 h-5 rounded-full" />
             <span className="text-xl font-bold text-amber-700">{formatAmount(giftDetails.amount)}</span>
-            <span className="text-xs text-amber-600 font-medium">Camly Coin</span>
+            <span className="text-xs text-amber-600 font-medium">{tokenDisplay.label}</span>
           </div>
         </div>
 
@@ -204,7 +207,7 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
           </div>
         )}
 
-        {/* Receipt button */}
+        {/* Receipt button - always show when receipt exists */}
         {finalReceiptId && (
           <Link to={`/receipt/${finalReceiptId}`} className="relative z-10 block">
             <Button
