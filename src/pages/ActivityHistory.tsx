@@ -110,20 +110,31 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
   const formattedTime = format(new Date(tx.created_at), "HH:mm:ss dd/M/yyyy", { locale });
   const tokenDisplay = getTokenDisplay(tx.gift_type);
 
+  const treasuryWallet = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
+
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-green-200 p-4 sm:p-5 hover:border-green-300 transition-all hover:shadow-md">
+    <div className="bg-gradient-to-br from-[#fffdf5] to-[#fef9e7] backdrop-blur-sm rounded-xl border border-[#daa520]/30 p-4 sm:p-5 hover:border-[#daa520]/50 transition-all hover:shadow-lg shadow-sm">
       {/* Row 1: Sender → Receiver with amount */}
       <div className="flex items-start justify-between gap-2">
         {/* Sender (left) */}
         <div className="flex items-center gap-2 min-w-0 flex-shrink">
           {isTreasury ? (
             <div className="flex items-center gap-2">
-              <Avatar className="w-10 h-10 border-2 border-emerald-200">
+              <Avatar className="w-10 h-10 border-2 border-[#daa520]/40">
                 <AvatarImage src={angelAiLogo} />
-                <AvatarFallback className="text-xs bg-emerald-100 text-emerald-700">AI</AvatarFallback>
+                <AvatarFallback className="text-xs bg-[#ffd700]/20 text-[#b8860b]">AI</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
                 <span className="font-bold text-sm text-[#3D2800]">@fun profile treasury</span>
+                <div className="flex items-center gap-1 text-[10px] text-[#8B7355]">
+                  <span className="font-mono text-[#daa520]">{truncateWallet(treasuryWallet)}</span>
+                  <button onClick={() => copyWallet(treasuryWallet)} className="hover:text-[#b8860b]">
+                    {copiedWallet === treasuryWallet ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
+                  </button>
+                  <a href={`https://bscscan.com/address/${treasuryWallet}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-2.5 h-2.5 text-[#8B7355] hover:text-[#b8860b]" />
+                  </a>
+                </div>
               </div>
             </div>
           ) : (
@@ -142,11 +153,9 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
                     <button onClick={() => copyWallet(tx.sender_wallet!)} className="hover:text-[#b8860b]">
                       {copiedWallet === tx.sender_wallet ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
                     </button>
-                    {tx.sender_wallet && (
-                      <a href={`https://bscscan.com/address/${tx.sender_wallet}`} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="w-2.5 h-2.5 text-[#8B7355] hover:text-[#b8860b]" />
-                      </a>
-                    )}
+                    <a href={`https://bscscan.com/address/${tx.sender_wallet}`} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-2.5 h-2.5 text-[#8B7355] hover:text-[#b8860b]" />
+                    </a>
                   </div>
                 )}
               </div>
@@ -156,7 +165,7 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
 
         {/* Arrow center */}
         <div className="flex-shrink-0 self-center">
-          <Send className={`w-5 h-5 ${isTreasury ? 'text-emerald-500' : isGift ? 'text-[#daa520]' : 'text-rose-500'}`} />
+          <Send className="w-5 h-5 text-[#daa520]" />
         </div>
 
         {/* Receiver (right) + Amount */}
@@ -187,10 +196,10 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
               </Link>
               {/* Amount */}
               <div className="flex items-center gap-1.5 mt-1">
-                <span className={`font-extrabold text-xl ${isTreasury ? 'text-emerald-600' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
+                <span className={`font-extrabold text-xl ${isTreasury ? 'text-[#b8860b]' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
                   {tx.amount.toLocaleString()}
                 </span>
-                <span className={`font-bold text-sm ${isTreasury ? 'text-emerald-600' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
+                <span className={`font-bold text-sm ${isTreasury ? 'text-[#b8860b]' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
                   {tokenDisplay.symbol}
                 </span>
               </div>
@@ -205,7 +214,7 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
       <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
         <span className={`inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium ${
           isTreasury
-            ? 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border border-emerald-300'
+            ? 'bg-gradient-to-r from-[#ffd700]/20 to-[#daa520]/20 text-[#b8860b] border border-[#daa520]/30'
             : isGift 
               ? 'bg-gradient-to-r from-[#ffd700]/20 to-[#daa520]/20 text-[#b8860b] border border-[#daa520]/30' 
               : 'bg-rose-100 text-rose-600 border border-rose-200'
@@ -224,13 +233,13 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
 
       {/* Row 3: Message */}
       {tx.message && (
-        <p className="text-xs text-green-600 mt-2 italic font-medium">
+        <p className="text-xs text-[#b8860b] mt-2 italic font-medium">
           "{tx.message}"
         </p>
       )}
 
       {/* Row 4: Footer - Status, Time, TX, View Card */}
-      <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-green-100">
+      <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-[#daa520]/15">
         <div className="flex items-center gap-2 flex-wrap text-[11px]">
           <span className="inline-flex items-center gap-0.5 bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">
             <CheckCircle2 className="w-3 h-3" />
