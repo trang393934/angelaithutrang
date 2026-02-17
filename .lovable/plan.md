@@ -1,67 +1,69 @@
 
 
-# Fix: Hien thi day du giao dich Web3 trong Lich su giao dich
+# Cap nhat he thong nhac nen - Them lua chon nhac cho nguoi dung
 
-## Nguyen nhan goc
+## Tong quan
 
-Chuc nang dong bo BSCScan (`sync-bscscan-gifts`) co 2 loi khien nhieu giao dich on-chain khong duoc ghi nhan:
+Thay the nut nhac Valentine co dinh (goc duoi phai) bang nut lua chon nhac nen tren Header, dat canh nut lua chon video nen. Nguoi dung se co nhieu bai nhac de chon. Dong thoi phong to 2 icon (nhac + video).
 
-1. **Filter qua chat**: Chi tim user "active" dua tren `gift_type = 'web3'` (exact match), nhung cac giao dich moi dung `web3_CAMLY`, `web3_FUN`, `web3_USDT`... nen bi bo qua
-2. **Chi scan CAMLY token**: Chi query BSCScan cho CAMLY contract, bo qua cac token khac (USDT, BNB, FUN...)
+## Cac thay doi
 
-Ket qua: Nhieu giao dich on-chain thanh cong (nhu 142,202.6 CAMLY trong hinh) da xay ra nhung khong duoc luu vao database.
+### 1. Copy 2 file nhac moi vao du an
 
-## Giai phap
+- `public/audio/tet-vui-ve-1.mp3` (tu file upload TET_VUI_VE_1.mp3)
+- `public/audio/tet-vui-ve-2.mp3` (tu file upload TET_VUI_VE_2.mp3)
 
-### Thay doi 1: Fix sync-bscscan-gifts Edge Function
+### 2. Viet lai `ValentineMusicPlayer.tsx` thanh `MusicThemeSelector`
 
-**File:** `supabase/functions/sync-bscscan-gifts/index.ts`
+Thay vi player co dinh o goc man hinh, chuyen thanh component kieu Popover giong `VideoThemeSelector`:
 
-- Sua filter `gift_type = 'web3'` thanh `gift_type LIKE 'web3%'` de bao gom tat ca cac loai web3_CAMLY, web3_FUN, web3_USDT, v.v.
-- Them scan cho cac token pho bien khac ngoai CAMLY:
-  - USDT (BSC): `0x55d398326f99059fF775485246999027B3197955`
-  - FUN Money contract (neu co)
-- Scan TAT CA wallet da dang ky (262 wallets) thay vi chi "active users" - vi user co the nhan CAMLY tu nguoi ngoai he thong
+- Danh sach nhac:
+  - "Valentine" (valentine-bg.mp3) 
+  - "Tet Vui Ve 1" (tet-vui-ve-1.mp3)
+  - "Tet Vui Ve 2" (tet-vui-ve-2.mp3)
+  - "Tat nhac" (none)
+- Luu lua chon vao localStorage
+- Hien thi icon Music tren Header (giong Film icon cua video)
+- Co Volume slider trong Popover
+- Ho tro `variant="header"` giong VideoThemeSelector
 
-### Thay doi 2: Mo rong ActivityHistory.tsx
+### 3. Phong to icon tren Header
 
-**File:** `src/pages/ActivityHistory.tsx`
+**File:** `src/components/Header.tsx`
 
-- Tang limit query `coin_gifts` tu 500 len 1000 de dam bao lay het tat ca giao dich (hien co 235, se tang sau khi sync)
-- Khong can thay doi logic hien thi vi form hien tai da ho tro hien thi tat ca loai gift_type
+- Doi icon VideoThemeSelector tu `w-3.5 h-3.5 lg:w-4 lg:h-4` thanh `w-5 h-5 lg:w-5 lg:h-5`
+- Icon MusicThemeSelector cung `w-5 h-5 lg:w-5 lg:h-5`
+- Dat 2 nut canh nhau: `<MusicThemeSelector variant="header" />` ngay ben canh `<VideoThemeSelector variant="header" />`
+
+**File:** `src/components/VideoThemeSelector.tsx`
+
+- Tang kich thuoc icon Film trong variant header tu `w-3.5 h-3.5 lg:w-4 lg:h-4` thanh `w-5 h-5 lg:w-5 lg:h-5`
+
+### 4. Cap nhat App.tsx
+
+- Bo `<ValentineMusicPlayer />` ra khoi layout chinh (vi da chuyen vao Header)
 
 ## Chi tiet ky thuat
 
-### sync-bscscan-gifts/index.ts
+### MusicThemeSelector (file moi: `src/components/MusicThemeSelector.tsx`)
 
-Dong 82 hien tai:
 ```text
-.eq("gift_type", "web3");
+Cau truc tuong tu VideoThemeSelector:
+- Popover voi trigger la nut Music icon
+- Noi dung: danh sach nhac + volume slider
+- Luu selectedTrack vao localStorage ("bg-music-track")
+- Luu volume vao localStorage ("bg-music-volume") 
+- Luu trang thai play vao localStorage ("bg-music-playing")
+- Su dung Audio API de phat nhac loop
+- Khi doi bai: pause -> doi src -> play
+- Khi chon "Tat nhac": pause audio
 ```
-Doi thanh:
-```text
-.like("gift_type", "web3%");
-```
 
-Dong 78-96 - Mo rong "active users" de bao gom tat ca user co wallet:
-- Bo gioi han chi scan wallet cua "active users"
-- Scan tat ca wallet trong `user_wallet_addresses` (262 wallets)
-- Them rate limiting tot hon (delay 3s moi 3 requests thay vi 2s)
+### Header.tsx - Vi tri 2 nut
 
-Them scan cho USDT token tren BSC:
-```text
-const USDT_CONTRACT = "0x55d398326f99059fF775485246999027B3197955";
-```
-- Lap qua walletsToScan 2 lan: 1 lan cho CAMLY, 1 lan cho USDT
-- Khi insert USDT transfer, set `gift_type = "web3_USDT"`
+Dong 168-170 (desktop): Them MusicThemeSelector ngay truoc hoac sau VideoThemeSelector
+Dong 319-320 (mobile): Them MusicThemeSelector ngay truoc hoac sau VideoThemeSelector
 
-### ActivityHistory.tsx
+### Giu nguyen logic autoplay
 
-Dong 402: Doi `.limit(500)` thanh `.limit(1000)` cho coin_gifts query.
-
-## Ket qua mong doi
-
-- Tat ca giao dich CAMLY on-chain (bao gom 142,202.6 CAMLY trong hinh) se duoc dong bo va hien thi
-- Giao dich USDT on-chain cung se duoc dong bo
-- Trang Lich su giao dich se hien thi day du: tang thuong (noi bo + Web3 multi-token), donate, rut thuong, li xi
-
+- Khi user mo trang, neu localStorage ghi "playing=true", tu dong phat nhac sau khi user tuong tac (click/touch) de vuot qua browser autoplay policy
