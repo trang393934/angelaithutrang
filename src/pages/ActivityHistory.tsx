@@ -107,170 +107,172 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
     ? <Building2 className="w-2.5 h-2.5" />
     : isGift ? <Gift className="w-2.5 h-2.5" /> : <Heart className="w-2.5 h-2.5" />;
 
+  const formattedTime = format(new Date(tx.created_at), "HH:mm:ss dd/M/yyyy", { locale });
+  const tokenDisplay = getTokenDisplay(tx.gift_type);
+
   return (
-    <div className="bg-white/70 backdrop-blur-sm rounded-xl border border-[#daa520]/20 p-3 sm:p-4 hover:border-[#daa520]/40 transition-all hover:shadow-md group">
-      <div className="flex items-start gap-3">
-        {/* Type icon */}
-        <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center shadow-sm ${
-          isTreasury
-            ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
-            : isGift 
-              ? 'bg-gradient-to-br from-[#daa520] to-[#b8860b]' 
-              : 'bg-gradient-to-br from-rose-400 to-pink-500'
-        }`}>
-          {isTreasury ? <Building2 className="w-4 h-4 text-white" /> : isGift ? <Gift className="w-4 h-4 text-white" /> : <Heart className="w-4 h-4 text-white fill-white" />}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          {/* Sender -> Receiver */}
-          <div className="flex items-center gap-1.5 flex-wrap mb-1">
-            <div className="flex flex-col">
-              {isTreasury ? (
-                <div className="flex items-center gap-1.5">
-                  <Avatar className="w-5 h-5">
-                    <AvatarImage src={angelAiLogo} />
-                    <AvatarFallback className="text-[8px] bg-emerald-100 text-emerald-700">AI</AvatarFallback>
-                  </Avatar>
-                  <span className="font-semibold text-sm text-[#3D2800]">Angel AI Treasury</span>
-                  <span className="inline-flex items-center gap-0.5 text-[9px] bg-emerald-100 text-emerald-700 border border-emerald-300 px-1.5 py-0.5 rounded-full font-bold">
-                    <ShieldCheck className="w-2.5 h-2.5" />
-                    Verified
-                  </span>
-                </div>
-              ) : (
-                <Link to={`/user/${tx.sender_id}`} className="flex items-center gap-1.5 hover:opacity-80">
-                  <Avatar className="w-5 h-5">
-                    <AvatarImage src={tx.sender_avatar || ""} />
-                    <AvatarFallback className="text-[8px] bg-[#ffd700]/20 text-[#b8860b]">
-                      {(tx.sender_name || "?")[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-semibold text-sm text-[#3D2800] truncate max-w-[100px]">
-                    {tx.sender_name || "Ẩn danh"}
-                  </span>
-                </Link>
-              )}
-              {tx.sender_wallet && (
-                <div className="flex items-center gap-1 text-[10px] text-[#8B7355] ml-6.5 mt-0.5">
-                  <span className="font-mono">{truncateWallet(tx.sender_wallet)}</span>
-                  <button onClick={() => copyWallet(tx.sender_wallet!)} className="hover:text-[#b8860b]">
-                    {copiedWallet === tx.sender_wallet ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <ArrowUpRight className={`w-3.5 h-3.5 flex-shrink-0 ${isTreasury ? 'text-emerald-500' : isGift ? 'text-[#daa520]' : 'text-rose-500'}`} />
-
-            {(isGift || isTreasury) && tx.receiver_id ? (
+    <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-green-200 p-4 sm:p-5 hover:border-green-300 transition-all hover:shadow-md">
+      {/* Row 1: Sender → Receiver with amount */}
+      <div className="flex items-start justify-between gap-2">
+        {/* Sender (left) */}
+        <div className="flex items-center gap-2 min-w-0 flex-shrink">
+          {isTreasury ? (
+            <div className="flex items-center gap-2">
+              <Avatar className="w-10 h-10 border-2 border-emerald-200">
+                <AvatarImage src={angelAiLogo} />
+                <AvatarFallback className="text-xs bg-emerald-100 text-emerald-700">AI</AvatarFallback>
+              </Avatar>
               <div className="flex flex-col">
-                <Link to={`/user/${tx.receiver_id}`} className="flex items-center gap-1.5 hover:opacity-80">
-                  <Avatar className="w-5 h-5">
-                    <AvatarImage src={tx.receiver_avatar || ""} />
-                    <AvatarFallback className="text-[8px] bg-[#ffd700]/20 text-[#b8860b]">
-                      {(tx.receiver_name || "?")[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-semibold text-sm text-[#3D2800] truncate max-w-[100px]">
-                    {tx.receiver_name || "Ẩn danh"}
-                  </span>
-                </Link>
-                {tx.receiver_wallet && (
-                  <div className="flex items-center gap-1 text-[10px] text-[#8B7355] ml-6.5 mt-0.5">
-                    <span className="font-mono">{truncateWallet(tx.receiver_wallet)}</span>
-                    <button onClick={() => copyWallet(tx.receiver_wallet!)} className="hover:text-[#b8860b]">
-                      {copiedWallet === tx.receiver_wallet ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
+                <span className="font-bold text-sm text-[#3D2800]">@fun profile treasury</span>
+              </div>
+            </div>
+          ) : (
+            <Link to={`/user/${tx.sender_id}`} className="flex items-center gap-2 hover:opacity-80 min-w-0">
+              <Avatar className="w-10 h-10 border-2 border-[#ffd700]/30 flex-shrink-0">
+                <AvatarImage src={tx.sender_avatar || ""} />
+                <AvatarFallback className="text-xs bg-[#ffd700]/20 text-[#b8860b]">
+                  {(tx.sender_name || "?")[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-sm text-[#3D2800] truncate">@{tx.sender_name || "Ẩn danh"}</span>
+                {tx.sender_wallet && (
+                  <div className="flex items-center gap-1 text-[10px] text-[#8B7355]">
+                    <span className="font-mono text-[#daa520]">{truncateWallet(tx.sender_wallet)}</span>
+                    <button onClick={() => copyWallet(tx.sender_wallet!)} className="hover:text-[#b8860b]">
+                      {copiedWallet === tx.sender_wallet ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
                     </button>
+                    {tx.sender_wallet && (
+                      <a href={`https://bscscan.com/address/${tx.sender_wallet}`} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-2.5 h-2.5 text-[#8B7355] hover:text-[#b8860b]" />
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
-            ) : !isTreasury ? (
-              <span className="font-semibold text-sm text-rose-600">Angel AI</span>
-            ) : null}
-          </div>
+            </Link>
+          )}
+        </div>
 
-          {/* Badges row */}
-          <div className="flex items-center gap-1.5 flex-wrap mt-1">
-            <span className={`inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium ${
-              isTreasury
-                ? 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border border-emerald-300'
-                : isGift 
-                  ? 'bg-gradient-to-r from-[#ffd700]/20 to-[#daa520]/20 text-[#b8860b] border border-[#daa520]/30' 
-                  : 'bg-rose-100 text-rose-600 border border-rose-200'
-            }`}>
-              {typeIcon}
-              {typeLabel}
-            </span>
+        {/* Arrow center */}
+        <div className="flex-shrink-0 self-center">
+          <Send className={`w-5 h-5 ${isTreasury ? 'text-emerald-500' : isGift ? 'text-[#daa520]' : 'text-rose-500'}`} />
+        </div>
 
-            {isOnchain && (
-              <span className="inline-flex items-center gap-0.5 text-[10px] bg-gradient-to-r from-[#ffd700]/20 to-[#daa520]/20 text-[#b8860b] border border-[#daa520]/30 px-2 py-0.5 rounded-full font-medium">
-                <Wallet className="w-2.5 h-2.5" />
-                Onchain
-              </span>
-            )}
+        {/* Receiver (right) + Amount */}
+        <div className="flex flex-col items-end min-w-0 flex-shrink">
+          {(isGift || isTreasury) && tx.receiver_id ? (
+            <>
+              <Link to={`/user/${tx.receiver_id}`} className="flex items-center gap-2 hover:opacity-80">
+                <div className="flex flex-col items-end min-w-0">
+                  <span className="font-bold text-sm text-[#3D2800] truncate">@{tx.receiver_name || "Ẩn danh"}</span>
+                  {tx.receiver_wallet && (
+                    <div className="flex items-center gap-1 text-[10px] text-[#8B7355]">
+                      <span className="font-mono text-[#daa520]">{truncateWallet(tx.receiver_wallet)}</span>
+                      <button onClick={(e) => { e.preventDefault(); copyWallet(tx.receiver_wallet!); }} className="hover:text-[#b8860b]">
+                        {copiedWallet === tx.receiver_wallet ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
+                      </button>
+                      <a href={`https://bscscan.com/address/${tx.receiver_wallet}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                        <ExternalLink className="w-2.5 h-2.5 text-[#8B7355] hover:text-[#b8860b]" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+                <Avatar className="w-10 h-10 border-2 border-[#ffd700]/30 flex-shrink-0">
+                  <AvatarImage src={tx.receiver_avatar || ""} />
+                  <AvatarFallback className="text-xs bg-[#ffd700]/20 text-[#b8860b]">
+                    {(tx.receiver_name || "?")[0]}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+              {/* Amount */}
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className={`font-extrabold text-xl ${isTreasury ? 'text-emerald-600' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
+                  {tx.amount.toLocaleString()}
+                </span>
+                <span className={`font-bold text-sm ${isTreasury ? 'text-emerald-600' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
+                  {tokenDisplay.symbol}
+                </span>
+              </div>
+            </>
+          ) : !isTreasury ? (
+            <span className="font-bold text-sm text-rose-600">Angel AI</span>
+          ) : null}
+        </div>
+      </div>
 
-            {isTreasury && (
-              <span className="inline-flex items-center gap-0.5 text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-medium">
-                <CheckCircle2 className="w-2.5 h-2.5" />
-                Thành công
-              </span>
-            )}
+      {/* Row 2: Badges */}
+      <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
+        <span className={`inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium ${
+          isTreasury
+            ? 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border border-emerald-300'
+            : isGift 
+              ? 'bg-gradient-to-r from-[#ffd700]/20 to-[#daa520]/20 text-[#b8860b] border border-[#daa520]/30' 
+              : 'bg-rose-100 text-rose-600 border border-rose-200'
+        }`}>
+          {typeIcon}
+          {typeLabel}
+        </span>
 
-            <span className="text-[10px] text-[#8B7355]">• {timeAgo}</span>
+        {isOnchain && (
+          <span className="inline-flex items-center gap-0.5 text-[10px] bg-gradient-to-r from-[#ffd700]/20 to-[#daa520]/20 text-[#b8860b] border border-[#daa520]/30 px-2 py-0.5 rounded-full font-medium">
+            <Wallet className="w-2.5 h-2.5" />
+            Onchain
+          </span>
+        )}
+      </div>
 
-            {tx.tx_hash && (
-              <span className="text-[10px] text-[#8B7355]">• BSC</span>
-            )}
-          </div>
+      {/* Row 3: Message */}
+      {tx.message && (
+        <p className="text-xs text-green-600 mt-2 italic font-medium">
+          "{tx.message}"
+        </p>
+      )}
 
-          {/* Amount + TX Hash */}
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-1.5">
-              <img src={getTokenDisplay(tx.gift_type).logo} alt={getTokenDisplay(tx.gift_type).symbol} className="w-4 h-4 rounded-full" />
-              <span className={`font-bold text-base ${isTreasury ? 'text-emerald-600' : isGift ? 'text-[#b8860b]' : 'text-rose-500'}`}>
-                {tx.amount.toLocaleString()}
-              </span>
-              <span className="text-[10px] text-[#8B7355] font-medium">{getTokenDisplay(tx.gift_type).symbol}</span>
-            </div>
+      {/* Row 4: Footer - Status, Time, TX, View Card */}
+      <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-green-100">
+        <div className="flex items-center gap-2 flex-wrap text-[11px]">
+          <span className="inline-flex items-center gap-0.5 bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">
+            <CheckCircle2 className="w-3 h-3" />
+            Thành công
+          </span>
+          <span className="text-[#8B7355]">• {formattedTime}</span>
+          {tx.tx_hash && (
+            <>
+              <span className="text-[#8B7355]">• BSC</span>
+              <span className="text-[#8B7355]">• TX:</span>
+              <a
+                href={`https://bscscan.com/tx/${tx.tx_hash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-[#daa520] hover:text-[#b8860b] flex items-center gap-0.5"
+              >
+                {truncateWallet(tx.tx_hash)}
+                <Copy className="w-2.5 h-2.5" />
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            </>
+          )}
+        </div>
 
-            <div className="flex items-center gap-1">
-              {tx.tx_hash && (
-                <a
-                  href={`https://bscscan.com/tx/${tx.tx_hash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-blue-500 hover:text-blue-600 flex items-center gap-0.5"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  TX
-                </a>
-              )}
-              {tx.receipt_public_id && (
-                <Link
-                  to={`/receipt/${tx.receipt_public_id}`}
-                  className="text-[10px] text-[#b8860b] hover:text-[#8B6914] flex items-center gap-0.5 ml-1"
-                >
-                  <Gift className="w-3 h-3" />
-                  Biên nhận
-                </Link>
-              )}
-              {tx.type === "gift" && onViewCard && (
-                <button
-                  onClick={() => onViewCard(tx)}
-                  className="text-[10px] text-[#b8860b] hover:text-[#8B6914] flex items-center gap-0.5 ml-1 font-medium"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  Xem Card
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Message */}
-          {tx.message && (
-            <p className="text-xs text-[#8B7355] mt-1.5 line-clamp-2 italic">
-              "{tx.message}"
-            </p>
+        <div className="flex items-center gap-2">
+          {tx.receipt_public_id && (
+            <Link
+              to={`/receipt/${tx.receipt_public_id}`}
+              className="text-[11px] text-[#b8860b] hover:text-[#8B6914] flex items-center gap-0.5 font-medium"
+            >
+              <Gift className="w-3 h-3" />
+              Biên nhận
+            </Link>
+          )}
+          {tx.type === "gift" && onViewCard && (
+            <button
+              onClick={() => onViewCard(tx)}
+              className="text-[11px] text-[#daa520] hover:text-[#b8860b] flex items-center gap-0.5 font-medium"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Xem Card
+            </button>
           )}
         </div>
       </div>
