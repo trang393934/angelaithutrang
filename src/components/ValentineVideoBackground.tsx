@@ -6,6 +6,7 @@ const THEME_VIDEOS: Record<VideoTheme, string[]> = {
   "nature-2": ["/videos/nature-3.mp4", "/videos/nature-4.mp4"],
   "nature-3": ["/videos/nature-1.mp4", "/videos/nature-3.mp4"],
   "nature-4": ["/videos/nature-2.mp4", "/videos/nature-4.mp4"],
+  "nature-5": ["/videos/nature-5.mp4"],
   "none": [],
 };
 
