@@ -653,16 +653,17 @@ const ActivityHistory = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {isAdmin && (
+              {user && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleSyncOnchain}
                   disabled={isSyncingOnchain}
                   className="text-white hover:bg-white/20 h-8"
+                  title={isAdmin ? "Đồng bộ tất cả ví (Admin)" : "Đồng bộ ví của bạn từ BSCScan"}
                 >
                   {isSyncingOnchain ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Globe className="w-4 h-4 mr-1" />}
-                  <span className="hidden sm:inline">Sync BSCScan</span>
+                  <span className="hidden sm:inline">{isAdmin ? "Sync All" : "Sync Ví"}</span>
                 </Button>
               )}
               <Button
