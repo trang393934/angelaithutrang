@@ -19,8 +19,8 @@ import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { vi } from "date-fns/locale";
 
-const TREASURY_WALLET_WITHDRAWAL = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
-const TREASURY_WALLET_LIXI = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D";
+const TREASURY_WALLET_WITHDRAWAL = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D";
+const TREASURY_WALLET_LIXI = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
 const BSCSCAN_TX = "https://bscscan.com/tx/";
 const BSCSCAN_ADDR = "https://bscscan.com/address/";
 const PAGE_SIZE = 20;
@@ -254,8 +254,8 @@ export default function AdminTreasury() {
     const allDates = [...new Set([...Object.keys(wMap), ...Object.keys(lMap)])].sort();
     return allDates.map(date => ({
       date,
-      "Rút Thưởng": +(wMap[date] || 0).toFixed(2),
-      "Lì Xì Tết": +(lMap[date] || 0).toFixed(2),
+      "Ví 1": +(wMap[date] || 0).toFixed(2),
+      "Ví 2": +(lMap[date] || 0).toFixed(2),
     }));
   }, [withdrawals, lixiClaims]);
 
@@ -340,12 +340,12 @@ export default function AdminTreasury() {
 
         {/* Summary Cards — 2 ví */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Ví Rút Thưởng */}
+          {/* Ví 1 */}
           <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-blue-500" />
-                Ví Rút Thưởng Camly
+                Ví 1 — Phát Thưởng Hệ Thống
               </CardTitle>
               <WalletAddressChip address={TREASURY_WALLET_WITHDRAWAL} label="Địa chỉ:" />
               {wStats && (
@@ -374,12 +374,12 @@ export default function AdminTreasury() {
             </CardContent>
           </Card>
 
-          {/* Ví Lì Xì Tết */}
+          {/* Ví 2 */}
           <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Gift className="w-4 h-4 text-red-500" />
-                Ví Lì Xì Tết 🧧
+                Ví 2 — Phát Thưởng Hệ Thống
               </CardTitle>
               <WalletAddressChip address={TREASURY_WALLET_LIXI} label="Địa chỉ:" />
               {lStats && (
@@ -401,7 +401,7 @@ export default function AdminTreasury() {
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-amber-500">{fmt(lStats.pending)}</div>
-                    <div className="text-xs text-muted-foreground">Chờ claim</div>
+                    <div className="text-xs text-muted-foreground">Chờ xử lý</div>
                   </div>
                 </div>
               ) : <div className="text-sm text-muted-foreground">Không có dữ liệu</div>}
@@ -439,8 +439,8 @@ export default function AdminTreasury() {
         <Tabs defaultValue="overview">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">📊 Tổng hợp</TabsTrigger>
-            <TabsTrigger value="withdrawal">💰 Ví Rút Thưởng</TabsTrigger>
-            <TabsTrigger value="lixi">🧧 Ví Lì Xì Tết</TabsTrigger>
+            <TabsTrigger value="withdrawal">💰 Ví 1</TabsTrigger>
+            <TabsTrigger value="lixi">💰 Ví 2</TabsTrigger>
           </TabsList>
 
           {/* ─── Tab: Tổng hợp ─── */}
@@ -460,8 +460,8 @@ export default function AdminTreasury() {
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(2)}M Camly`]} />
                     <Legend />
-                    <Bar dataKey="Rút Thưởng" fill="#3b82f6" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="Lì Xì Tết" fill="#ef4444" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Ví 1" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Ví 2" fill="#ef4444" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -478,8 +478,8 @@ export default function AdminTreasury() {
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-2 px-3 text-muted-foreground font-medium">Chỉ số</th>
-                        <th className="text-center py-2 px-3 text-blue-600 dark:text-blue-400 font-semibold">💰 Rút Thưởng</th>
-                        <th className="text-center py-2 px-3 text-red-600 dark:text-red-400 font-semibold">🧧 Lì Xì Tết</th>
+                        <th className="text-center py-2 px-3 text-blue-600 dark:text-blue-400 font-semibold">💰 Ví 1</th>
+                        <th className="text-center py-2 px-3 text-red-600 dark:text-red-400 font-semibold">💰 Ví 2</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
