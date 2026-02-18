@@ -1,94 +1,154 @@
 
-# Kế hoạch: Hiển thị thông tin chủ ví khi nhập địa chỉ ví trong mục Tặng Thưởng
+# Tạo trang Admin: Danh sách Ví & Tạm dừng tài khoản
 
 ## Phân tích hiện trạng
 
-File `src/components/gifts/CryptoTransferTab.tsx` đã có logic tra cứu chủ ví (lines 102-156):
-- Khi người dùng nhập đủ 42 ký tự địa chỉ ví hợp lệ (0x...), hệ thống query `user_wallet_addresses` và fallback sang `coin_withdrawals`
-- Kết quả được lưu vào `walletOwner` state
-- UI hiện tại (lines 436-455) đã hiển thị avatar + tên + badge xác nhận
+- Database có **268 ví** trong bảng `user_wallet_addresses`
+- Bảng `user_suspensions` đã tồn tại với các cột: `id`, `user_id`, `suspension_type`, `reason`, `healing_message`, `suspended_at`, `suspended_until`, `lifted_at`, `lifted_by`, `created_by`, `created_at`
+- Edge function `suspend-user` đã được deploy sẵn với đầy đủ logic
+- `AdminNavToolbar` là component điều hướng cần thêm mục mới
+- `App.tsx` cần thêm route `/admin/wallet-management`
 
-## Vấn đề cần cải thiện
+## Các thay đổi cần thực hiện
 
-Mặc dù logic đã có, UX còn thiếu một số điểm:
+### 1. Tạo trang mới: `src/pages/AdminWalletManagement.tsx`
 
-1. **Card hiển thị walletOwner quá nhỏ và không nổi bật** — người dùng dễ bỏ qua thông tin xác nhận chủ ví
-2. **Không có trạng thái "ví lạ" (không tìm thấy trong hệ thống)** — khi không có chủ ví, UI im lặng, không có phản hồi cho người dùng biết ví này là ví ngoài hệ thống
-3. **Thiếu cảnh báo nhập ví của chính mình** — hiện tại không có kiểm tra người dùng tự gửi cho mình
-4. **Animation/transition thiếu** — card xuất hiện đột ngột, không có hiệu ứng mượt mà
+Trang này hiển thị toàn bộ danh sách ví với đầy đủ thông tin người dùng và nút tạm dừng.
 
-## Thay đổi cần thực hiện
-
-### File duy nhất: `src/components/gifts/CryptoTransferTab.tsx`
-
-#### Cải thiện 1: Card xác nhận chủ ví được nâng cấp
-
-Thay thế card đơn giản (lines 443-455) bằng card đẹp hơn:
+**Cấu trúc trang:**
 
 ```text
-Trước:
-┌─────────────────────────────────┐
-│ [Avatar] Tên người dùng    ✓   │
-│          Chủ sở hữu ví này     │
-└─────────────────────────────────┘
-
-Sau:
-┌─────────────────────────────────────┐
-│  ✅ Tìm thấy chủ ví trong hệ thống  │
-│  ┌──────────────────────────────┐   │
-│  │ [Avatar 48px]  Tên đầy đủ   │   │
-│  │               @handle (nếu có)│  │
-│  │               [badge xanh ✓]  │   │
-│  └──────────────────────────────┘   │
-│  Địa chỉ: 0x1234...5678             │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  [←] Angel AI  |  Quản lý Ví  |  268 ví đã đăng ký        │
+├─────────────────────────────────────────────────────────────┤
+│  AdminNavToolbar                                             │
+├─────────────────────────────────────────────────────────────┤
+│  STATS ROW:                                                  │
+│  [Tổng ví: 268] [Đang hoạt động: N] [Bị tạm dừng: N]       │
+├─────────────────────────────────────────────────────────────┤
+│  FILTERS:                                                    │
+│  [🔍 Tìm tên / ví / handle] [Trạng thái: All/Active/Paused] │
+├─────────────────────────────────────────────────────────────┤
+│  TABLE:                                                      │
+│  Avatar | Tên | Handle | Địa chỉ ví | Số dư Camly | Đã rút │
+│         | Thưởng TT | Trạng thái | Hành động               │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-#### Cải thiện 2: Trạng thái "ví ngoài hệ thống"
+**Dữ liệu query** - JOIN các bảng:
+```sql
+SELECT 
+  uwa.wallet_address, uwa.user_id,
+  p.display_name, p.avatar_url, p.handle,
+  ccb.balance, ccb.lifetime_earned,
+  -- Tổng đã rút
+  COALESCE(SUM(cw.amount) FILTER (WHERE cw.status = 'completed'), 0) as total_withdrawn,
+  -- Trạng thái tạm dừng
+  us.suspension_type, us.suspended_until, us.reason
+FROM user_wallet_addresses uwa
+LEFT JOIN profiles p ON p.user_id = uwa.user_id
+LEFT JOIN camly_coin_balances ccb ON ccb.user_id = uwa.user_id
+LEFT JOIN coin_withdrawals cw ON cw.user_id = uwa.user_id
+LEFT JOIN user_suspensions us ON us.user_id = uwa.user_id AND us.lifted_at IS NULL
+GROUP BY uwa.wallet_address, uwa.user_id, p.display_name, p.avatar_url, p.handle,
+  ccb.balance, ccb.lifetime_earned, us.suspension_type, us.suspended_until, us.reason
+```
 
-Khi `walletAddress` hợp lệ nhưng `walletOwner === null` và `!isLookingUpWallet`:
+**Cột trong bảng:**
+| Cột | Nội dung |
+|-----|---------|
+| Người dùng | Avatar 32px + Tên + @handle |
+| Địa chỉ ví | Font mono, copy button, link BSCScan |
+| Số dư Camly | Formatted number |
+| Tổng thưởng | Lifetime earned |
+| Đã rút | Tổng withdrawal completed |
+| Trạng thái | Badge: Hoạt động (xanh) / Tạm dừng (đỏ) / Đã khóa vĩnh viễn (đen) |
+| Hành động | Nút tạm dừng hoặc gỡ tạm dừng |
 
+**Dialog tạm dừng** - Khi click nút "Tạm dừng":
 ```text
-┌──────────────────────────────────────┐
-│  ⚠️ Ví ngoài hệ thống Angel AI       │
-│  Ví này chưa đăng ký trong hệ thống. │
-│  Giao dịch sẽ gửi đến:               │
-│  0x1234...abcd                        │
-│  (Bạn vẫn có thể tiếp tục chuyển)    │
-└──────────────────────────────────────┘
+┌────────────────────────────────────────┐
+│  ⚠️ Tạm dừng tài khoản                │
+│  Người dùng: [Avatar] Tên người dùng   │
+│                                        │
+│  Loại tạm dừng:                        │
+│  ○ Tạm thời  ● Vĩnh viễn              │
+│                                        │
+│  [Nếu tạm thời] Số ngày: [___]         │
+│                                        │
+│  Lý do: [________________________]     │
+│         [________________________]     │
+│                                        │
+│  Thông điệp chữa lành (tùy chọn):      │
+│  [________________________]             │
+│                                        │
+│  [Hủy]           [Xác nhận tạm dừng]  │
+└────────────────────────────────────────┘
 ```
 
-#### Cải thiện 3: Cảnh báo tự gửi cho mình
+**Dialog gỡ tạm dừng** - Khi click nút "Gỡ tạm dừng":
+- Dialog xác nhận đơn giản: "Bạn có chắc muốn khôi phục tài khoản này không?"
+- Gọi Supabase update `user_suspensions` set `lifted_at = now()`
 
-Kiểm tra thêm: nếu `walletOwner?.user_id === user?.id`, hiển thị cảnh báo:
-```text
-⚠️ Đây là ví của chính bạn!
+### 2. Sửa `src/components/admin/AdminNavToolbar.tsx`
+
+Thêm mục "Quản lý Ví" vào nhóm "Người dùng":
+
+```typescript
+// Trong nhóm "Người dùng":
+{ to: "/admin/wallet-management", icon: Wallet, label: "Quản lý Ví" },
 ```
 
-#### Cải thiện 4: Thêm framer-motion animation
+### 3. Sửa `src/App.tsx`
 
-Wrap card bằng `AnimatePresence` + `motion.div` để card xuất hiện mượt mà khi tìm thấy kết quả.
+Thêm route và import:
+```typescript
+import AdminWalletManagement from "./pages/AdminWalletManagement";
+// ...
+<Route path="/admin/wallet-management" element={<AdminWalletManagement />} />
+```
 
 ## Chi tiết kỹ thuật
 
-| State | Hiển thị |
-|-------|---------|
-| `isLookingUpWallet === true` | Spinner "Đang tìm chủ ví..." |
-| `walletOwner !== null` và `user_id !== currentUser` | Card xanh lá với avatar + tên |
-| `walletOwner !== null` và `user_id === currentUser` | Card vàng với cảnh báo "Ví của bạn" |
-| `walletOwner === null` và ví hợp lệ 42 ký tự | Card cam với "Ví ngoài hệ thống" |
-| Ví chưa đủ 42 ký tự hoặc không bắt đầu bằng 0x | Không hiển thị gì |
+### Logic tạm dừng tài khoản
 
-## Import cần thêm
-
+Trang sẽ gọi edge function `suspend-user` đã có sẵn:
 ```typescript
-import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle } from "lucide-react"; // icon cảnh báo
+const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/suspend-user`, {
+  method: "POST",
+  headers: { "Authorization": `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+  body: JSON.stringify({ targetUserId, suspensionType, reason, durationDays, healingMessage })
+});
 ```
 
-## Kết quả mong đợi
+### Logic gỡ tạm dừng
 
-- Khi nhập địa chỉ ví của người dùng đã đăng ký trong hệ thống: card xanh lá hiển thị avatar + tên đầy đủ với animation mượt
-- Khi nhập địa chỉ ví ngoài hệ thống: card cam cảnh báo nhẹ, vẫn cho phép chuyển
-- Khi nhập địa chỉ ví của chính mình: card vàng cảnh báo
-- Toàn bộ chỉ chỉnh sửa 1 file duy nhất: `src/components/gifts/CryptoTransferTab.tsx`
+Gọi trực tiếp Supabase (update bảng `user_suspensions`):
+```typescript
+await supabase.from("user_suspensions")
+  .update({ lifted_at: new Date().toISOString(), lifted_by: adminUser.id })
+  .eq("user_id", targetUserId)
+  .is("lifted_at", null);
+```
+
+### Filter & Search
+
+- Search: tìm theo tên, handle, địa chỉ ví
+- Filter trạng thái: Tất cả / Đang hoạt động / Đang tạm dừng
+- Pagination: 25 ví / trang
+- Copy button cho địa chỉ ví đầy đủ
+- Link BSCScan mở tab mới
+
+### Badges trạng thái
+
+| Trạng thái | Màu | Nội dung |
+|-----------|-----|---------|
+| Không có suspension | Xanh lá | "Hoạt động" |
+| `temporary` | Vàng cam | "Tạm dừng N ngày" |
+| `permanent` | Đỏ đậm | "Khóa vĩnh viễn" |
+
+## Files cần thay đổi
+
+1. **Tạo mới**: `src/pages/AdminWalletManagement.tsx` (~350 dòng)
+2. **Sửa**: `src/components/admin/AdminNavToolbar.tsx` (thêm 1 dòng nav item)
+3. **Sửa**: `src/App.tsx` (thêm 1 import + 1 route)
