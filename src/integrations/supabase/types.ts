@@ -1231,6 +1231,48 @@ export type Database = {
         }
         Relationships: []
       }
+      fraud_alerts: {
+        Row: {
+          action_taken: string | null
+          alert_type: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          is_reviewed: boolean | null
+          matched_pattern: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          action_taken?: string | null
+          alert_type: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          is_reviewed?: boolean | null
+          matched_pattern?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+          user_id: string
+        }
+        Update: {
+          action_taken?: string | null
+          alert_type?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          is_reviewed?: boolean | null
+          matched_pattern?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -2905,6 +2947,39 @@ export type Database = {
         Update: {
           created_at?: string
           word?: string
+        }
+        Relationships: []
+      }
+      sybil_pattern_registry: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          flagged_by: string | null
+          id: string
+          is_active: boolean | null
+          pattern_type: string
+          pattern_value: string
+          severity: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          flagged_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          pattern_type: string
+          pattern_value: string
+          severity?: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          flagged_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          pattern_type?: string
+          pattern_value?: string
+          severity?: string
         }
         Relationships: []
       }
