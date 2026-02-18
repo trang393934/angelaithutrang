@@ -38,6 +38,7 @@ const navGroups: NavGroup[] = [
       { to: "/admin/statistics", icon: TrendingUp, label: "Thống kê" },
       { to: "/admin/early-adopters", icon: Users, label: "Early Adopters" },
       { to: "/admin/user-management", icon: UserCog, label: "Quản lý User" },
+      { to: "/admin/wallet-management", icon: Wallet, label: "Quản lý Ví" },
     ],
   },
   {
