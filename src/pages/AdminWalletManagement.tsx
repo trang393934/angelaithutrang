@@ -58,6 +58,12 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -76,6 +82,7 @@ interface WalletEntry {
   // New: fraud & pending
   fraud_alert_count: number;
   max_alert_severity: string | null;
+  fraud_alert_details: { alert_type: string; severity: string; matched_pattern: string | null }[];
   pending_withdrawal_amount: number;
   pending_withdrawal_ids: string[];
   withdrawal_wallet_count: number;
@@ -189,7 +196,7 @@ const AdminWalletManagement = () => {
         supabase.from("camly_coin_balances").select("user_id, balance, lifetime_earned").in("user_id", userIds),
         supabase.from("coin_withdrawals").select("user_id, amount").in("user_id", userIds).eq("status", "completed"),
         supabase.from("user_suspensions").select("user_id, suspension_type, suspended_until, reason").in("user_id", userIds).is("lifted_at", null),
-        supabase.from("fraud_alerts").select("user_id, severity, is_reviewed").in("user_id", userIds).eq("is_reviewed", false),
+        supabase.from("fraud_alerts").select("user_id, severity, alert_type, matched_pattern, is_reviewed").in("user_id", userIds).eq("is_reviewed", false),
         supabase.from("coin_withdrawals").select("user_id, amount, id").in("user_id", userIds).eq("status", "pending"),
         supabase.from("coin_withdrawals").select("user_id, wallet_address").in("user_id", userIds).eq("status", "completed"),
       ]);
@@ -207,9 +214,10 @@ const AdminWalletManagement = () => {
       const suspensionMap: Record<string, typeof suspensions[0]> = {};
       suspensions?.forEach((s) => (suspensionMap[s.user_id] = s));
 
-      // Fraud: count + max severity per user
+      // Fraud: count + max severity + detail per user
       const fraudCountMap: Record<string, number> = {};
       const fraudSeverityMap: Record<string, string> = {};
+      const fraudDetailMap: Record<string, { alert_type: string; severity: string; matched_pattern: string | null }[]> = {};
       const severityOrder = ["critical", "high", "medium", "low"];
       fraudAlerts?.forEach((fa) => {
         fraudCountMap[fa.user_id] = (fraudCountMap[fa.user_id] || 0) + 1;
@@ -217,6 +225,12 @@ const AdminWalletManagement = () => {
         if (!existing || severityOrder.indexOf(fa.severity) < severityOrder.indexOf(existing)) {
           fraudSeverityMap[fa.user_id] = fa.severity;
         }
+        if (!fraudDetailMap[fa.user_id]) fraudDetailMap[fa.user_id] = [];
+        fraudDetailMap[fa.user_id].push({
+          alert_type: fa.alert_type,
+          severity: fa.severity,
+          matched_pattern: fa.matched_pattern ?? null,
+        });
       });
 
       // Pending withdrawal
@@ -252,6 +266,7 @@ const AdminWalletManagement = () => {
           suspension_reason: suspension?.reason ?? null,
           fraud_alert_count: fraudCountMap[w.user_id] ?? 0,
           max_alert_severity: fraudSeverityMap[w.user_id] ?? null,
+          fraud_alert_details: fraudDetailMap[w.user_id] ?? [],
           pending_withdrawal_amount: pendingAmtMap[w.user_id] ?? 0,
           pending_withdrawal_ids: pendingIdsMap[w.user_id] ?? [],
           withdrawal_wallet_count: walletCountMap[w.user_id]?.size ?? 0,
@@ -578,19 +593,74 @@ const AdminWalletManagement = () => {
     );
   };
 
-  const getFraudBadge = (severity: string | null, count: number) => {
+  const alertTypeLabel: Record<string, string> = {
+    email_pattern: "Email trùng pattern",
+    bulk_registration: "Đăng ký đồng loạt",
+    shared_wallet: "Ví dùng chung",
+    wallet_rotation: "Hoán đổi ví",
+    suspicious_withdrawal: "Rút tiền nghi ngờ",
+    sybil: "Tài khoản sybil",
+  };
+
+  const getFraudBadge = (
+    severity: string | null,
+    count: number,
+    details?: { alert_type: string; severity: string; matched_pattern: string | null }[]
+  ) => {
     if (!severity || count === 0) return null;
-    const cfg: Record<string, { cls: string; label: string }> = {
-      critical: { cls: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-400", label: "⚠ CRITICAL" },
-      high:     { cls: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-400", label: "🔴 HIGH" },
-      medium:   { cls: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400", label: "🟠 MEDIUM" },
-      low:      { cls: "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-400", label: "🟡 LOW" },
+    const cfg: Record<string, { cls: string; label: string; dotCls: string }> = {
+      critical: { cls: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-400", label: "⚠ CRITICAL", dotCls: "bg-red-500" },
+      high:     { cls: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-400", label: "🔴 HIGH", dotCls: "bg-orange-500" },
+      medium:   { cls: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400", label: "🟠 MEDIUM", dotCls: "bg-amber-500" },
+      low:      { cls: "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-400", label: "🟡 LOW", dotCls: "bg-yellow-500" },
     };
     const c = cfg[severity] ?? cfg.low;
-    return (
-      <Badge className={`${c.cls} border text-xs`}>
+
+    const badge = (
+      <Badge className={`${c.cls} border text-xs cursor-help`}>
         {c.label} ×{count}
       </Badge>
+    );
+
+    if (!details || details.length === 0) return badge;
+
+    return (
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger asChild>{badge}</TooltipTrigger>
+          <TooltipContent
+            side="right"
+            align="start"
+            className="max-w-xs p-0 overflow-hidden rounded-lg border shadow-lg bg-popover"
+          >
+            <div className="px-3 py-2 border-b bg-muted/50">
+              <p className="text-xs font-semibold text-foreground">
+                🚨 {count} cảnh báo chưa xử lý
+              </p>
+            </div>
+            <ul className="px-3 py-2 space-y-1.5 max-h-48 overflow-y-auto">
+              {details.map((d, i) => {
+                const sev = cfg[d.severity] ?? cfg.low;
+                return (
+                  <li key={i} className="flex items-start gap-2 text-xs">
+                    <span className={`mt-1 shrink-0 w-2 h-2 rounded-full ${sev.dotCls}`} />
+                    <div className="text-foreground leading-relaxed">
+                      <span className="font-medium">
+                        {alertTypeLabel[d.alert_type] ?? d.alert_type}
+                      </span>
+                      {d.matched_pattern && (
+                        <span className="ml-1 text-muted-foreground">
+                          — pattern: <code className="font-mono bg-muted px-0.5 rounded">{d.matched_pattern}</code>
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   };
 
@@ -805,7 +875,7 @@ const AdminWalletManagement = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {getFraudBadge(w.max_alert_severity, w.fraud_alert_count)}
+                          {getFraudBadge(w.max_alert_severity, w.fraud_alert_count, w.fraud_alert_details)}
                         </TableCell>
                         <TableCell className="text-right">
                           <span className="text-sm font-medium text-foreground">{fmt(w.balance)}</span>
