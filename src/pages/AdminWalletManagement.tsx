@@ -990,20 +990,16 @@ const AdminWalletManagement = () => {
           ))}
         </div>
 
-        {/* 3-Tab Layout */}
+        {/* 2-Tab Layout */}
         <Tabs defaultValue="wallets" onValueChange={(v) => {
           if (v === "audit") fetchSharedWallets();
-          if (v === "withdrawals") fetchPendingWithdrawals();
         }}>
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="wallets">
               <Wallet className="w-4 h-4 mr-2" /> Tất cả Ví
             </TabsTrigger>
             <TabsTrigger value="audit">
               <AlertTriangle className="w-4 h-4 mr-2" /> 🚨 Cần Kiểm tra
-            </TabsTrigger>
-            <TabsTrigger value="withdrawals">
-              <DollarSign className="w-4 h-4 mr-2" /> 💰 Lệnh Rút Pending
             </TabsTrigger>
           </TabsList>
 
@@ -1368,185 +1364,6 @@ const AdminWalletManagement = () => {
                 </div>
               </>
             )}
-          </TabsContent>
-
-          {/* ═══════════════ TAB 3: PENDING WITHDRAWALS ═══════════════ */}
-          <TabsContent value="withdrawals" className="space-y-4">
-            {/* Stats summary */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: "Tổng pending", value: pendingWithdrawals.length, color: "text-primary", icon: Clock },
-                { label: "Có cảnh báo", value: pendingFlagged, color: "text-orange-500", icon: AlertTriangle },
-                { label: "Tài khoản bị khóa", value: pendingSuspended, color: "text-destructive", icon: Ban },
-                { label: "Tổng Camly pending", value: fmt(pendingTotal), color: "text-amber-600 dark:text-amber-400", icon: DollarSign },
-              ].map((s) => (
-                <div key={s.label} className="bg-card border border-border rounded-lg p-3 flex items-center gap-2">
-                  <s.icon className={`w-5 h-5 ${s.color} shrink-0`} />
-                  <div>
-                    <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
-                    <p className="text-xs text-muted-foreground">{s.label}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Bulk actions */}
-            {selectedWithdrawalIds.length > 0 && (
-              <div className="flex items-center justify-between bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-3">
-                <span className="text-sm font-medium text-foreground">
-                  Đã chọn <strong>{selectedWithdrawalIds.length}</strong> lệnh rút
-                </span>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setSelectedWithdrawalIds([])}>
-                    Bỏ chọn
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => setBulkRejectOpen(true)}
-                  >
-                    <XCircle className="w-3.5 h-3.5 mr-1" />
-                    Từ chối {selectedWithdrawalIds.length} lệnh
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Refresh */}
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">
-                {pendingWithdrawals.length} lệnh rút đang chờ xét duyệt
-              </p>
-              <Button variant="outline" size="sm" onClick={fetchPendingWithdrawals} disabled={pendingLoading}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${pendingLoading ? "animate-spin" : ""}`} />
-                Làm mới
-              </Button>
-            </div>
-
-            {/* Table */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
-              {pendingLoading ? (
-                <div className="p-12 text-center text-muted-foreground">Đang tải...</div>
-              ) : pendingWithdrawals.length === 0 ? (
-                <div className="p-12 text-center">
-                  <CheckCircle className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
-                  <p className="text-muted-foreground">Không có lệnh rút nào đang chờ xử lý</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="w-10">
-                        <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
-                      </TableHead>
-                      <TableHead>Người dùng</TableHead>
-                      <TableHead>Ví rút</TableHead>
-                      <TableHead>Cảnh báo</TableHead>
-                      <TableHead className="text-right">Số Camly</TableHead>
-                      <TableHead>Ngày tạo</TableHead>
-                      <TableHead className="text-center">Hành động</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pendingWithdrawals.map((w) => (
-                      <TableRow
-                        key={w.id}
-                        className={`hover:bg-muted/30 ${
-                          w.is_suspended
-                            ? "bg-red-50/40 dark:bg-red-900/10 border-l-2 border-l-red-500"
-                            : w.fraud_alert_count > 0 && w.max_alert_severity === "critical"
-                            ? "bg-red-50/20 dark:bg-red-900/5 border-l-2 border-l-red-400"
-                            : w.fraud_alert_count > 0
-                            ? "bg-orange-50/20 dark:bg-orange-900/5 border-l-2 border-l-orange-400"
-                            : ""
-                        }`}
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedWithdrawalIds.includes(w.id)}
-                            onCheckedChange={() => toggleSelectOne(w.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="w-8 h-8">
-                              <AvatarImage src={w.avatar_url ?? ""} />
-                              <AvatarFallback className="text-xs">{(w.display_name ?? "?")[0]}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p
-                                className="text-sm font-medium cursor-pointer hover:text-primary"
-                                onClick={() => navigate(`/user/${w.user_id}`)}
-                              >
-                                {w.display_name ?? "Unknown"}
-                              </p>
-                              {w.handle && <p className="text-xs text-muted-foreground">@{w.handle}</p>}
-                              {w.is_suspended && (
-                                <Badge variant="destructive" className="text-xs mt-0.5">
-                                  <Ban className="w-2.5 h-2.5 mr-1" /> Đang bị khóa
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono text-xs text-foreground/80">
-                              {w.wallet_address.slice(0, 6)}...{w.wallet_address.slice(-4)}
-                            </span>
-                            <button onClick={() => copyAddress(w.wallet_address)} className="text-muted-foreground hover:text-foreground">
-                              <Copy className="w-3.5 h-3.5" />
-                            </button>
-                            <a href={`https://bscscan.com/address/${w.wallet_address}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getFraudBadge(w.max_alert_severity, w.fraud_alert_count)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
-                            {fmt(w.amount)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(w.created_at).toLocaleDateString("vi-VN", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5 justify-center">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 text-xs text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800"
-                              onClick={() => handleApproveWithdrawal(w.id)}
-                            >
-                              <ThumbsUp className="w-3 h-3 mr-1" /> Duyệt
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                              onClick={() => setRejectTarget(w)}
-                            >
-                              <XCircle className="w-3 h-3 mr-1" /> Từ chối
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -40,7 +40,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/admin/user-management", icon: UserCog, label: "Quản lý User" },
       { to: "/admin/wallet-management", icon: Wallet, label: "Quản lý Ví" },
-      { to: "/admin/withdrawals", icon: Wallet, label: "Rút coin" },
+      { to: "/admin/withdrawals", icon: Wallet, label: "Rút thưởng" },
       { to: "/admin/mint-stats", icon: Sparkles, label: "FUN Money" },
       { to: "/admin/tet-reward", icon: Gift, label: "Thưởng Tết" },
       { to: "/admin/knowledge", icon: MessageSquare, label: "Kiến thức" },
