@@ -1,4 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
   TrendingUp,
@@ -16,6 +18,7 @@ import {
   Gift,
   Shield,
   FileBarChart,
+  Siren,
 } from "lucide-react";
 
 interface NavGroup {
@@ -86,6 +89,18 @@ const navGroups: NavGroup[] = [
 
 const AdminNavToolbar = () => {
   const location = useLocation();
+  const [unreviewedCount, setUnreviewedCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("fraud_alerts")
+        .select("id", { count: "exact", head: true })
+        .eq("is_reviewed", false);
+      setUnreviewedCount(count || 0);
+    };
+    fetchCount();
+  }, []);
 
   return (
     <div className="sticky top-[73px] z-40 bg-primary-pale/50 backdrop-blur-md border-b border-primary-pale">
@@ -133,6 +148,28 @@ const AdminNavToolbar = () => {
               </div>
             </div>
           ))}
+
+          {/* Fraud Alerts button - always visible with badge */}
+          <div className="flex items-stretch shrink-0">
+            <div className="w-px bg-border/60 mx-1.5 my-1.5 self-stretch" />
+            <Link
+              to="/admin/fraud-alerts"
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 shrink-0 relative",
+                location.pathname === "/admin/fraud-alerts"
+                  ? "bg-destructive/10 text-destructive"
+                  : "text-destructive hover:bg-destructive/10"
+              )}
+            >
+              <Siren className="w-3.5 h-3.5" />
+              <span>Cảnh báo</span>
+              {unreviewedCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-1 leading-none">
+                  {unreviewedCount > 99 ? "99+" : unreviewedCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </nav>
       </div>
     </div>
