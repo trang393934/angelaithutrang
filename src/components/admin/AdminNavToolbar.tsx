@@ -34,14 +34,17 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    label: "Người dùng",
+    label: "Quản lý",
     colorClass: "text-purple-600 dark:text-purple-400",
     activeClass: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
     items: [
-      { to: "/admin/statistics", icon: TrendingUp, label: "Thống kê" },
-      { to: "/admin/early-adopters", icon: Users, label: "Early Adopters" },
       { to: "/admin/user-management", icon: UserCog, label: "Quản lý User" },
       { to: "/admin/wallet-management", icon: Wallet, label: "Quản lý Ví" },
+      { to: "/admin/withdrawals", icon: Wallet, label: "Rút coin" },
+      { to: "/admin/mint-stats", icon: Sparkles, label: "FUN Money" },
+      { to: "/admin/tet-reward", icon: Gift, label: "Thưởng Tết" },
+      { to: "/admin/knowledge", icon: MessageSquare, label: "Kiến thức" },
+      { to: "/admin/ideas", icon: Zap, label: "Ý tưởng" },
     ],
   },
   {
@@ -49,12 +52,9 @@ const navGroups: NavGroup[] = [
     colorClass: "text-amber-600 dark:text-amber-400",
     activeClass: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
     items: [
-      { to: "/admin/withdrawals", icon: Wallet, label: "Rút coin" },
       { to: "/admin/project-fund", icon: Heart, label: "Quỹ" },
-      { to: "/admin/mint-stats", icon: Sparkles, label: "FUN Money" },
       { to: "/admin/mint-approval", icon: Shield, label: "Mint Approval" },
       { to: "/admin/tip-reports", icon: Gift, label: "Tip Reports" },
-      { to: "/admin/tet-reward", icon: Gift, label: "Thưởng Tết" },
     ],
   },
   {
@@ -62,16 +62,16 @@ const navGroups: NavGroup[] = [
     colorClass: "text-blue-600 dark:text-blue-400",
     activeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
     items: [
-      { to: "/admin/knowledge", icon: MessageSquare, label: "Kiến thức" },
-      { to: "/admin/ideas", icon: Zap, label: "Ý tưởng" },
       { to: "/admin/bounty", icon: FileText, label: "Bounty" },
     ],
   },
   {
-    label: "Lịch sử",
+    label: "Thống kê",
     colorClass: "text-emerald-600 dark:text-emerald-400",
     activeClass: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
     items: [
+      { to: "/admin/statistics", icon: TrendingUp, label: "Thống kê" },
+      { to: "/admin/early-adopters", icon: Users, label: "Early Adopters" },
       { to: "/admin/activity-history", icon: History, label: "Lịch sử chat" },
       { to: "/admin/ai-usage", icon: BarChart3, label: "AI Usage" },
       { to: "/admin/image-history", icon: Image, label: "Lịch sử ảnh" },
@@ -105,12 +105,12 @@ const AdminNavToolbar = () => {
   return (
     <div className="sticky top-[73px] z-40 bg-primary-pale/50 backdrop-blur-md border-b border-primary-pale">
       <div className="container mx-auto px-2 sm:px-4">
-        <nav className="flex items-stretch gap-0 overflow-x-auto scrollbar-none py-1.5">
+        <nav className="flex items-start flex-wrap gap-y-1 py-1.5">
           {navGroups.map((group, groupIndex) => (
-            <div key={group.label} className="flex items-stretch shrink-0">
+            <div key={group.label} className="flex items-center shrink-0">
               {/* Group separator */}
               {groupIndex > 0 && (
-                <div className="w-px bg-border/60 mx-1.5 my-1.5 self-stretch" />
+                <div className="w-px bg-border/60 mx-1.5 my-1 self-stretch min-h-[24px]" />
               )}
 
               {/* Group label (visible on md+) */}
