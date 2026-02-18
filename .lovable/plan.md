@@ -1,154 +1,169 @@
 
-# Tạo trang Admin: Danh sách Ví & Tạm dừng tài khoản
+# Thực thi Bảo vệ Nền Kinh tế Ánh sáng - Chặn 20 Tài khoản Sybil
 
-## Phân tích hiện trạng
+## Tình trạng hiện tại (đã xác minh)
 
-- Database có **268 ví** trong bảng `user_wallet_addresses`
-- Bảng `user_suspensions` đã tồn tại với các cột: `id`, `user_id`, `suspension_type`, `reason`, `healing_message`, `suspended_at`, `suspended_until`, `lifted_at`, `lifted_by`, `created_by`, `created_at`
-- Edge function `suspend-user` đã được deploy sẵn với đầy đủ logic
-- `AdminNavToolbar` là component điều hướng cần thêm mục mới
-- `App.tsx` cần thêm route `/admin/wallet-management`
+### 20 tài khoản bị chặn - chia thành 4 nhóm:
 
-## Các thay đổi cần thực hiện
+**Nhóm BACHP/BACHN (7 tài khoản)** - Email đồng loạt `bachp*/bachn*`:
+- Như Xuyến (bachnbn991) - 2,423,209 Camly earned
+- Vu Nhu (bachpn223) - 2,350,185 Camly earned
+- Fan của Cha (bachnb919) - 2,274,075 Camly earned
+- Lê Huệ (bachpn19) - 2,204,881 Camly earned
+- Mận Trần (bachpnb991) - 2,014,505 Camly earned
+- Trinh Que (bachpb19) - 1,882,337 Camly earned
+- Trâm Đặng (bachpnb) - 762,900 Camly earned
 
-### 1. Tạo trang mới: `src/pages/AdminWalletManagement.tsx`
+**Nhóm 270818 (4 tài khoản)** - Email chứa `270818`:
+- joni (vietsoan270818) - 1,949,938 Camly earned
+- thuy le (luuanh270818) - 1,921,886 Camly earned
+- bao ngan (baongan270818) - 1,790,536 Camly earned
+- hương (nguyenhuong270818) - 1,771,400 Camly earned
 
-Trang này hiển thị toàn bộ danh sách ví với đầy đủ thông tin người dùng và nút tạm dừng.
+**Nhóm 11136 (4 tài khoản)** - Email chứa `11136`:
+- cao lan (sonth11136) - 2,163,062 Camly earned
+- canh (canhth11136) - 2,146,675 Camly earned
+- huyền (huyenth11136) - 1,955,293 Camly earned
+- thoa (thoath11136) - 1,775,644 Camly earned
 
-**Cấu trúc trang:**
+**Nhóm 442/68682 (5 tài khoản)** - Ví chuyển tiền chéo:
+- le quang (lequang68682) - Ví tổng `0xAdF1E1...`
+- sac (vietsac442) - Ví tổng `0x0CFc02...`
+- le lien (lelien4334) - 1,248,570 Camly earned
+- yên hoa (yenhoa1442) - 385,988 Camly earned
+- hoa kieu (nguoigochoa442) - 313,813 Camly earned
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  [←] Angel AI  |  Quản lý Ví  |  268 ví đã đăng ký        │
-├─────────────────────────────────────────────────────────────┤
-│  AdminNavToolbar                                             │
-├─────────────────────────────────────────────────────────────┤
-│  STATS ROW:                                                  │
-│  [Tổng ví: 268] [Đang hoạt động: N] [Bị tạm dừng: N]       │
-├─────────────────────────────────────────────────────────────┤
-│  FILTERS:                                                    │
-│  [🔍 Tìm tên / ví / handle] [Trạng thái: All/Active/Paused] │
-├─────────────────────────────────────────────────────────────┤
-│  TABLE:                                                      │
-│  Avatar | Tên | Handle | Địa chỉ ví | Số dư Camly | Đã rút │
-│         | Thưởng TT | Trạng thái | Hành động               │
-└─────────────────────────────────────────────────────────────┘
-```
+### 13 lệnh rút PENDING cần chặn:
+Tổng: **3,132,840 Camly** phải bị từ chối
 
-**Dữ liệu query** - JOIN các bảng:
+## 3 việc cần thực hiện
+
+### Việc 1: Ban tất cả 20 tài khoản (Permanent)
+
+**Tạo edge function mới:** `supabase/functions/bulk-suspend-users/index.ts`
+
+Function này nhận danh sách user IDs, gọi logic suspend hàng loạt:
+- Loop qua từng user ID
+- Insert vào `user_suspensions` với `suspension_type = 'permanent'`
+- Update `user_energy_status` thành `rejected`
+- Gửi `healing_message` vào bảng `healing_messages`
+
+**Hoặc** thực thi trực tiếp qua admin action trong `AdminWalletManagement.tsx` - thêm nút "Ban hàng loạt" cho phép admin chọn nhiều tài khoản rồi ban 1 lần.
+
+### Việc 2: Từ chối 13 lệnh rút PENDING
+
+Update trực tiếp bảng `coin_withdrawals`:
 ```sql
-SELECT 
-  uwa.wallet_address, uwa.user_id,
-  p.display_name, p.avatar_url, p.handle,
-  ccb.balance, ccb.lifetime_earned,
-  -- Tổng đã rút
-  COALESCE(SUM(cw.amount) FILTER (WHERE cw.status = 'completed'), 0) as total_withdrawn,
-  -- Trạng thái tạm dừng
-  us.suspension_type, us.suspended_until, us.reason
-FROM user_wallet_addresses uwa
-LEFT JOIN profiles p ON p.user_id = uwa.user_id
-LEFT JOIN camly_coin_balances ccb ON ccb.user_id = uwa.user_id
-LEFT JOIN coin_withdrawals cw ON cw.user_id = uwa.user_id
-LEFT JOIN user_suspensions us ON us.user_id = uwa.user_id AND us.lifted_at IS NULL
-GROUP BY uwa.wallet_address, uwa.user_id, p.display_name, p.avatar_url, p.handle,
-  ccb.balance, ccb.lifetime_earned, us.suspension_type, us.suspended_until, us.reason
+UPDATE coin_withdrawals SET status = 'failed', admin_notes = 'Từ chối - Tài khoản nghi ngờ sybil farming' 
+WHERE id IN ('3a6ce799...', '33bde1b9...', ...) AND status = 'pending';
+```
+Đồng thời hoàn tiền về balance (trigger `update_withdrawal_stats` đã xử lý refund tự động khi status = 'failed').
+
+### Việc 3: Hệ thống phát hiện & cảnh báo tự động (Fraud Detection)
+
+**Tạo bảng mới:** `sybil_pattern_registry`
+```sql
+CREATE TABLE sybil_pattern_registry (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  pattern_type TEXT NOT NULL, -- 'email_suffix', 'wallet_cluster', 'ip_hash', 'registration_burst'
+  pattern_value TEXT NOT NULL, -- e.g. '270818', '11136', '442'
+  severity TEXT NOT NULL DEFAULT 'high', -- 'low', 'medium', 'high', 'critical'
+  description TEXT,
+  flagged_by UUID, -- admin user ID
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 ```
 
-**Cột trong bảng:**
-| Cột | Nội dung |
-|-----|---------|
-| Người dùng | Avatar 32px + Tên + @handle |
-| Địa chỉ ví | Font mono, copy button, link BSCScan |
-| Số dư Camly | Formatted number |
-| Tổng thưởng | Lifetime earned |
-| Đã rút | Tổng withdrawal completed |
-| Trạng thái | Badge: Hoạt động (xanh) / Tạm dừng (đỏ) / Đã khóa vĩnh viễn (đen) |
-| Hành động | Nút tạm dừng hoặc gỡ tạm dừng |
+**Tạo bảng:** `fraud_alerts`
+```sql
+CREATE TABLE fraud_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  alert_type TEXT NOT NULL, -- 'email_pattern', 'bulk_registration', 'wallet_cluster', 'withdrawal_spike'
+  matched_pattern TEXT,
+  severity TEXT NOT NULL DEFAULT 'medium',
+  is_reviewed BOOLEAN DEFAULT false,
+  reviewed_by UUID,
+  reviewed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
 
-**Dialog tạm dừng** - Khi click nút "Tạm dừng":
+**Tạo Edge Function:** `supabase/functions/fraud-scanner/index.ts`
+
+Chạy khi user đăng ký mới OR khi user tạo yêu cầu rút tiền. Kiểm tra:
+
+1. **Email Pattern Match** - So sánh email mới với `sybil_pattern_registry`:
+   ```
+   IF email CONTAINS any pattern in registry → CREATE fraud_alert (severity: high)
+   ```
+
+2. **Bulk Registration Burst** - Phát hiện đăng ký đồng loạt:
+   ```
+   IF >3 accounts registered within 2 hours with similar email prefix → alert
+   ```
+
+3. **Withdrawal Spike** - Phát hiện rút tiền hàng loạt:
+   ```
+   IF same day, >5 accounts with similar email suffix all request withdrawal → alert
+   ```
+
+**Tạo trang Admin mới:** `src/pages/AdminFraudAlerts.tsx`
+
+Dashboard hiển thị:
+- Danh sách cảnh báo gian lận chưa được xem xét
+- Badge đỏ số lượng cảnh báo mới trên AdminNavToolbar
+- Nút "Ban ngay" / "Bỏ qua" cho từng cảnh báo
+
+**Thêm trigger tự động** trong database:
+```sql
+-- Trigger chạy khi user mới đăng ký (via user_light_agreements)
+CREATE TRIGGER check_fraud_on_registration
+AFTER INSERT ON user_light_agreements
+FOR EACH ROW EXECUTE FUNCTION auto_fraud_check();
+```
+
+## Files cần thay đổi / tạo mới
+
+### Database Migrations:
+1. Tạo bảng `sybil_pattern_registry` với dữ liệu seed (các pattern đã biết: `270818`, `11136`, `442`, `4334`, `68682`, `bachp`, `bachn`)
+2. Tạo bảng `fraud_alerts`
+3. Database function `auto_fraud_check()` để trigger khi đăng ký mới
+
+### Edge Functions:
+4. `supabase/functions/bulk-suspend-users/index.ts` - Ban hàng loạt + từ chối withdrawal
+5. `supabase/functions/fraud-scanner/index.ts` - Quét pattern mới
+
+### Frontend:
+6. `src/pages/AdminFraudAlerts.tsx` - Trang cảnh báo gian lận (MỚI)
+7. `src/pages/AdminWalletManagement.tsx` - Thêm checkbox multi-select + nút "Ban hàng loạt" + action từ chối withdrawal
+8. `src/components/admin/AdminNavToolbar.tsx` - Thêm "🚨 Cảnh báo" với badge số đỏ
+9. `src/App.tsx` - Thêm route `/admin/fraud-alerts`
+
+## Thứ tự thực thi
+
 ```text
-┌────────────────────────────────────────┐
-│  ⚠️ Tạm dừng tài khoản                │
-│  Người dùng: [Avatar] Tên người dùng   │
-│                                        │
-│  Loại tạm dừng:                        │
-│  ○ Tạm thời  ● Vĩnh viễn              │
-│                                        │
-│  [Nếu tạm thời] Số ngày: [___]         │
-│                                        │
-│  Lý do: [________________________]     │
-│         [________________________]     │
-│                                        │
-│  Thông điệp chữa lành (tùy chọn):      │
-│  [________________________]             │
-│                                        │
-│  [Hủy]           [Xác nhận tạm dừng]  │
-└────────────────────────────────────────┘
+Bước 1: Migration DB (bảng sybil_pattern_registry + fraud_alerts)
+   ↓
+Bước 2: Deploy edge function bulk-suspend-users
+   ↓
+Bước 3: Thực thi BAN 20 tài khoản (gọi function)
+   ↓
+Bước 4: Thực thi TỪ CHỐI 13 lệnh rút (gọi trực tiếp DB)
+   ↓
+Bước 5: Deploy fraud-scanner function
+   ↓
+Bước 6: Tạo frontend AdminFraudAlerts + cập nhật WalletManagement
+   ↓
+Bước 7: Seed dữ liệu pattern registry (7 patterns đã biết)
 ```
 
-**Dialog gỡ tạm dừng** - Khi click nút "Gỡ tạm dừng":
-- Dialog xác nhận đơn giản: "Bạn có chắc muốn khôi phục tài khoản này không?"
-- Gọi Supabase update `user_suspensions` set `lifted_at = now()`
+## Tác động tài chính
 
-### 2. Sửa `src/components/admin/AdminNavToolbar.tsx`
+| Hành động | Số lượng | Camly |
+|-----------|---------|-------|
+| Tài khoản bị ban | 20 tài khoản | ~37.5M earned bị đóng băng |
+| Lệnh rút bị từ chối | 13 lệnh | 3,132,840 Camly được hoàn lại hệ thống |
+| Pattern được đăng ký | 7 patterns | Ngăn chặn sybil mới trong tương lai |
 
-Thêm mục "Quản lý Ví" vào nhóm "Người dùng":
-
-```typescript
-// Trong nhóm "Người dùng":
-{ to: "/admin/wallet-management", icon: Wallet, label: "Quản lý Ví" },
-```
-
-### 3. Sửa `src/App.tsx`
-
-Thêm route và import:
-```typescript
-import AdminWalletManagement from "./pages/AdminWalletManagement";
-// ...
-<Route path="/admin/wallet-management" element={<AdminWalletManagement />} />
-```
-
-## Chi tiết kỹ thuật
-
-### Logic tạm dừng tài khoản
-
-Trang sẽ gọi edge function `suspend-user` đã có sẵn:
-```typescript
-const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/suspend-user`, {
-  method: "POST",
-  headers: { "Authorization": `Bearer ${session.access_token}`, "Content-Type": "application/json" },
-  body: JSON.stringify({ targetUserId, suspensionType, reason, durationDays, healingMessage })
-});
-```
-
-### Logic gỡ tạm dừng
-
-Gọi trực tiếp Supabase (update bảng `user_suspensions`):
-```typescript
-await supabase.from("user_suspensions")
-  .update({ lifted_at: new Date().toISOString(), lifted_by: adminUser.id })
-  .eq("user_id", targetUserId)
-  .is("lifted_at", null);
-```
-
-### Filter & Search
-
-- Search: tìm theo tên, handle, địa chỉ ví
-- Filter trạng thái: Tất cả / Đang hoạt động / Đang tạm dừng
-- Pagination: 25 ví / trang
-- Copy button cho địa chỉ ví đầy đủ
-- Link BSCScan mở tab mới
-
-### Badges trạng thái
-
-| Trạng thái | Màu | Nội dung |
-|-----------|-----|---------|
-| Không có suspension | Xanh lá | "Hoạt động" |
-| `temporary` | Vàng cam | "Tạm dừng N ngày" |
-| `permanent` | Đỏ đậm | "Khóa vĩnh viễn" |
-
-## Files cần thay đổi
-
-1. **Tạo mới**: `src/pages/AdminWalletManagement.tsx` (~350 dòng)
-2. **Sửa**: `src/components/admin/AdminNavToolbar.tsx` (thêm 1 dòng nav item)
-3. **Sửa**: `src/App.tsx` (thêm 1 import + 1 route)
+> Lưu ý: Khi từ chối withdrawal (status = 'failed'), trigger `update_withdrawal_stats` sẽ tự động hoàn trả số Camly về balance của từng tài khoản. Tuy nhiên vì tài khoản đã bị ban vĩnh viễn, số dư này sẽ bị đóng băng và không thể rút được nữa.
