@@ -86,9 +86,11 @@ interface WalletEntry {
   pending_withdrawal_amount: number;
   pending_withdrawal_ids: string[];
   withdrawal_wallet_count: number;
+  withdrawal_wallet_addresses: string[]; // Danh sách địa chỉ ví đã dùng để rút
   // Shared wallet detection
   is_shared_wallet: boolean;
   shared_wallet_user_count: number;
+  shared_wallet_users: { user_id: string; display_name: string | null; handle: string | null }[]; // Tài khoản dùng chung ví
 }
 
 interface PendingWithdrawal {
@@ -185,10 +187,13 @@ const AdminWalletManagement = () => {
         return;
       }
 
-      // ── Build shared wallet map: wallet_address → count of users ──────────
+      // ── Build shared wallet map: wallet_address → list of user_ids ──────────
       const walletAddressCount: Record<string, number> = {};
+      const walletAddressUsers: Record<string, string[]> = {}; // wallet_address → [user_ids]
       allWalletAddressData.forEach((w) => {
         walletAddressCount[w.wallet_address] = (walletAddressCount[w.wallet_address] || 0) + 1;
+        if (!walletAddressUsers[w.wallet_address]) walletAddressUsers[w.wallet_address] = [];
+        walletAddressUsers[w.wallet_address].push(w.user_id);
       });
 
       const walletData = allWalletAddressData;
@@ -213,16 +218,16 @@ const AdminWalletManagement = () => {
       ]);
 
       // Build maps
-      const profileMap: Record<string, typeof profiles[0]> = {};
+      const profileMap: Record<string, { user_id: string; display_name: string | null; avatar_url: string | null; handle: string | null }> = {};
       profiles?.forEach((p) => (profileMap[p.user_id] = p));
 
-      const balanceMap: Record<string, typeof balances[0]> = {};
+      const balanceMap: Record<string, { user_id: string; balance: number; lifetime_earned: number }> = {};
       balances?.forEach((b) => (balanceMap[b.user_id] = b));
 
       const withdrawalMap: Record<string, number> = {};
       completedWds?.forEach((w) => { withdrawalMap[w.user_id] = (withdrawalMap[w.user_id] || 0) + w.amount; });
 
-      const suspensionMap: Record<string, typeof suspensions[0]> = {};
+      const suspensionMap: Record<string, { user_id: string; suspension_type: string | null; suspended_until: string | null; reason: string | null }> = {};
       suspensions?.forEach((s) => (suspensionMap[s.user_id] = s));
 
       // Fraud: count + max severity + detail per user
@@ -252,19 +257,29 @@ const AdminWalletManagement = () => {
         pendingIdsMap[w.user_id] = [...(pendingIdsMap[w.user_id] || []), w.id];
       });
 
-      // Wallet rotation count (distinct wallet addresses used for completed withdrawals)
+      // Wallet rotation: distinct wallet addresses per user for completed withdrawals
       const walletCountMap: Record<string, Set<string>> = {};
       allWds?.forEach((w) => {
         if (!walletCountMap[w.user_id]) walletCountMap[w.user_id] = new Set();
         walletCountMap[w.user_id].add(w.wallet_address);
+      });
+      const walletAddrsMap: Record<string, string[]> = {};
+      Object.entries(walletCountMap).forEach(([uid, addrSet]) => {
+        walletAddrsMap[uid] = Array.from(addrSet);
       });
 
       const merged: WalletEntry[] = walletData.map((w) => {
         const profile = profileMap[w.user_id];
         const balance = balanceMap[w.user_id];
         const suspension = suspensionMap[w.user_id];
-        // Shared wallet: how many users share this exact address
         const sharedCount = walletAddressCount[w.wallet_address] ?? 1;
+        // Other users sharing the same wallet address
+        const sharedUserIds = (walletAddressUsers[w.wallet_address] ?? []).filter((uid) => uid !== w.user_id);
+        const sharedUsers = sharedUserIds.map((uid) => ({
+          user_id: uid,
+          display_name: profileMap[uid]?.display_name ?? null,
+          handle: profileMap[uid]?.handle ?? null,
+        }));
         return {
           wallet_address: w.wallet_address,
           user_id: w.user_id,
@@ -283,8 +298,10 @@ const AdminWalletManagement = () => {
           pending_withdrawal_amount: pendingAmtMap[w.user_id] ?? 0,
           pending_withdrawal_ids: pendingIdsMap[w.user_id] ?? [],
           withdrawal_wallet_count: walletCountMap[w.user_id]?.size ?? 0,
+          withdrawal_wallet_addresses: walletAddrsMap[w.user_id] ?? [],
           is_shared_wallet: sharedCount > 1,
           shared_wallet_user_count: sharedCount,
+          shared_wallet_users: sharedUsers,
         };
       });
 
@@ -631,32 +648,30 @@ const AdminWalletManagement = () => {
     else if (hasRotation) topSeverity = "high";
     else if (w.max_alert_severity) topSeverity = w.max_alert_severity;
 
-    const severityCfg: Record<string, { badgeCls: string; dotCls: string; label: string }> = {
+    const severityCfg: Record<string, { badgeCls: string; dotColor: string; label: string }> = {
       critical: {
         badgeCls: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-400 dark:border-red-700",
-        dotCls: "bg-red-500",
+        dotColor: "#ef4444",
         label: "🔴 VÍ DÙNG CHUNG",
       },
       high: {
         badgeCls: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-400 dark:border-orange-700",
-        dotCls: "bg-orange-500",
+        dotColor: "#f97316",
         label: "🟠 HOÁN ĐỔI VÍ",
       },
       medium: {
         badgeCls: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-700",
-        dotCls: "bg-amber-500",
+        dotColor: "#f59e0b",
         label: "🟡 CẢNH BÁO",
       },
       low: {
         badgeCls: "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-400 dark:border-yellow-700",
-        dotCls: "bg-yellow-400",
+        dotColor: "#eab308",
         label: "⚠ NGHI NGỜ",
       },
     };
 
     const cfg = severityCfg[topSeverity] ?? severityCfg.low;
-
-    // Đếm tổng số lý do cảnh báo
     const warningCount = (hasShared ? 1 : 0) + (hasRotation ? 1 : 0) + w.fraud_alert_count;
 
     const badge = (
@@ -669,66 +684,173 @@ const AdminWalletManagement = () => {
       </Badge>
     );
 
+    // Rút gọn địa chỉ ví
+    const shortAddr = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+
     return (
-      <TooltipProvider delayDuration={100}>
+      <TooltipProvider delayDuration={150}>
         <Tooltip>
           <TooltipTrigger asChild>{badge}</TooltipTrigger>
           <TooltipContent
             side="right"
             align="start"
-            className="max-w-xs p-0 overflow-hidden rounded-lg border shadow-lg bg-popover z-50"
+            className="max-w-sm w-80 p-0 overflow-hidden rounded-xl border border-border shadow-xl bg-popover z-50"
           >
-            <div className="px-3 py-2 border-b bg-muted/50">
-              <p className="text-xs font-semibold text-foreground">
-                🚨 {warningCount} dấu hiệu bất thường
+            {/* Header */}
+            <div className="px-4 py-2.5 border-b border-border bg-muted/60 flex items-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />
+              <p className="text-xs font-bold text-foreground">
+                Phân tích cảnh báo — {warningCount} dấu hiệu
               </p>
             </div>
-            <ul className="px-3 py-2 space-y-2 max-h-56 overflow-y-auto">
-              {/* Nguồn 1: Shared wallet */}
+
+            <div className="px-4 py-3 space-y-3 max-h-72 overflow-y-auto">
+
+              {/* ── Dấu hiệu 1: Ví dùng chung ── */}
               {hasShared && (
-                <li className="flex items-start gap-2 text-xs">
-                  <span className="mt-1 shrink-0 w-2 h-2 rounded-full bg-red-500" />
-                  <div className="text-foreground leading-relaxed">
-                    <span className="font-semibold text-red-600 dark:text-red-400">Ví dùng chung</span>
-                    <span className="ml-1 text-muted-foreground">
-                      — địa chỉ này đang được dùng bởi{" "}
-                      <strong>{w.shared_wallet_user_count} tài khoản</strong> khác nhau
-                    </span>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                    <p className="text-xs font-bold text-red-600 dark:text-red-400">
+                      Ví dùng chung — Nguy cơ cao
+                    </p>
                   </div>
-                </li>
-              )}
-              {/* Nguồn 2: Wallet rotation */}
-              {hasRotation && (
-                <li className="flex items-start gap-2 text-xs">
-                  <span className="mt-1 shrink-0 w-2 h-2 rounded-full bg-orange-500" />
-                  <div className="text-foreground leading-relaxed">
-                    <span className="font-semibold text-orange-600 dark:text-orange-400">Hoán đổi ví</span>
-                    <span className="ml-1 text-muted-foreground">
-                      — đã sử dụng <strong>{w.withdrawal_wallet_count} địa chỉ ví khác nhau</strong> để rút tiền
-                    </span>
-                  </div>
-                </li>
-              )}
-              {/* Nguồn 3: Fraud alerts */}
-              {hasFraud && w.fraud_alert_details.map((d, i) => {
-                const sev = severityCfg[d.severity] ?? severityCfg.low;
-                return (
-                  <li key={i} className="flex items-start gap-2 text-xs">
-                    <span className={`mt-1 shrink-0 w-2 h-2 rounded-full ${sev.dotCls}`} />
-                    <div className="text-foreground leading-relaxed">
-                      <span className="font-medium">
-                        {alertTypeLabel[d.alert_type] ?? d.alert_type}
-                      </span>
-                      {d.matched_pattern && (
-                        <span className="ml-1 text-muted-foreground">
-                          — <code className="font-mono bg-muted px-0.5 rounded text-xs">{d.matched_pattern}</code>
-                        </span>
-                      )}
+                  <p className="text-xs text-muted-foreground pl-3.5">
+                    Địa chỉ ví{" "}
+                    <code className="font-mono bg-muted px-1 py-0.5 rounded text-[10px] text-foreground">
+                      {shortAddr(w.wallet_address)}
+                    </code>{" "}
+                    đang được sử dụng bởi{" "}
+                    <strong className="text-foreground">{w.shared_wallet_user_count} tài khoản</strong> khác nhau.
+                  </p>
+                  {w.shared_wallet_users.length > 0 && (
+                    <div className="pl-3.5 space-y-1">
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Tài khoản dùng chung:</p>
+                      <ul className="space-y-0.5">
+                        {/* Bản thân */}
+                        <li className="flex items-center gap-1.5 text-xs">
+                          <span className="text-muted-foreground">→</span>
+                          <span className="font-medium text-foreground">{w.display_name ?? "Chưa đặt tên"}</span>
+                          {w.handle && <span className="text-muted-foreground">@{w.handle}</span>}
+                          <span className="text-[10px] text-primary">(tài khoản này)</span>
+                        </li>
+                        {/* Các tài khoản khác */}
+                        {w.shared_wallet_users.map((u) => (
+                          <li key={u.user_id} className="flex items-center gap-1.5 text-xs">
+                            <span className="text-muted-foreground">→</span>
+                            <span
+                              className="font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => navigate(`/user/${u.user_id}`)}
+                            >
+                              {u.display_name ?? "Chưa đặt tên"}
+                            </span>
+                            {u.handle && <span className="text-muted-foreground">@{u.handle}</span>}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
+                  )}
+                </div>
+              )}
+
+              {/* Divider giữa các loại cảnh báo */}
+              {hasShared && (hasRotation || hasFraud) && (
+                <div className="border-t border-border/60" />
+              )}
+
+              {/* ── Dấu hiệu 2: Hoán đổi ví ── */}
+              {hasRotation && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-orange-500 shrink-0" />
+                    <p className="text-xs font-bold text-orange-600 dark:text-orange-400">
+                      Hoán đổi ví — Nguy cơ trung bình
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-3.5">
+                    Tài khoản này đã dùng{" "}
+                    <strong className="text-foreground">{w.withdrawal_wallet_count} địa chỉ ví khác nhau</strong>{" "}
+                    để thực hiện lệnh rút tiền.
+                  </p>
+                  {w.withdrawal_wallet_addresses.length > 0 && (
+                    <div className="pl-3.5 space-y-1">
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Danh sách ví đã dùng:</p>
+                      <ul className="space-y-0.5">
+                        {w.withdrawal_wallet_addresses.map((addr, i) => (
+                          <li key={addr} className="flex items-center gap-1.5 text-xs">
+                            <span className="text-muted-foreground shrink-0">#{i + 1}</span>
+                            <code className="font-mono bg-muted px-1 py-0.5 rounded text-[10px] text-foreground">
+                              {shortAddr(addr)}
+                            </code>
+                            <a
+                              href={`https://bscscan.com/address/${addr}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-muted-foreground hover:text-primary transition-colors"
+                            >
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Divider */}
+              {hasRotation && hasFraud && (
+                <div className="border-t border-border/60" />
+              )}
+
+              {/* ── Dấu hiệu 3: Fraud alerts từ hệ thống ── */}
+              {hasFraud && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                    <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                      Cảnh báo hệ thống — {w.fraud_alert_count} alert
+                    </p>
+                  </div>
+                  <ul className="pl-3.5 space-y-1.5">
+                    {w.fraud_alert_details.map((d, i) => {
+                      const dotColor = severityCfg[d.severity]?.dotColor ?? "#eab308";
+                      return (
+                        <li key={i} className="text-xs space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                              style={{ backgroundColor: dotColor }}
+                            />
+                            <span className="font-medium text-foreground">
+                              {alertTypeLabel[d.alert_type] ?? d.alert_type}
+                            </span>
+                            <span className="text-[10px] uppercase text-muted-foreground">
+                              [{d.severity}]
+                            </span>
+                          </div>
+                          {d.matched_pattern && (
+                            <p className="pl-3 text-muted-foreground text-[11px]">
+                              Pattern:{" "}
+                              <code className="font-mono bg-muted px-1 py-0.5 rounded text-[10px] text-foreground">
+                                {d.matched_pattern}
+                              </code>
+                            </p>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Footer gợi ý hành động */}
+            <div className="px-4 py-2 border-t border-border bg-muted/30">
+              <p className="text-[10px] text-muted-foreground">
+                💡 Kiểm tra tab "Cần Kiểm tra" để xem toàn bộ nhóm ví liên quan
+              </p>
+            </div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
