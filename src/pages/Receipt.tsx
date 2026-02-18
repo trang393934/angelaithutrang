@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -84,6 +84,7 @@ interface ReceiptData {
 
 export default function Receipt() {
   const { receiptId } = useParams<{ receiptId: string }>();
+  const navigate = useNavigate();
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,12 +139,10 @@ export default function Receipt() {
           <CardContent className="p-8 text-center">
             <Gift className="w-12 h-12 text-amber-300 mx-auto mb-4" />
             <p className="text-lg font-medium text-gray-600">{error || "Biên nhận không tồn tại"}</p>
-            <Link to="/">
-              <Button variant="outline" className="mt-4">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Về trang chủ
-              </Button>
-            </Link>
+            <Button variant="outline" className="mt-4" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Quay lại
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -180,10 +179,13 @@ export default function Receipt() {
 
       <div className="max-w-lg mx-auto relative z-10">
         {/* Back */}
-        <Link to="/" className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 mb-6"
+        >
           <ArrowLeft className="w-4 h-4" />
-          Trang chủ
-        </Link>
+          Quay lại
+        </button>
 
         <Card className="border-2 border-amber-200 shadow-xl overflow-hidden">
           {/* Header */}
