@@ -19,8 +19,11 @@ import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { vi } from "date-fns/locale";
 
-const TREASURY_WALLET_WITHDRAWAL = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D";
-const TREASURY_WALLET_LIXI = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
+// Verified via BSCScan: Both withdrawal types use the SAME sender wallet
+// coin_withdrawals (Ví 1) & lixi_claims (Ví 2) → From: 0x416336c3b7ACAe89A47EAD2707412f20DA159ac8
+const TREASURY_WALLET_1 = "0x416336c3b7ACAe89A47EAD2707412f20DA159ac8"; // Ví 1: Rút thưởng Camly (coin_withdrawals)
+const TREASURY_WALLET_2 = "0x416336c3b7ACAe89A47EAD2707412f20DA159ac8"; // Ví 2: Lì Xì Tết (lixi_claims) — cùng ví 1
+const TREASURY_WALLET_RESERVE = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D"; // Ví dự phòng (chưa có tx ghi nhận)
 const BSCSCAN_TX = "https://bscscan.com/tx/";
 const BSCSCAN_ADDR = "https://bscscan.com/address/";
 const PAGE_SIZE = 20;
@@ -338,16 +341,27 @@ export default function AdminTreasury() {
           </div>
         </div>
 
+        {/* Verified wallet notice */}
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300">
+          <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+          <div>
+            <span className="font-semibold">Đã xác minh qua BSCScan:</span> Cả 2 loại phát thưởng (Rút thưởng Camly và Lì Xì Tết) đều được gửi từ cùng 1 ví{" "}
+            <code className="bg-emerald-100 dark:bg-emerald-900/50 px-1 rounded font-mono">0x4163...9ac8</code>.
+            Ví <code className="bg-emerald-100 dark:bg-emerald-900/50 px-1 rounded font-mono">0x02D5...9a0D</code> là ví dự phòng (chưa có giao dịch ghi nhận).
+          </div>
+        </div>
+
         {/* Summary Cards — 2 ví */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Ví 1 */}
+          {/* Ví 1 — Rút thưởng Camly */}
           <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-blue-500" />
-                Ví 1 — Phát Thưởng Hệ Thống
+                Ví 1 — Rút Thưởng Camly
               </CardTitle>
-              <WalletAddressChip address={TREASURY_WALLET_WITHDRAWAL} label="Địa chỉ:" />
+              <WalletAddressChip address={TREASURY_WALLET_1} label="Sender (BSCScan):" />
+              <p className="text-[11px] text-muted-foreground mt-0.5">Nguồn: bảng <code className="bg-muted px-1 rounded">coin_withdrawals</code></p>
               {wStats && (
                 <p className="text-xs text-muted-foreground mt-1">
                   🗓️ Hoạt động: {fmtDate(wStats.first!)} → {fmtDate(wStats.last!)} ({wStats.days} ngày)
@@ -374,14 +388,15 @@ export default function AdminTreasury() {
             </CardContent>
           </Card>
 
-          {/* Ví 2 */}
+          {/* Ví 2 — Lì Xì Tết */}
           <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Gift className="w-4 h-4 text-red-500" />
-                Ví 2 — Phát Thưởng Hệ Thống
+                Ví 2 — Lì Xì Tết
               </CardTitle>
-              <WalletAddressChip address={TREASURY_WALLET_LIXI} label="Địa chỉ:" />
+              <WalletAddressChip address={TREASURY_WALLET_2} label="Sender (BSCScan):" />
+              <p className="text-[11px] text-muted-foreground mt-0.5">Nguồn: bảng <code className="bg-muted px-1 rounded">lixi_claims</code></p>
               {lStats && (
                 <p className="text-xs text-muted-foreground mt-1">
                   🗓️ Hoạt động: {fmtDate(lStats.first!)} → {fmtDate(lStats.last!)} ({lStats.days} ngày)
@@ -439,8 +454,8 @@ export default function AdminTreasury() {
         <Tabs defaultValue="overview">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">📊 Tổng hợp</TabsTrigger>
-            <TabsTrigger value="withdrawal">💰 Ví 1</TabsTrigger>
-            <TabsTrigger value="lixi">💰 Ví 2</TabsTrigger>
+            <TabsTrigger value="withdrawal">💰 Ví 1 — Rút Thưởng</TabsTrigger>
+            <TabsTrigger value="lixi">🧧 Ví 2 — Lì Xì Tết</TabsTrigger>
           </TabsList>
 
           {/* ─── Tab: Tổng hợp ─── */}
@@ -484,7 +499,7 @@ export default function AdminTreasury() {
                     </thead>
                     <tbody className="divide-y">
                       {[
-                        ["Địa chỉ ví", shortAddr(TREASURY_WALLET_WITHDRAWAL), shortAddr(TREASURY_WALLET_LIXI)],
+                        ["Địa chỉ ví", shortAddr(TREASURY_WALLET_1), shortAddr(TREASURY_WALLET_2)],
                         ["GD hoàn thành", fmt(wStats?.totalTx || 0), fmt(lStats?.totalTx || 0)],
                         ["Tổng Camly phát ra", fmt(wStats?.totalCamly || 0), fmt(lStats?.totalCamly || 0)],
                         ["Chờ xử lý", fmt(wStats?.pending || 0), fmt(lStats?.pending || 0)],
