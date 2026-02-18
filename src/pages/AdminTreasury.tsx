@@ -19,11 +19,11 @@ import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { vi } from "date-fns/locale";
 
-// Ví 1: 0x416336... — hoạt động TRƯỚC 12/02/2026 (chỉ rút thưởng Camly, đã dừng)
-// Ví 2: 0x02D557... — hoạt động TỪ 12/02/2026 (cả lì xì Tết + rút thưởng mới)
+// Ví 1: 0x02D557... — đã dừng hoạt động
+// Ví 2: 0x416336... — đang hoạt động (cả lì xì Tết + rút thưởng)
 // Phân tách dữ liệu theo ngày processed_at/claimed_at
-const TREASURY_WALLET_1 = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
-const TREASURY_WALLET_2 = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D";
+const TREASURY_WALLET_1 = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D";
+const TREASURY_WALLET_2 = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
 // Ngày ví 2 bắt đầu hoạt động
 const VI2_START_DATE = new Date("2026-02-12T00:00:00Z");
 const BSCSCAN_TX = "https://bscscan.com/tx/";
