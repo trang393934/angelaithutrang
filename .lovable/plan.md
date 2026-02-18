@@ -1,169 +1,164 @@
 
-# Thực thi Bảo vệ Nền Kinh tế Ánh sáng - Chặn 20 Tài khoản Sybil
+# Nâng cấp Trang Quản lý Ví - Hiển thị Cảnh báo & Từ chối Rút tiền
 
-## Tình trạng hiện tại (đã xác minh)
+## Phân tích hiện trạng
 
-### 20 tài khoản bị chặn - chia thành 4 nhóm:
+### AdminWalletManagement.tsx (620 dòng)
+Hiện tại chỉ có:
+- Bảng danh sách ví đơn giản (tên, địa chỉ ví, số dư, trạng thái)
+- Nút "Tạm dừng" / "Gỡ tạm dừng" cho từng user
+- Không có: cảnh báo nghi ngờ, thông tin pending withdrawals, shared wallets, hay quyền từ chối rút tiền
 
-**Nhóm BACHP/BACHN (7 tài khoản)** - Email đồng loạt `bachp*/bachn*`:
-- Như Xuyến (bachnbn991) - 2,423,209 Camly earned
-- Vu Nhu (bachpn223) - 2,350,185 Camly earned
-- Fan của Cha (bachnb919) - 2,274,075 Camly earned
-- Lê Huệ (bachpn19) - 2,204,881 Camly earned
-- Mận Trần (bachpnb991) - 2,014,505 Camly earned
-- Trinh Que (bachpb19) - 1,882,337 Camly earned
-- Trâm Đặng (bachpnb) - 762,900 Camly earned
+### AdminFraudAlerts.tsx (619 dòng)
+Trang riêng biệt đang hoạt động với:
+- Bảng fraud_alerts với nút Ban/Bỏ qua
+- Pattern Registry
+- Không có: liên kết trực tiếp tới lệnh rút tiền đang pending
 
-**Nhóm 270818 (4 tài khoản)** - Email chứa `270818`:
-- joni (vietsoan270818) - 1,949,938 Camly earned
-- thuy le (luuanh270818) - 1,921,886 Camly earned
-- bao ngan (baongan270818) - 1,790,536 Camly earned
-- hương (nguyenhuong270818) - 1,771,400 Camly earned
+## Kế hoạch nâng cấp
 
-**Nhóm 11136 (4 tài khoản)** - Email chứa `11136`:
-- cao lan (sonth11136) - 2,163,062 Camly earned
-- canh (canhth11136) - 2,146,675 Camly earned
-- huyền (huyenth11136) - 1,955,293 Camly earned
-- thoa (thoath11136) - 1,775,644 Camly earned
+### 1. Nâng cấp AdminWalletManagement.tsx
 
-**Nhóm 442/68682 (5 tài khoản)** - Ví chuyển tiền chéo:
-- le quang (lequang68682) - Ví tổng `0xAdF1E1...`
-- sac (vietsac442) - Ví tổng `0x0CFc02...`
-- le lien (lelien4334) - 1,248,570 Camly earned
-- yên hoa (yenhoa1442) - 385,988 Camly earned
-- hoa kieu (nguoigochoa442) - 313,813 Camly earned
+Thêm hệ thống **3 Tab**:
 
-### 13 lệnh rút PENDING cần chặn:
-Tổng: **3,132,840 Camly** phải bị từ chối
+**Tab 1: "Tất cả Ví" (hiện tại)** - giữ nguyên bảng hiện có + thêm:
+- Cột "Cảnh báo" hiển thị badge màu đỏ/cam nếu user có fraud_alert chưa xử lý
+- Cột "Pending Rút" hiển thị số Camly đang pending, nút "Từ chối" màu đỏ ngay trong bảng
+- Filter thêm: "Có cảnh báo" để lọc nhanh
 
-## 3 việc cần thực hiện
+**Tab 2: "🚨 Cần Kiểm tra"** - Dashboard tổng hợp nhóm nghi ngờ:
+- **Section A - Ví dùng chung (Shared Wallets)**: Query `user_wallet_addresses` GROUP BY `wallet_address` HAVING COUNT > 1, hiển thị từng nhóm với nút "Ban cả nhóm"
+- **Section B - Hoán đổi Ví (Wallet Rotation)**: Query `coin_withdrawals` GROUP BY `user_id` với COUNT(DISTINCT wallet_address) >= 2, hiển thị users đã dùng nhiều ví khác nhau
+- **Section C - Tài khoản Đăng ký Đồng loạt**: Liên kết tới fraud_alerts loại `bulk_registration`
 
-### Việc 1: Ban tất cả 20 tài khoản (Permanent)
+**Tab 3: "💰 Lệnh Rút Pending"** - Quản lý tập trung tất cả lệnh rút:
+- Hiển thị toàn bộ `coin_withdrawals` với `status = 'pending'`
+- Mỗi dòng hiển thị: tên user, ví rút, số Camly, ngày tạo, và **badge cảnh báo** nếu user có fraud_alert
+- Nút "Từ chối" từng lệnh rút với popup xác nhận + nhập ghi chú admin
+- Nút "Duyệt" để chuyển sang processing
+- **Multi-select checkbox** + nút "Từ chối hàng loạt" ở đầu trang
+- Thống kê: Tổng pending, Số có cảnh báo, Tổng Camly đang pending
 
-**Tạo edge function mới:** `supabase/functions/bulk-suspend-users/index.ts`
+### 2. Logic từ chối lệnh rút tiền
 
-Function này nhận danh sách user IDs, gọi logic suspend hàng loạt:
-- Loop qua từng user ID
-- Insert vào `user_suspensions` với `suspension_type = 'permanent'`
-- Update `user_energy_status` thành `rejected`
-- Gửi `healing_message` vào bảng `healing_messages`
-
-**Hoặc** thực thi trực tiếp qua admin action trong `AdminWalletManagement.tsx` - thêm nút "Ban hàng loạt" cho phép admin chọn nhiều tài khoản rồi ban 1 lần.
-
-### Việc 2: Từ chối 13 lệnh rút PENDING
-
-Update trực tiếp bảng `coin_withdrawals`:
-```sql
-UPDATE coin_withdrawals SET status = 'failed', admin_notes = 'Từ chối - Tài khoản nghi ngờ sybil farming' 
-WHERE id IN ('3a6ce799...', '33bde1b9...', ...) AND status = 'pending';
+Thêm function `handleRejectWithdrawal(withdrawalId, adminNote)`:
+```typescript
+await supabase
+  .from("coin_withdrawals")
+  .update({
+    status: "failed",
+    admin_notes: adminNote,
+    processed_at: new Date().toISOString(),
+    processed_by: session.user.id,
+  })
+  .eq("id", withdrawalId)
+  .eq("status", "pending");
 ```
-Đồng thời hoàn tiền về balance (trigger `update_withdrawal_stats` đã xử lý refund tự động khi status = 'failed').
+Trigger `update_withdrawal_stats` sẽ tự động hoàn tiền về balance.
 
-### Việc 3: Hệ thống phát hiện & cảnh báo tự động (Fraud Detection)
+### 3. Badge cảnh báo trực tiếp trong bảng ví
 
-**Tạo bảng mới:** `sybil_pattern_registry`
-```sql
-CREATE TABLE sybil_pattern_registry (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  pattern_type TEXT NOT NULL, -- 'email_suffix', 'wallet_cluster', 'ip_hash', 'registration_burst'
-  pattern_value TEXT NOT NULL, -- e.g. '270818', '11136', '442'
-  severity TEXT NOT NULL DEFAULT 'high', -- 'low', 'medium', 'high', 'critical'
-  description TEXT,
-  flagged_by UUID, -- admin user ID
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-```
+Khi fetch wallets, sẽ join thêm:
+- `fraud_alerts` → đếm số alerts chưa reviewed per user
+- `coin_withdrawals` với status='pending' → tổng tiền đang pending per user
 
-**Tạo bảng:** `fraud_alerts`
-```sql
-CREATE TABLE fraud_alerts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
-  alert_type TEXT NOT NULL, -- 'email_pattern', 'bulk_registration', 'wallet_cluster', 'withdrawal_spike'
-  matched_pattern TEXT,
-  severity TEXT NOT NULL DEFAULT 'medium',
-  is_reviewed BOOLEAN DEFAULT false,
-  reviewed_by UUID,
-  reviewed_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-```
+Hiển thị trong cột mới:
+- 🔴 Badge đỏ nếu có fraud_alert critical chưa xử lý
+- 🟠 Badge cam nếu có fraud_alert high/medium
+- 💰 Số Camly pending với nút từ chối nhanh
 
-**Tạo Edge Function:** `supabase/functions/fraud-scanner/index.ts`
+### 4. Interface mới cần thêm
 
-Chạy khi user đăng ký mới OR khi user tạo yêu cầu rút tiền. Kiểm tra:
+```typescript
+interface WalletEntry {
+  // ... existing fields ...
+  fraud_alert_count: number;       // số alerts chưa reviewed
+  max_alert_severity: string | null; // 'critical' | 'high' | 'medium'
+  pending_withdrawal_amount: number;  // tổng Camly đang pending
+  pending_withdrawal_ids: string[];   // IDs của lệnh rút pending
+  withdrawal_wallet_count: number;   // số ví đã dùng để rút (detect rotation)
+}
 
-1. **Email Pattern Match** - So sánh email mới với `sybil_pattern_registry`:
-   ```
-   IF email CONTAINS any pattern in registry → CREATE fraud_alert (severity: high)
-   ```
+interface PendingWithdrawal {
+  id: string;
+  user_id: string;
+  wallet_address: string;
+  amount: number;
+  created_at: string;
+  display_name: string | null;
+  handle: string | null;
+  avatar_url: string | null;
+  fraud_alert_count: number;
+  max_alert_severity: string | null;
+}
 
-2. **Bulk Registration Burst** - Phát hiện đăng ký đồng loạt:
-   ```
-   IF >3 accounts registered within 2 hours with similar email prefix → alert
-   ```
-
-3. **Withdrawal Spike** - Phát hiện rút tiền hàng loạt:
-   ```
-   IF same day, >5 accounts with similar email suffix all request withdrawal → alert
-   ```
-
-**Tạo trang Admin mới:** `src/pages/AdminFraudAlerts.tsx`
-
-Dashboard hiển thị:
-- Danh sách cảnh báo gian lận chưa được xem xét
-- Badge đỏ số lượng cảnh báo mới trên AdminNavToolbar
-- Nút "Ban ngay" / "Bỏ qua" cho từng cảnh báo
-
-**Thêm trigger tự động** trong database:
-```sql
--- Trigger chạy khi user mới đăng ký (via user_light_agreements)
-CREATE TRIGGER check_fraud_on_registration
-AFTER INSERT ON user_light_agreements
-FOR EACH ROW EXECUTE FUNCTION auto_fraud_check();
+interface SharedWalletGroup {
+  wallet_address: string;
+  user_count: number;
+  users: { user_id: string; display_name: string; handle: string }[];
+  total_pending: number;
+}
 ```
 
-## Files cần thay đổi / tạo mới
+## Technical Implementation Details
 
-### Database Migrations:
-1. Tạo bảng `sybil_pattern_registry` với dữ liệu seed (các pattern đã biết: `270818`, `11136`, `442`, `4334`, `68682`, `bachp`, `bachn`)
-2. Tạo bảng `fraud_alerts`
-3. Database function `auto_fraud_check()` để trigger khi đăng ký mới
+### Thay đổi file duy nhất: `src/pages/AdminWalletManagement.tsx`
 
-### Edge Functions:
-4. `supabase/functions/bulk-suspend-users/index.ts` - Ban hàng loạt + từ chối withdrawal
-5. `supabase/functions/fraud-scanner/index.ts` - Quét pattern mới
+**Thêm imports:** `Tabs, TabsContent, TabsList, TabsTrigger` từ `@/components/ui/tabs`, thêm icons `XCircle, DollarSign, Network`
 
-### Frontend:
-6. `src/pages/AdminFraudAlerts.tsx` - Trang cảnh báo gian lận (MỚI)
-7. `src/pages/AdminWalletManagement.tsx` - Thêm checkbox multi-select + nút "Ban hàng loạt" + action từ chối withdrawal
-8. `src/components/admin/AdminNavToolbar.tsx` - Thêm "🚨 Cảnh báo" với badge số đỏ
-9. `src/App.tsx` - Thêm route `/admin/fraud-alerts`
+**Thêm state:**
+```typescript
+const [activeTab, setActiveTab] = useState<"wallets" | "audit" | "withdrawals">("wallets");
+const [pendingWithdrawals, setPendingWithdrawals] = useState<PendingWithdrawal[]>([]);
+const [selectedWithdrawalIds, setSelectedWithdrawalIds] = useState<string[]>([]);
+const [sharedWalletGroups, setSharedWalletGroups] = useState<SharedWalletGroup[]>([]);
+const [rejectTarget, setRejectTarget] = useState<PendingWithdrawal | null>(null);
+const [rejectNote, setRejectNote] = useState("");
+const [rejecting, setRejecting] = useState(false);
+const [fraudFilter, setFraudFilter] = useState<"all" | "flagged">("all");
+```
+
+**Thêm fetch functions:**
+- `fetchPendingWithdrawals()` - lấy tất cả pending + join profiles + fraud_alerts
+- `fetchSharedWallets()` - detect shared wallet clusters
+- Sửa `fetchWallets()` để join thêm fraud_alerts count và pending_withdrawal_amount
+
+**Thêm handlers:**
+- `handleRejectWithdrawal(ids: string[], note: string)` - từ chối một hoặc nhiều lệnh
+- `handleBulkReject()` - từ chối hàng loạt từ selectedWithdrawalIds
+
+### Không cần migration DB
+
+Tất cả data đã có sẵn trong các bảng hiện tại:
+- `fraud_alerts` (đã tạo)
+- `coin_withdrawals` (đã có, có cột `admin_notes`, `processed_at`, `processed_by`)
+- `user_wallet_addresses` (đã có)
 
 ## Thứ tự thực thi
 
 ```text
-Bước 1: Migration DB (bảng sybil_pattern_registry + fraud_alerts)
+Bước 1: Cập nhật interface WalletEntry + PendingWithdrawal + SharedWalletGroup
    ↓
-Bước 2: Deploy edge function bulk-suspend-users
+Bước 2: Sửa fetchWallets() để join fraud_alerts + pending withdrawals
    ↓
-Bước 3: Thực thi BAN 20 tài khoản (gọi function)
+Bước 3: Thêm fetchPendingWithdrawals() + fetchSharedWallets()
    ↓
-Bước 4: Thực thi TỪ CHỐI 13 lệnh rút (gọi trực tiếp DB)
+Bước 4: Thêm Tabs layout (3 tabs)
    ↓
-Bước 5: Deploy fraud-scanner function
+Bước 5: Tab 1 - thêm cột "Cảnh báo" + "Pending" + filter "Có cảnh báo"
    ↓
-Bước 6: Tạo frontend AdminFraudAlerts + cập nhật WalletManagement
+Bước 6: Tab 2 - Section Shared Wallets + Wallet Rotation
    ↓
-Bước 7: Seed dữ liệu pattern registry (7 patterns đã biết)
+Bước 7: Tab 3 - Bảng Pending Withdrawals với multi-select + từ chối
+   ↓
+Bước 8: Dialog từ chối lệnh rút (rejectTarget dialog)
 ```
 
-## Tác động tài chính
+## Kết quả sau khi hoàn thành
 
-| Hành động | Số lượng | Camly |
-|-----------|---------|-------|
-| Tài khoản bị ban | 20 tài khoản | ~37.5M earned bị đóng băng |
-| Lệnh rút bị từ chối | 13 lệnh | 3,132,840 Camly được hoàn lại hệ thống |
-| Pattern được đăng ký | 7 patterns | Ngăn chặn sybil mới trong tương lai |
+Admin khi vào `/admin/wallet-management` sẽ thấy:
+- **Tab "Tất cả Ví"**: Mỗi user có flag đỏ/cam ngay cạnh tên nếu có cảnh báo, có số Camly pending
+- **Tab "🚨 Cần Kiểm tra"**: Nhóm shared wallets nghi ngờ, danh sách wallet rotation — nhìn qua là biết ngay ai đáng ngờ
+- **Tab "💰 Pending Rút"**: Tổng quan toàn bộ lệnh rút đang chờ, highlight đỏ những lệnh có fraud alert, chọn nhiều và từ chối 1 lần
 
-> Lưu ý: Khi từ chối withdrawal (status = 'failed'), trigger `update_withdrawal_stats` sẽ tự động hoàn trả số Camly về balance của từng tài khoản. Tuy nhiên vì tài khoản đã bị ban vĩnh viễn, số dư này sẽ bị đóng băng và không thể rút được nữa.
+Tất cả trong 1 file `AdminWalletManagement.tsx`, không cần trang mới.
