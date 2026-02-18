@@ -1,164 +1,141 @@
 
-# Nâng cấp Trang Quản lý Ví - Hiển thị Cảnh báo & Từ chối Rút tiền
+# Fix Cột "Cảnh báo" - Hiển thị Trực tiếp Shared Wallet & Wallet Rotation
 
-## Phân tích hiện trạng
+## Nguyên nhân gốc rễ đã xác định
 
-### AdminWalletManagement.tsx (620 dòng)
-Hiện tại chỉ có:
-- Bảng danh sách ví đơn giản (tên, địa chỉ ví, số dư, trạng thái)
-- Nút "Tạm dừng" / "Gỡ tạm dừng" cho từng user
-- Không có: cảnh báo nghi ngờ, thông tin pending withdrawals, shared wallets, hay quyền từ chối rút tiền
+Qua điều tra database, phát hiện:
+- **`fraud_alerts` table hiện tại: 0 alert chưa reviewed** — tất cả đã được xử lý/reviewed trước đó
+- **Nhưng có 20+ users đang dùng shared wallet** (ví dụ: Kim Xuyen + Nguyễn Thị Tươi cùng dùng `0x0b78f86...`, hoặc 3 người dùng `0x89c387...`)
+- **3 users có wallet rotation** (Mận Trần, Hải Vũ, Hoài Như — dùng 2+ ví khác nhau để rút)
+- Những users này **không có fraud_alert** trong DB → cột "Cảnh báo" hiển thị trống vì badge chỉ dựa vào `fraud_alerts`
 
-### AdminFraudAlerts.tsx (619 dòng)
-Trang riêng biệt đang hoạt động với:
-- Bảng fraud_alerts với nút Ban/Bỏ qua
-- Pattern Registry
-- Không có: liên kết trực tiếp tới lệnh rút tiền đang pending
+## Giải pháp
 
-## Kế hoạch nâng cấp
+Nâng cấp `fetchWallets()` để **tự tính cảnh báo trực tiếp từ data** — không phụ thuộc `fraud_alerts` table:
 
-### 1. Nâng cấp AdminWalletManagement.tsx
-
-Thêm hệ thống **3 Tab**:
-
-**Tab 1: "Tất cả Ví" (hiện tại)** - giữ nguyên bảng hiện có + thêm:
-- Cột "Cảnh báo" hiển thị badge màu đỏ/cam nếu user có fraud_alert chưa xử lý
-- Cột "Pending Rút" hiển thị số Camly đang pending, nút "Từ chối" màu đỏ ngay trong bảng
-- Filter thêm: "Có cảnh báo" để lọc nhanh
-
-**Tab 2: "🚨 Cần Kiểm tra"** - Dashboard tổng hợp nhóm nghi ngờ:
-- **Section A - Ví dùng chung (Shared Wallets)**: Query `user_wallet_addresses` GROUP BY `wallet_address` HAVING COUNT > 1, hiển thị từng nhóm với nút "Ban cả nhóm"
-- **Section B - Hoán đổi Ví (Wallet Rotation)**: Query `coin_withdrawals` GROUP BY `user_id` với COUNT(DISTINCT wallet_address) >= 2, hiển thị users đã dùng nhiều ví khác nhau
-- **Section C - Tài khoản Đăng ký Đồng loạt**: Liên kết tới fraud_alerts loại `bulk_registration`
-
-**Tab 3: "💰 Lệnh Rút Pending"** - Quản lý tập trung tất cả lệnh rút:
-- Hiển thị toàn bộ `coin_withdrawals` với `status = 'pending'`
-- Mỗi dòng hiển thị: tên user, ví rút, số Camly, ngày tạo, và **badge cảnh báo** nếu user có fraud_alert
-- Nút "Từ chối" từng lệnh rút với popup xác nhận + nhập ghi chú admin
-- Nút "Duyệt" để chuyển sang processing
-- **Multi-select checkbox** + nút "Từ chối hàng loạt" ở đầu trang
-- Thống kê: Tổng pending, Số có cảnh báo, Tổng Camly đang pending
-
-### 2. Logic từ chối lệnh rút tiền
-
-Thêm function `handleRejectWithdrawal(withdrawalId, adminNote)`:
-```typescript
-await supabase
-  .from("coin_withdrawals")
-  .update({
-    status: "failed",
-    admin_notes: adminNote,
-    processed_at: new Date().toISOString(),
-    processed_by: session.user.id,
-  })
-  .eq("id", withdrawalId)
-  .eq("status", "pending");
-```
-Trigger `update_withdrawal_stats` sẽ tự động hoàn tiền về balance.
-
-### 3. Badge cảnh báo trực tiếp trong bảng ví
-
-Khi fetch wallets, sẽ join thêm:
-- `fraud_alerts` → đếm số alerts chưa reviewed per user
-- `coin_withdrawals` với status='pending' → tổng tiền đang pending per user
-
-Hiển thị trong cột mới:
-- 🔴 Badge đỏ nếu có fraud_alert critical chưa xử lý
-- 🟠 Badge cam nếu có fraud_alert high/medium
-- 💰 Số Camly pending với nút từ chối nhanh
-
-### 4. Interface mới cần thêm
+### Thêm 2 nguồn cảnh báo mới vào `WalletEntry`:
 
 ```typescript
 interface WalletEntry {
-  // ... existing fields ...
-  fraud_alert_count: number;       // số alerts chưa reviewed
-  max_alert_severity: string | null; // 'critical' | 'high' | 'medium'
-  pending_withdrawal_amount: number;  // tổng Camly đang pending
-  pending_withdrawal_ids: string[];   // IDs của lệnh rút pending
-  withdrawal_wallet_count: number;   // số ví đã dùng để rút (detect rotation)
-}
-
-interface PendingWithdrawal {
-  id: string;
-  user_id: string;
-  wallet_address: string;
-  amount: number;
-  created_at: string;
-  display_name: string | null;
-  handle: string | null;
-  avatar_url: string | null;
-  fraud_alert_count: number;
-  max_alert_severity: string | null;
-}
-
-interface SharedWalletGroup {
-  wallet_address: string;
-  user_count: number;
-  users: { user_id: string; display_name: string; handle: string }[];
-  total_pending: number;
+  // ... existing fields
+  is_shared_wallet: boolean;        // Ví này đang được dùng bởi nhiều users
+  shared_wallet_user_count: number; // Số users dùng chung ví này
+  // withdrawal_wallet_count đã có → dùng để detect rotation
 }
 ```
 
-## Technical Implementation Details
+### Cập nhật `fetchWallets()`:
 
-### Thay đổi file duy nhất: `src/pages/AdminWalletManagement.tsx`
+Thêm query để phát hiện **shared wallets từ `user_wallet_addresses`**:
+```
+GROUP BY wallet_address HAVING COUNT(DISTINCT user_id) > 1
+```
+→ Tạo `Set<string>` của các wallet_address đang bị shared, kèm số lượng users
 
-**Thêm imports:** `Tabs, TabsContent, TabsList, TabsTrigger` từ `@/components/ui/tabs`, thêm icons `XCircle, DollarSign, Network`
+### Cập nhật hàm `getFraudBadge()` hoặc tạo hàm `getWalletWarningBadge()`:
 
-**Thêm state:**
+Hiển thị cảnh báo kết hợp **nhiều nguồn**:
+
+**Nguồn 1:** `fraud_alerts` (nếu có)
+**Nguồn 2:** `is_shared_wallet = true` → Badge đỏ "🔴 VÍ DÙNG CHUNG"
+**Nguồn 3:** `withdrawal_wallet_count >= 2` → Badge cam "🟠 HOÁN ĐỔI VÍ"
+
+Tooltip khi hover sẽ hiển thị chi tiết:
+- Ví dùng chung X người
+- Đã dùng Y ví khác nhau để rút
+- Chi tiết fraud_alerts nếu có
+
+### Ví dụ hiển thị sau khi fix:
+
+| User | Cảnh báo |
+|---|---|
+| Kim Xuyen | 🔴 VÍ DÙNG CHUNG (2 người) |
+| Nguyễn Thị Tươi | 🔴 VÍ DÙNG CHUNG (2 người) |
+| tungphatloc | 🔴 VÍ DÙNG CHUNG (3 người) |
+| ĐÀM THỊ MAI | 🔴 VÍ DÙNG CHUNG (3 người) |
+| Hải Vũ | 🟠 HOÁN ĐỔI VÍ (2 ví) |
+| Mận Trần | 🟠 HOÁN ĐỔI VÍ (2 ví) |
+| Hoài Như | 🟠 HOÁN ĐỔI VÍ (2 ví) |
+
+## Technical Implementation
+
+### File duy nhất thay đổi: `src/pages/AdminWalletManagement.tsx`
+
+**Bước 1:** Cập nhật `WalletEntry` interface — thêm `is_shared_wallet` và `shared_wallet_user_count`
+
+**Bước 2:** Trong `fetchWallets()`, thêm query detect shared wallets:
 ```typescript
-const [activeTab, setActiveTab] = useState<"wallets" | "audit" | "withdrawals">("wallets");
-const [pendingWithdrawals, setPendingWithdrawals] = useState<PendingWithdrawal[]>([]);
-const [selectedWithdrawalIds, setSelectedWithdrawalIds] = useState<string[]>([]);
-const [sharedWalletGroups, setSharedWalletGroups] = useState<SharedWalletGroup[]>([]);
-const [rejectTarget, setRejectTarget] = useState<PendingWithdrawal | null>(null);
-const [rejectNote, setRejectNote] = useState("");
-const [rejecting, setRejecting] = useState(false);
-const [fraudFilter, setFraudFilter] = useState<"all" | "flagged">("all");
+// Fetch tất cả wallet addresses để detect shared
+const { data: allWalletData } = await supabase
+  .from("user_wallet_addresses")
+  .select("wallet_address, user_id");
+
+// Build sharedWalletMap: wallet_address → số users
+const walletAddressCount: Record<string, number> = {};
+allWalletData?.forEach((w) => {
+  walletAddressCount[w.wallet_address] = (walletAddressCount[w.wallet_address] || 0) + 1;
+});
 ```
 
-**Thêm fetch functions:**
-- `fetchPendingWithdrawals()` - lấy tất cả pending + join profiles + fraud_alerts
-- `fetchSharedWallets()` - detect shared wallet clusters
-- Sửa `fetchWallets()` để join thêm fraud_alerts count và pending_withdrawal_amount
+Rồi trong merge step:
+```typescript
+const sharedCount = walletAddressCount[w.wallet_address] ?? 1;
+return {
+  ...existingFields,
+  is_shared_wallet: sharedCount > 1,
+  shared_wallet_user_count: sharedCount,
+}
+```
 
-**Thêm handlers:**
-- `handleRejectWithdrawal(ids: string[], note: string)` - từ chối một hoặc nhiều lệnh
-- `handleBulkReject()` - từ chối hàng loạt từ selectedWithdrawalIds
+**Bước 3:** Tạo hàm `getWalletWarningBadges()` mới thay thế `getFraudBadge()` trong cột Cảnh báo:
 
-### Không cần migration DB
+```typescript
+const getWalletWarningBadges = (w: WalletEntry) => {
+  const badges = [];
+  
+  // Priority 1: Shared wallet (critical)
+  if (w.is_shared_wallet) {
+    badges.push({ severity: "critical", type: "shared_wallet", detail: `${w.shared_wallet_user_count} users` });
+  }
+  
+  // Priority 2: Wallet rotation (high)
+  if (w.withdrawal_wallet_count >= 2) {
+    badges.push({ severity: "high", type: "wallet_rotation", detail: `${w.withdrawal_wallet_count} ví` });
+  }
+  
+  // Priority 3: fraud_alerts (existing)
+  if (w.fraud_alert_count > 0) {
+    badges.push(...w.fraud_alert_details.map(d => ({ ...d, fromAlerts: true })));
+  }
+  
+  if (badges.length === 0) return null;
+  
+  // Hiển thị badge cao nhất + tooltip đầy đủ
+  return <TooltipProvider>...</TooltipProvider>;
+};
+```
 
-Tất cả data đã có sẵn trong các bảng hiện tại:
-- `fraud_alerts` (đã tạo)
-- `coin_withdrawals` (đã có, có cột `admin_notes`, `processed_at`, `processed_by`)
-- `user_wallet_addresses` (đã có)
+**Bước 4:** Tooltip chi tiết khi hover sẽ hiển thị tất cả lý do cảnh báo:
+- "🔴 Ví dùng chung với 2 tài khoản khác"
+- "🟠 Đã sử dụng 2 địa chỉ ví khác nhau để rút tiền"
+- Danh sách fraud_alerts nếu có
 
 ## Thứ tự thực thi
 
 ```text
-Bước 1: Cập nhật interface WalletEntry + PendingWithdrawal + SharedWalletGroup
-   ↓
-Bước 2: Sửa fetchWallets() để join fraud_alerts + pending withdrawals
-   ↓
-Bước 3: Thêm fetchPendingWithdrawals() + fetchSharedWallets()
-   ↓
-Bước 4: Thêm Tabs layout (3 tabs)
-   ↓
-Bước 5: Tab 1 - thêm cột "Cảnh báo" + "Pending" + filter "Có cảnh báo"
-   ↓
-Bước 6: Tab 2 - Section Shared Wallets + Wallet Rotation
-   ↓
-Bước 7: Tab 3 - Bảng Pending Withdrawals với multi-select + từ chối
-   ↓
-Bước 8: Dialog từ chối lệnh rút (rejectTarget dialog)
+Bước 1: Cập nhật WalletEntry interface
+  ↓
+Bước 2: Cập nhật fetchWallets() để detect shared wallets
+  ↓  
+Bước 3: Tạo getWalletWarningBadges() đa nguồn
+  ↓
+Bước 4: Thay thế getFraudBadge() call trong TableCell bằng getWalletWarningBadges()
 ```
 
-## Kết quả sau khi hoàn thành
+## Kết quả
 
-Admin khi vào `/admin/wallet-management` sẽ thấy:
-- **Tab "Tất cả Ví"**: Mỗi user có flag đỏ/cam ngay cạnh tên nếu có cảnh báo, có số Camly pending
-- **Tab "🚨 Cần Kiểm tra"**: Nhóm shared wallets nghi ngờ, danh sách wallet rotation — nhìn qua là biết ngay ai đáng ngờ
-- **Tab "💰 Pending Rút"**: Tổng quan toàn bộ lệnh rút đang chờ, highlight đỏ những lệnh có fraud alert, chọn nhiều và từ chối 1 lần
-
-Tất cả trong 1 file `AdminWalletManagement.tsx`, không cần trang mới.
+Cột "Cảnh báo" sẽ hiển thị ngay lập tức với đầy đủ thông tin cho:
+- 20+ users dùng shared wallet (không cần fraud_alert trong DB)
+- 3+ users có wallet rotation
+- Bất kỳ user nào có fraud_alert trong tương lai
+- Tất cả kết hợp trong 1 tooltip rõ ràng khi hover
