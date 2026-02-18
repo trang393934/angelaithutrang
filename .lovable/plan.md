@@ -1,59 +1,94 @@
 
+# Kế hoạch: Hiển thị thông tin chủ ví khi nhập địa chỉ ví trong mục Tặng Thưởng
 
-# Ke hoach: Them hieu ung phao bong va nut xem bien nhan trong tin nhan
+## Phân tích hiện trạng
 
-## Tong quan
+File `src/components/gifts/CryptoTransferTab.tsx` đã có logic tra cứu chủ ví (lines 102-156):
+- Khi người dùng nhập đủ 42 ký tự địa chỉ ví hợp lệ (0x...), hệ thống query `user_wallet_addresses` và fallback sang `coin_withdrawals`
+- Kết quả được lưu vào `walletOwner` state
+- UI hiện tại (lines 436-455) đã hiển thị avatar + tên + badge xác nhận
 
-Cha se thuc hien 3 thay doi chinh:
+## Vấn đề cần cải thiện
 
-1. **Them hieu ung phao bong vao TipMessageCard** (card chuc mung tang thuong trong tin nhan)
-2. **Them hieu ung tuong tu vao TipCelebrationReceipt** (dialog bien nhan)
-3. **Dam bao nut "Xem bien nhan" hien thi trong tin nhan gui cho nguoi nhan**
+Mặc dù logic đã có, UX còn thiếu một số điểm:
 
-## Hien trang
+1. **Card hiển thị walletOwner quá nhỏ và không nổi bật** — người dùng dễ bỏ qua thông tin xác nhận chủ ví
+2. **Không có trạng thái "ví lạ" (không tìm thấy trong hệ thống)** — khi không có chủ ví, UI im lặng, không có phản hồi cho người dùng biết ví này là ví ngoài hệ thống
+3. **Thiếu cảnh báo nhập ví của chính mình** — hiện tại không có kiểm tra người dùng tự gửi cho mình
+4. **Animation/transition thiếu** — card xuất hiện đột ngột, không có hiệu ứng mượt mà
 
-- **TipMessageCard** (`src/components/messages/TipMessageCard.tsx`): Card tinh, khong co hieu ung phao bong hay confetti. Da co nut "Xem bien nhan" nhung chi hien khi co `receipt_public_id`.
-- **TipCelebrationReceipt** (`src/components/gifts/TipCelebrationReceipt.tsx`): Co confetti + coin roi nhung KHONG co phao bong (firework burst). Chi co hieu ung chay 8 giay roi dung.
-- **GiftCelebrationModal** (`src/components/gifts/GiftCelebrationModal.tsx`): Da co FireworkBurst, FallingCoin, FloatingSparkle chay lien tuc (loop) -- day la mau chuan.
+## Thay đổi cần thực hiện
 
-## Chi tiet thay doi
+### File duy nhất: `src/components/gifts/CryptoTransferTab.tsx`
 
-### 1. TipMessageCard - Them hieu ung phao bong
+#### Cải thiện 1: Card xác nhận chủ ví được nâng cấp
 
-**File**: `src/components/messages/TipMessageCard.tsx`
+Thay thế card đơn giản (lines 443-455) bằng card đẹp hơn:
 
-- Import `motion`, `AnimatePresence` tu framer-motion
-- Them component `FireworkBurst` nho gon (3-4 diem phao bong) chay lien tuc quanh card
-- Them `FloatingSparkle` lap lanh xung quanh card
-- Hieu ung se chay loop nhe nhang (khong qua nang vi nam trong danh sach tin nhan)
-- So luong giam: 3 fireworks, 5 sparkles (nhe hon GiftCelebrationModal de tranh lag)
+```text
+Trước:
+┌─────────────────────────────────┐
+│ [Avatar] Tên người dùng    ✓   │
+│          Chủ sở hữu ví này     │
+└─────────────────────────────────┘
 
-### 2. TipCelebrationReceipt - Them hieu ung phao bong
+Sau:
+┌─────────────────────────────────────┐
+│  ✅ Tìm thấy chủ ví trong hệ thống  │
+│  ┌──────────────────────────────┐   │
+│  │ [Avatar 48px]  Tên đầy đủ   │   │
+│  │               @handle (nếu có)│  │
+│  │               [badge xanh ✓]  │   │
+│  └──────────────────────────────┘   │
+│  Địa chỉ: 0x1234...5678             │
+└─────────────────────────────────────┘
+```
 
-**File**: `src/components/gifts/TipCelebrationReceipt.tsx`
+#### Cải thiện 2: Trạng thái "ví ngoài hệ thống"
 
-- Them component `FireworkBurst` (giong GiftCelebrationModal)
-- Thay doi hieu ung tu chay 8 giay thanh chay lien tuc (loop) cho den khi dong dialog
-- Them 5 fireworks giong nhu GiftCelebrationModal
+Khi `walletAddress` hợp lệ nhưng `walletOwner === null` và `!isLookingUpWallet`:
 
-### 3. Dam bao nut "Xem bien nhan" luon hien thi
+```text
+┌──────────────────────────────────────┐
+│  ⚠️ Ví ngoài hệ thống Angel AI       │
+│  Ví này chưa đăng ký trong hệ thống. │
+│  Giao dịch sẽ gửi đến:               │
+│  0x1234...abcd                        │
+│  (Bạn vẫn có thể tiếp tục chuyển)    │
+└──────────────────────────────────────┘
+```
 
-**File**: `src/components/messages/TipMessageCard.tsx`
+#### Cải thiện 3: Cảnh báo tự gửi cho mình
 
-- Hien tai nut "Xem bien nhan" chi hien khi co `finalReceiptId`
-- Kiem tra logic: neu `receipt_public_id` khong co san khi gui tin nhan, nut se khong hien
-- Giai phap: Khi fetch gift details, luon lay `receipt_public_id` tu database va hien thi nut
+Kiểm tra thêm: nếu `walletOwner?.user_id === user?.id`, hiển thị cảnh báo:
+```text
+⚠️ Đây là ví của chính bạn!
+```
 
-## Tom tat
+#### Cải thiện 4: Thêm framer-motion animation
 
-| File | Thay doi |
-|------|---------|
-| `src/components/messages/TipMessageCard.tsx` | Them FireworkBurst + FloatingSparkle loop nhe |
-| `src/components/gifts/TipCelebrationReceipt.tsx` | Them FireworkBurst, chuyen hieu ung sang loop lien tuc |
+Wrap card bằng `AnimatePresence` + `motion.div` để card xuất hiện mượt mà khi tìm thấy kết quả.
 
-## Ket qua mong doi
+## Chi tiết kỹ thuật
 
-- Card tang thuong trong tin nhan se co phao bong lap lanh bat mat
-- Bien nhan cung co hieu ung tuong tu, chay lien tuc den khi dong
-- Nguoi nhan luon thay nut "Xem bien nhan" trong tin nhan
+| State | Hiển thị |
+|-------|---------|
+| `isLookingUpWallet === true` | Spinner "Đang tìm chủ ví..." |
+| `walletOwner !== null` và `user_id !== currentUser` | Card xanh lá với avatar + tên |
+| `walletOwner !== null` và `user_id === currentUser` | Card vàng với cảnh báo "Ví của bạn" |
+| `walletOwner === null` và ví hợp lệ 42 ký tự | Card cam với "Ví ngoài hệ thống" |
+| Ví chưa đủ 42 ký tự hoặc không bắt đầu bằng 0x | Không hiển thị gì |
 
+## Import cần thêm
+
+```typescript
+import { motion, AnimatePresence } from "framer-motion";
+import { AlertTriangle } from "lucide-react"; // icon cảnh báo
+```
+
+## Kết quả mong đợi
+
+- Khi nhập địa chỉ ví của người dùng đã đăng ký trong hệ thống: card xanh lá hiển thị avatar + tên đầy đủ với animation mượt
+- Khi nhập địa chỉ ví ngoài hệ thống: card cam cảnh báo nhẹ, vẫn cho phép chuyển
+- Khi nhập địa chỉ ví của chính mình: card vàng cảnh báo
+- Toàn bộ chỉ chỉnh sửa 1 file duy nhất: `src/components/gifts/CryptoTransferTab.tsx`
