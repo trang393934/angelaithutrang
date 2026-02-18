@@ -634,6 +634,32 @@ const AdminWalletManagement = () => {
     sybil: "🚫 Tài khoản sybil",
   };
 
+  // ─── Helpers dùng chung ────────────────────────────────────────────────────
+  const shortAddr = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+
+  const SEVERITY_CFG: Record<string, { badgeCls: string; dotColor: string; badgeLabel: string }> = {
+    critical: {
+      badgeCls: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-400 dark:border-red-700",
+      dotColor: "#ef4444",
+      badgeLabel: "🔴 VÍ DÙNG CHUNG",
+    },
+    high: {
+      badgeCls: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-400 dark:border-orange-700",
+      dotColor: "#f97316",
+      badgeLabel: "🟠 HOÁN ĐỔI VÍ",
+    },
+    medium: {
+      badgeCls: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-700",
+      dotColor: "#f59e0b",
+      badgeLabel: "🟡 CẢNH BÁO",
+    },
+    low: {
+      badgeCls: "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-400 dark:border-yellow-700",
+      dotColor: "#eab308",
+      badgeLabel: "⚠ NGHI NGỜ",
+    },
+  };
+
   // Hàm tổng hợp cảnh báo từ 3 nguồn: shared_wallet, wallet_rotation, fraud_alerts
   const getWalletWarningBadges = (w: WalletEntry) => {
     const hasShared = w.is_shared_wallet;
@@ -642,157 +668,146 @@ const AdminWalletManagement = () => {
 
     if (!hasShared && !hasRotation && !hasFraud) return null;
 
-    // Xác định severity cao nhất để chọn màu badge
+    // Severity cao nhất để chọn màu badge chính
     let topSeverity = "low";
     if (hasShared) topSeverity = "critical";
     else if (hasRotation) topSeverity = "high";
     else if (w.max_alert_severity) topSeverity = w.max_alert_severity;
 
-    const severityCfg: Record<string, { badgeCls: string; dotColor: string; label: string }> = {
-      critical: {
-        badgeCls: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-400 dark:border-red-700",
-        dotColor: "#ef4444",
-        label: "🔴 VÍ DÙNG CHUNG",
-      },
-      high: {
-        badgeCls: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-400 dark:border-orange-700",
-        dotColor: "#f97316",
-        label: "🟠 HOÁN ĐỔI VÍ",
-      },
-      medium: {
-        badgeCls: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-700",
-        dotColor: "#f59e0b",
-        label: "🟡 CẢNH BÁO",
-      },
-      low: {
-        badgeCls: "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-400 dark:border-yellow-700",
-        dotColor: "#eab308",
-        label: "⚠ NGHI NGỜ",
-      },
-    };
-
-    const cfg = severityCfg[topSeverity] ?? severityCfg.low;
+    const cfg = SEVERITY_CFG[topSeverity] ?? SEVERITY_CFG.low;
     const warningCount = (hasShared ? 1 : 0) + (hasRotation ? 1 : 0) + w.fraud_alert_count;
 
-    const badge = (
-      <Badge className={`${cfg.badgeCls} border text-xs font-semibold cursor-help whitespace-nowrap`}>
-        {hasShared
-          ? `🔴 VÍ DÙNG CHUNG (${w.shared_wallet_user_count})`
-          : hasRotation
-          ? `🟠 HOÁN ĐỔI VÍ (${w.withdrawal_wallet_count} ví)`
-          : `${cfg.label} ×${w.fraud_alert_count}`}
-      </Badge>
-    );
-
-    // Rút gọn địa chỉ ví
-    const shortAddr = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    // Label badge chính
+    const badgeText = hasShared
+      ? `🔴 VÍ DÙNG CHUNG (${w.shared_wallet_user_count} tài khoản)`
+      : hasRotation
+      ? `🟠 HOÁN ĐỔI VÍ (${w.withdrawal_wallet_count} ví)`
+      : `${cfg.badgeLabel} ×${w.fraud_alert_count}`;
 
     return (
-      <TooltipProvider delayDuration={150}>
+      <TooltipProvider delayDuration={0}>
         <Tooltip>
-          <TooltipTrigger asChild>{badge}</TooltipTrigger>
+          <TooltipTrigger asChild>
+            <Badge
+              className={`${cfg.badgeCls} border text-xs font-semibold cursor-help whitespace-nowrap select-none`}
+            >
+              {badgeText}
+            </Badge>
+          </TooltipTrigger>
           <TooltipContent
-            side="right"
+            side="bottom"
+            sideOffset={6}
             align="start"
-            className="max-w-sm w-80 p-0 overflow-hidden rounded-xl border border-border shadow-xl bg-popover z-50"
+            avoidCollisions
+            collisionPadding={12}
+            className="p-0 overflow-hidden rounded-xl border border-border shadow-2xl bg-popover z-[9999] w-[340px]"
           >
-            {/* Header */}
-            <div className="px-4 py-2.5 border-b border-border bg-muted/60 flex items-center gap-2">
+            {/* ── Header ── */}
+            <div className="px-4 py-2.5 border-b border-border bg-muted/70 flex items-center gap-2">
               <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />
               <p className="text-xs font-bold text-foreground">
-                Phân tích cảnh báo — {warningCount} dấu hiệu
+                Phân tích cảnh báo — {warningCount} dấu hiệu bất thường
               </p>
             </div>
 
-            <div className="px-4 py-3 space-y-3 max-h-72 overflow-y-auto">
+            <div className="px-4 py-3 space-y-3.5 max-h-80 overflow-y-auto">
 
-              {/* ── Dấu hiệu 1: Ví dùng chung ── */}
+              {/* ── Khối 1: Ví dùng chung ── */}
               {hasShared && (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <div className="flex items-center gap-1.5">
                     <span className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0" />
                     <p className="text-xs font-bold text-red-600 dark:text-red-400">
-                      Ví dùng chung — Nguy cơ cao
+                      🔴 Ví dùng chung — Nguy cơ CỰC CAO
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground pl-3.5">
-                    Địa chỉ ví{" "}
+                  <p className="text-xs text-muted-foreground pl-3.5 leading-relaxed">
+                    Địa chỉ{" "}
                     <code className="font-mono bg-muted px-1 py-0.5 rounded text-[10px] text-foreground">
                       {shortAddr(w.wallet_address)}
                     </code>{" "}
-                    đang được sử dụng bởi{" "}
-                    <strong className="text-foreground">{w.shared_wallet_user_count} tài khoản</strong> khác nhau.
+                    đang được dùng bởi{" "}
+                    <strong className="text-red-600 dark:text-red-400">{w.shared_wallet_user_count} tài khoản</strong>{" "}
+                    khác nhau — đây là dấu hiệu tài khoản giả mạo (Sybil).
                   </p>
-                  {w.shared_wallet_users.length > 0 && (
-                    <div className="pl-3.5 space-y-1">
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Tài khoản dùng chung:</p>
-                      <ul className="space-y-0.5">
-                        {/* Bản thân */}
-                        <li className="flex items-center gap-1.5 text-xs">
-                          <span className="text-muted-foreground">→</span>
-                          <span className="font-medium text-foreground">{w.display_name ?? "Chưa đặt tên"}</span>
-                          {w.handle && <span className="text-muted-foreground">@{w.handle}</span>}
-                          <span className="text-[10px] text-primary">(tài khoản này)</span>
-                        </li>
-                        {/* Các tài khoản khác */}
-                        {w.shared_wallet_users.map((u) => (
-                          <li key={u.user_id} className="flex items-center gap-1.5 text-xs">
-                            <span className="text-muted-foreground">→</span>
-                            <span
-                              className="font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
-                              onClick={() => navigate(`/user/${u.user_id}`)}
-                            >
-                              {u.display_name ?? "Chưa đặt tên"}
-                            </span>
-                            {u.handle && <span className="text-muted-foreground">@{u.handle}</span>}
-                          </li>
-                        ))}
-                      </ul>
+                  {/* Danh sách tài khoản dùng chung */}
+                  <div className="pl-3.5 space-y-1">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">
+                      Danh sách tài khoản liên quan:
+                    </p>
+                    <div className="space-y-1 rounded-lg bg-red-50/60 dark:bg-red-900/20 border border-red-200/60 dark:border-red-800/40 p-2">
+                      {/* Tài khoản này */}
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="text-red-400 shrink-0">●</span>
+                        <span className="font-semibold text-foreground">{w.display_name ?? "Chưa đặt tên"}</span>
+                        {w.handle && <span className="text-muted-foreground text-[11px]">@{w.handle}</span>}
+                        <span className="ml-auto text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full shrink-0">
+                          TÀI KHOẢN NÀY
+                        </span>
+                      </div>
+                      {/* Tài khoản khác */}
+                      {w.shared_wallet_users.map((u) => (
+                        <div key={u.user_id} className="flex items-center gap-1.5 text-xs">
+                          <span className="text-muted-foreground shrink-0">●</span>
+                          <span
+                            className="font-medium text-foreground cursor-pointer hover:text-primary hover:underline transition-colors"
+                            onClick={() => navigate(`/user/${u.user_id}`)}
+                          >
+                            {u.display_name ?? "Ẩn danh"}
+                          </span>
+                          {u.handle && <span className="text-muted-foreground text-[11px]">@{u.handle}</span>}
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
-              {/* Divider giữa các loại cảnh báo */}
+              {/* Divider */}
               {hasShared && (hasRotation || hasFraud) && (
-                <div className="border-t border-border/60" />
+                <div className="border-t border-border/50" />
               )}
 
-              {/* ── Dấu hiệu 2: Hoán đổi ví ── */}
+              {/* ── Khối 2: Hoán đổi ví ── */}
               {hasRotation && (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <div className="flex items-center gap-1.5">
                     <span className="inline-block w-2 h-2 rounded-full bg-orange-500 shrink-0" />
                     <p className="text-xs font-bold text-orange-600 dark:text-orange-400">
-                      Hoán đổi ví — Nguy cơ trung bình
+                      🟠 Hoán đổi ví — Nguy cơ CAO
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground pl-3.5">
-                    Tài khoản này đã dùng{" "}
-                    <strong className="text-foreground">{w.withdrawal_wallet_count} địa chỉ ví khác nhau</strong>{" "}
-                    để thực hiện lệnh rút tiền.
+                  <p className="text-xs text-muted-foreground pl-3.5 leading-relaxed">
+                    Tài khoản đã rút tiền tới{" "}
+                    <strong className="text-orange-600 dark:text-orange-400">
+                      {w.withdrawal_wallet_count} địa chỉ ví khác nhau
+                    </strong>{" "}
+                    — có thể là hành vi tránh truy vết hoặc chia nhỏ giao dịch.
                   </p>
                   {w.withdrawal_wallet_addresses.length > 0 && (
                     <div className="pl-3.5 space-y-1">
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Danh sách ví đã dùng:</p>
-                      <ul className="space-y-0.5">
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">
+                        Địa chỉ ví đã nhận tiền:
+                      </p>
+                      <div className="space-y-1 rounded-lg bg-orange-50/60 dark:bg-orange-900/20 border border-orange-200/60 dark:border-orange-800/40 p-2">
                         {w.withdrawal_wallet_addresses.map((addr, i) => (
-                          <li key={addr} className="flex items-center gap-1.5 text-xs">
-                            <span className="text-muted-foreground shrink-0">#{i + 1}</span>
-                            <code className="font-mono bg-muted px-1 py-0.5 rounded text-[10px] text-foreground">
+                          <div key={addr} className="flex items-center gap-1.5 text-xs">
+                            <span className="text-muted-foreground shrink-0 font-mono text-[10px]">#{i + 1}</span>
+                            <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px] text-foreground flex-1">
                               {shortAddr(addr)}
                             </code>
                             <a
                               href={`https://bscscan.com/address/${addr}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-muted-foreground hover:text-primary transition-colors"
+                              className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                              title="Xem trên BSCScan"
                             >
-                              <ExternalLink className="w-2.5 h-2.5" />
+                              <ExternalLink className="w-3 h-3" />
                             </a>
-                          </li>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -800,55 +815,65 @@ const AdminWalletManagement = () => {
 
               {/* Divider */}
               {hasRotation && hasFraud && (
-                <div className="border-t border-border/60" />
+                <div className="border-t border-border/50" />
               )}
 
-              {/* ── Dấu hiệu 3: Fraud alerts từ hệ thống ── */}
+              {/* ── Khối 3: Fraud alerts từ hệ thống ── */}
               {hasFraud && (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <div className="flex items-center gap-1.5">
                     <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                     <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                      Cảnh báo hệ thống — {w.fraud_alert_count} alert
+                      ⚠ Cảnh báo hệ thống — {w.fraud_alert_count} alert chưa xử lý
                     </p>
                   </div>
-                  <ul className="pl-3.5 space-y-1.5">
+                  <div className="pl-3.5 space-y-1.5">
                     {w.fraud_alert_details.map((d, i) => {
-                      const dotColor = severityCfg[d.severity]?.dotColor ?? "#eab308";
+                      const dotColor = SEVERITY_CFG[d.severity]?.dotColor ?? "#eab308";
                       return (
-                        <li key={i} className="text-xs space-y-0.5">
-                          <div className="flex items-center gap-1.5">
+                        <div
+                          key={i}
+                          className="rounded-lg bg-amber-50/60 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-800/40 p-2 space-y-1"
+                        >
+                          <div className="flex items-center gap-1.5 text-xs">
                             <span
-                              className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                              className="inline-block w-2 h-2 rounded-full shrink-0"
                               style={{ backgroundColor: dotColor }}
                             />
-                            <span className="font-medium text-foreground">
+                            <span className="font-semibold text-foreground">
                               {alertTypeLabel[d.alert_type] ?? d.alert_type}
                             </span>
-                            <span className="text-[10px] uppercase text-muted-foreground">
-                              [{d.severity}]
+                            <span
+                              className="ml-auto text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                              style={{
+                                backgroundColor: `${dotColor}20`,
+                                color: dotColor,
+                              }}
+                            >
+                              {d.severity}
                             </span>
                           </div>
                           {d.matched_pattern && (
-                            <p className="pl-3 text-muted-foreground text-[11px]">
-                              Pattern:{" "}
+                            <p className="text-[11px] text-muted-foreground pl-3.5">
+                              Khớp pattern:{" "}
                               <code className="font-mono bg-muted px-1 py-0.5 rounded text-[10px] text-foreground">
                                 {d.matched_pattern}
                               </code>
                             </p>
                           )}
-                        </li>
+                        </div>
                       );
                     })}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Footer gợi ý hành động */}
-            <div className="px-4 py-2 border-t border-border bg-muted/30">
+            {/* ── Footer ── */}
+            <div className="px-4 py-2.5 border-t border-border bg-muted/40 flex items-center gap-1.5">
+              <AlertCircle className="w-3 h-3 text-muted-foreground shrink-0" />
               <p className="text-[10px] text-muted-foreground">
-                💡 Kiểm tra tab "Cần Kiểm tra" để xem toàn bộ nhóm ví liên quan
+                Vào tab <strong>"🚨 Cần Kiểm tra"</strong> để xem nhóm ví liên quan đầy đủ
               </p>
             </div>
           </TooltipContent>
@@ -1020,7 +1045,7 @@ const AdminWalletManagement = () => {
             </div>
 
             {/* Table */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-card border border-border rounded-xl overflow-visible relative">
               {loading ? (
                 <div className="p-12 text-center text-muted-foreground">Đang tải dữ liệu...</div>
               ) : paginated.length === 0 ? (
