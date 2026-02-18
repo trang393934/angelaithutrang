@@ -79,13 +79,16 @@ interface WalletEntry {
   suspension_type: string | null;
   suspended_until: string | null;
   suspension_reason: string | null;
-  // New: fraud & pending
+  // Fraud & pending
   fraud_alert_count: number;
   max_alert_severity: string | null;
   fraud_alert_details: { alert_type: string; severity: string; matched_pattern: string | null }[];
   pending_withdrawal_amount: number;
   pending_withdrawal_ids: string[];
   withdrawal_wallet_count: number;
+  // Shared wallet detection
+  is_shared_wallet: boolean;
+  shared_wallet_user_count: number;
 }
 
 interface PendingWithdrawal {
@@ -171,16 +174,24 @@ const AdminWalletManagement = () => {
   const fetchWallets = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: walletData, error: walletError } = await supabase
+      // Fetch ALL wallet addresses (to detect shared wallets across all users)
+      const { data: allWalletAddressData, error: walletError } = await supabase
         .from("user_wallet_addresses")
         .select("wallet_address, user_id");
 
       if (walletError) throw walletError;
-      if (!walletData || walletData.length === 0) {
+      if (!allWalletAddressData || allWalletAddressData.length === 0) {
         setWallets([]);
         return;
       }
 
+      // ── Build shared wallet map: wallet_address → count of users ──────────
+      const walletAddressCount: Record<string, number> = {};
+      allWalletAddressData.forEach((w) => {
+        walletAddressCount[w.wallet_address] = (walletAddressCount[w.wallet_address] || 0) + 1;
+      });
+
+      const walletData = allWalletAddressData;
       const userIds = walletData.map((w) => w.user_id);
 
       const [
@@ -241,7 +252,7 @@ const AdminWalletManagement = () => {
         pendingIdsMap[w.user_id] = [...(pendingIdsMap[w.user_id] || []), w.id];
       });
 
-      // Wallet rotation count
+      // Wallet rotation count (distinct wallet addresses used for completed withdrawals)
       const walletCountMap: Record<string, Set<string>> = {};
       allWds?.forEach((w) => {
         if (!walletCountMap[w.user_id]) walletCountMap[w.user_id] = new Set();
@@ -252,6 +263,8 @@ const AdminWalletManagement = () => {
         const profile = profileMap[w.user_id];
         const balance = balanceMap[w.user_id];
         const suspension = suspensionMap[w.user_id];
+        // Shared wallet: how many users share this exact address
+        const sharedCount = walletAddressCount[w.wallet_address] ?? 1;
         return {
           wallet_address: w.wallet_address,
           user_id: w.user_id,
@@ -270,6 +283,8 @@ const AdminWalletManagement = () => {
           pending_withdrawal_amount: pendingAmtMap[w.user_id] ?? 0,
           pending_withdrawal_ids: pendingIdsMap[w.user_id] ?? [],
           withdrawal_wallet_count: walletCountMap[w.user_id]?.size ?? 0,
+          is_shared_wallet: sharedCount > 1,
+          shared_wallet_user_count: sharedCount,
         };
       });
 
@@ -594,35 +609,65 @@ const AdminWalletManagement = () => {
   };
 
   const alertTypeLabel: Record<string, string> = {
-    email_pattern: "Email trùng pattern",
-    bulk_registration: "Đăng ký đồng loạt",
-    shared_wallet: "Ví dùng chung",
-    wallet_rotation: "Hoán đổi ví",
-    suspicious_withdrawal: "Rút tiền nghi ngờ",
-    sybil: "Tài khoản sybil",
+    email_pattern: "📧 Email trùng pattern",
+    bulk_registration: "👥 Đăng ký đồng loạt",
+    shared_wallet: "🔴 Ví dùng chung",
+    wallet_rotation: "🟠 Hoán đổi ví",
+    suspicious_withdrawal: "⚠ Rút tiền nghi ngờ",
+    sybil: "🚫 Tài khoản sybil",
   };
 
-  const getFraudBadge = (
-    severity: string | null,
-    count: number,
-    details?: { alert_type: string; severity: string; matched_pattern: string | null }[]
-  ) => {
-    if (!severity || count === 0) return null;
-    const cfg: Record<string, { cls: string; label: string; dotCls: string }> = {
-      critical: { cls: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-400", label: "⚠ CRITICAL", dotCls: "bg-red-500" },
-      high:     { cls: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-400", label: "🔴 HIGH", dotCls: "bg-orange-500" },
-      medium:   { cls: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400", label: "🟠 MEDIUM", dotCls: "bg-amber-500" },
-      low:      { cls: "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-400", label: "🟡 LOW", dotCls: "bg-yellow-500" },
+  // Hàm tổng hợp cảnh báo từ 3 nguồn: shared_wallet, wallet_rotation, fraud_alerts
+  const getWalletWarningBadges = (w: WalletEntry) => {
+    const hasShared = w.is_shared_wallet;
+    const hasRotation = w.withdrawal_wallet_count >= 2;
+    const hasFraud = w.fraud_alert_count > 0;
+
+    if (!hasShared && !hasRotation && !hasFraud) return null;
+
+    // Xác định severity cao nhất để chọn màu badge
+    let topSeverity = "low";
+    if (hasShared) topSeverity = "critical";
+    else if (hasRotation) topSeverity = "high";
+    else if (w.max_alert_severity) topSeverity = w.max_alert_severity;
+
+    const severityCfg: Record<string, { badgeCls: string; dotCls: string; label: string }> = {
+      critical: {
+        badgeCls: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-400 dark:border-red-700",
+        dotCls: "bg-red-500",
+        label: "🔴 VÍ DÙNG CHUNG",
+      },
+      high: {
+        badgeCls: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-400 dark:border-orange-700",
+        dotCls: "bg-orange-500",
+        label: "🟠 HOÁN ĐỔI VÍ",
+      },
+      medium: {
+        badgeCls: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-700",
+        dotCls: "bg-amber-500",
+        label: "🟡 CẢNH BÁO",
+      },
+      low: {
+        badgeCls: "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-400 dark:border-yellow-700",
+        dotCls: "bg-yellow-400",
+        label: "⚠ NGHI NGỜ",
+      },
     };
-    const c = cfg[severity] ?? cfg.low;
+
+    const cfg = severityCfg[topSeverity] ?? severityCfg.low;
+
+    // Đếm tổng số lý do cảnh báo
+    const warningCount = (hasShared ? 1 : 0) + (hasRotation ? 1 : 0) + w.fraud_alert_count;
 
     const badge = (
-      <Badge className={`${c.cls} border text-xs cursor-help`}>
-        {c.label} ×{count}
+      <Badge className={`${cfg.badgeCls} border text-xs font-semibold cursor-help whitespace-nowrap`}>
+        {hasShared
+          ? `🔴 VÍ DÙNG CHUNG (${w.shared_wallet_user_count})`
+          : hasRotation
+          ? `🟠 HOÁN ĐỔI VÍ (${w.withdrawal_wallet_count} ví)`
+          : `${cfg.label} ×${w.fraud_alert_count}`}
       </Badge>
     );
-
-    if (!details || details.length === 0) return badge;
 
     return (
       <TooltipProvider delayDuration={100}>
@@ -631,16 +676,42 @@ const AdminWalletManagement = () => {
           <TooltipContent
             side="right"
             align="start"
-            className="max-w-xs p-0 overflow-hidden rounded-lg border shadow-lg bg-popover"
+            className="max-w-xs p-0 overflow-hidden rounded-lg border shadow-lg bg-popover z-50"
           >
             <div className="px-3 py-2 border-b bg-muted/50">
               <p className="text-xs font-semibold text-foreground">
-                🚨 {count} cảnh báo chưa xử lý
+                🚨 {warningCount} dấu hiệu bất thường
               </p>
             </div>
-            <ul className="px-3 py-2 space-y-1.5 max-h-48 overflow-y-auto">
-              {details.map((d, i) => {
-                const sev = cfg[d.severity] ?? cfg.low;
+            <ul className="px-3 py-2 space-y-2 max-h-56 overflow-y-auto">
+              {/* Nguồn 1: Shared wallet */}
+              {hasShared && (
+                <li className="flex items-start gap-2 text-xs">
+                  <span className="mt-1 shrink-0 w-2 h-2 rounded-full bg-red-500" />
+                  <div className="text-foreground leading-relaxed">
+                    <span className="font-semibold text-red-600 dark:text-red-400">Ví dùng chung</span>
+                    <span className="ml-1 text-muted-foreground">
+                      — địa chỉ này đang được dùng bởi{" "}
+                      <strong>{w.shared_wallet_user_count} tài khoản</strong> khác nhau
+                    </span>
+                  </div>
+                </li>
+              )}
+              {/* Nguồn 2: Wallet rotation */}
+              {hasRotation && (
+                <li className="flex items-start gap-2 text-xs">
+                  <span className="mt-1 shrink-0 w-2 h-2 rounded-full bg-orange-500" />
+                  <div className="text-foreground leading-relaxed">
+                    <span className="font-semibold text-orange-600 dark:text-orange-400">Hoán đổi ví</span>
+                    <span className="ml-1 text-muted-foreground">
+                      — đã sử dụng <strong>{w.withdrawal_wallet_count} địa chỉ ví khác nhau</strong> để rút tiền
+                    </span>
+                  </div>
+                </li>
+              )}
+              {/* Nguồn 3: Fraud alerts */}
+              {hasFraud && w.fraud_alert_details.map((d, i) => {
+                const sev = severityCfg[d.severity] ?? severityCfg.low;
                 return (
                   <li key={i} className="flex items-start gap-2 text-xs">
                     <span className={`mt-1 shrink-0 w-2 h-2 rounded-full ${sev.dotCls}`} />
@@ -650,7 +721,7 @@ const AdminWalletManagement = () => {
                       </span>
                       {d.matched_pattern && (
                         <span className="ml-1 text-muted-foreground">
-                          — pattern: <code className="font-mono bg-muted px-0.5 rounded">{d.matched_pattern}</code>
+                          — <code className="font-mono bg-muted px-0.5 rounded text-xs">{d.matched_pattern}</code>
                         </span>
                       )}
                     </div>
@@ -661,6 +732,26 @@ const AdminWalletManagement = () => {
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+    );
+  };
+
+  // Legacy wrapper cho pending tab (chỉ dùng fraud_alerts)
+  const getFraudBadge = (
+    severity: string | null,
+    count: number,
+  ) => {
+    if (!severity || count === 0) return null;
+    const cfg: Record<string, { cls: string; label: string }> = {
+      critical: { cls: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-400", label: "⚠ CRITICAL" },
+      high:     { cls: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-400", label: "🔴 HIGH" },
+      medium:   { cls: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400", label: "🟠 MEDIUM" },
+      low:      { cls: "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-400", label: "🟡 LOW" },
+    };
+    const c = cfg[severity] ?? cfg.low;
+    return (
+      <Badge className={`${c.cls} border text-xs cursor-help`}>
+        {c.label} ×{count}
+      </Badge>
     );
   };
 
@@ -680,8 +771,10 @@ const AdminWalletManagement = () => {
       (statusFilter === "active" && !isSuspended) ||
       (statusFilter === "suspended" && isSuspended);
 
+    // Flagged = có bất kỳ dấu hiệu bất thường nào: shared_wallet, wallet_rotation, hoặc fraud_alert
+    const hasWarning = w.is_shared_wallet || w.withdrawal_wallet_count >= 2 || w.fraud_alert_count > 0;
     const matchFraud =
-      fraudFilter === "all" || (fraudFilter === "flagged" && w.fraud_alert_count > 0);
+      fraudFilter === "all" || (fraudFilter === "flagged" && hasWarning);
 
     return matchSearch && matchStatus && matchFraud;
   });
@@ -689,7 +782,7 @@ const AdminWalletManagement = () => {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalSuspended = wallets.filter((w) => !!w.suspension_type).length;
-  const totalFlagged = wallets.filter((w) => w.fraud_alert_count > 0).length;
+  const totalFlagged = wallets.filter((w) => w.is_shared_wallet || w.withdrawal_wallet_count >= 2 || w.fraud_alert_count > 0).length;
   const totalPendingAmt = wallets.reduce((s, w) => s + w.pending_withdrawal_amount, 0);
 
   // ─── Pending withdrawal stats ──────────────────────────────────────────────
@@ -829,10 +922,14 @@ const AdminWalletManagement = () => {
                       <TableRow
                         key={`${w.user_id}-${w.wallet_address}`}
                         className={`hover:bg-muted/30 ${
-                          w.fraud_alert_count > 0 && w.max_alert_severity === "critical"
+                          w.is_shared_wallet
                             ? "bg-red-50/30 dark:bg-red-900/10 border-l-2 border-l-red-500"
-                            : w.fraud_alert_count > 0
+                            : w.withdrawal_wallet_count >= 2
                             ? "bg-orange-50/30 dark:bg-orange-900/10 border-l-2 border-l-orange-400"
+                            : w.fraud_alert_count > 0 && w.max_alert_severity === "critical"
+                            ? "bg-red-50/20 dark:bg-red-900/10 border-l-2 border-l-red-400"
+                            : w.fraud_alert_count > 0
+                            ? "bg-amber-50/20 dark:bg-amber-900/10 border-l-2 border-l-amber-400"
                             : ""
                         }`}
                       >
@@ -875,7 +972,7 @@ const AdminWalletManagement = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {getFraudBadge(w.max_alert_severity, w.fraud_alert_count, w.fraud_alert_details)}
+                          {getWalletWarningBadges(w)}
                         </TableCell>
                         <TableCell className="text-right">
                           <span className="text-sm font-medium text-foreground">{fmt(w.balance)}</span>
