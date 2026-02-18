@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Loader2, User, Wallet, Sparkles, ExternalLink, MessageCircle, CheckCircle2 } from "lucide-react";
+import { Search, Loader2, User, Wallet, Sparkles, ExternalLink, MessageCircle, CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -434,25 +435,102 @@ export function CryptoTransferTab({
             onChange={(e) => setWalletAddress(e.target.value)}
           />
           {/* Wallet owner lookup result */}
-          {isLookingUpWallet && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground py-1.5">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Đang tìm chủ ví...
-            </div>
-          )}
-          {walletOwner && !isLookingUpWallet && (
-            <div className="flex items-center gap-3 p-2.5 bg-accent/60 rounded-lg border border-border/50">
-              <Avatar className="h-9 w-9 ring-2 ring-primary/30">
-                <AvatarImage src={walletOwner.avatar_url || ""} className="object-cover" />
-                <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{walletOwner.display_name || "Người dùng"}</div>
-                <div className="text-xs text-muted-foreground">Chủ sở hữu ví này</div>
-              </div>
-              <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {isLookingUpWallet && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2 text-xs text-muted-foreground py-2 px-3 bg-muted/40 rounded-lg border border-border/40"
+              >
+                <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                Đang tìm chủ ví...
+              </motion.div>
+            )}
+
+            {!isLookingUpWallet && walletOwner && walletOwner.user_id === user?.id && (
+              <motion.div
+                key="self"
+                initial={{ opacity: 0, scale: 0.97, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97, y: -4 }}
+                transition={{ duration: 0.25 }}
+                className="rounded-xl border border-yellow-400/60 bg-yellow-50/80 dark:bg-yellow-900/20 p-3 space-y-2"
+              >
+                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 font-semibold text-sm">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  Đây là ví của chính bạn!
+                </div>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 ring-2 ring-yellow-400/50">
+                    <AvatarImage src={walletOwner.avatar_url || ""} className="object-cover" />
+                    <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm text-foreground truncate">{walletOwner.display_name || "Bạn"}</div>
+                    <div className="text-xs text-yellow-600 dark:text-yellow-400">Bạn đang gửi cho chính mình</div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {!isLookingUpWallet && walletOwner && walletOwner.user_id !== user?.id && (
+              <motion.div
+                key="found"
+                initial={{ opacity: 0, scale: 0.97, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97, y: -4 }}
+                transition={{ duration: 0.25 }}
+                className="rounded-xl border border-green-400/60 bg-green-50/80 dark:bg-green-900/20 p-3 space-y-2"
+              >
+                <div className="flex items-center gap-2 text-green-700 dark:text-green-400 font-semibold text-sm">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  Tìm thấy chủ ví trong hệ thống
+                </div>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12 ring-2 ring-green-400/50">
+                    <AvatarImage src={walletOwner.avatar_url || ""} className="object-cover" />
+                    <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-base text-foreground truncate">{walletOwner.display_name || "Người dùng"}</div>
+                    <div className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-xs font-medium">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Đã xác minh
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground font-mono bg-muted/50 rounded px-2 py-1 truncate">
+                  {walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}
+                </div>
+              </motion.div>
+            )}
+
+            {!isLookingUpWallet && !walletOwner && walletAddress.length === 42 && walletAddress.startsWith("0x") && (
+              <motion.div
+                key="external"
+                initial={{ opacity: 0, scale: 0.97, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97, y: -4 }}
+                transition={{ duration: 0.25 }}
+                className="rounded-xl border border-orange-400/60 bg-orange-50/80 dark:bg-orange-900/20 p-3 space-y-1.5"
+              >
+                <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400 font-semibold text-sm">
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  Ví ngoài hệ thống Angel AI
+                </div>
+                <p className="text-xs text-orange-600/80 dark:text-orange-400/80">
+                  Ví này chưa đăng ký trong hệ thống. Giao dịch sẽ được gửi đến:
+                </p>
+                <div className="text-xs text-muted-foreground font-mono bg-muted/50 rounded px-2 py-1 truncate">
+                  {walletAddress}
+                </div>
+                <p className="text-xs text-orange-500/70 italic">Bạn vẫn có thể tiếp tục chuyển.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       ) : (
         <div className="space-y-2">
