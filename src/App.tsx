@@ -62,6 +62,7 @@ import AdminReport from "./pages/AdminReport";
 import AdminUserManagement from "./pages/AdminUserManagement";
 import AdminWalletManagement from "./pages/AdminWalletManagement";
 import AdminFraudAlerts from "./pages/AdminFraudAlerts";
+import AdminTreasury from "./pages/AdminTreasury";
 
 // Note: Global error handling is in main.tsx (registered before React renders)
 
@@ -118,6 +119,7 @@ const App = () => (
               <Route path="/admin/user-management" element={<AdminUserManagement />} />
               <Route path="/admin/wallet-management" element={<AdminWalletManagement />} />
               <Route path="/admin/fraud-alerts" element={<AdminFraudAlerts />} />
+              <Route path="/admin/treasury" element={<AdminTreasury />} />
               <Route path="/receipt/:receiptId" element={<Receipt />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/community-questions" element={<CommunityQuestions />} />

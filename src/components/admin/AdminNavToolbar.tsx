@@ -19,6 +19,7 @@ import {
   Shield,
   FileBarChart,
   Siren,
+  Vault,
 } from "lucide-react";
 
 interface NavGroup {
@@ -52,6 +53,7 @@ const navGroups: NavGroup[] = [
     colorClass: "text-amber-600 dark:text-amber-400",
     activeClass: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
     items: [
+      { to: "/admin/treasury", icon: Vault, label: "Ví Treasury" },
       { to: "/admin/project-fund", icon: Heart, label: "Quỹ" },
       { to: "/admin/mint-approval", icon: Shield, label: "Mint Approval" },
       { to: "/admin/tip-reports", icon: Gift, label: "Tip Reports" },
