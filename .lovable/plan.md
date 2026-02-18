@@ -1,141 +1,170 @@
 
-# Fix Cột "Cảnh báo" - Hiển thị Trực tiếp Shared Wallet & Wallet Rotation
+# Tạo Tab "Ví Phát Thưởng" trong Admin Dashboard
 
-## Nguyên nhân gốc rễ đã xác định
+## Tổng quan dữ liệu đã xác minh
 
-Qua điều tra database, phát hiện:
-- **`fraud_alerts` table hiện tại: 0 alert chưa reviewed** — tất cả đã được xử lý/reviewed trước đó
-- **Nhưng có 20+ users đang dùng shared wallet** (ví dụ: Kim Xuyen + Nguyễn Thị Tươi cùng dùng `0x0b78f86...`, hoặc 3 người dùng `0x89c387...`)
-- **3 users có wallet rotation** (Mận Trần, Hải Vũ, Hoài Như — dùng 2+ ví khác nhau để rút)
-- Những users này **không có fraud_alert** trong DB → cột "Cảnh báo" hiển thị trống vì badge chỉ dựa vào `fraud_alerts`
+Qua phân tích database, xác định rõ 2 ví treasury và nguồn giao dịch tương ứng:
 
-## Giải pháp
+**Ví 1: `0x416336c3b7ACAe89F47EAD2707412f20DA159ac8`** — Ví Rút Thưởng (Camly Withdrawals)
+- Nguồn dữ liệu: bảng `coin_withdrawals` (status = 'completed')
+- Hoạt động: **27/01/2026** → **13/02/2026**
+- Tổng: **166 giao dịch** hoàn thành, **42,117,639 Camly** đã phát ra
+- Ngoài ra: 60 lệnh pending, 13 thất bại, 1 bị từ chối
 
-Nâng cấp `fetchWallets()` để **tự tính cảnh báo trực tiếp từ data** — không phụ thuộc `fraud_alerts` table:
+**Ví 2: `0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D`** — Ví Lì Xì Tết (LiXi Claims)
+- Nguồn dữ liệu: bảng `lixi_claims` (status = 'completed')
+- Hoạt động: **12/02/2026** → **18/02/2026**
+- Tổng: **136 giao dịch** hoàn thành, **148,501,000 Camly** đã phát ra
+- Ngoài ra: 15 pending, 2 thất bại
 
-### Thêm 2 nguồn cảnh báo mới vào `WalletEntry`:
+## Kiến trúc giải pháp
 
-```typescript
-interface WalletEntry {
-  // ... existing fields
-  is_shared_wallet: boolean;        // Ví này đang được dùng bởi nhiều users
-  shared_wallet_user_count: number; // Số users dùng chung ví này
-  // withdrawal_wallet_count đã có → dùng để detect rotation
-}
+Tạo **1 trang mới** `/admin/treasury` với đầy đủ báo cáo, và thêm link vào AdminNavToolbar.
+
+### File cần tạo:
+- `src/pages/AdminTreasury.tsx` — Trang báo cáo ví phát thưởng
+
+### File cần sửa:
+- `src/components/admin/AdminNavToolbar.tsx` — Thêm menu item "Ví Treasury"
+- `src/App.tsx` — Thêm route `/admin/treasury`
+
+## Thiết kế trang `AdminTreasury.tsx`
+
+### Layout tổng thể:
+```
+Header (AdminNavToolbar)
+│
+├── Tổng quan 2 ví (Summary Cards)
+│   ├── Ví 1: 0x4163... | Rút Thưởng Camly
+│   └── Ví 2: 0x02D5... | Lì Xì Tết
+│
+└── Tabs chi tiết
+    ├── 📊 Tổng hợp (combined view)
+    ├── 💰 Ví Rút Thưởng (0x4163...)
+    └── 🎁 Ví Lì Xì Tết (0x02D5...)
 ```
 
-### Cập nhật `fetchWallets()`:
+### Tab 1 — Tổng hợp:
+- Biểu đồ timeline (recharts BarChart) hiển thị giao dịch theo ngày của cả 2 ví
+- Bảng thống kê so sánh 2 ví (cạnh nhau)
+- Tổng cộng toàn hệ thống
 
-Thêm query để phát hiện **shared wallets từ `user_wallet_addresses`**:
+### Tab 2 — Ví Rút Thưởng (`0x416336...`):
+
+**Summary section:**
 ```
-GROUP BY wallet_address HAVING COUNT(DISTINCT user_id) > 1
+┌─────────────────────────────────────────────────────┐
+│ 🏦 Ví: 0x416336c3...DA159ac8 [BSCScan ↗]            │
+│ Hoạt động: 27/01/2026 → 13/02/2026 (18 ngày)        │
+│                                                      │
+│ 166 giao dịch    42,117,639    60 pending            │
+│ hoàn thành       Camly phát    chờ xử lý             │
+└─────────────────────────────────────────────────────┘
 ```
-→ Tạo `Set<string>` của các wallet_address đang bị shared, kèm số lượng users
 
-### Cập nhật hàm `getFraudBadge()` hoặc tạo hàm `getWalletWarningBadge()`:
+**Biểu đồ theo ngày** (BarChart - recharts):
+- X-axis: ngày (27/01 → 13/02)
+- Y-axis: số Camly gửi đi
+- Highlight ngày 28/01 (9.65M) và 02/02 (11.2M) là cao nhất
 
-Hiển thị cảnh báo kết hợp **nhiều nguồn**:
+**Bảng lịch sử chi tiết** (có phân trang, tìm kiếm):
+| Thời gian | Người nhận | Ví nhận | Số Camly | Tx Hash | Trạng thái |
+|---|---|---|---|---|---|
+| 13/02 16:10 | Thu Sang | 0x942c... | 200,000 | 0xe949...↗ | ✅ |
+| 07/02 02:03 | joni | 0xcbb9... | 208,276 | 0xf5ef...↗ | ✅ |
+| ... | | | | | |
 
-**Nguồn 1:** `fraud_alerts` (nếu có)
-**Nguồn 2:** `is_shared_wallet = true` → Badge đỏ "🔴 VÍ DÙNG CHUNG"
-**Nguồn 3:** `withdrawal_wallet_count >= 2` → Badge cam "🟠 HOÁN ĐỔI VÍ"
+### Tab 3 — Ví Lì Xì Tết (`0x02D557...`):
 
-Tooltip khi hover sẽ hiển thị chi tiết:
-- Ví dùng chung X người
-- Đã dùng Y ví khác nhau để rút
-- Chi tiết fraud_alerts nếu có
+**Summary section:**
+```
+┌─────────────────────────────────────────────────────┐
+│ 🧧 Ví: 0x02D5578...E6D9a0D [BSCScan ↗]              │
+│ Hoạt động: 12/02/2026 → 18/02/2026 (7 ngày)         │
+│                                                      │
+│ 136 giao dịch    148,501,000   15 pending            │
+│ hoàn thành       Camly phát    chờ claim             │
+└─────────────────────────────────────────────────────┘
+```
 
-### Ví dụ hiển thị sau khi fix:
+**Biểu đồ theo ngày** (BarChart):
+- Peak ngày 15/02: 144.3M Camly (125 giao dịch Tết)
 
-| User | Cảnh báo |
-|---|---|
-| Kim Xuyen | 🔴 VÍ DÙNG CHUNG (2 người) |
-| Nguyễn Thị Tươi | 🔴 VÍ DÙNG CHUNG (2 người) |
-| tungphatloc | 🔴 VÍ DÙNG CHUNG (3 người) |
-| ĐÀM THỊ MAI | 🔴 VÍ DÙNG CHUNG (3 người) |
-| Hải Vũ | 🟠 HOÁN ĐỔI VÍ (2 ví) |
-| Mận Trần | 🟠 HOÁN ĐỔI VÍ (2 ví) |
-| Hoài Như | 🟠 HOÁN ĐỔI VÍ (2 ví) |
+**Bảng lịch sử chi tiết** (có phân trang, tìm kiếm):
+| Thời gian | Người nhận | Ví nhận | Camly | FUN | Tx Hash | Trạng thái |
+|---|---|---|---|---|---|---|
+| 18/02 16:12 | Hoàng Tỷ Đô | 0x... | 403,000 | 403 | 0xe50c...↗ | ✅ |
+| 18/02 10:20 | Angel Huỳnh Thủy | 0x... | 73,000 | 73 | 0xabbd...↗ | ✅ |
+| ... | | | | | | |
 
 ## Technical Implementation
 
-### File duy nhất thay đổi: `src/pages/AdminWalletManagement.tsx`
+### Data fetching trong `AdminTreasury.tsx`:
 
-**Bước 1:** Cập nhật `WalletEntry` interface — thêm `is_shared_wallet` và `shared_wallet_user_count`
-
-**Bước 2:** Trong `fetchWallets()`, thêm query detect shared wallets:
 ```typescript
-// Fetch tất cả wallet addresses để detect shared
-const { data: allWalletData } = await supabase
-  .from("user_wallet_addresses")
-  .select("wallet_address, user_id");
+const TREASURY_WALLET_WITHDRAWAL = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
+const TREASURY_WALLET_LIXI = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D";
 
-// Build sharedWalletMap: wallet_address → số users
-const walletAddressCount: Record<string, number> = {};
-allWalletData?.forEach((w) => {
-  walletAddressCount[w.wallet_address] = (walletAddressCount[w.wallet_address] || 0) + 1;
-});
+// Fetch withdrawal history
+const { data: withdrawals } = await supabase
+  .from("coin_withdrawals")
+  .select(`
+    id, wallet_address, amount, tx_hash, 
+    created_at, processed_at, status,
+    profiles:user_id (display_name, handle, avatar_url)
+  `)
+  .eq("status", "completed")
+  .order("created_at", { ascending: false });
+
+// Fetch lixi_claims history  
+const { data: lixiClaims } = await supabase
+  .from("lixi_claims")
+  .select(`
+    id, wallet_address, camly_amount, fun_amount, 
+    tx_hash, claimed_at, status,
+    profiles:user_id (display_name, handle, avatar_url)
+  `)
+  .eq("status", "completed")
+  .order("claimed_at", { ascending: false });
 ```
 
-Rồi trong merge step:
+### Computed stats:
 ```typescript
-const sharedCount = walletAddressCount[w.wallet_address] ?? 1;
-return {
-  ...existingFields,
-  is_shared_wallet: sharedCount > 1,
-  shared_wallet_user_count: sharedCount,
-}
-```
-
-**Bước 3:** Tạo hàm `getWalletWarningBadges()` mới thay thế `getFraudBadge()` trong cột Cảnh báo:
-
-```typescript
-const getWalletWarningBadges = (w: WalletEntry) => {
-  const badges = [];
-  
-  // Priority 1: Shared wallet (critical)
-  if (w.is_shared_wallet) {
-    badges.push({ severity: "critical", type: "shared_wallet", detail: `${w.shared_wallet_user_count} users` });
-  }
-  
-  // Priority 2: Wallet rotation (high)
-  if (w.withdrawal_wallet_count >= 2) {
-    badges.push({ severity: "high", type: "wallet_rotation", detail: `${w.withdrawal_wallet_count} ví` });
-  }
-  
-  // Priority 3: fraud_alerts (existing)
-  if (w.fraud_alert_count > 0) {
-    badges.push(...w.fraud_alert_details.map(d => ({ ...d, fromAlerts: true })));
-  }
-  
-  if (badges.length === 0) return null;
-  
-  // Hiển thị badge cao nhất + tooltip đầy đủ
-  return <TooltipProvider>...</TooltipProvider>;
+// Summary stats per wallet
+const withdrawalStats = {
+  totalTx: withdrawals.length,
+  totalCamly: withdrawals.reduce((s, w) => s + w.amount, 0),
+  firstDate: withdrawals.at(-1)?.created_at,
+  lastDate: withdrawals.at(0)?.created_at,
+  daysActive: diffInDays(firstDate, lastDate),
 };
+
+// Daily chart data
+const dailyWithdrawals = groupByDate(withdrawals); // recharts compatible
 ```
 
-**Bước 4:** Tooltip chi tiết khi hover sẽ hiển thị tất cả lý do cảnh báo:
-- "🔴 Ví dùng chung với 2 tài khoản khác"
-- "🟠 Đã sử dụng 2 địa chỉ ví khác nhau để rút tiền"
-- Danh sách fraud_alerts nếu có
+### Thêm vào NavToolbar:
+```typescript
+// Thêm vào group "Tài chính"
+{ to: "/admin/treasury", icon: Vault, label: "Ví Treasury" }
+```
 
 ## Thứ tự thực thi
 
 ```text
-Bước 1: Cập nhật WalletEntry interface
+Bước 1: Tạo AdminTreasury.tsx với đầy đủ logic fetch + UI
   ↓
-Bước 2: Cập nhật fetchWallets() để detect shared wallets
-  ↓  
-Bước 3: Tạo getWalletWarningBadges() đa nguồn
+Bước 2: Thêm route /admin/treasury vào App.tsx
   ↓
-Bước 4: Thay thế getFraudBadge() call trong TableCell bằng getWalletWarningBadges()
+Bước 3: Thêm "Ví Treasury" vào AdminNavToolbar group "Tài chính"
 ```
 
-## Kết quả
+## UX Details
 
-Cột "Cảnh báo" sẽ hiển thị ngay lập tức với đầy đủ thông tin cho:
-- 20+ users dùng shared wallet (không cần fraud_alert trong DB)
-- 3+ users có wallet rotation
-- Bất kỳ user nào có fraud_alert trong tương lai
-- Tất cả kết hợp trong 1 tooltip rõ ràng khi hover
+- **Địa chỉ ví rút gọn**: `0x4163...9ac8` kèm nút copy + link BSCScan
+- **Tx Hash**: rút gọn `0xe949...6322` kèm link BSCScan cho từng giao dịch
+- **Số Camly**: format có dấu phẩy ngàn (42,117,639)
+- **Bảng có phân trang**: 20 dòng/trang với nút Next/Prev
+- **Tìm kiếm**: theo tên người nhận hoặc địa chỉ ví
+- **Export**: nút Export Excel tương tự các trang admin khác
+- **Loading state**: skeleton cards trong khi fetch data
