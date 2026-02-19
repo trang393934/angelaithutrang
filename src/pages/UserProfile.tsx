@@ -536,30 +536,47 @@ const UserProfile = () => {
 
               {/* ── Bảng Danh Dự — top-right overlay on cover ── */}
               <div
-                className="absolute right-3 top-2.5 z-20 hidden sm:block w-[258px] rounded-xl p-2.5"
+                className="absolute right-3 top-2.5 z-20 hidden sm:block w-[268px] rounded-xl p-2.5"
                 style={{
-                  background: "white",
-                  border: "1.5px solid rgba(180,144,30,0.5)",
-                  boxShadow: "0 4px 18px rgba(0,0,0,0.14)",
+                  background: "linear-gradient(145deg, #1a0a00, #2d1500, #1a0a00)",
+                  border: "2px solid #daa520",
+                  boxShadow: "0 0 20px rgba(218,165,32,0.35), 0 4px 20px rgba(0,0,0,0.4)",
                 }}
               >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <img src={angelAiGoldenLogo} className="w-5 h-5 object-contain" alt="Angel AI" />
-                  <span className="text-[10px] font-extrabold tracking-widest uppercase" style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Bảng Danh Dự</span>
-                  <Avatar className="w-5 h-5 ml-auto">
+                {/* Header: logo + title centered + avatar */}
+                <div className="flex items-center justify-between mb-2">
+                  <img src={angelAiGoldenLogo} className="w-6 h-6 object-contain flex-shrink-0" alt="Angel AI" />
+                  <span
+                    className="text-[10px] font-extrabold tracking-widest uppercase text-center flex-1 mx-1"
+                    style={{
+                      background: "linear-gradient(90deg, #ff0000, #ff7700, #ffdd00, #00ff00, #0099ff, #8800ff, #ff00ff)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }}
+                  >
+                    ✦ Bảng Danh Dự ✦
+                  </span>
+                  <Avatar className="w-6 h-6 flex-shrink-0">
                     <AvatarImage src={profile?.avatar_url || angelAvatar} className="object-cover" />
-                    <AvatarFallback className="text-[9px]">{profile?.display_name?.charAt(0) || "U"}</AvatarFallback>
+                    <AvatarFallback className="text-[9px] bg-amber-900 text-amber-200">{profile?.display_name?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                 </div>
+                {/* Divider line */}
+                <div className="w-full h-px mb-2" style={{ background: "linear-gradient(90deg, transparent, #daa520, transparent)" }} />
                 <div className="grid grid-cols-2 gap-1">
                   {honorStats.map((s, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between px-2 py-1 rounded-full"
-                      style={{ background: "#1a6b3a", border: "1px solid #daa520" }}
+                      className="flex items-center justify-between px-2 py-1.5 rounded-full"
+                      style={{
+                        background: "linear-gradient(135deg, #0d3320, #1a6b3a, #0d3320)",
+                        border: "1px solid #daa520",
+                        boxShadow: "inset 0 1px 0 rgba(255,215,0,0.15)",
+                      }}
                     >
-                      <span className="text-[9px] text-white leading-none">{s.icon} {s.label}</span>
-                      <span className="text-[9px] font-bold text-amber-300 ml-1 leading-none">{s.value}</span>
+                      <span className="text-[9px] text-white/90 leading-none font-medium">{s.icon} {s.label}</span>
+                      <span className="text-[9px] font-extrabold ml-1 leading-none" style={{ color: "#4ade80" }}>{s.value}</span>
                     </div>
                   ))}
                 </div>
