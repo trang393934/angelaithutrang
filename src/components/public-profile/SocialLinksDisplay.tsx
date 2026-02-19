@@ -1,4 +1,6 @@
-import { Facebook, Instagram, Youtube, Globe, MessageCircle, ExternalLink } from "lucide-react";
+import { Facebook, Youtube, MessageCircle, ExternalLink } from "lucide-react";
+import funProfileLogo from "@/assets/fun-profile-logo.png";
+import funPlayLogo from "@/assets/fun-play-logo.png";
 
 interface SocialLinksDisplayProps {
   socialLinks: Record<string, string> | null;
@@ -6,23 +8,23 @@ interface SocialLinksDisplayProps {
 }
 
 const PLATFORM_META: Record<string, { label: string; icon: React.ReactNode; bgClass: string; textClass: string }> = {
+  fun_profile: {
+    label: "Fun Profile",
+    icon: <img src={funProfileLogo} className="w-4 h-4 object-contain" alt="Fun Profile" />,
+    bgClass: "bg-amber-950/30",
+    textClass: "text-amber-400",
+  },
+  fun_play: {
+    label: "Fun Play",
+    icon: <img src={funPlayLogo} className="w-4 h-4 object-contain" alt="Fun Play" />,
+    bgClass: "bg-blue-950/30",
+    textClass: "text-amber-400",
+  },
   facebook: {
     label: "Facebook",
     icon: <Facebook className="w-4 h-4" />,
     bgClass: "bg-blue-100 dark:bg-blue-950/40",
     textClass: "text-blue-600 dark:text-blue-400",
-  },
-  instagram: {
-    label: "Instagram",
-    icon: <Instagram className="w-4 h-4" />,
-    bgClass: "bg-pink-100 dark:bg-pink-950/40",
-    textClass: "text-pink-600 dark:text-pink-400",
-  },
-  tiktok: {
-    label: "TikTok",
-    icon: <span className="text-sm font-bold">T</span>,
-    bgClass: "bg-gray-100 dark:bg-gray-800",
-    textClass: "text-gray-900 dark:text-gray-200",
   },
   youtube: {
     label: "YouTube",
@@ -30,23 +32,11 @@ const PLATFORM_META: Record<string, { label: string; icon: React.ReactNode; bgCl
     bgClass: "bg-red-100 dark:bg-red-950/40",
     textClass: "text-red-600 dark:text-red-400",
   },
-  linkedin: {
-    label: "LinkedIn",
-    icon: <span className="text-sm font-bold">in</span>,
-    bgClass: "bg-blue-100 dark:bg-blue-950/40",
-    textClass: "text-blue-700 dark:text-blue-400",
-  },
   twitter: {
     label: "X (Twitter)",
     icon: <span className="text-sm font-bold">𝕏</span>,
-    bgClass: "bg-gray-100 dark:bg-gray-800",
-    textClass: "text-gray-900 dark:text-gray-200",
-  },
-  website: {
-    label: "Website",
-    icon: <Globe className="w-4 h-4" />,
-    bgClass: "bg-emerald-100 dark:bg-emerald-950/40",
-    textClass: "text-emerald-600 dark:text-emerald-400",
+    bgClass: "bg-muted",
+    textClass: "text-foreground",
   },
   telegram: {
     label: "Telegram",
@@ -54,11 +44,23 @@ const PLATFORM_META: Record<string, { label: string; icon: React.ReactNode; bgCl
     bgClass: "bg-sky-100 dark:bg-sky-950/40",
     textClass: "text-sky-600 dark:text-sky-400",
   },
-  discord: {
-    label: "Discord",
-    icon: <span className="text-sm font-bold">D</span>,
-    bgClass: "bg-indigo-100 dark:bg-indigo-950/40",
-    textClass: "text-indigo-600 dark:text-indigo-400",
+  tiktok: {
+    label: "TikTok",
+    icon: <span className="text-sm font-bold">TK</span>,
+    bgClass: "bg-muted",
+    textClass: "text-foreground",
+  },
+  linkedin: {
+    label: "LinkedIn",
+    icon: <span className="text-sm font-bold">in</span>,
+    bgClass: "bg-blue-100 dark:bg-blue-950/40",
+    textClass: "text-blue-700 dark:text-blue-400",
+  },
+  zalo: {
+    label: "Zalo",
+    icon: <span className="text-sm font-bold">Z</span>,
+    bgClass: "bg-blue-100 dark:bg-blue-950/40",
+    textClass: "text-blue-500 dark:text-blue-400",
   },
 };
 

@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
-import { Copy, Check, Share2, Calendar, Facebook, Instagram, Youtube, Globe, MessageCircle, Plus } from "lucide-react";
+import { Copy, Check, Share2, Calendar, Facebook, Youtube, MessageCircle, Plus } from "lucide-react";
+import funProfileLogo from "@/assets/fun-profile-logo.png";
+import funPlayLogo from "@/assets/fun-play-logo.png";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,22 +23,22 @@ const PLATFORM_META: Record<string, {
   bg: string;
   color: string;
 }> = {
+  fun_profile: {
+    label: "Fun Profile",
+    icon: <img src={funProfileLogo} className="w-4 h-4 object-contain" alt="Fun Profile" />,
+    bg: "#1a2e1a",
+    color: "#ffd700",
+  },
+  fun_play: {
+    label: "Fun Play",
+    icon: <img src={funPlayLogo} className="w-4 h-4 object-contain" alt="Fun Play" />,
+    bg: "#0a1a3a",
+    color: "#ffd700",
+  },
   facebook: {
     label: "Facebook",
     icon: <Facebook className="w-4 h-4" />,
     bg: "#1877F2",
-    color: "#fff",
-  },
-  instagram: {
-    label: "Instagram",
-    icon: <Instagram className="w-4 h-4" />,
-    bg: "linear-gradient(135deg,#f58529,#dd2a7b,#8134af,#515bd4)",
-    color: "#fff",
-  },
-  tiktok: {
-    label: "TikTok",
-    icon: <span className="text-xs font-black leading-none">TK</span>,
-    bg: "#010101",
     color: "#fff",
   },
   youtube: {
@@ -45,22 +47,10 @@ const PLATFORM_META: Record<string, {
     bg: "#FF0000",
     color: "#fff",
   },
-  linkedin: {
-    label: "LinkedIn",
-    icon: <span className="text-xs font-black leading-none">in</span>,
-    bg: "#0A66C2",
-    color: "#fff",
-  },
   twitter: {
     label: "X (Twitter)",
     icon: <span className="text-xs font-black leading-none">𝕏</span>,
     bg: "#14171A",
-    color: "#fff",
-  },
-  website: {
-    label: "Website",
-    icon: <Globe className="w-4 h-4" />,
-    bg: "#10B981",
     color: "#fff",
   },
   telegram: {
@@ -69,10 +59,22 @@ const PLATFORM_META: Record<string, {
     bg: "#26A5E4",
     color: "#fff",
   },
-  discord: {
-    label: "Discord",
-    icon: <span className="text-xs font-black leading-none">D</span>,
-    bg: "#5865F2",
+  tiktok: {
+    label: "TikTok",
+    icon: <span className="text-xs font-black leading-none">TK</span>,
+    bg: "#010101",
+    color: "#fff",
+  },
+  linkedin: {
+    label: "LinkedIn",
+    icon: <span className="text-xs font-black leading-none">in</span>,
+    bg: "#0A66C2",
+    color: "#fff",
+  },
+  zalo: {
+    label: "Zalo",
+    icon: <span className="text-xs font-black leading-none">Z</span>,
+    bg: "#0068FF",
     color: "#fff",
   },
 };
@@ -127,7 +129,7 @@ function OrbitalAddButton({ orbitRadius, onAdd }: { orbitRadius: number; onAdd: 
             side="top"
             className="text-xs font-semibold bg-background border border-amber-400/40 text-foreground"
           >
-            ✨ Thêm Social Links
+            ✨ Thêm Mạng Xã Hội
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
