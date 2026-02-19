@@ -126,11 +126,12 @@ function OrbitalIcon({
               left: x, top: y, width: 36, height: 36,
               background: meta.bg,
               boxShadow: hovered
-                ? `0 0 18px rgba(251,191,36,0.85), 0 2px 10px rgba(0,0,0,0.4)`
-                : "0 2px 8px rgba(0,0,0,0.4)",
-              outline: hovered ? "2.5px solid #ffd700" : `2px solid ${meta.bg}`,
-              outlineOffset: 1.5, zIndex: 20,
-              border: "2.5px solid #ffd700",
+                ? `0 0 16px ${meta.bg}cc, 0 2px 10px rgba(0,0,0,0.4)`
+                : `0 2px 8px rgba(0,0,0,0.35)`,
+              border: `2.5px solid ${meta.bg}`,
+              outline: hovered ? `2px solid ${meta.bg}` : "none",
+              outlineOffset: 2,
+              zIndex: 20,
             }}
             animate={{ rotate: hovered ? 0 : -360 }}
             transition={{ duration: hovered ? 0.2 : durationSecs, repeat: hovered ? 0 : Infinity, ease: "linear" }}
@@ -538,19 +539,22 @@ const UserProfile = () => {
               {/* Cover buttons — own profile */}
               {isOwnProfile && (
                 <div className="absolute bottom-3 right-4 z-10 flex items-center gap-2">
-                  {profile?.cover_photo_url && (
-                    <button
-                      onClick={() => setCoverEditorOpen(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-lg text-sm font-medium text-white transition-colors"
-                    >
+                  {/* Nút Đổi/Thêm ảnh bìa — bên trong có tuỳ chọn điều chỉnh vị trí */}
+                  <div className="relative group">
+                    <Link to="/profile" className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-lg text-sm font-medium text-white transition-colors">
                       <Camera className="w-4 h-4" />
-                      Điều chỉnh vị trí
-                    </button>
-                  )}
-                  <Link to="/profile" className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-lg text-sm font-medium text-white transition-colors">
-                    <Camera className="w-4 h-4" />
-                    {profile?.cover_photo_url ? "Đổi ảnh bìa" : "Thêm ảnh bìa"}
-                  </Link>
+                      {profile?.cover_photo_url ? "Đổi ảnh bìa" : "Thêm ảnh bìa"}
+                    </Link>
+                    {profile?.cover_photo_url && (
+                      <button
+                        onClick={() => setCoverEditorOpen(true)}
+                        className="absolute bottom-full right-0 mb-1 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 bg-black/70 hover:bg-black/90 rounded-lg text-xs font-medium text-white transition-all opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto translate-y-1 group-hover:translate-y-0 duration-200"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        Điều chỉnh vị trí
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
