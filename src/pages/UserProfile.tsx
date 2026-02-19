@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
+import { MusicThemeSelector } from "@/components/MusicThemeSelector";
 import { 
   ArrowLeft, UserPlus, UserCheck, MessageCircle, Loader2, Clock, 
   FileText, ShieldAlert, Ban, AlertTriangle, Camera, 
@@ -467,10 +469,22 @@ const UserProfile = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: "#f0f2f5" }}>
+    <div className="min-h-screen relative" style={{ background: "#f0f2f5" }}>
+
+      {/* ── Video Background (reuses global video theme setting) ─────────── */}
+      <ValentineVideoBackground />
+
+      {/* ── Music selector floating button ───────────────────────────────── */}
+      <MusicThemeSelector variant="floating" />
+
+      {/* ── Overlay để nội dung vẫn đọc được trên video ─────────────────── */}
+      <div className="fixed inset-0 pointer-events-none z-[1]" style={{ background: "rgba(240,242,245,0.75)" }} />
+
+      {/* ── Nội dung chính nằm trên video ─────────────────────────────── */}
+      <div className="relative z-[2]">
 
       {/* ── Cover Photo ─────────────────────────────────────────────────── */}
-      <div className="relative h-[180px] sm:h-[240px] overflow-hidden">
+      <div className="relative h-[220px] sm:h-[280px] overflow-hidden">
         {profile?.cover_photo_url ? (
           <>
             <img
@@ -975,6 +989,8 @@ const UserProfile = () => {
 
       {/* ── Signup Prompt ─────────────────────────────────────────────────── */}
       <SignupPromptDialog open={showSignupPrompt} onOpenChange={setShowSignupPrompt} />
+
+      </div>{/* end relative z-[2] content wrapper */}
     </div>
   );
 };
