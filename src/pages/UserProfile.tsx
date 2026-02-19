@@ -103,13 +103,14 @@ const PLATFORM_META: Record<string, { label: string; icon: React.ReactNode; bg: 
   },
 };
 
-// ─── Orbital Icon ─────────────────────────────────────────────────────────────
+// ─── Orbital Icon — shows user's own avatar, overflowing the circle ──────────
 function OrbitalIcon({
-  platform, url, meta, x, y, durationSecs,
+  platform, url, meta, x, y, durationSecs, userAvatarUrl,
 }: {
   platform: string; url: string;
   meta: { label: string; icon: React.ReactNode; bg: string; color: string };
   x: number; y: number; durationSecs: number;
+  userAvatarUrl?: string | null;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -118,21 +119,35 @@ function OrbitalIcon({
         <TooltipTrigger asChild>
           <motion.a
             href={url} target="_blank" rel="noopener noreferrer"
-            className="absolute flex items-center justify-center rounded-full pointer-events-auto cursor-pointer"
+            className="absolute rounded-full pointer-events-auto cursor-pointer overflow-hidden"
             style={{
               left: x, top: y, width: 36, height: 36,
-              background: meta.bg, color: meta.color,
-              boxShadow: hovered ? "0 0 16px rgba(251,191,36,0.7), 0 2px 10px rgba(0,0,0,0.4)" : "0 2px 8px rgba(0,0,0,0.35)",
-              outline: hovered ? "2px solid #fbbf24" : "1.5px solid rgba(251,191,36,0.45)",
-              outlineOffset: 1, zIndex: 20,
+              background: meta.bg,
+              boxShadow: hovered
+                ? `0 0 18px rgba(251,191,36,0.85), 0 2px 10px rgba(0,0,0,0.4)`
+                : "0 2px 8px rgba(0,0,0,0.4)",
+              outline: hovered ? "2.5px solid #ffd700" : `2px solid ${meta.bg}`,
+              outlineOffset: 1.5, zIndex: 20,
+              border: "2.5px solid #ffd700",
             }}
             animate={{ rotate: hovered ? 0 : -360 }}
             transition={{ duration: hovered ? 0.2 : durationSecs, repeat: hovered ? 0 : Infinity, ease: "linear" }}
-            whileHover={{ scale: 1.25 }}
+            whileHover={{ scale: 1.3 }}
             onHoverStart={() => setHovered(true)}
             onHoverEnd={() => setHovered(false)}
           >
-            {meta.icon}
+            {userAvatarUrl ? (
+              <img
+                src={userAvatarUrl}
+                alt={meta.label}
+                className="w-full h-full object-cover"
+                style={{ display: "block" }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center" style={{ color: meta.color }}>
+                {meta.icon}
+              </div>
+            )}
           </motion.a>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs font-semibold bg-gray-800 border border-amber-400/40 text-white">
@@ -144,8 +159,9 @@ function OrbitalIcon({
 }
 
 // ─── Orbital Social Links ─────────────────────────────────────────────────────
-function OrbitalSocialLinks({ socialLinks, orbitRadius = 90, durationSecs = 22 }: {
+function OrbitalSocialLinks({ socialLinks, orbitRadius = 90, durationSecs = 22, userAvatarUrl }: {
   socialLinks: Record<string, string>; orbitRadius?: number; durationSecs?: number;
+  userAvatarUrl?: string | null;
 }) {
   const activeLinks = Object.entries(socialLinks).filter(([, url]) => url?.trim());
   if (activeLinks.length === 0) return null;
@@ -153,7 +169,7 @@ function OrbitalSocialLinks({ socialLinks, orbitRadius = 90, durationSecs = 22 }
 
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 10 }}>
-      <div className="absolute rounded-full border border-amber-400/20" style={{ width: orbitRadius * 2, height: orbitRadius * 2 }} />
+      <div className="absolute rounded-full border border-amber-400/25" style={{ width: orbitRadius * 2, height: orbitRadius * 2 }} />
       <motion.div
         className="absolute"
         style={{ width: orbitRadius * 2, height: orbitRadius * 2, top: "50%", left: "50%", marginTop: -orbitRadius, marginLeft: -orbitRadius }}
@@ -167,7 +183,7 @@ function OrbitalSocialLinks({ socialLinks, orbitRadius = 90, durationSecs = 22 }
           const y = orbitRadius + orbitRadius * Math.sin(rad) - 18;
           const meta = PLATFORM_META[platform];
           if (!meta) return null;
-          return <OrbitalIcon key={platform} platform={platform} url={url} meta={meta} x={x} y={y} durationSecs={durationSecs} />;
+          return <OrbitalIcon key={platform} platform={platform} url={url} meta={meta} x={x} y={y} durationSecs={durationSecs} userAvatarUrl={userAvatarUrl} />;
         })}
       </motion.div>
     </div>
@@ -471,239 +487,253 @@ const UserProfile = () => {
   return (
     <div className="min-h-screen relative" style={{ background: "#f0f2f5" }}>
 
-      {/* ── Video Background (reuses global video theme setting) ─────────── */}
+      {/* ── Video Background ─────────────────────────────────────────────── */}
       <ValentineVideoBackground />
 
       {/* ── Music selector floating button ───────────────────────────────── */}
       <MusicThemeSelector variant="floating" />
 
-      {/* ── Overlay để nội dung vẫn đọc được trên video ─────────────────── */}
-      <div className="fixed inset-0 pointer-events-none z-[1]" style={{ background: "rgba(240,242,245,0.75)" }} />
+      {/* ── Overlay for readability ───────────────────────────────────────── */}
+      <div className="fixed inset-0 pointer-events-none z-[1]" style={{ background: "rgba(240,242,245,0.72)" }} />
 
-      {/* ── Nội dung chính nằm trên video ─────────────────────────────── */}
-      <div className="relative z-[2]">
+      {/* ── Main content ─────────────────────────────────────────────────── */}
+      <div className="relative z-[2] pt-4">
 
-      {/* ── Cover Photo ─────────────────────────────────────────────────── */}
-      <div className="relative h-[220px] sm:h-[280px] overflow-hidden">
-        {profile?.cover_photo_url ? (
-          <>
-            <img
-              src={profile.cover_photo_url}
-              alt="Cover"
-              className="w-full h-full object-cover cursor-pointer"
-              onClick={() => setCoverLightboxOpen(true)}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
-          </>
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-emerald-100 via-teal-50 to-amber-50">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
-          </div>
-        )}
-
-        {/* Back */}
-        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 z-10 p-2 bg-black/30 hover:bg-black/50 rounded-full transition-colors">
-          <ArrowLeft className="w-5 h-5 text-white" />
-        </button>
-
-        {/* Edit cover — own profile */}
-        {isOwnProfile && (
-          <Link to="/profile" className="absolute bottom-3 right-4 z-10 flex items-center gap-2 px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-lg text-sm font-medium text-white transition-colors">
-            <Camera className="w-4 h-4" />
-            {profile?.cover_photo_url ? "Đổi ảnh bìa" : "Thêm ảnh bìa"}
-          </Link>
-        )}
-
-        {/* ── Bảng Danh Dự — floating overlay on cover, top-right ── */}
-        <div
-          className="absolute right-4 top-3 z-20 hidden sm:block w-[270px] rounded-xl p-3"
-          style={{
-            background: "white",
-            border: "2px solid rgba(180,144,30,0.5)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-          }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <img src={angelAiGoldenLogo} className="w-6 h-6 object-contain" alt="Angel AI" />
-            <span className="text-xs font-extrabold tracking-widest text-amber-600 uppercase">Bảng Danh Dự</span>
-            <Avatar className="w-6 h-6 ml-auto">
-              <AvatarImage src={profile?.avatar_url || angelAvatar} className="object-cover" />
-              <AvatarFallback className="text-[10px]">{profile?.display_name?.charAt(0) || "U"}</AvatarFallback>
-            </Avatar>
-          </div>
-          <div className="grid grid-cols-2 gap-1">
-            {honorStats.map((s, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between px-2.5 py-1.5 rounded-full"
-                style={{ background: "#1a6b3a", border: "1px solid #daa520" }}
-              >
-                <span className="text-[10px] text-white">{s.icon} {s.label}</span>
-                <span className="text-[10px] font-bold text-amber-300 ml-1">{s.value}</span>
-              </div>
-            ))}
-          </div>
+        {/* Back button (floating above card) */}
+        <div className="max-w-[1100px] mx-auto px-4 mb-2">
+          <button onClick={() => navigate(-1)} className="p-2 bg-white/80 hover:bg-white rounded-full shadow transition-colors">
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
+          </button>
         </div>
-      </div>
 
-      {/* ── Profile Header Card ──────────────────────────────────────────── */}
-      <div className="max-w-[1100px] mx-auto px-4">
-        <div className="bg-white rounded-2xl p-4 sm:p-6 -mt-6 relative z-10 shadow-sm">
+        {/* ── White Card (cover + profile info together) ───────────────── */}
+        <div className="max-w-[1100px] mx-auto px-4">
+          <div className="bg-white rounded-2xl shadow-sm overflow-visible relative z-10">
 
-          {/* ── Two-column layout: [Avatar+Orbital] + [Info] ── */}
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
+            {/* ── Cover Photo (rounded top, contained inside white card) ── */}
+            <div className="relative h-[190px] sm:h-[230px] rounded-t-2xl overflow-hidden">
+              {profile?.cover_photo_url ? (
+                <>
+                  <img
+                    src={profile.cover_photo_url}
+                    alt="Cover"
+                    className="w-full h-full object-cover cursor-pointer"
+                    onClick={() => setCoverLightboxOpen(true)}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                </>
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-emerald-100 via-teal-50 to-amber-50" />
+              )}
 
-            {/* Left: Avatar + Orbital + Diamond */}
-            <div
-              className="relative flex-shrink-0 flex items-center justify-center self-center sm:self-start"
-              style={{ width: wrapperSize, height: wrapperSize, marginTop: -wrapperSize / 2 - 16 }}
-            >
-              {/* Glow ring */}
-              <div className="absolute rounded-full" style={{ width: orbitRadius * 2 + 8, height: orbitRadius * 2 + 8, background: "radial-gradient(circle, rgba(251,191,36,0.08) 0%, transparent 70%)" }} />
+              {/* Edit cover button */}
+              {isOwnProfile && (
+                <Link to="/profile" className="absolute bottom-3 right-4 z-10 flex items-center gap-2 px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-lg text-sm font-medium text-white transition-colors">
+                  <Camera className="w-4 h-4" />
+                  {profile?.cover_photo_url ? "Đổi ảnh bìa" : "Thêm ảnh bìa"}
+                </Link>
+              )}
 
-              {/* Orbital social links */}
-              <OrbitalSocialLinks socialLinks={activeSocialLinks} orbitRadius={orbitRadius} durationSecs={22} />
-
-              {/* Avatar */}
-              <div className="relative z-20">
-                <div
-                  className="rounded-full p-[3px] cursor-pointer"
-                  style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700, #ffec8b, #daa520, #b8860b)", boxShadow: "0 0 20px rgba(251,191,36,0.3)" }}
-                  onClick={() => profile?.avatar_url && setAvatarLightboxOpen(true)}
-                >
-                  <Avatar className="w-[110px] h-[110px] sm:w-[130px] sm:h-[130px] border-[3px] border-white">
-                    <AvatarImage src={profile?.avatar_url || angelAvatar} alt={profile?.display_name || "User"} className="object-cover" />
-                    <AvatarFallback className="text-4xl bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700">
-                      {profile?.display_name?.charAt(0) || "U"}
-                    </AvatarFallback>
+              {/* ── Bảng Danh Dự — top-right overlay on cover ── */}
+              <div
+                className="absolute right-3 top-2.5 z-20 hidden sm:block w-[258px] rounded-xl p-2.5"
+                style={{
+                  background: "white",
+                  border: "1.5px solid rgba(180,144,30,0.5)",
+                  boxShadow: "0 4px 18px rgba(0,0,0,0.14)",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <img src={angelAiGoldenLogo} className="w-5 h-5 object-contain" alt="Angel AI" />
+                  <span className="text-[10px] font-extrabold tracking-widest uppercase" style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Bảng Danh Dự</span>
+                  <Avatar className="w-5 h-5 ml-auto">
+                    <AvatarImage src={profile?.avatar_url || angelAvatar} className="object-cover" />
+                    <AvatarFallback className="text-[9px]">{profile?.display_name?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                 </div>
-
-                {/* Diamond Badge — top-center */}
-                <DiamondBadge />
-
-                {/* Edit avatar */}
-                {isOwnProfile && (
-                  <Link to="/profile" className="absolute bottom-1 right-1 z-40 p-1.5 bg-white hover:bg-gray-50 rounded-full border border-amber-400/60 transition-colors shadow-sm">
-                    <Camera className="w-3.5 h-3.5 text-amber-500" />
-                  </Link>
-                )}
+                <div className="grid grid-cols-2 gap-1">
+                  {honorStats.map((s, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between px-2 py-1 rounded-full"
+                      style={{ background: "#1a6b3a", border: "1px solid #daa520" }}
+                    >
+                      <span className="text-[9px] text-white leading-none">{s.icon} {s.label}</span>
+                      <span className="text-[9px] font-bold text-amber-300 ml-1 leading-none">{s.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Right: Info */}
-            <div className="flex-1 min-w-0 pt-1 sm:pt-2">
-              {/* Name + badge level chip */}
-              <div className="flex items-start flex-wrap gap-2">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
-                  {profile?.display_name || "Người dùng ẩn danh"}
-                </h1>
-                <span className="self-center inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 border border-amber-300 text-amber-700">
-                  {badgeLevel === "angel" ? "👼 Angel"
-                    : badgeLevel === "lightworker" ? "✨ Lightworker"
-                    : badgeLevel === "guardian" ? "🛡️ Guardian"
-                    : badgeLevel === "contributor" ? "🌟 Contributor"
-                    : "🌱 Newcomer"}
-                </span>
-              </div>
+            {/* ── Profile info section ─────────────────────────────────── */}
+            <div className="px-4 sm:px-6 pb-4 sm:pb-5">
 
-              {/* Handle + copy */}
-              {profile?.handle && (
-                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                  <span className="text-sm font-semibold text-amber-600">@{profile.handle}</span>
-                  <span className="text-xs text-gray-400 hidden sm:inline">· angel.fun.rich/{profile.handle}</span>
-                  <button onClick={handleCopyLink} className="p-1 rounded hover:bg-amber-50 text-gray-400 hover:text-amber-500 transition-colors">
-                    {copied ? <Check className="w-3 h-3 text-amber-500" /> : <Copy className="w-3 h-3" />}
-                  </button>
-                </div>
-              )}
+              {/* Two-column: [Avatar+Orbital] + [Info] */}
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
 
-              {/* Wallet row + Edit button (own profile) */}
-              <div className="flex items-center justify-between gap-2 mt-1 flex-wrap">
-                {userId && <WalletAddressDisplay userId={userId} />}
-                {isOwnProfile && (
-                  <Link to="/profile">
-                    <Button size="sm" variant="outline" className="border-amber-500 text-amber-700 font-semibold whitespace-nowrap hover:bg-amber-50">
-                      <Pencil className="w-3.5 h-3.5 mr-1.5" />
-                      Chỉnh sửa trang cá nhân
-                    </Button>
-                  </Link>
-                )}
-              </div>
-
-              {/* Location + ecosystem */}
-              <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500 flex-wrap">
-                <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5 text-amber-500" /> FUN Ecosystem</span>
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                  Tham gia {profile?.created_at ? format(new Date(profile.created_at), "MM/yyyy", { locale: vi }) : "—"}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Star className="w-3.5 h-3.5 text-amber-500" />
-                  {positiveActions} hành động tốt
-                </span>
-              </div>
-
-              {/* Friends avatars */}
-              {friends.length > 0 && (
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="flex -space-x-2">
-                    {friends.slice(0, 6).map(friend => (
-                      <Link key={friend.user_id} to={`/user/${friend.user_id}`}>
-                        <Avatar className="w-7 h-7 border-2 border-white hover:z-10 transition-transform hover:scale-110">
-                          <AvatarImage src={friend.avatar_url || angelAvatar} className="object-cover" />
-                          <AvatarFallback className="text-xs">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
-                        </Avatar>
-                      </Link>
-                    ))}
-                  </div>
-                  <span className="text-xs text-gray-500">{stats.friends} bạn bè</span>
-                </div>
-              )}
-
-              {/* Bio */}
-              {profile?.bio && (
-                <p className="text-sm text-gray-500 mt-2 leading-relaxed max-w-md">{profile.bio}</p>
-              )}
-
-              {/* Action buttons (non-own profile) */}
-              <div className="mt-3">
-                {renderActionButtons()}
-              </div>
-            </div>
-          </div>
-
-          {/* Separator */}
-          <Separator className="my-4 bg-gray-200" />
-
-          {/* ── Navigation Tabs + More menu ── */}
-          <div className="flex items-center justify-between">
-            <div className="flex gap-0.5 overflow-x-auto">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2.5 text-[14px] font-semibold rounded-lg transition-colors whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? "text-amber-600 border-b-[3px] border-amber-500 rounded-b-none bg-amber-50/60"
-                      : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-                  }`}
+                {/* Left: Avatar + Orbital + Diamond Badge */}
+                <div
+                  className="relative flex-shrink-0 flex items-center justify-center self-center sm:self-start"
+                  style={{ width: wrapperSize, height: wrapperSize, marginTop: -(wrapperSize / 2 + 4) }}
                 >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+                  {/* Glow ring */}
+                  <div className="absolute rounded-full" style={{ width: orbitRadius * 2 + 8, height: orbitRadius * 2 + 8, background: "radial-gradient(circle, rgba(251,191,36,0.10) 0%, transparent 70%)" }} />
 
-            {/* "..." nút 3 chấm bên phải */}
-            <ProfileMoreMenu
-              userId={userId || ""}
-              displayName={profile?.display_name ?? null}
-              handle={profile?.handle ?? null}
-              isOwnProfile={isOwnProfile}
-            />
+                  {/* Orbital social links (user avatar in each circle) */}
+                  <OrbitalSocialLinks
+                    socialLinks={activeSocialLinks}
+                    orbitRadius={orbitRadius}
+                    durationSecs={22}
+                    userAvatarUrl={profile?.avatar_url}
+                  />
+
+                  {/* Avatar */}
+                  <div className="relative z-20">
+                    <div
+                      className="rounded-full p-[3px] cursor-pointer"
+                      style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700, #ffec8b, #daa520, #b8860b)", boxShadow: "0 0 24px rgba(251,191,36,0.35)" }}
+                      onClick={() => profile?.avatar_url && setAvatarLightboxOpen(true)}
+                    >
+                      <Avatar className="w-[110px] h-[110px] sm:w-[130px] sm:h-[130px] border-[3px] border-white">
+                        <AvatarImage src={profile?.avatar_url || angelAvatar} alt={profile?.display_name || "User"} className="object-cover" />
+                        <AvatarFallback className="text-4xl bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700">
+                          {profile?.display_name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+
+                    {/* Diamond Badge — top-center */}
+                    <DiamondBadge />
+
+                    {/* Edit avatar */}
+                    {isOwnProfile && (
+                      <Link to="/profile" className="absolute bottom-1 right-1 z-40 p-1.5 bg-white hover:bg-gray-50 rounded-full border border-amber-400/60 transition-colors shadow-sm">
+                        <Camera className="w-3.5 h-3.5 text-amber-500" />
+                      </Link>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Info */}
+                <div className="flex-1 min-w-0 pt-1 sm:pt-3">
+
+                  {/* Name — Angel AI gold metallic */}
+                  <div className="flex items-start flex-wrap gap-2">
+                    <h1
+                      className="text-2xl sm:text-3xl font-extrabold leading-tight"
+                      style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700, #b8860b)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+                    >
+                      {profile?.display_name || "Người dùng ẩn danh"}
+                    </h1>
+                    <span className="self-center inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 border border-amber-300 text-amber-700">
+                      {badgeLevel === "angel" ? "👼 Angel"
+                        : badgeLevel === "lightworker" ? "✨ Lightworker"
+                        : badgeLevel === "guardian" ? "🛡️ Guardian"
+                        : badgeLevel === "contributor" ? "🌟 Contributor"
+                        : "🌱 Newcomer"}
+                    </span>
+                  </div>
+
+                  {/* Handle + copy */}
+                  {profile?.handle && (
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span className="text-sm font-semibold text-amber-500">@{profile.handle}</span>
+                      <span className="text-xs text-gray-400 hidden sm:inline">· angel.fun.rich/{profile.handle}</span>
+                      <button onClick={handleCopyLink} className="p-1 rounded hover:bg-amber-50 text-gray-400 hover:text-amber-500 transition-colors">
+                        {copied ? <Check className="w-3 h-3 text-amber-500" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Wallet row + Edit button (own profile) */}
+                  <div className="flex items-center justify-between gap-2 mt-1.5 flex-wrap">
+                    {userId && <WalletAddressDisplay userId={userId} />}
+                    {isOwnProfile && (
+                      <Link to="/profile">
+                        <Button size="sm" variant="outline" className="border-amber-500 text-amber-600 font-semibold whitespace-nowrap hover:bg-amber-50">
+                          <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                          Chỉnh sửa trang cá nhân
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Location + ecosystem */}
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500 flex-wrap">
+                    <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5 text-amber-500" /> FUN Ecosystem</span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                      Tham gia {profile?.created_at ? format(new Date(profile.created_at), "MM/yyyy", { locale: vi }) : "—"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 text-amber-500" />
+                      {positiveActions} hành động tốt
+                    </span>
+                  </div>
+
+                  {/* Friends avatars */}
+                  {friends.length > 0 && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex -space-x-2">
+                        {friends.slice(0, 6).map(friend => (
+                          <Link key={friend.user_id} to={`/user/${friend.user_id}`}>
+                            <Avatar className="w-7 h-7 border-2 border-white hover:z-10 transition-transform hover:scale-110">
+                              <AvatarImage src={friend.avatar_url || angelAvatar} className="object-cover" />
+                              <AvatarFallback className="text-xs">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
+                            </Avatar>
+                          </Link>
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-500">{stats.friends} bạn bè</span>
+                    </div>
+                  )}
+
+                  {/* Bio */}
+                  {profile?.bio && (
+                    <p className="text-sm text-gray-500 mt-2 leading-relaxed max-w-md">{profile.bio}</p>
+                  )}
+
+                  {/* Action buttons (non-own profile) */}
+                  <div className="mt-3">
+                    {renderActionButtons()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Separator */}
+              <Separator className="my-4 bg-gray-200" />
+
+              {/* ── Navigation Tabs + More menu ── */}
+              <div className="flex items-center justify-between">
+                <div className="flex gap-0.5 overflow-x-auto">
+                  {tabs.map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-4 py-2.5 text-[14px] font-semibold rounded-lg transition-colors whitespace-nowrap ${
+                        activeTab === tab.id
+                          ? "border-b-[3px] border-amber-500 rounded-b-none bg-amber-50/60"
+                          : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                      }`}
+                      style={activeTab === tab.id ? { color: "#daa520" } : {}}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* "..." nút 3 chấm bên phải */}
+                <ProfileMoreMenu
+                  userId={userId || ""}
+                  displayName={profile?.display_name ?? null}
+                  handle={profile?.handle ?? null}
+                  isOwnProfile={isOwnProfile}
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* ── Main Content ─────────────────────────────────────────────────── */}
       <div className="max-w-[1100px] mx-auto px-4 py-4">
