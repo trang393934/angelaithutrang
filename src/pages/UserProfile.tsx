@@ -105,13 +105,14 @@ const PLATFORM_META: Record<string, { label: string; logoUrl: string; bg: string
   },
 };
 
-// ─── Orbital Icon — shows platform logo ──────────────────────────────────────
+// ─── Orbital Icon — shows user avatar with platform brand border ──────────────
 function OrbitalIcon({
-  platform, url, meta, x, y, durationSecs,
+  platform, url, meta, x, y, durationSecs, userAvatarUrl,
 }: {
   platform: string; url: string;
   meta: { label: string; logoUrl: string; bg: string; color: string };
   x: number; y: number; durationSecs: number;
+  userAvatarUrl?: string | null;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -123,10 +124,10 @@ function OrbitalIcon({
             className="absolute rounded-full pointer-events-auto cursor-pointer overflow-hidden flex items-center justify-center"
             style={{
               left: x, top: y, width: 36, height: 36,
-              background: "#fff",
+              background: meta.bg,
               boxShadow: hovered
-                ? `0 0 16px ${meta.bg}cc, 0 2px 10px rgba(0,0,0,0.4)`
-                : `0 2px 8px rgba(0,0,0,0.35)`,
+                ? `0 0 18px ${meta.bg}dd, 0 2px 10px rgba(0,0,0,0.4)`
+                : `0 0 8px ${meta.bg}88, 0 2px 6px rgba(0,0,0,0.3)`,
               border: `2.5px solid ${meta.bg}`,
               outline: hovered ? `2px solid ${meta.bg}` : "none",
               outlineOffset: 2,
@@ -138,12 +139,21 @@ function OrbitalIcon({
             onHoverStart={() => setHovered(true)}
             onHoverEnd={() => setHovered(false)}
           >
-            <img
-              src={meta.logoUrl}
-              alt={meta.label}
-              className="w-5 h-5 object-contain"
-              style={{ display: "block" }}
-            />
+            {userAvatarUrl ? (
+              <img
+                src={userAvatarUrl}
+                alt={meta.label}
+                className="w-full h-full object-cover"
+                style={{ display: "block" }}
+              />
+            ) : (
+              <img
+                src={meta.logoUrl}
+                alt={meta.label}
+                className="w-5 h-5 object-contain"
+                style={{ display: "block" }}
+              />
+            )}
           </motion.a>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs font-semibold bg-background border border-amber-400/40 text-foreground">
@@ -155,8 +165,9 @@ function OrbitalIcon({
 }
 
 // ─── Orbital Social Links ─────────────────────────────────────────────────────
-function OrbitalSocialLinks({ socialLinks, orbitRadius = 90, durationSecs = 22 }: {
+function OrbitalSocialLinks({ socialLinks, orbitRadius = 90, durationSecs = 22, userAvatarUrl }: {
   socialLinks: Record<string, string>; orbitRadius?: number; durationSecs?: number;
+  userAvatarUrl?: string | null;
 }) {
   const activeLinks = Object.entries(socialLinks).filter(([, url]) => url?.trim());
   if (activeLinks.length === 0) return null;
@@ -178,7 +189,7 @@ function OrbitalSocialLinks({ socialLinks, orbitRadius = 90, durationSecs = 22 }
           const y = orbitRadius + orbitRadius * Math.sin(rad) - 18;
           const meta = PLATFORM_META[platform];
           if (!meta) return null;
-          return <OrbitalIcon key={platform} platform={platform} url={url} meta={meta} x={x} y={y} durationSecs={durationSecs} />;
+          return <OrbitalIcon key={platform} platform={platform} url={url} meta={meta} x={x} y={y} durationSecs={durationSecs} userAvatarUrl={userAvatarUrl} />;
         })}
       </motion.div>
     </div>
@@ -621,6 +632,7 @@ const UserProfile = () => {
                     socialLinks={activeSocialLinks}
                     orbitRadius={orbitRadius}
                     durationSecs={22}
+                    userAvatarUrl={profile?.avatar_url}
                   />
 
                   {/* Avatar */}
