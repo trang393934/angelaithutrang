@@ -97,7 +97,9 @@ interface SybilGroup {
 }
 
 // ============================================================
-// 📋 DANH SÁCH 14 TÀI KHOẢN SYBIL — DỮ LIỆU ĐÃ XÁC MINH TỪ DB
+// 📋 DANH SÁCH 19 TÀI KHOẢN SYBIL — DỮ LIỆU ĐÃ XÁC MINH TỪ DB
+// Cập nhật: 5 nhóm, 16 tài khoản duy nhất (Trần Nhung chỉ đếm 1 lần)
+// Tổng pending rút ~3.2M Camly | Tổng pending mint ~733 requests
 // ============================================================
 const SYBIL_GROUPS: SybilGroup[] = [
   {
@@ -139,7 +141,7 @@ const SYBIL_GROUPS: SybilGroup[] = [
     groupName: "Nhóm Ví Tổng le quang — 0xAdF1...e24",
     walletAddress: "0xAdF192cee80f68d5bE8A78a6c9e9b8692748e24",
     severity: "critical",
-    note: "8 tài khoản chuyển tiền về ví tổng 'le quang', dấu hiệu sybil farming có tổ chức",
+    note: "7 tài khoản chuyển tiền về ví tổng 'le quang' (Trần Nhung tính ở nhóm 7786), dấu hiệu sybil farming có tổ chức",
     members: [
       {
         userId: "c4d884f7-23e0-4da5-8735-50bf1202a529",
@@ -148,7 +150,7 @@ const SYBIL_GROUPS: SybilGroup[] = [
         balance: 1233300,
         lifetimeEarned: 2132659,
         pendingMint: 54,
-        pendingWithdrawal: 1,
+        pendingWithdrawal: 292424,
       },
       {
         userId: "71bdc8b3-ae19-45d7-a1f5-ebdd716c464f",
@@ -157,7 +159,7 @@ const SYBIL_GROUPS: SybilGroup[] = [
         balance: 1666100,
         lifetimeEarned: 1895938,
         pendingMint: 42,
-        pendingWithdrawal: 1,
+        pendingWithdrawal: 229838,
       },
       {
         userId: "b5621395-32ba-4974-b27e-3c2c39c09a90",
@@ -166,7 +168,7 @@ const SYBIL_GROUPS: SybilGroup[] = [
         balance: 927100,
         lifetimeEarned: 1753486,
         pendingMint: 46,
-        pendingWithdrawal: 1,
+        pendingWithdrawal: 257905,
       },
       {
         userId: "ebe0a17e-b0ac-4042-9440-527bca4d0248",
@@ -175,7 +177,7 @@ const SYBIL_GROUPS: SybilGroup[] = [
         balance: 101296,
         lifetimeEarned: 898917,
         pendingMint: 75,
-        pendingWithdrawal: 1,
+        pendingWithdrawal: 200187,
       },
       {
         userId: "4be73a80-c89c-4690-bae7-ba0ec3a43380",
@@ -202,16 +204,7 @@ const SYBIL_GROUPS: SybilGroup[] = [
         balance: 95984,
         lifetimeEarned: 334489,
         pendingMint: 46,
-        pendingWithdrawal: 1,
-      },
-      {
-        userId: "5182148f-1999-43b5-83db-09560e25c688",
-        name: "Trần Nhung",
-        email: "trannhung7786@gmail.com",
-        balance: 1548380,
-        lifetimeEarned: 2066010,
-        pendingMint: 34,
-        pendingWithdrawal: 290000,
+        pendingWithdrawal: 238505,
       },
     ],
   },
@@ -255,6 +248,41 @@ const SYBIL_GROUPS: SybilGroup[] = [
         lifetimeEarned: 1704727,
         pendingMint: 40,
         pendingWithdrawal: 229627,
+      },
+    ],
+  },
+  {
+    groupName: "Nhóm PHAM — Email pattern 3112021",
+    walletAddress: "0x75be0d3Bd905ecF6188F26B430cE6483d3905278",
+    severity: "critical",
+    note: "3 tài khoản email prefix 'pham', suffix trùng '3112021'. Pending rút tổng ~989,065 Camly — MỨC ĐỘ KHẨN CẤP CAO",
+    members: [
+      {
+        userId: "4986011b-6669-4374-aa50-ef67710e33aa",
+        name: "Trung Kiên (Minh Quân)",
+        email: "phamminhquan2782016@gmail.com",
+        balance: 1386039,
+        lifetimeEarned: 2609201,
+        pendingMint: 61,
+        pendingWithdrawal: 500000,
+      },
+      {
+        userId: "266f8c06-df49-47df-ae3e-0dbef1d17c59",
+        name: "Minh kiên",
+        email: "phamlong3112021@gmail.com",
+        balance: 1549300,
+        lifetimeEarned: 2382324,
+        pendingMint: 103,
+        pendingWithdrawal: 209065,
+      },
+      {
+        userId: "1eeb2750-272b-49c3-8b13-1894b12f7cf7",
+        name: "Kim Xuyen",
+        email: "phamminhlong3112021@gmail.com",
+        balance: 1552074,
+        lifetimeEarned: 2386921,
+        pendingMint: 93,
+        pendingWithdrawal: 280000,
       },
     ],
   },
