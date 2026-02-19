@@ -482,6 +482,7 @@ const AdminFraudAlerts = () => {
           body: JSON.stringify({
             userIds: [...selectedIds],
             reason: "Sybil farming — tài khoản thuộc nhóm đã phân tích và xác minh",
+            healingMessage: "Tài khoản của bạn bị phát hiện farming sybil — vi phạm điều khoản sử dụng Angel AI nên hệ thống đã đóng vĩnh viễn tài khoản này.",
             rejectWithdrawals: true,
           }),
         }
@@ -521,6 +522,7 @@ const AdminFraudAlerts = () => {
           body: JSON.stringify({
             userIds: [banTarget.user_id],
             reason: `Sybil farming - ${banTarget.alert_type}: ${banTarget.matched_pattern || "pattern detected"}`,
+            healingMessage: "Tài khoản của bạn bị phát hiện farming sybil — vi phạm điều khoản sử dụng Angel AI nên hệ thống đã đóng vĩnh viễn tài khoản này.",
             rejectWithdrawals: true,
           }),
         }
