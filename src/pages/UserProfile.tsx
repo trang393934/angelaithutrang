@@ -12,8 +12,9 @@ import { usePoPLScore } from "@/hooks/usePoPLScore";
 import { useFUNMoneyStats } from "@/hooks/useFUNMoneyStats";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
-import funProfileLogo from "@/assets/fun-profile-logo.png";
+import angelAiGoldenLogo from "@/assets/angel-ai-golden-logo.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
+import funProfileLogo from "@/assets/fun-profile-logo.png";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { Button } from "@/components/ui/button";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
@@ -132,7 +133,7 @@ function OrbitalIcon({
             {meta.icon}
           </motion.a>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs font-semibold bg-[#0d2137] border border-amber-400/40 text-white">
+        <TooltipContent side="top" className="text-xs font-semibold bg-gray-800 border border-amber-400/40 text-white">
           {meta.label}
         </TooltipContent>
       </Tooltip>
@@ -189,24 +190,21 @@ interface FriendData {
   avatar_url: string | null;
 }
 
-// ─── Diamond Badge icon ───────────────────────────────────────────────────────
-function DiamondBadge({ badgeLevel }: { badgeLevel: string }) {
-  const icon = badgeLevel === "angel" ? "💎"
-    : badgeLevel === "lightworker" ? "✨"
-    : badgeLevel === "guardian" ? "🛡️"
-    : badgeLevel === "contributor" ? "🌟"
-    : "⭐";
-
+// ─── Diamond Badge icon — top-center, always 💎, gold gradient ───────────────
+function DiamondBadge() {
   return (
     <div
-      className="absolute -top-1 -right-1 z-30 w-8 h-8 rounded-full flex items-center justify-center text-sm"
+      className="absolute z-30 flex items-center justify-center rounded-full text-sm"
       style={{
-      background: "linear-gradient(135deg, #b8860b, #0a1628)",
-        border: "2px solid #ffd700",
-        boxShadow: "0 0 14px rgba(255,215,0,0.7), 0 0 28px rgba(218,165,32,0.3)",
+        width: 32, height: 32,
+        top: -16, left: "50%",
+        transform: "translateX(-50%)",
+        background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)",
+        border: "2px solid #fff",
+        boxShadow: "0 0 14px rgba(255,215,0,0.8), 0 2px 8px rgba(0,0,0,0.3)",
       }}
     >
-      {icon}
+      💎
     </div>
   );
 }
@@ -408,16 +406,9 @@ const UserProfile = () => {
 
   // ── Action buttons ────────────────────────────────────────────────────────
   const renderActionButtons = () => {
-    if (isOwnProfile) {
-      return (
-        <Link to="/profile">
-          <Button size="sm" style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)" }} className="text-black font-bold">
-            <Pencil className="w-3.5 h-3.5 mr-1.5" />
-            Chỉnh sửa
-          </Button>
-        </Link>
-      );
-    }
+    // Own profile: edit button is shown in wallet row — return null here
+    if (isOwnProfile) return null;
+
     if (friendshipLoading) return <Button disabled size="sm" variant="outline"><Loader2 className="w-4 h-4 animate-spin" /></Button>;
 
     const buttons: React.ReactNode[] = [];
@@ -425,16 +416,16 @@ const UserProfile = () => {
       buttons.push(<Button key="add" size="sm" onClick={() => sendFriendRequest(userId!)} style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)" }} className="text-black font-bold"><UserPlus className="w-3.5 h-3.5 mr-1.5" />Thêm bạn</Button>);
     } else if (friendshipStatus.status === "pending") {
       if (friendshipStatus.requester_id === user?.id) {
-        buttons.push(<Button key="pending" size="sm" variant="outline" className="border-amber-600/50 text-amber-400" onClick={() => cancelFriendRequest(friendshipStatus.id)}><Clock className="w-3.5 h-3.5 mr-1.5" />Đã gửi</Button>);
+        buttons.push(<Button key="pending" size="sm" variant="outline" className="border-amber-500 text-amber-600" onClick={() => cancelFriendRequest(friendshipStatus.id)}><Clock className="w-3.5 h-3.5 mr-1.5" />Đã gửi</Button>);
       } else {
         buttons.push(<Button key="accept" size="sm" onClick={() => acceptFriendRequest(friendshipStatus.id)} style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)" }} className="text-black font-bold"><UserCheck className="w-3.5 h-3.5 mr-1.5" />Xác nhận</Button>);
       }
     } else if (friendshipStatus.status === "accepted") {
-      buttons.push(<Button key="friends" size="sm" variant="outline" className="border-amber-600/50 text-amber-400"><UserCheck className="w-3.5 h-3.5 mr-1.5" />Bạn bè</Button>);
+      buttons.push(<Button key="friends" size="sm" variant="outline" className="border-amber-500 text-amber-600"><UserCheck className="w-3.5 h-3.5 mr-1.5" />Bạn bè</Button>);
     }
     buttons.push(
-      <Link key="msg" to={`/messages/${userId}`}><Button size="sm" variant="outline" className="border-amber-600/50 text-amber-300"><MessageCircle className="w-3.5 h-3.5 mr-1.5" />Nhắn tin</Button></Link>,
-      <Button key="gift" size="sm" variant="outline" className="border-amber-600/50 text-amber-300" onClick={() => setGiftDialogOpen(true)}><Gift className="w-3.5 h-3.5 mr-1.5" />Tặng</Button>
+      <Link key="msg" to={`/messages/${userId}`}><Button size="sm" variant="outline" className="border-amber-500 text-amber-600"><MessageCircle className="w-3.5 h-3.5 mr-1.5" />Nhắn tin</Button></Link>,
+      <Button key="gift" size="sm" variant="outline" className="border-amber-500 text-amber-600" onClick={() => setGiftDialogOpen(true)}><Gift className="w-3.5 h-3.5 mr-1.5" />Tặng</Button>
     );
     return <div className="flex flex-wrap gap-2">{buttons}</div>;
   };
@@ -442,16 +433,16 @@ const UserProfile = () => {
   // ── Loading / not found ───────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)" }}>
-        <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+      <div className="min-h-screen flex items-center justify-center bg-[#f0f2f5]">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
       </div>
     );
   }
 
   if (!profile && !userId) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)" }}>
-        <p className="text-lg text-white/60 mb-4">Không tìm thấy người dùng</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f0f2f5]">
+        <p className="text-lg text-gray-500 mb-4">Không tìm thấy người dùng</p>
         <Link to="/community"><Button>Quay lại cộng đồng</Button></Link>
       </div>
     );
@@ -476,28 +467,10 @@ const UserProfile = () => {
   ];
 
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)",
-        "--background": "13 33 55",
-        "--card": "13 33 55",
-        "--card-foreground": "255 255 255",
-        "--foreground": "255 255 255",
-        "--muted-foreground": "148 163 184",
-        "--border": "180 144 30 / 0.25",
-        "--popover": "13 33 55",
-        "--popover-foreground": "255 255 255",
-        "--muted": "13 25 45",
-        "--accent": "180 144 30 / 0.15",
-        "--accent-foreground": "255 255 255",
-        "--input": "13 33 55",
-        "--ring": "180 144 30",
-      } as React.CSSProperties}
-    >
+    <div className="min-h-screen" style={{ background: "#f0f2f5" }}>
 
       {/* ── Cover Photo ─────────────────────────────────────────────────── */}
-      <div className="relative h-[220px] sm:h-[280px] overflow-hidden">
+      <div className="relative h-[180px] sm:h-[240px] overflow-hidden">
         {profile?.cover_photo_url ? (
           <>
             <img
@@ -506,34 +479,63 @@ const UserProfile = () => {
               className="w-full h-full object-cover cursor-pointer"
               onClick={() => setCoverLightboxOpen(true)}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#060d1a] via-black/20 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
           </>
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-amber-950/30 via-[#0a1628] to-amber-900/20">
-            <div className="absolute inset-0 bg-gradient-to-t from-[#060d1a] to-transparent pointer-events-none" />
+          <div className="w-full h-full bg-gradient-to-br from-emerald-100 via-teal-50 to-amber-50">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
           </div>
         )}
 
         {/* Back */}
-        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 z-10 p-2 bg-black/40 hover:bg-black/60 rounded-full transition-colors">
+        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 z-10 p-2 bg-black/30 hover:bg-black/50 rounded-full transition-colors">
           <ArrowLeft className="w-5 h-5 text-white" />
         </button>
 
         {/* Edit cover — own profile */}
         {isOwnProfile && (
-          <Link to="/profile" className="absolute bottom-4 right-4 z-10 flex items-center gap-2 px-3 py-1.5 bg-black/50 hover:bg-black/70 rounded-lg text-sm font-medium text-white transition-colors">
+          <Link to="/profile" className="absolute bottom-3 right-4 z-10 flex items-center gap-2 px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-lg text-sm font-medium text-white transition-colors">
             <Camera className="w-4 h-4" />
             {profile?.cover_photo_url ? "Đổi ảnh bìa" : "Thêm ảnh bìa"}
           </Link>
         )}
+
+        {/* ── Bảng Danh Dự — floating overlay on cover, top-right ── */}
+        <div
+          className="absolute right-4 top-3 z-20 hidden sm:block w-[270px] rounded-xl p-3"
+          style={{
+            background: "white",
+            border: "2px solid rgba(180,144,30,0.5)",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <img src={angelAiGoldenLogo} className="w-6 h-6 object-contain" alt="Angel AI" />
+            <span className="text-xs font-extrabold tracking-widest text-amber-600 uppercase">Bảng Danh Dự</span>
+            <Avatar className="w-6 h-6 ml-auto">
+              <AvatarImage src={profile?.avatar_url || angelAvatar} className="object-cover" />
+              <AvatarFallback className="text-[10px]">{profile?.display_name?.charAt(0) || "U"}</AvatarFallback>
+            </Avatar>
+          </div>
+          <div className="grid grid-cols-2 gap-1">
+            {honorStats.map((s, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-full"
+                style={{ background: "#1a6b3a", border: "1px solid #daa520" }}
+              >
+                <span className="text-[10px] text-white">{s.icon} {s.label}</span>
+                <span className="text-[10px] font-bold text-amber-300 ml-1">{s.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ── Profile Header Card ──────────────────────────────────────────── */}
       <div className="max-w-[1100px] mx-auto px-4">
-        <div
-          className="rounded-2xl p-4 sm:p-6 -mt-6 relative z-10"
-          style={{ background: "rgba(13,33,55,0.92)", border: "1px solid rgba(180,144,30,0.25)", boxShadow: "0 8px 40px rgba(0,0,0,0.5)" }}
-        >
+        <div className="bg-white rounded-2xl p-4 sm:p-6 -mt-6 relative z-10 shadow-sm">
+
           {/* ── Two-column layout: [Avatar+Orbital] + [Info] ── */}
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
 
@@ -543,7 +545,7 @@ const UserProfile = () => {
               style={{ width: wrapperSize, height: wrapperSize, marginTop: -wrapperSize / 2 - 16 }}
             >
               {/* Glow ring */}
-              <div className="absolute rounded-full" style={{ width: orbitRadius * 2 + 8, height: orbitRadius * 2 + 8, background: "radial-gradient(circle, rgba(251,191,36,0.1) 0%, transparent 70%)", boxShadow: "0 0 40px rgba(251,191,36,0.18)" }} />
+              <div className="absolute rounded-full" style={{ width: orbitRadius * 2 + 8, height: orbitRadius * 2 + 8, background: "radial-gradient(circle, rgba(251,191,36,0.08) 0%, transparent 70%)" }} />
 
               {/* Orbital social links */}
               <OrbitalSocialLinks socialLinks={activeSocialLinks} orbitRadius={orbitRadius} durationSecs={22} />
@@ -552,24 +554,24 @@ const UserProfile = () => {
               <div className="relative z-20">
                 <div
                   className="rounded-full p-[3px] cursor-pointer"
-                  style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700, #ffec8b, #daa520, #b8860b)", boxShadow: "0 0 30px rgba(251,191,36,0.4), 0 0 60px rgba(251,191,36,0.15)" }}
+                  style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700, #ffec8b, #daa520, #b8860b)", boxShadow: "0 0 20px rgba(251,191,36,0.3)" }}
                   onClick={() => profile?.avatar_url && setAvatarLightboxOpen(true)}
                 >
-                  <Avatar className="w-[110px] h-[110px] sm:w-[130px] sm:h-[130px] border-[3px] border-[#0a1628]">
+                  <Avatar className="w-[110px] h-[110px] sm:w-[130px] sm:h-[130px] border-[3px] border-white">
                     <AvatarImage src={profile?.avatar_url || angelAvatar} alt={profile?.display_name || "User"} className="object-cover" />
-                    <AvatarFallback className="text-4xl bg-gradient-to-br from-amber-900 to-amber-700 text-amber-100">
+                    <AvatarFallback className="text-4xl bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700">
                       {profile?.display_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </div>
 
-                {/* Diamond / Badge icon */}
-                <DiamondBadge badgeLevel={badgeLevel} />
+                {/* Diamond Badge — top-center */}
+                <DiamondBadge />
 
                 {/* Edit avatar */}
                 {isOwnProfile && (
-                  <Link to="/profile" className="absolute bottom-1 right-1 z-40 p-1.5 bg-[#0a1628] hover:bg-[#0d2137] rounded-full border border-amber-600/40 transition-colors">
-                    <Camera className="w-3.5 h-3.5 text-amber-400" />
+                  <Link to="/profile" className="absolute bottom-1 right-1 z-40 p-1.5 bg-white hover:bg-gray-50 rounded-full border border-amber-400/60 transition-colors shadow-sm">
+                    <Camera className="w-3.5 h-3.5 text-amber-500" />
                   </Link>
                 )}
               </div>
@@ -579,10 +581,10 @@ const UserProfile = () => {
             <div className="flex-1 min-w-0 pt-1 sm:pt-2">
               {/* Name + badge level chip */}
               <div className="flex items-start flex-wrap gap-2">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
                   {profile?.display_name || "Người dùng ẩn danh"}
                 </h1>
-                <span className="self-center inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-900/40 border border-amber-600/40 text-amber-300">
+                <span className="self-center inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 border border-amber-300 text-amber-700">
                   {badgeLevel === "angel" ? "👼 Angel"
                     : badgeLevel === "lightworker" ? "✨ Lightworker"
                     : badgeLevel === "guardian" ? "🛡️ Guardian"
@@ -594,26 +596,36 @@ const UserProfile = () => {
               {/* Handle + copy */}
               {profile?.handle && (
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                  <span className="text-sm font-semibold text-amber-400">@{profile.handle}</span>
-                  <span className="text-xs text-white/50 hidden sm:inline">· angel.fun.rich/{profile.handle}</span>
-                  <button onClick={handleCopyLink} className="p-1 rounded hover:bg-amber-400/10 text-white/50 hover:text-amber-400 transition-colors">
-                    {copied ? <Check className="w-3 h-3 text-amber-400" /> : <Copy className="w-3 h-3" />}
+                  <span className="text-sm font-semibold text-amber-600">@{profile.handle}</span>
+                  <span className="text-xs text-gray-400 hidden sm:inline">· angel.fun.rich/{profile.handle}</span>
+                  <button onClick={handleCopyLink} className="p-1 rounded hover:bg-amber-50 text-gray-400 hover:text-amber-500 transition-colors">
+                    {copied ? <Check className="w-3 h-3 text-amber-500" /> : <Copy className="w-3 h-3" />}
                   </button>
                 </div>
               )}
 
-              {/* Wallet */}
-              {userId && <WalletAddressDisplay userId={userId} className="mt-1" />}
+              {/* Wallet row + Edit button (own profile) */}
+              <div className="flex items-center justify-between gap-2 mt-1 flex-wrap">
+                {userId && <WalletAddressDisplay userId={userId} />}
+                {isOwnProfile && (
+                  <Link to="/profile">
+                    <Button size="sm" variant="outline" className="border-amber-500 text-amber-700 font-semibold whitespace-nowrap hover:bg-amber-50">
+                      <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                      Chỉnh sửa trang cá nhân
+                    </Button>
+                  </Link>
+                )}
+              </div>
 
               {/* Location + ecosystem */}
-              <div className="flex items-center gap-3 mt-1.5 text-xs text-white/60 flex-wrap">
-                <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> FUN Ecosystem</span>
+              <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500 flex-wrap">
+                <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5 text-amber-500" /> FUN Ecosystem</span>
                 <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
+                  <Calendar className="w-3.5 h-3.5 text-amber-500" />
                   Tham gia {profile?.created_at ? format(new Date(profile.created_at), "MM/yyyy", { locale: vi }) : "—"}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Star className="w-3.5 h-3.5 text-amber-400" />
+                  <Star className="w-3.5 h-3.5 text-amber-500" />
                   {positiveActions} hành động tốt
                 </span>
               </div>
@@ -624,52 +636,31 @@ const UserProfile = () => {
                   <div className="flex -space-x-2">
                     {friends.slice(0, 6).map(friend => (
                       <Link key={friend.user_id} to={`/user/${friend.user_id}`}>
-                        <Avatar className="w-7 h-7 border-2 border-[#0a1628] hover:z-10 transition-transform hover:scale-110">
+                        <Avatar className="w-7 h-7 border-2 border-white hover:z-10 transition-transform hover:scale-110">
                           <AvatarImage src={friend.avatar_url || angelAvatar} className="object-cover" />
                           <AvatarFallback className="text-xs">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
                       </Link>
                     ))}
                   </div>
-                  <span className="text-xs text-white/60">{stats.friends} bạn bè</span>
+                  <span className="text-xs text-gray-500">{stats.friends} bạn bè</span>
                 </div>
               )}
 
               {/* Bio */}
               {profile?.bio && (
-                <p className="text-sm text-white/60 mt-2 leading-relaxed max-w-md">{profile.bio}</p>
+                <p className="text-sm text-gray-500 mt-2 leading-relaxed max-w-md">{profile.bio}</p>
               )}
 
-              {/* Action buttons */}
+              {/* Action buttons (non-own profile) */}
               <div className="mt-3">
                 {renderActionButtons()}
               </div>
             </div>
-
-            {/* Bảng Danh Dự — top right on large screens */}
-            <div
-              className="w-full sm:w-auto sm:min-w-[220px] rounded-xl p-3 flex-shrink-0"
-              style={{ background: "linear-gradient(135deg, #0d3320, #1a4a2e)", border: "1px solid rgba(180,144,30,0.4)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}
-            >
-              <div className="flex items-center gap-2 mb-2.5">
-                <img src={funProfileLogo} className="w-5 h-5 object-contain" alt="" />
-                <span className="text-xs font-extrabold tracking-widest text-amber-300 uppercase">Bảng Danh Dự</span>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {honorStats.map((s, i) => (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded-lg" style={{ background: "rgba(10,46,24,0.8)", border: "1px solid rgba(180,144,30,0.3)" }}>
-                    <span className="text-xs text-amber-400/80">{s.icon} {s.label}</span>
-                    <span className="text-xs font-bold text-white ml-1">{s.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {/* ── Admin ID ── */}
-          {isAdmin && <p className="text-xs text-white/50 mt-2 font-mono">User ID: {userId}</p>}
-
-          <Separator className="my-4 bg-amber-900/30" />
+          {/* Separator */}
+          <Separator className="my-4 bg-gray-200" />
 
           {/* ── Navigation Tabs + More menu ── */}
           <div className="flex items-center justify-between">
@@ -680,8 +671,8 @@ const UserProfile = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-4 py-2.5 text-[14px] font-semibold rounded-lg transition-colors whitespace-nowrap ${
                     activeTab === tab.id
-                      ? "text-amber-400 border-b-[3px] border-amber-400 rounded-b-none bg-amber-400/5"
-                      : "text-white/60 hover:text-white hover:bg-white/10"
+                      ? "text-amber-600 border-b-[3px] border-amber-500 rounded-b-none bg-amber-50/60"
+                      : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                   }`}
                 >
                   {tab.label}
@@ -708,55 +699,55 @@ const UserProfile = () => {
           <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
 
             {/* Intro Card */}
-            <div className="rounded-2xl p-4" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(180,144,30,0.2)", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
-              <h3 className="text-base font-bold text-white mb-3">Giới thiệu</h3>
-              {profile?.bio && <p className="text-sm text-white/60 mb-3 leading-relaxed">{profile.bio}</p>}
+            <div className="rounded-2xl p-4 bg-white shadow-sm">
+              <h3 className="text-base font-bold text-gray-900 mb-3">Giới thiệu</h3>
+              {profile?.bio && <p className="text-sm text-gray-500 mb-3 leading-relaxed">{profile.bio}</p>}
 
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2.5 text-white/60">
-                  <Globe className="w-4 h-4 flex-shrink-0 text-amber-400/70" />
+                <div className="flex items-center gap-2.5 text-gray-500">
+                  <Globe className="w-4 h-4 flex-shrink-0 text-amber-500" />
                   <span>FUN Ecosystem · Angel AI Community</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-white/60">
-                  <Calendar className="w-4 h-4 flex-shrink-0 text-amber-400/70" />
+                <div className="flex items-center gap-2.5 text-gray-500">
+                  <Calendar className="w-4 h-4 flex-shrink-0 text-amber-500" />
                   <span>Tham gia {profile?.created_at ? format(new Date(profile.created_at), "MMMM yyyy", { locale: vi }) : "gần đây"}</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-white/60">
-                  <Star className="w-4 h-4 flex-shrink-0 text-amber-400" />
-                  <span>PoPL Score: <strong className="text-amber-400">{poplScore}/100</strong></span>
+                <div className="flex items-center gap-2.5 text-gray-500">
+                  <Star className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                  <span>PoPL Score: <strong className="text-amber-600">{poplScore}/100</strong></span>
                 </div>
-                <div className="flex items-center gap-2.5 text-white/60">
-                  <ThumbsUp className="w-4 h-4 flex-shrink-0 text-amber-400/70" />
-                  <span><strong className="text-white">{stats.likes}</strong> lượt thích</span>
+                <div className="flex items-center gap-2.5 text-gray-500">
+                  <ThumbsUp className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                  <span><strong className="text-gray-700">{stats.likes}</strong> lượt thích</span>
                 </div>
               </div>
 
               {/* Camly Coin */}
-              <div className="mt-3 p-2.5 rounded-xl flex items-center gap-2.5" style={{ background: "rgba(180,144,30,0.08)", border: "1px solid rgba(180,144,30,0.25)" }}>
+              <div className="mt-3 p-2.5 rounded-xl flex items-center gap-2.5 bg-amber-50 border border-amber-200">
                 <img src={camlyCoinLogo} alt="CAMLY" className="w-7 h-7 rounded-full flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-white/50">Số dư · Tổng tích lũy</p>
-                  <p className="text-sm font-bold text-amber-400">{Math.floor(balance).toLocaleString()} · {Math.floor(naturalLifetimeEarned).toLocaleString()} <span className="text-xs font-normal text-amber-400/70">CAMLY</span></p>
+                  <p className="text-[10px] text-gray-400">Số dư · Tổng tích lũy</p>
+                  <p className="text-sm font-bold text-amber-600">{Math.floor(balance).toLocaleString()} · {Math.floor(naturalLifetimeEarned).toLocaleString()} <span className="text-xs font-normal text-amber-500">CAMLY</span></p>
                 </div>
               </div>
 
               {lixiReward > 0 && (
-                <div className="mt-2 p-2.5 rounded-xl flex items-center gap-2.5" style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)" }}>
+                <div className="mt-2 p-2.5 rounded-xl flex items-center gap-2.5 bg-red-50 border border-red-200">
                   <span className="text-xl">🧧</span>
                   <div>
-                    <p className="text-[10px] text-white/50">Lì xì Tết</p>
-                    <p className="text-sm font-bold text-red-400">{Math.floor(lixiReward).toLocaleString()} <span className="text-xs font-normal text-white/60">CAMLY</span></p>
+                    <p className="text-[10px] text-gray-400">Lì xì Tết</p>
+                    <p className="text-sm font-bold text-red-500">{Math.floor(lixiReward).toLocaleString()} <span className="text-xs font-normal text-gray-400">CAMLY</span></p>
                   </div>
                 </div>
               )}
 
               {/* FUN Money */}
               {!funMoneyStats.isLoading && funMoneyStats.totalAmount > 0 && (
-                <div className="mt-2 p-2.5 rounded-xl flex items-center gap-2.5" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+                <div className="mt-2 p-2.5 rounded-xl flex items-center gap-2.5 bg-emerald-50 border border-emerald-200">
                   <img src={funMoneyLogo} alt="FUN" className="w-7 h-7 flex-shrink-0" />
                   <div>
-                    <p className="text-[10px] text-white/50">FUN Money (On-chain)</p>
-                    <p className="text-sm font-bold text-emerald-400">{funMoneyStats.totalAmount.toLocaleString()} <span className="text-xs font-normal text-white/60">FUN</span></p>
+                    <p className="text-[10px] text-gray-400">FUN Money (On-chain)</p>
+                    <p className="text-sm font-bold text-emerald-600">{funMoneyStats.totalAmount.toLocaleString()} <span className="text-xs font-normal text-gray-400">FUN</span></p>
                   </div>
                 </div>
               )}
@@ -768,12 +759,12 @@ const UserProfile = () => {
 
               {/* Own profile links */}
               {isOwnProfile && (
-                <div className="space-y-2 mt-3 pt-3 border-t border-amber-900/30">
-                  <Link to="/activity-history" className="flex items-center justify-between text-sm text-white/60 hover:text-amber-400 transition-colors">
+                <div className="space-y-2 mt-3 pt-3 border-t border-gray-100">
+                  <Link to="/activity-history" className="flex items-center justify-between text-sm text-gray-500 hover:text-amber-600 transition-colors">
                     <span className="flex items-center gap-2"><History className="w-4 h-4" />Lịch sử hoạt động</span>
                     <span>→</span>
                   </Link>
-                  <Link to="/profile" className="flex items-center justify-between text-sm text-white/60 hover:text-amber-400 transition-colors">
+                  <Link to="/profile" className="flex items-center justify-between text-sm text-gray-500 hover:text-amber-600 transition-colors">
                     <span className="flex items-center gap-2"><Settings className="w-4 h-4" />Chỉnh sửa chi tiết</span>
                     <span>→</span>
                   </Link>
@@ -783,14 +774,14 @@ const UserProfile = () => {
 
             {/* Admin Actions */}
             {isAdmin && !isOwnProfile && (
-              <div className="rounded-2xl p-4" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(239,68,68,0.3)" }}>
+              <div className="rounded-2xl p-4 bg-white shadow-sm border border-red-200">
                 <h3 className="text-base font-bold text-destructive flex items-center gap-2 mb-3">
                   <ShieldAlert className="w-5 h-5" />Quản lý người dùng
                 </h3>
                 <div className="space-y-2">
                   <Dialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" className="w-full text-amber-600 border-amber-600 hover:bg-amber-50/10">
+                      <Button variant="outline" className="w-full text-amber-600 border-amber-600 hover:bg-amber-50">
                         <ShieldAlert className="w-4 h-4 mr-2" />Suspend User
                       </Button>
                     </DialogTrigger>
@@ -820,7 +811,7 @@ const UserProfile = () => {
                       </div>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setSuspendDialogOpen(false)}>Hủy</Button>
-                        <Button onClick={handleSuspendUser} disabled={isSuspending || !suspendReason.trim()} className="bg-amber-600 hover:bg-amber-700">
+                        <Button onClick={handleSuspendUser} disabled={isSuspending || !suspendReason.trim()} className="bg-amber-600 hover:bg-amber-700 text-white">
                           {isSuspending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Xác nhận
                         </Button>
                       </DialogFooter>
@@ -865,26 +856,26 @@ const UserProfile = () => {
             )}
 
             {/* Friends Preview */}
-            <div className="rounded-2xl p-4" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(180,144,30,0.2)" }}>
+            <div className="rounded-2xl p-4 bg-white shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-base font-bold text-white">Bạn bè</h3>
-                  <p className="text-xs text-white/60">{stats.friends} bạn bè</p>
+                  <h3 className="text-base font-bold text-gray-900">Bạn bè</h3>
+                  <p className="text-xs text-gray-400">{stats.friends} bạn bè</p>
                 </div>
                 {stats.friends > 9 && (
-                  <button onClick={() => setActiveTab("friends")} className="text-amber-400 hover:underline text-xs">Xem tất cả</button>
+                  <button onClick={() => setActiveTab("friends")} className="text-amber-600 hover:underline text-xs">Xem tất cả</button>
                 )}
               </div>
               {friends.length === 0 ? (
-                <p className="text-white/60 text-center py-4 text-sm">Chưa có bạn bè</p>
+                <p className="text-gray-400 text-center py-4 text-sm">Chưa có bạn bè</p>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {friends.slice(0, 9).map(friend => (
                     <Link key={friend.user_id} to={`/user/${friend.user_id}`} className="group">
-                      <div className="aspect-square rounded-xl overflow-hidden border border-amber-900/30">
+                      <div className="aspect-square rounded-xl overflow-hidden border border-gray-100">
                         <img src={friend.avatar_url || angelAvatar} alt={friend.display_name || "User"} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                       </div>
-                      <p className="text-[11px] font-medium text-white/60 mt-1 truncate group-hover:text-amber-400 transition-colors">{friend.display_name || "Người dùng"}</p>
+                      <p className="text-[11px] font-medium text-gray-500 mt-1 truncate group-hover:text-amber-600 transition-colors">{friend.display_name || "Người dùng"}</p>
                     </Link>
                   ))}
                 </div>
@@ -897,9 +888,9 @@ const UserProfile = () => {
             {activeTab === "posts" && (
               <>
                 {userPosts.length === 0 ? (
-                  <div className="rounded-2xl p-12 text-center" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(180,144,30,0.2)" }}>
-                    <FileText className="w-14 h-14 text-amber-400/20 mx-auto mb-3" />
-                    <p className="text-white/60">Chưa có bài viết nào</p>
+                  <div className="rounded-2xl p-12 text-center bg-white shadow-sm">
+                    <FileText className="w-14 h-14 text-amber-300 mx-auto mb-3" />
+                    <p className="text-gray-400">Chưa có bài viết nào</p>
                     {isOwnProfile && (
                       <Link to="/community" className="mt-4 inline-block">
                         <Button style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)" }} className="text-black font-bold mt-4">Đăng bài đầu tiên</Button>
@@ -919,21 +910,21 @@ const UserProfile = () => {
             )}
 
             {activeTab === "about" && (
-              <div className="rounded-2xl p-6 space-y-5" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(180,144,30,0.2)" }}>
-                <h3 className="text-xl font-bold text-white">Giới thiệu</h3>
+              <div className="rounded-2xl p-6 space-y-5 bg-white shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900">Giới thiệu</h3>
                 {profile?.bio && (
                   <div>
-                    <p className="text-sm text-white/60 font-semibold mb-1">Tiểu sử</p>
-                    <p className="text-[15px] text-white">{profile.bio}</p>
+                    <p className="text-sm text-gray-400 font-semibold mb-1">Tiểu sử</p>
+                    <p className="text-[15px] text-gray-700">{profile.bio}</p>
                   </div>
                 )}
                 <div className="space-y-3">
-                  <h4 className="text-base font-semibold text-white">Tài chính & Thành tích</h4>
+                  <h4 className="text-base font-semibold text-gray-900">Tài chính & Thành tích</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {honorStats.map((s, i) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: "rgba(10,46,24,0.5)", border: "1px solid rgba(180,144,30,0.25)" }}>
-                        <span className="text-sm text-amber-400/80">{s.icon} {s.label}</span>
-                        <span className="text-sm font-bold text-white">{s.value}</span>
+                      <div key={i} className="flex items-center justify-between px-3 py-2 rounded-full" style={{ background: "#1a6b3a", border: "1px solid #daa520" }}>
+                        <span className="text-xs text-white">{s.icon} {s.label}</span>
+                        <span className="text-xs font-bold text-amber-300 ml-1">{s.value}</span>
                       </div>
                     ))}
                   </div>
@@ -942,19 +933,19 @@ const UserProfile = () => {
             )}
 
             {activeTab === "friends" && (
-              <div className="rounded-2xl p-6" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(180,144,30,0.2)" }}>
-                <h3 className="text-xl font-bold text-white mb-4">Bạn bè · {stats.friends}</h3>
+              <div className="rounded-2xl p-6 bg-white shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Bạn bè · {stats.friends}</h3>
                 {friends.length === 0 ? (
-                  <p className="text-white/60 text-center py-8">Chưa có bạn bè nào</p>
+                  <p className="text-gray-400 text-center py-8">Chưa có bạn bè nào</p>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {friends.map(friend => (
-                      <Link key={friend.user_id} to={`/user/${friend.user_id}`} className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-amber-400/5 transition-colors border border-amber-900/20">
+                      <Link key={friend.user_id} to={`/user/${friend.user_id}`} className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-amber-50 transition-colors border border-gray-100">
                         <Avatar className="w-10 h-10 flex-shrink-0">
                           <AvatarImage src={friend.avatar_url || angelAvatar} className="object-cover" />
                           <AvatarFallback className="text-sm">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
-                        <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors truncate">{friend.display_name || "Người dùng"}</p>
+                        <p className="text-sm font-medium text-gray-700 group-hover:text-amber-600 transition-colors truncate">{friend.display_name || "Người dùng"}</p>
                       </Link>
                     ))}
                   </div>
