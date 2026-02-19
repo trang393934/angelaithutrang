@@ -201,9 +201,9 @@ function DiamondBadge({ badgeLevel }: { badgeLevel: string }) {
     <div
       className="absolute -top-1 -right-1 z-30 w-8 h-8 rounded-full flex items-center justify-center text-sm"
       style={{
-        background: "linear-gradient(135deg, #0a1628, #0d2137)",
-        border: "2px solid #22d3ee",
-        boxShadow: "0 0 12px rgba(34,211,238,0.6), 0 0 24px rgba(34,211,238,0.2)",
+      background: "linear-gradient(135deg, #b8860b, #0a1628)",
+        border: "2px solid #ffd700",
+        boxShadow: "0 0 14px rgba(255,215,0,0.7), 0 0 28px rgba(218,165,32,0.3)",
       }}
     >
       {icon}
@@ -476,10 +476,28 @@ const UserProfile = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)" }}>
+    <div
+      className="min-h-screen"
+      style={{
+        background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)",
+        "--background": "13 33 55",
+        "--card": "13 33 55",
+        "--card-foreground": "255 255 255",
+        "--foreground": "255 255 255",
+        "--muted-foreground": "148 163 184",
+        "--border": "180 144 30 / 0.25",
+        "--popover": "13 33 55",
+        "--popover-foreground": "255 255 255",
+        "--muted": "13 25 45",
+        "--accent": "180 144 30 / 0.15",
+        "--accent-foreground": "255 255 255",
+        "--input": "13 33 55",
+        "--ring": "180 144 30",
+      } as React.CSSProperties}
+    >
 
       {/* ── Cover Photo ─────────────────────────────────────────────────── */}
-      <div className="relative h-[260px] sm:h-[320px] overflow-hidden">
+      <div className="relative h-[220px] sm:h-[280px] overflow-hidden">
         {profile?.cover_photo_url ? (
           <>
             <img
