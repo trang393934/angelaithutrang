@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { Header } from "@/components/Header";
 import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
 import { MusicThemeSelector } from "@/components/MusicThemeSelector";
 import { 
@@ -496,18 +497,16 @@ const UserProfile = () => {
       {/* ── Overlay for readability ───────────────────────────────────────── */}
       <div className="fixed inset-0 pointer-events-none z-[1]" style={{ background: "rgba(240,242,245,0.72)" }} />
 
+      {/* ── Header (same as homepage) ────────────────────────────────────── */}
+      <div className="relative z-[50]">
+        <Header />
+      </div>
+
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <div className="relative z-[2] pt-4">
 
-        {/* Back button (floating above card) */}
-        <div className="max-w-[1100px] mx-auto px-4 mb-2">
-          <button onClick={() => navigate(-1)} className="p-2 bg-white/80 hover:bg-white rounded-full shadow transition-colors">
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-        </div>
-
         {/* ── White Card (cover + profile info together) ───────────────── */}
-        <div className="max-w-[1100px] mx-auto px-4">
+        <div className="max-w-[1100px] mx-auto px-6 lg:px-12">
           <div className="bg-white rounded-2xl shadow-sm overflow-visible relative z-10">
 
             {/* ── Cover Photo (rounded top, contained inside white card) ── */}
@@ -755,7 +754,7 @@ const UserProfile = () => {
         </div>
 
       {/* ── Main Content ─────────────────────────────────────────────────── */}
-      <div className="max-w-[1100px] mx-auto px-4 py-4">
+      <div className="max-w-[1100px] mx-auto px-6 lg:px-12 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 lg:items-start">
 
           {/* ── Left Sidebar ─────────────────────────────────────────────── */}
