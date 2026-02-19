@@ -237,7 +237,7 @@ function OrbitalIcon({ platform, url, meta, x, y, durationSecs, userAvatarUrl }:
               top: y,
               width: 36,
               height: 36,
-              background: meta.bg,
+              background: userAvatarUrl ? meta.bg : meta.bg,
               boxShadow: hovered
                 ? `0 0 18px ${meta.bg}dd, 0 2px 10px rgba(0,0,0,0.4)`
                 : `0 0 8px ${meta.bg}88, 0 2px 6px rgba(0,0,0,0.3)`,
@@ -246,7 +246,6 @@ function OrbitalIcon({ platform, url, meta, x, y, durationSecs, userAvatarUrl }:
               outlineOffset: 2,
               zIndex: 20,
             }}
-            // Counter-rotate so icon stays upright
             animate={{ rotate: hovered ? 0 : -360 }}
             transition={{
               duration: hovered ? 0.2 : durationSecs,
