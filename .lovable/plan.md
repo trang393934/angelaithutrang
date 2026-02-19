@@ -1,134 +1,107 @@
 
-# Nâng Cấp Giao Diện Trang Cá Nhân — Angel AI Style
+# Nâng Cấp Social Links Editor & Orbital Display
 
-## Mục Tiêu
-Redesign `PublicProfileHeader` và `SocialLinksDisplay` để tạo hiệu ứng **các vòng tròn mạng xã hội xoay quanh avatar** theo phong cách Angel AI (gold/dark). Các thay đổi tập trung vào component `src/components/public-profile/PublicProfileHeader.tsx` và `src/components/public-profile/SocialLinksDisplay.tsx`.
+## Phân Tích Từ 2 Hình Tham Khảo
 
----
+**Hình 1** (trạng thái chưa cài link): Giao diện chọn platform dạng lưới 3 cột — mỗi ô là 1 button tròn có icon + tên platform. Bên dưới là ô input nhập link. Thứ tự: Angel AI (→ Fun Profile), Fun Play, Facebook, YouTube, Twitter/X, Telegram, TikTok, LinkedIn, Zalo.
 
-## Phân Tích Hình Tham Khảo
-Từ hình người dùng cung cấp:
-- Avatar lớn, nổi bật ở giữa/trái
-- Các icon mạng xã hội (Facebook, v.v.) là **vòng tròn nhỏ nổi xung quanh avatar**, mỗi cái link đến trang mạng xã hội tương ứng
-- Các vòng tròn này di chuyển/xoay liên tục theo quỹ đạo hình tròn quanh avatar
-- Màu sắc Angel AI: vàng kim loại (gold gradient), nền sáng/tối sang trọng
-- Tên + handle to, rõ ràng bên dưới
-- Layout tổng thể: cover photo → avatar nổi lên + vòng tròn xoay → tên/thông tin
+**Hình 2** (sau khi thêm links): Hiển thị danh sách các link đã thêm — mỗi item là 1 card có: icon tròn (logo thật của platform), tên platform in đậm, link rút gọn bên dưới, nút X để xóa. Bên dưới là phần "Thêm mạng xã hội" chỉ hiển thị các platform chưa được thêm.
 
----
+## Các Thay Đổi Cần Thực Hiện
 
-## Các File Sẽ Chỉnh Sửa
+### File 1: `src/components/profile/SocialLinksEditor.tsx` — REFACTOR TOÀN BỘ
 
-### 1. `src/components/public-profile/PublicProfileHeader.tsx` — CHỈNH SỬA CHÍNH
+**Thứ tự platforms mới (theo đúng hình):**
+1. `fun_profile` → "Fun Profile" (dùng logo `fun-profile-logo.png`)
+2. `fun_play` → "Fun Play" (dùng logo `fun-play-logo.png`)
+3. `facebook` → "Facebook" (icon Facebook xanh)
+4. `youtube` → "YouTube" (icon đỏ)
+5. `twitter` → "Twitter / X" (icon X đen)
+6. `telegram` → "Telegram" (icon xanh sky)
+7. `tiktok` → "TikTok" (icon đen)
+8. `linkedin` → "LinkedIn" (icon xanh navy)
+9. `zalo` → "Zalo" (icon xanh Zalo)
 
-**Thay đổi:**
+**Loại bỏ:** `instagram`, `website`, `discord` (không có trong hình tham khảo)
 
-**A. Orbiting Social Circles quanh Avatar**
-- Tạo một `OrbitalSocialLinks` component con ngay trong file
-- Dùng `framer-motion` (đã có sẵn) để animate các vòng tròn icon
-- Mỗi mạng xã hội → 1 vòng tròn nhỏ (32x32px) với icon thương hiệu, màu nền đặc trưng, border gold
-- Các vòng tròn sắp xếp theo quỹ đạo tròn quanh avatar, mỗi cái bắt đầu tại góc phân bổ đều (360° / số lượng)
-- Animation: `rotate` vô hạn, nhưng bản thân icon **counter-rotate** để icon không bị quay ngược
-- Khi hover vào 1 vòng tròn: dừng xoay, scale lên, hiện tooltip tên platform
-- Click → mở link mạng xã hội trong tab mới
-- Bán kính quỹ đạo: ~90px cho desktop, ~70px cho mobile
+**Thêm mới:** `fun_profile`, `fun_play`, `zalo`
 
-**B. Avatar Container**
-- Tăng size avatar: 140px mobile, 168px desktop
-- Border: 5px vàng kim loại gradient (`from-amber-400 via-yellow-300 to-amber-500`)
-- Ring ngoài: `ring-2 ring-amber-400/40 shadow-[0_0_30px_rgba(251,191,36,0.3)]` — hiệu ứng glow
-- Wrapper `div` có `position: relative` chứa cả avatar + vòng tròn xoay
-- Wrapper phải đủ rộng để vòng tròn không bị clip: `w-[280px] h-[280px]` với avatar ở giữa
+**UX mới — 3 bước:**
 
-**C. Bố cục tổng thể**
-- Chuyển từ layout hàng ngang (Facebook style) sang layout **căn giữa** (như hình tham khảo)
-- Cover photo giữ nguyên phía trên
-- Avatar + orbital circles căn giữa, nổi lên từ cover (-mt-[70px])
-- Tên, handle, bio, thông tin → căn giữa bên dưới avatar
-- Bỏ `SocialLinksDisplay` dạng danh sách dọc (vì social links đã được hiển thị qua orbital circles)
+**Bước 1:** Platform chưa có link → hiển thị dạng grid button (như hình 1). Khi click 1 platform → chuyển sang input mode cho platform đó
 
----
+**Bước 2:** Có link → hiển thị dạng card list (như hình 2). Card gồm: icon/logo platform, tên, URL rút gọn, nút X xóa
 
-### 2. `src/components/public-profile/SocialLinksDisplay.tsx` — CẬP NHẬT
+**Bước 3:** Phần "Thêm mạng xã hội" bên dưới chỉ hiển thị platforms chưa có link (grid nhỏ hơn)
 
-- Giữ nguyên file này nhưng không dùng trong `PublicProfileHeader` nữa (thay bằng orbital)
-- Hoặc export thêm hàm `getSocialPlatformMeta(platform)` để `PublicProfileHeader` tái sử dụng icon/màu của từng platform
-
----
-
-## Chi Tiết Kỹ Thuật
-
-### Orbital Animation Logic
-
-```text
-Mỗi icon được đặt tại:
-  x = cx + R * cos(angle + time * speed)
-  y = cy + R * sin(angle + time * speed)
-
-Trong framer-motion, dùng:
-  animate={{ rotate: 360 }}
-  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-
-Wrapper xoay tròn → icon children counter-rotate ngược lại để icon thẳng đứng
+**Logic mới:**
+```typescript
+// Trạng thái:
+const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+const [inputValue, setInputValue] = useState("");
+// Khi click platform → set selectedPlatform
+// Khi nhấn + → save link cho platform đó vào links state
+// Khi nhấn X trên card → xóa link đó khỏi state
+// Khi nhấn "Cập nhật hồ sơ" → save toàn bộ vào DB
 ```
 
-### Platform Icons trong Orbital Circles
+**Thiết kế card (hình 2):**
+- Border nhẹ, rounded-xl
+- Icon platform: 48px × 48px, rounded-full (dùng logo image cho Fun Profile & Fun Play, icon lucide cho Facebook/YouTube/Telegram, text icon cho TikTok/LinkedIn/Zalo)
+- Tên platform: font-semibold, text-foreground
+- URL: text-sm text-muted-foreground, truncate
+- Nút X: absolute top-right, nhỏ
 
-| Platform | Màu nền | Icon |
-|----------|---------|------|
-| Facebook | Xanh dương | `Facebook` lucide |
-| Instagram | Hồng tím gradient | `Instagram` lucide |
-| TikTok | Đen | 🎵 |
-| YouTube | Đỏ | `Youtube` lucide |
-| LinkedIn | Xanh navy | `in` text |
-| Twitter/X | Đen | 𝕏 |
-| Website | Xanh lá | `Globe` lucide |
-| Telegram | Xanh trời | `MessageCircle` lucide |
-| Discord | Tím | `D` text |
+**Thiết kế grid selector (hình 1):**
+- Container: dashed border, rounded-xl, bg-muted/20
+- Mỗi platform: button dạng flex row (icon + tên), 3 cột trên desktop, 2-3 cột responsive
+- Input phía dưới: placeholder thay đổi theo platform được chọn
 
-### Màu Sắc Angel AI Áp Dụng
+### File 2: `src/components/public-profile/PublicProfileHeader.tsx` — CẬP NHẬT `PLATFORM_META`
 
-- Avatar border: `linear-gradient(135deg, #b8860b, #daa520, #ffd700, #ffec8b, #daa520, #b8860b)`
-- Vòng tròn social: border `ring-1 ring-amber-400/60`, `shadow-[0_2px_8px_rgba(0,0,0,0.3)]`
-- Nền vòng tròn: màu đặc trưng của platform nhưng thêm shimmer edge vàng khi hover
-- Quỹ đạo path: có thể vẽ một vòng tròn nhạt `border border-primary/10 rounded-full absolute` làm "đường ray" cho đẹp
-
----
-
-## Các Bước Thực Hiện
-
-1. **Cập nhật `PublicProfileHeader.tsx`:**
-   - Thêm `OrbitalSocialLinks` component
-   - Dùng `framer-motion` `motion.div` với `animate={{ rotate: 360 }}` cho wrapper quỹ đạo
-   - Đặt avatar ở giữa wrapper, các icon ở positions tuyệt đối theo góc phân bổ
-   - Chuyển layout từ hàng ngang sang căn giữa
-   - Xóa `<SocialLinksDisplay>` khỏi header (đã thay bằng orbital)
-
-2. **Cập nhật `src/pages/HandleProfile.tsx`:**
-   - Xóa phần render `<SocialLinksDisplay>` riêng lẻ nếu có (vì đã tích hợp vào header)
-
-3. **Không cần migration database** — chỉ thay đổi UI, dữ liệu `social_links` từ database vẫn dùng như cũ.
-
----
-
-## Kết Quả Cuối Cùng
-
-```text
-┌──────────────────────────────────────────────┐
-│          [COVER PHOTO — full width]          │
-│                                              │
-│         ╭─────────────────────╮             │
-│    TG ○ │  ╭─────────────╮  │ ○ FB        │
-│         │  │  [AVATAR]   │  │              │
-│   YT ○  │  │             │  │  ○ IG        │
-│         │  ╰─────────────╯  │              │
-│    DC ○ ╰─────────────────────╯ ○ TW       │
-│                                              │
-│           Tên Hiển Thị                      │
-│      @handle · angel.fun.rich/handle         │
-│            Bio của người dùng                │
-│         [Wallet] · [Joined date]             │
-└──────────────────────────────────────────────┘
+Thêm `fun_profile` và `fun_play` vào `PLATFORM_META`:
+```typescript
+fun_profile: {
+  label: "Fun Profile",
+  icon: <img src={funProfileLogo} className="w-5 h-5 object-contain" />,
+  bg: "#1a472a", // xanh lá dark
+  color: "#ffd700",
+},
+fun_play: {
+  label: "Fun Play",
+  icon: <img src={funPlayLogo} className="w-5 h-5 object-contain" />,
+  bg: "#0a1a3a", // navy dark
+  color: "#ffd700",
+},
+zalo: {
+  label: "Zalo",
+  icon: <span className="text-xs font-black">Z</span>,
+  bg: "#0068FF",
+  color: "#fff",
+},
 ```
 
-Các vòng tròn icon xoay liên tục theo chiều kim đồng hồ. Hover = dừng + tooltip. Click = mở link mới.
+Xóa `discord`, `instagram`, `website` khỏi `PLATFORM_META` (không còn dùng).
+
+Cập nhật tooltip nút "+" orbital (chủ sở hữu chưa có link) → text đổi thành "✨ Thêm Mạng Xã Hội".
+
+### File 3: `src/components/public-profile/SocialLinksDisplay.tsx` — CẬP NHẬT
+
+Thêm `fun_profile`, `fun_play`, `zalo` vào `PLATFORM_META` để hiển thị đúng khi render danh sách (dùng ở nơi khác nếu có).
+
+## Thứ Tự Hiển Thị Orbital (Public Profile)
+
+Các vòng tròn orbital trên trang public profile sẽ hiển thị theo đúng thứ tự platform đã được thêm (từ data `social_links`), với icon logo thật cho Fun Profile và Fun Play thay vì text placeholder.
+
+## Kỹ Thuật
+
+- Import logo assets: `import funProfileLogo from "@/assets/fun-profile-logo.png"` và `import funPlayLogo from "@/assets/fun-play-logo.png"`
+- Zalo không có icon lucide → dùng text "Z" với màu nền `#0068FF`
+- Placeholder input thay đổi động theo platform được chọn (ví dụ "Link trang cá nhân Facebook", "Link kênh YouTube", v.v.)
+- Counter: "Mạng xã hội (X/9)" trong tiêu đề section như hình
+
+## Tóm Tắt File Sẽ Sửa
+
+1. `src/components/profile/SocialLinksEditor.tsx` — Refactor UX hoàn toàn theo 2 hình tham khảo
+2. `src/components/public-profile/PublicProfileHeader.tsx` — Thêm `fun_profile`, `fun_play`, `zalo` vào PLATFORM_META
+3. `src/components/public-profile/SocialLinksDisplay.tsx` — Thêm các platform mới vào PLATFORM_META
