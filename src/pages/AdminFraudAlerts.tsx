@@ -7,6 +7,7 @@ import AdminNavToolbar from "@/components/admin/AdminNavToolbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -32,8 +33,11 @@ import {
   Eye,
   RefreshCw,
   Siren,
-  User,
   Clock,
+  Users,
+  Wallet,
+  Coins,
+  AlertCircle,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -57,7 +61,6 @@ interface FraudAlert {
   reviewed_at: string | null;
   action_taken: string | null;
   created_at: string;
-  // Joined
   display_name?: string | null;
   avatar_url?: string | null;
   handle?: string | null;
@@ -74,6 +77,190 @@ interface PatternEntry {
   is_active: boolean;
   created_at: string;
 }
+
+interface SybilMember {
+  userId: string;
+  name: string;
+  email: string;
+  balance: number;
+  lifetimeEarned: number;
+  pendingMint: number;
+  pendingWithdrawal: number;
+}
+
+interface SybilGroup {
+  groupName: string;
+  walletAddress: string;
+  severity: "critical" | "high";
+  note: string;
+  members: SybilMember[];
+}
+
+// ============================================================
+// 📋 DANH SÁCH 14 TÀI KHOẢN SYBIL — DỮ LIỆU ĐÃ XÁC MINH TỪ DB
+// ============================================================
+const SYBIL_GROUPS: SybilGroup[] = [
+  {
+    groupName: "Nhóm 7786 — Ví tổng 0x1BC4...446",
+    walletAddress: "0x1BC43AA93a9Cf9880eBb000B15A7de87F6Bf1446",
+    severity: "critical",
+    note: "3 tài khoản cùng suffix email '7786', chuyển tiền về 1 ví tổng",
+    members: [
+      {
+        userId: "efb81db9-52dd-4af6-a9d1-aff044bf37b7",
+        name: "Thanh Thùy",
+        email: "anhnguyet7786@gmail.com",
+        balance: 1550641,
+        lifetimeEarned: 2317354,
+        pendingMint: 72,
+        pendingWithdrawal: 250000,
+      },
+      {
+        userId: "37f87d2a-111f-4988-a74b-6f6ef6041d4c",
+        name: "Xuân Nguyễn",
+        email: "xuannguyen77786@gmail.com",
+        balance: 1858930,
+        lifetimeEarned: 2308716,
+        pendingMint: 40,
+        pendingWithdrawal: 0,
+      },
+      {
+        userId: "5182148f-1999-43b5-83db-09560e25c688",
+        name: "Trần Nhung",
+        email: "trannhung7786@gmail.com",
+        balance: 1548380,
+        lifetimeEarned: 2066010,
+        pendingMint: 34,
+        pendingWithdrawal: 290000,
+      },
+    ],
+  },
+  {
+    groupName: "Nhóm Ví Tổng le quang — 0xAdF1...e24",
+    walletAddress: "0xAdF192cee80f68d5bE8A78a6c9e9b8692748e24",
+    severity: "critical",
+    note: "8 tài khoản chuyển tiền về ví tổng 'le quang', dấu hiệu sybil farming có tổ chức",
+    members: [
+      {
+        userId: "c4d884f7-23e0-4da5-8735-50bf1202a529",
+        name: "tinhthan",
+        email: "tinhthan331@gmail.com",
+        balance: 1233300,
+        lifetimeEarned: 2132659,
+        pendingMint: 54,
+        pendingWithdrawal: 1,
+      },
+      {
+        userId: "71bdc8b3-ae19-45d7-a1f5-ebdd716c464f",
+        name: "nguyen sinh 4",
+        email: "nguyensinh6921@gmail.com",
+        balance: 1666100,
+        lifetimeEarned: 1895938,
+        pendingMint: 42,
+        pendingWithdrawal: 1,
+      },
+      {
+        userId: "b5621395-32ba-4974-b27e-3c2c39c09a90",
+        name: "le bong",
+        email: "lebong3441@gmail.com",
+        balance: 927100,
+        lifetimeEarned: 1753486,
+        pendingMint: 46,
+        pendingWithdrawal: 1,
+      },
+      {
+        userId: "ebe0a17e-b0ac-4042-9440-527bca4d0248",
+        name: "Lê sang",
+        email: "sangle12111@gmail.com",
+        balance: 101296,
+        lifetimeEarned: 898917,
+        pendingMint: 75,
+        pendingWithdrawal: 1,
+      },
+      {
+        userId: "4be73a80-c89c-4690-bae7-ba0ec3a43380",
+        name: "Nguyễn Chính",
+        email: "namleanh2211@gmail.com",
+        balance: 200,
+        lifetimeEarned: 852141,
+        pendingMint: 24,
+        pendingWithdrawal: 257232,
+      },
+      {
+        userId: "bc604f2f-46d3-445b-a3cf-39b25c261382",
+        name: "quynh anh",
+        email: "quynhanh070820188@gmail.com",
+        balance: 170771,
+        lifetimeEarned: 409169,
+        pendingMint: 43,
+        pendingWithdrawal: 0,
+      },
+      {
+        userId: "98ef9564-e581-429b-9b53-9b340b1c4d57",
+        name: "trung binh",
+        email: "trung1211121@gmail.com",
+        balance: 95984,
+        lifetimeEarned: 334489,
+        pendingMint: 46,
+        pendingWithdrawal: 1,
+      },
+      {
+        userId: "5182148f-1999-43b5-83db-09560e25c688",
+        name: "Trần Nhung",
+        email: "trannhung7786@gmail.com",
+        balance: 1548380,
+        lifetimeEarned: 2066010,
+        pendingMint: 34,
+        pendingWithdrawal: 290000,
+      },
+    ],
+  },
+  {
+    groupName: "Nhóm wanting2308 — Cùng địa chỉ ví",
+    walletAddress: "0x5c56eE4C...",
+    severity: "high",
+    note: "2 tài khoản tên giống nhau (Thu Nguyễn), cùng 1 địa chỉ ví = cùng 1 người",
+    members: [
+      {
+        userId: "2fa4f884-3b65-4762-b12e-e469b92090fb",
+        name: "Thu Nguyễn",
+        email: "wanting23081962@gmail.com",
+        balance: 509600,
+        lifetimeEarned: 511700,
+        pendingMint: 0,
+        pendingWithdrawal: 0,
+      },
+      {
+        userId: "708c1c0d-e0c3-4892-867c-52d36ab648e6",
+        name: "Thu Nguyễn (tài khoản 2)",
+        email: "wanting23081861@gmail.com",
+        balance: 16500,
+        lifetimeEarned: 16500,
+        pendingMint: 0,
+        pendingWithdrawal: 0,
+      },
+    ],
+  },
+  {
+    groupName: "Nhóm Ngọc na — Liên kết ví tổng le quang",
+    walletAddress: "0x350340d8...8733Ced5C",
+    severity: "high",
+    note: "Giao dịch liên kết với ví tổng le quang",
+    members: [
+      {
+        userId: "55ec5ce5-6986-4be0-b7b2-f9ec1511059f",
+        name: "Ngọc na",
+        email: "ngocnamc466@gmail.com",
+        balance: 1475100,
+        lifetimeEarned: 1704727,
+        pendingMint: 40,
+        pendingWithdrawal: 229627,
+      },
+    ],
+  },
+];
+
+const ALL_SYBIL_USER_IDS = [...new Set(SYBIL_GROUPS.flatMap((g) => g.members.map((m) => m.userId)))];
 
 const SEVERITY_MAP: Record<string, { label: string; className: string }> = {
   critical: { label: "Nghiêm trọng", className: "bg-destructive text-destructive-foreground" },
@@ -100,13 +287,18 @@ const AdminFraudAlerts = () => {
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [reviewedFilter, setReviewedFilter] = useState<string>("unreviewed");
-  const [activeTab, setActiveTab] = useState<"alerts" | "patterns">("alerts");
+  const [activeTab, setActiveTab] = useState<"alerts" | "patterns" | "sybil_groups">("alerts");
+
+  // Sybil groups state
+  const [suspendedIds, setSuspendedIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBanning, setBulkBanning] = useState(false);
+  const [loadingSybil, setLoadingSybil] = useState(false);
+  const [confirmBulkBan, setConfirmBulkBan] = useState(false);
 
   // Ban dialog
   const [banTarget, setBanTarget] = useState<FraudAlert | null>(null);
   const [banning, setBanning] = useState(false);
-
-  // Ignore dialog
   const [ignoreTarget, setIgnoreTarget] = useState<FraudAlert | null>(null);
 
   const fetchAlerts = async () => {
@@ -127,13 +319,11 @@ const AdminFraudAlerts = () => {
 
       const userIds = [...new Set(alertData.map((a) => a.user_id))];
 
-      // Fetch profiles
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, display_name, avatar_url, handle")
         .in("user_id", userIds);
 
-      // Fetch suspension status
       const { data: suspensions } = await supabase
         .from("user_suspensions")
         .select("user_id")
@@ -171,10 +361,30 @@ const AdminFraudAlerts = () => {
     setPatterns(data || []);
   };
 
+  const fetchSybilStatus = async () => {
+    setLoadingSybil(true);
+    try {
+      const { data } = await supabase
+        .from("user_suspensions")
+        .select("user_id")
+        .in("user_id", ALL_SYBIL_USER_IDS)
+        .is("lifted_at", null);
+      setSuspendedIds(new Set(data?.map((s) => s.user_id) || []));
+    } finally {
+      setLoadingSybil(false);
+    }
+  };
+
   useEffect(() => {
     fetchAlerts();
     fetchPatterns();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "sybil_groups") {
+      fetchSybilStatus();
+    }
+  }, [activeTab]);
 
   const filtered = alerts.filter((a) => {
     const q = search.toLowerCase();
@@ -196,6 +406,77 @@ const AdminFraudAlerts = () => {
 
   const unreviewed = alerts.filter((a) => !a.is_reviewed).length;
   const critical = alerts.filter((a) => a.severity === "critical" && !a.is_reviewed).length;
+
+  // Sybil helpers
+  const notBannedCount = ALL_SYBIL_USER_IDS.filter((id) => !suspendedIds.has(id)).length;
+  const uniqueAllIds = [...new Set(ALL_SYBIL_USER_IDS)];
+
+  const toggleUser = (userId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(userId) ? next.delete(userId) : next.add(userId);
+      return next;
+    });
+  };
+
+  const toggleGroup = (group: SybilGroup) => {
+    const groupIds = group.members.map((m) => m.userId).filter((id) => !suspendedIds.has(id));
+    const allSelected = groupIds.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        groupIds.forEach((id) => next.delete(id));
+      } else {
+        groupIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const selectAllNotBanned = () => {
+    const toSelect = uniqueAllIds.filter((id) => !suspendedIds.has(id));
+    setSelectedIds(new Set(toSelect));
+  };
+
+  const handleBulkBan = async () => {
+    if (!session?.access_token || selectedIds.size === 0) return;
+    setBulkBanning(true);
+    setConfirmBulkBan(false);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bulk-suspend-users`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userIds: [...selectedIds],
+            reason: "Sybil farming — tài khoản thuộc nhóm đã phân tích và xác minh",
+            rejectWithdrawals: true,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Lỗi ban tài khoản");
+
+      toast({
+        title: `✅ Đã ban ${data.banned_count} tài khoản`,
+        description: `Từ chối ${data.withdrawals_rejected} lệnh rút tiền. Thất bại: ${data.failed_count}`,
+      });
+      setSelectedIds(new Set());
+      await fetchSybilStatus();
+    } catch (err: unknown) {
+      toast({
+        title: "Lỗi",
+        description: err instanceof Error ? err.message : "Không thể ban",
+        variant: "destructive",
+      });
+    } finally {
+      setBulkBanning(false);
+    }
+  };
 
   const handleBan = async () => {
     if (!banTarget || !session?.access_token) return;
@@ -244,7 +525,7 @@ const AdminFraudAlerts = () => {
       toast({ title: "Đã đánh dấu bỏ qua" });
       setIgnoreTarget(null);
       await fetchAlerts();
-    } catch (err) {
+    } catch {
       toast({ title: "Lỗi", variant: "destructive" });
     }
   };
@@ -258,6 +539,7 @@ const AdminFraudAlerts = () => {
   };
 
   const fmt = (d: string) => new Date(d).toLocaleString("vi-VN");
+  const fmtNum = (n: number) => n.toLocaleString("vi-VN");
 
   return (
     <div className="min-h-screen bg-background">
@@ -282,7 +564,7 @@ const AdminFraudAlerts = () => {
             </p>
           </div>
           <div className="ml-auto">
-            <Button variant="outline" size="sm" onClick={() => { fetchAlerts(); fetchPatterns(); }}>
+            <Button variant="outline" size="sm" onClick={() => { fetchAlerts(); fetchPatterns(); if (activeTab === "sybil_groups") fetchSybilStatus(); }}>
               <RefreshCw className="w-4 h-4 mr-1" /> Làm mới
             </Button>
           </div>
@@ -308,7 +590,7 @@ const AdminFraudAlerts = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant={activeTab === "alerts" ? "default" : "outline"}
             size="sm"
@@ -328,11 +610,24 @@ const AdminFraudAlerts = () => {
           >
             <Shield className="w-4 h-4 mr-1" /> Pattern Registry ({patterns.length})
           </Button>
+          <Button
+            variant={activeTab === "sybil_groups" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab("sybil_groups")}
+            className={activeTab !== "sybil_groups" && notBannedCount > 0 ? "border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" : ""}
+          >
+            <Users className="w-4 h-4 mr-1" /> 🚫 Nhóm Sybil
+            {notBannedCount > 0 && (
+              <span className="ml-1.5 bg-destructive text-destructive-foreground text-[10px] rounded-full px-1.5 py-0.5">
+                {notBannedCount}
+              </span>
+            )}
+          </Button>
         </div>
 
+        {/* ============ TAB: ALERTS ============ */}
         {activeTab === "alerts" && (
           <>
-            {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -367,7 +662,6 @@ const AdminFraudAlerts = () => {
               </Select>
             </div>
 
-            {/* Table */}
             {loading ? (
               <div className="text-center py-12 text-muted-foreground">Đang tải...</div>
             ) : (
@@ -442,12 +736,7 @@ const AdminFraudAlerts = () => {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Badge
-                              className={
-                                SEVERITY_MAP[alert.severity]?.className ||
-                                "bg-muted text-muted-foreground"
-                              }
-                            >
+                            <Badge className={SEVERITY_MAP[alert.severity]?.className || "bg-muted text-muted-foreground"}>
                               {SEVERITY_MAP[alert.severity]?.label || alert.severity}
                             </Badge>
                           </TableCell>
@@ -475,9 +764,7 @@ const AdminFraudAlerts = () => {
                             )}
                           </TableCell>
                           <TableCell>
-                            <span className="text-xs text-muted-foreground">
-                              {fmt(alert.created_at)}
-                            </span>
+                            <span className="text-xs text-muted-foreground">{fmt(alert.created_at)}</span>
                           </TableCell>
                           <TableCell className="text-right">
                             {!alert.is_reviewed && !alert.is_suspended && (
@@ -521,6 +808,7 @@ const AdminFraudAlerts = () => {
           </>
         )}
 
+        {/* ============ TAB: PATTERNS ============ */}
         {activeTab === "patterns" && (
           <div className="border border-border rounded-xl overflow-hidden">
             <Table>
@@ -555,11 +843,7 @@ const AdminFraudAlerts = () => {
                         </code>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          className={
-                            SEVERITY_MAP[p.severity]?.className || "bg-muted text-muted-foreground"
-                          }
-                        >
+                        <Badge className={SEVERITY_MAP[p.severity]?.className || "bg-muted text-muted-foreground"}>
                           {SEVERITY_MAP[p.severity]?.label || p.severity}
                         </Badge>
                       </TableCell>
@@ -586,9 +870,211 @@ const AdminFraudAlerts = () => {
             </Table>
           </div>
         )}
+
+        {/* ============ TAB: SYBIL GROUPS ============ */}
+        {activeTab === "sybil_groups" && (
+          <div className="space-y-5">
+            {/* Action bar */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-destructive/10 border border-destructive/30 rounded-xl p-4">
+              <div>
+                <p className="font-semibold text-destructive flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  {notBannedCount} tài khoản chưa bị ban — đã xác minh sybil farming
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Đã chọn: <strong>{selectedIds.size}</strong> tài khoản
+                </p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAllNotBanned}
+                  disabled={loadingSybil}
+                >
+                  Chọn tất cả chưa ban ({notBannedCount})
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setConfirmBulkBan(true)}
+                  disabled={selectedIds.size === 0 || bulkBanning}
+                >
+                  <Ban className="w-4 h-4 mr-1" />
+                  {bulkBanning ? "Đang xử lý..." : `Ban ${selectedIds.size} tài khoản đã chọn`}
+                </Button>
+              </div>
+            </div>
+
+            {/* Groups */}
+            {loadingSybil ? (
+              <div className="text-center py-12 text-muted-foreground">Đang tải trạng thái...</div>
+            ) : (
+              SYBIL_GROUPS.map((group, gi) => {
+                const groupActiveIds = group.members.map((m) => m.userId).filter((id) => !suspendedIds.has(id));
+                const allGroupSelected = groupActiveIds.length > 0 && groupActiveIds.every((id) => selectedIds.has(id));
+                const someGroupSelected = groupActiveIds.some((id) => selectedIds.has(id));
+                const groupBannedCount = group.members.filter((m) => suspendedIds.has(m.userId)).length;
+                const groupTotalBalance = group.members.reduce((s, m) => s + m.balance, 0);
+                const groupTotalPendingMint = group.members.reduce((s, m) => s + m.pendingMint, 0);
+
+                // Deduplicate members by userId for display
+                const uniqueMembers = group.members.filter(
+                  (m, idx, arr) => arr.findIndex((x) => x.userId === m.userId) === idx
+                );
+
+                return (
+                  <div
+                    key={gi}
+                    className={`border rounded-xl overflow-hidden ${
+                      group.severity === "critical"
+                        ? "border-destructive/40"
+                        : "border-amber-400/40"
+                    }`}
+                  >
+                    {/* Group header */}
+                    <div
+                      className={`px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                        group.severity === "critical"
+                          ? "bg-destructive/10"
+                          : "bg-amber-500/10"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={allGroupSelected}
+                          onCheckedChange={() => toggleGroup(group)}
+                          className="border-muted-foreground"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm">{group.groupName}</span>
+                            <Badge
+                              className={
+                                group.severity === "critical"
+                                  ? "bg-destructive text-destructive-foreground text-[10px]"
+                                  : "bg-amber-500 text-white text-[10px]"
+                              }
+                            >
+                              {group.severity === "critical" ? "🔴 Nghiêm trọng" : "🟡 Cao"}
+                            </Badge>
+                            {groupBannedCount === group.members.length && (
+                              <Badge className="bg-emerald-500 text-white text-[10px]">✅ Đã ban hết</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{group.note}</p>
+                          <p className="text-xs font-mono text-muted-foreground mt-0.5 truncate max-w-xs">
+                            <Wallet className="w-3 h-3 inline mr-1" />
+                            {group.walletAddress}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {uniqueMembers.length} TK ({groupBannedCount} đã ban)
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Coins className="w-3 h-3" />
+                          {fmtNum(groupTotalBalance)}
+                        </span>
+                        {groupTotalPendingMint > 0 && (
+                          <span className="text-amber-600 dark:text-amber-400">
+                            {groupTotalPendingMint} mint pending
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Members table */}
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead className="w-10"></TableHead>
+                          <TableHead>Tên / Email</TableHead>
+                          <TableHead>Số dư</TableHead>
+                          <TableHead>Lifetime Earned</TableHead>
+                          <TableHead>Mint pending</TableHead>
+                          <TableHead>Rút chờ</TableHead>
+                          <TableHead className="text-right">Trạng thái</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {uniqueMembers.map((member) => {
+                          const isBanned = suspendedIds.has(member.userId);
+                          const isSelected = selectedIds.has(member.userId);
+                          return (
+                            <TableRow
+                              key={member.userId}
+                              className={isBanned ? "opacity-50 bg-muted/20" : isSelected ? "bg-destructive/5" : ""}
+                            >
+                              <TableCell>
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => !isBanned && toggleUser(member.userId)}
+                                  disabled={isBanned}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium text-sm">{member.name}</p>
+                                  <p className="text-xs text-muted-foreground font-mono">{member.email}</p>
+                                  <p className="text-[10px] text-muted-foreground/60 font-mono">{member.userId.slice(0, 8)}...</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-mono text-sm font-medium">
+                                  {fmtNum(member.balance)}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-mono text-sm text-muted-foreground">
+                                  {fmtNum(member.lifetimeEarned)}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                {member.pendingMint > 0 ? (
+                                  <Badge variant="outline" className="text-xs text-amber-600 border-amber-400">
+                                    {member.pendingMint}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {member.pendingWithdrawal > 0 ? (
+                                  <span className="text-xs font-mono text-destructive font-medium">
+                                    {fmtNum(member.pendingWithdrawal)}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {isBanned ? (
+                                  <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px]">
+                                    ✅ Đã ban
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-destructive/10 text-destructive border border-destructive/30 text-[10px]">
+                                    🔴 Chờ xử lý
+                                  </Badge>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Ban Dialog */}
+      {/* Ban Dialog (single from alerts tab) */}
       <Dialog open={!!banTarget} onOpenChange={(o) => !o && setBanTarget(null)}>
         <DialogContent>
           <DialogHeader>
@@ -603,11 +1089,38 @@ const AdminFraudAlerts = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBanTarget(null)} disabled={banning}>
-              Hủy
-            </Button>
+            <Button variant="outline" onClick={() => setBanTarget(null)} disabled={banning}>Hủy</Button>
             <Button variant="destructive" onClick={handleBan} disabled={banning}>
               {banning ? "Đang xử lý..." : "Xác nhận Ban"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Bulk Ban Dialog */}
+      <Dialog open={confirmBulkBan} onOpenChange={(o) => !o && setConfirmBulkBan(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Ban className="w-5 h-5" /> Xác nhận Ban hàng loạt
+            </DialogTitle>
+            <DialogDescription className="space-y-2">
+              <p>
+                Bạn sắp ban vĩnh viễn <strong>{selectedIds.size} tài khoản</strong> đã được xác minh là sybil farming.
+              </p>
+              <p>Hành động này sẽ:</p>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                <li>Ban vĩnh viễn tất cả tài khoản đã chọn</li>
+                <li>Từ chối tất cả lệnh rút tiền đang chờ</li>
+                <li>Gửi thông điệp healing đến từng tài khoản</li>
+              </ul>
+              <p className="text-destructive font-medium">Hành động này không thể hoàn tác!</p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmBulkBan(false)} disabled={bulkBanning}>Hủy</Button>
+            <Button variant="destructive" onClick={handleBulkBan} disabled={bulkBanning}>
+              {bulkBanning ? "Đang ban..." : `✅ Xác nhận Ban ${selectedIds.size} tài khoản`}
             </Button>
           </DialogFooter>
         </DialogContent>
