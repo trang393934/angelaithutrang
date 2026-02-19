@@ -212,16 +212,14 @@ interface FriendData {
 function DiamondBadge() {
   return (
     <div
-      className="absolute z-30 flex items-center justify-center rounded-full"
+      className="absolute z-30 flex items-center justify-center rounded-full text-sm"
       style={{
-        width: 52, height: 52,
-        top: -28, left: "50%",
+        width: 32, height: 32,
+        top: -16, left: "50%",
         transform: "translateX(-50%)",
-        background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700, #ffec8b, #daa520)",
-        border: "3px solid #fff",
-        boxShadow: "0 0 22px rgba(255,215,0,0.9), 0 0 40px rgba(255,215,0,0.4), 0 3px 12px rgba(0,0,0,0.35)",
-        fontSize: 28,
-        lineHeight: 1,
+        background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)",
+        border: "2px solid #fff",
+        boxShadow: "0 0 14px rgba(255,215,0,0.8), 0 2px 8px rgba(0,0,0,0.3)",
       }}
     >
       💎
@@ -551,7 +549,7 @@ const UserProfile = () => {
                 <div className="flex items-center justify-between mb-2">
                   <img src={angelAiGoldenLogo} className="w-6 h-6 object-contain flex-shrink-0" alt="Angel AI" />
                   <span
-                    className="text-xs font-extrabold tracking-widest uppercase text-center flex-1 mx-1"
+                    className="text-[10px] font-extrabold tracking-widest uppercase text-center flex-1 mx-1"
                     style={{
                       background: "linear-gradient(90deg, #ff0000, #ff7700, #ffdd00, #00ff00, #0099ff, #8800ff, #ff00ff)",
                       WebkitBackgroundClip: "text",
@@ -568,19 +566,19 @@ const UserProfile = () => {
                 </div>
                 {/* Divider line */}
                 <div className="w-full h-px mb-2" style={{ background: "linear-gradient(90deg, transparent, #daa520, transparent)" }} />
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-1">
                   {honorStats.map((s, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between px-2.5 py-2 rounded-full"
+                      className="flex items-center justify-between px-2 py-1.5 rounded-full"
                       style={{
                         background: "linear-gradient(135deg, rgba(255,236,139,0.35), rgba(255,215,0,0.20), rgba(218,165,32,0.28))",
                         border: "1.5px solid #b8860b",
                         boxShadow: "0 0 6px rgba(218,165,32,0.4), inset 0 1px 0 rgba(255,255,255,0.4)",
                       }}
                     >
-                      <span className="text-[10px] leading-none font-semibold" style={{ color: "#7a4e00" }}>{s.icon} {s.label}</span>
-                      <span className="text-[10px] font-extrabold ml-1 leading-none" style={{ color: "#b8860b" }}>{s.value}</span>
+                      <span className="text-[9px] leading-none font-semibold" style={{ color: "#7a4e00" }}>{s.icon} {s.label}</span>
+                      <span className="text-[9px] font-extrabold ml-1 leading-none" style={{ color: "#b8860b" }}>{s.value}</span>
                     </div>
                   ))}
                 </div>
