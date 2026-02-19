@@ -132,7 +132,7 @@ function OrbitalIcon({
             {meta.icon}
           </motion.a>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs font-semibold bg-background border border-amber-400/40 text-foreground">
+        <TooltipContent side="top" className="text-xs font-semibold bg-[#0d2137] border border-amber-400/40 text-white">
           {meta.label}
         </TooltipContent>
       </Tooltip>
@@ -451,7 +451,7 @@ const UserProfile = () => {
   if (!profile && !userId) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)" }}>
-        <p className="text-lg text-muted-foreground mb-4">Không tìm thấy người dùng</p>
+        <p className="text-lg text-white/60 mb-4">Không tìm thấy người dùng</p>
         <Link to="/community"><Button>Quay lại cộng đồng</Button></Link>
       </div>
     );
@@ -476,10 +476,10 @@ const UserProfile = () => {
   ];
 
   return (
-    <div className="dark min-h-screen" style={{ background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)" }}>
+    <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)" }}>
 
       {/* ── Cover Photo ─────────────────────────────────────────────────── */}
-      <div className="relative h-[200px] sm:h-[260px] overflow-hidden">
+      <div className="relative h-[260px] sm:h-[320px] overflow-hidden">
         {profile?.cover_photo_url ? (
           <>
             <img
@@ -561,7 +561,7 @@ const UserProfile = () => {
             <div className="flex-1 min-w-0 pt-1 sm:pt-2">
               {/* Name + badge level chip */}
               <div className="flex items-start flex-wrap gap-2">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground leading-tight">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
                   {profile?.display_name || "Người dùng ẩn danh"}
                 </h1>
                 <span className="self-center inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-900/40 border border-amber-600/40 text-amber-300">
@@ -577,8 +577,8 @@ const UserProfile = () => {
               {profile?.handle && (
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                   <span className="text-sm font-semibold text-amber-400">@{profile.handle}</span>
-                  <span className="text-xs text-muted-foreground hidden sm:inline">· angel.fun.rich/{profile.handle}</span>
-                  <button onClick={handleCopyLink} className="p-1 rounded hover:bg-amber-400/10 text-muted-foreground hover:text-amber-400 transition-colors">
+                  <span className="text-xs text-white/50 hidden sm:inline">· angel.fun.rich/{profile.handle}</span>
+                  <button onClick={handleCopyLink} className="p-1 rounded hover:bg-amber-400/10 text-white/50 hover:text-amber-400 transition-colors">
                     {copied ? <Check className="w-3 h-3 text-amber-400" /> : <Copy className="w-3 h-3" />}
                   </button>
                 </div>
@@ -588,7 +588,7 @@ const UserProfile = () => {
               {userId && <WalletAddressDisplay userId={userId} className="mt-1" />}
 
               {/* Location + ecosystem */}
-              <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
+              <div className="flex items-center gap-3 mt-1.5 text-xs text-white/60 flex-wrap">
                 <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> FUN Ecosystem</span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" />
@@ -613,13 +613,13 @@ const UserProfile = () => {
                       </Link>
                     ))}
                   </div>
-                  <span className="text-xs text-muted-foreground">{stats.friends} bạn bè</span>
+                  <span className="text-xs text-white/60">{stats.friends} bạn bè</span>
                 </div>
               )}
 
               {/* Bio */}
               {profile?.bio && (
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-md">{profile.bio}</p>
+                <p className="text-sm text-white/60 mt-2 leading-relaxed max-w-md">{profile.bio}</p>
               )}
 
               {/* Action buttons */}
@@ -649,7 +649,7 @@ const UserProfile = () => {
           </div>
 
           {/* ── Admin ID ── */}
-          {isAdmin && <p className="text-xs text-muted-foreground mt-2 font-mono">User ID: {userId}</p>}
+          {isAdmin && <p className="text-xs text-white/50 mt-2 font-mono">User ID: {userId}</p>}
 
           <Separator className="my-4 bg-amber-900/30" />
 
@@ -663,7 +663,7 @@ const UserProfile = () => {
                   className={`px-4 py-2.5 text-[14px] font-semibold rounded-lg transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? "text-amber-400 border-b-[3px] border-amber-400 rounded-b-none bg-amber-400/5"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                      : "text-white/60 hover:text-white hover:bg-white/10"
                   }`}
                 >
                   {tab.label}
@@ -691,25 +691,25 @@ const UserProfile = () => {
 
             {/* Intro Card */}
             <div className="rounded-2xl p-4" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(180,144,30,0.2)", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
-              <h3 className="text-base font-bold text-foreground mb-3">Giới thiệu</h3>
-              {profile?.bio && <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{profile.bio}</p>}
+              <h3 className="text-base font-bold text-white mb-3">Giới thiệu</h3>
+              {profile?.bio && <p className="text-sm text-white/60 mb-3 leading-relaxed">{profile.bio}</p>}
 
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2.5 text-muted-foreground">
+                <div className="flex items-center gap-2.5 text-white/60">
                   <Globe className="w-4 h-4 flex-shrink-0 text-amber-400/70" />
                   <span>FUN Ecosystem · Angel AI Community</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-muted-foreground">
+                <div className="flex items-center gap-2.5 text-white/60">
                   <Calendar className="w-4 h-4 flex-shrink-0 text-amber-400/70" />
                   <span>Tham gia {profile?.created_at ? format(new Date(profile.created_at), "MMMM yyyy", { locale: vi }) : "gần đây"}</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-muted-foreground">
+                <div className="flex items-center gap-2.5 text-white/60">
                   <Star className="w-4 h-4 flex-shrink-0 text-amber-400" />
                   <span>PoPL Score: <strong className="text-amber-400">{poplScore}/100</strong></span>
                 </div>
-                <div className="flex items-center gap-2.5 text-muted-foreground">
+                <div className="flex items-center gap-2.5 text-white/60">
                   <ThumbsUp className="w-4 h-4 flex-shrink-0 text-amber-400/70" />
-                  <span><strong className="text-foreground">{stats.likes}</strong> lượt thích</span>
+                  <span><strong className="text-white">{stats.likes}</strong> lượt thích</span>
                 </div>
               </div>
 
@@ -717,7 +717,7 @@ const UserProfile = () => {
               <div className="mt-3 p-2.5 rounded-xl flex items-center gap-2.5" style={{ background: "rgba(180,144,30,0.08)", border: "1px solid rgba(180,144,30,0.25)" }}>
                 <img src={camlyCoinLogo} alt="CAMLY" className="w-7 h-7 rounded-full flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-muted-foreground">Số dư · Tổng tích lũy</p>
+                  <p className="text-[10px] text-white/50">Số dư · Tổng tích lũy</p>
                   <p className="text-sm font-bold text-amber-400">{Math.floor(balance).toLocaleString()} · {Math.floor(naturalLifetimeEarned).toLocaleString()} <span className="text-xs font-normal text-amber-400/70">CAMLY</span></p>
                 </div>
               </div>
@@ -726,8 +726,8 @@ const UserProfile = () => {
                 <div className="mt-2 p-2.5 rounded-xl flex items-center gap-2.5" style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)" }}>
                   <span className="text-xl">🧧</span>
                   <div>
-                    <p className="text-[10px] text-muted-foreground">Lì xì Tết</p>
-                    <p className="text-sm font-bold text-red-400">{Math.floor(lixiReward).toLocaleString()} <span className="text-xs font-normal">CAMLY</span></p>
+                    <p className="text-[10px] text-white/50">Lì xì Tết</p>
+                    <p className="text-sm font-bold text-red-400">{Math.floor(lixiReward).toLocaleString()} <span className="text-xs font-normal text-white/60">CAMLY</span></p>
                   </div>
                 </div>
               )}
@@ -737,8 +737,8 @@ const UserProfile = () => {
                 <div className="mt-2 p-2.5 rounded-xl flex items-center gap-2.5" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
                   <img src={funMoneyLogo} alt="FUN" className="w-7 h-7 flex-shrink-0" />
                   <div>
-                    <p className="text-[10px] text-muted-foreground">FUN Money (On-chain)</p>
-                    <p className="text-sm font-bold text-emerald-400">{funMoneyStats.totalAmount.toLocaleString()} <span className="text-xs font-normal">FUN</span></p>
+                    <p className="text-[10px] text-white/50">FUN Money (On-chain)</p>
+                    <p className="text-sm font-bold text-emerald-400">{funMoneyStats.totalAmount.toLocaleString()} <span className="text-xs font-normal text-white/60">FUN</span></p>
                   </div>
                 </div>
               )}
@@ -751,11 +751,11 @@ const UserProfile = () => {
               {/* Own profile links */}
               {isOwnProfile && (
                 <div className="space-y-2 mt-3 pt-3 border-t border-amber-900/30">
-                  <Link to="/activity-history" className="flex items-center justify-between text-sm text-muted-foreground hover:text-amber-400 transition-colors">
+                  <Link to="/activity-history" className="flex items-center justify-between text-sm text-white/60 hover:text-amber-400 transition-colors">
                     <span className="flex items-center gap-2"><History className="w-4 h-4" />Lịch sử hoạt động</span>
                     <span>→</span>
                   </Link>
-                  <Link to="/profile" className="flex items-center justify-between text-sm text-muted-foreground hover:text-amber-400 transition-colors">
+                  <Link to="/profile" className="flex items-center justify-between text-sm text-white/60 hover:text-amber-400 transition-colors">
                     <span className="flex items-center gap-2"><Settings className="w-4 h-4" />Chỉnh sửa chi tiết</span>
                     <span>→</span>
                   </Link>
@@ -850,15 +850,15 @@ const UserProfile = () => {
             <div className="rounded-2xl p-4" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(180,144,30,0.2)" }}>
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-base font-bold text-foreground">Bạn bè</h3>
-                  <p className="text-xs text-muted-foreground">{stats.friends} bạn bè</p>
+                  <h3 className="text-base font-bold text-white">Bạn bè</h3>
+                  <p className="text-xs text-white/60">{stats.friends} bạn bè</p>
                 </div>
                 {stats.friends > 9 && (
                   <button onClick={() => setActiveTab("friends")} className="text-amber-400 hover:underline text-xs">Xem tất cả</button>
                 )}
               </div>
               {friends.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4 text-sm">Chưa có bạn bè</p>
+                <p className="text-white/60 text-center py-4 text-sm">Chưa có bạn bè</p>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {friends.slice(0, 9).map(friend => (
@@ -866,7 +866,7 @@ const UserProfile = () => {
                       <div className="aspect-square rounded-xl overflow-hidden border border-amber-900/30">
                         <img src={friend.avatar_url || angelAvatar} alt={friend.display_name || "User"} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                       </div>
-                      <p className="text-[11px] font-medium text-muted-foreground mt-1 truncate group-hover:text-amber-400 transition-colors">{friend.display_name || "Người dùng"}</p>
+                      <p className="text-[11px] font-medium text-white/60 mt-1 truncate group-hover:text-amber-400 transition-colors">{friend.display_name || "Người dùng"}</p>
                     </Link>
                   ))}
                 </div>
@@ -881,7 +881,7 @@ const UserProfile = () => {
                 {userPosts.length === 0 ? (
                   <div className="rounded-2xl p-12 text-center" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(180,144,30,0.2)" }}>
                     <FileText className="w-14 h-14 text-amber-400/20 mx-auto mb-3" />
-                    <p className="text-muted-foreground">Chưa có bài viết nào</p>
+                    <p className="text-white/60">Chưa có bài viết nào</p>
                     {isOwnProfile && (
                       <Link to="/community" className="mt-4 inline-block">
                         <Button style={{ background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)" }} className="text-black font-bold mt-4">Đăng bài đầu tiên</Button>
@@ -902,15 +902,15 @@ const UserProfile = () => {
 
             {activeTab === "about" && (
               <div className="rounded-2xl p-6 space-y-5" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(180,144,30,0.2)" }}>
-                <h3 className="text-xl font-bold text-foreground">Giới thiệu</h3>
+                <h3 className="text-xl font-bold text-white">Giới thiệu</h3>
                 {profile?.bio && (
                   <div>
-                    <p className="text-sm text-muted-foreground font-semibold mb-1">Tiểu sử</p>
-                    <p className="text-[15px] text-foreground">{profile.bio}</p>
+                    <p className="text-sm text-white/60 font-semibold mb-1">Tiểu sử</p>
+                    <p className="text-[15px] text-white">{profile.bio}</p>
                   </div>
                 )}
                 <div className="space-y-3">
-                  <h4 className="text-base font-semibold text-foreground">Tài chính & Thành tích</h4>
+                  <h4 className="text-base font-semibold text-white">Tài chính & Thành tích</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {honorStats.map((s, i) => (
                       <div key={i} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: "rgba(10,46,24,0.5)", border: "1px solid rgba(180,144,30,0.25)" }}>
@@ -925,9 +925,9 @@ const UserProfile = () => {
 
             {activeTab === "friends" && (
               <div className="rounded-2xl p-6" style={{ background: "rgba(13,33,55,0.85)", border: "1px solid rgba(180,144,30,0.2)" }}>
-                <h3 className="text-xl font-bold text-foreground mb-4">Bạn bè · {stats.friends}</h3>
+                <h3 className="text-xl font-bold text-white mb-4">Bạn bè · {stats.friends}</h3>
                 {friends.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">Chưa có bạn bè nào</p>
+                  <p className="text-white/60 text-center py-8">Chưa có bạn bè nào</p>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {friends.map(friend => (
@@ -936,7 +936,7 @@ const UserProfile = () => {
                           <AvatarImage src={friend.avatar_url || angelAvatar} className="object-cover" />
                           <AvatarFallback className="text-sm">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
-                        <p className="text-sm font-medium text-foreground group-hover:text-amber-400 transition-colors truncate">{friend.display_name || "Người dùng"}</p>
+                        <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors truncate">{friend.display_name || "Người dùng"}</p>
                       </Link>
                     ))}
                   </div>
