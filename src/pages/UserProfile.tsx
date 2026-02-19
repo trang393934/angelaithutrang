@@ -476,7 +476,7 @@ const UserProfile = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)" }}>
+    <div className="dark min-h-screen" style={{ background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)" }}>
 
       {/* ── Cover Photo ─────────────────────────────────────────────────── */}
       <div className="relative h-[200px] sm:h-[260px] overflow-hidden">
