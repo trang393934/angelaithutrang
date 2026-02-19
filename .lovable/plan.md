@@ -1,170 +1,134 @@
 
-# Tạo Tab "Ví Phát Thưởng" trong Admin Dashboard
+# Nâng Cấp Giao Diện Trang Cá Nhân — Angel AI Style
 
-## Tổng quan dữ liệu đã xác minh
+## Mục Tiêu
+Redesign `PublicProfileHeader` và `SocialLinksDisplay` để tạo hiệu ứng **các vòng tròn mạng xã hội xoay quanh avatar** theo phong cách Angel AI (gold/dark). Các thay đổi tập trung vào component `src/components/public-profile/PublicProfileHeader.tsx` và `src/components/public-profile/SocialLinksDisplay.tsx`.
 
-Qua phân tích database, xác định rõ 2 ví treasury và nguồn giao dịch tương ứng:
+---
 
-**Ví 1: `0x416336c3b7ACAe89F47EAD2707412f20DA159ac8`** — Ví Rút Thưởng (Camly Withdrawals)
-- Nguồn dữ liệu: bảng `coin_withdrawals` (status = 'completed')
-- Hoạt động: **27/01/2026** → **13/02/2026**
-- Tổng: **166 giao dịch** hoàn thành, **42,117,639 Camly** đã phát ra
-- Ngoài ra: 60 lệnh pending, 13 thất bại, 1 bị từ chối
+## Phân Tích Hình Tham Khảo
+Từ hình người dùng cung cấp:
+- Avatar lớn, nổi bật ở giữa/trái
+- Các icon mạng xã hội (Facebook, v.v.) là **vòng tròn nhỏ nổi xung quanh avatar**, mỗi cái link đến trang mạng xã hội tương ứng
+- Các vòng tròn này di chuyển/xoay liên tục theo quỹ đạo hình tròn quanh avatar
+- Màu sắc Angel AI: vàng kim loại (gold gradient), nền sáng/tối sang trọng
+- Tên + handle to, rõ ràng bên dưới
+- Layout tổng thể: cover photo → avatar nổi lên + vòng tròn xoay → tên/thông tin
 
-**Ví 2: `0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D`** — Ví Lì Xì Tết (LiXi Claims)
-- Nguồn dữ liệu: bảng `lixi_claims` (status = 'completed')
-- Hoạt động: **12/02/2026** → **18/02/2026**
-- Tổng: **136 giao dịch** hoàn thành, **148,501,000 Camly** đã phát ra
-- Ngoài ra: 15 pending, 2 thất bại
+---
 
-## Kiến trúc giải pháp
+## Các File Sẽ Chỉnh Sửa
 
-Tạo **1 trang mới** `/admin/treasury` với đầy đủ báo cáo, và thêm link vào AdminNavToolbar.
+### 1. `src/components/public-profile/PublicProfileHeader.tsx` — CHỈNH SỬA CHÍNH
 
-### File cần tạo:
-- `src/pages/AdminTreasury.tsx` — Trang báo cáo ví phát thưởng
+**Thay đổi:**
 
-### File cần sửa:
-- `src/components/admin/AdminNavToolbar.tsx` — Thêm menu item "Ví Treasury"
-- `src/App.tsx` — Thêm route `/admin/treasury`
+**A. Orbiting Social Circles quanh Avatar**
+- Tạo một `OrbitalSocialLinks` component con ngay trong file
+- Dùng `framer-motion` (đã có sẵn) để animate các vòng tròn icon
+- Mỗi mạng xã hội → 1 vòng tròn nhỏ (32x32px) với icon thương hiệu, màu nền đặc trưng, border gold
+- Các vòng tròn sắp xếp theo quỹ đạo tròn quanh avatar, mỗi cái bắt đầu tại góc phân bổ đều (360° / số lượng)
+- Animation: `rotate` vô hạn, nhưng bản thân icon **counter-rotate** để icon không bị quay ngược
+- Khi hover vào 1 vòng tròn: dừng xoay, scale lên, hiện tooltip tên platform
+- Click → mở link mạng xã hội trong tab mới
+- Bán kính quỹ đạo: ~90px cho desktop, ~70px cho mobile
 
-## Thiết kế trang `AdminTreasury.tsx`
+**B. Avatar Container**
+- Tăng size avatar: 140px mobile, 168px desktop
+- Border: 5px vàng kim loại gradient (`from-amber-400 via-yellow-300 to-amber-500`)
+- Ring ngoài: `ring-2 ring-amber-400/40 shadow-[0_0_30px_rgba(251,191,36,0.3)]` — hiệu ứng glow
+- Wrapper `div` có `position: relative` chứa cả avatar + vòng tròn xoay
+- Wrapper phải đủ rộng để vòng tròn không bị clip: `w-[280px] h-[280px]` với avatar ở giữa
 
-### Layout tổng thể:
-```
-Header (AdminNavToolbar)
-│
-├── Tổng quan 2 ví (Summary Cards)
-│   ├── Ví 1: 0x4163... | Rút Thưởng Camly
-│   └── Ví 2: 0x02D5... | Lì Xì Tết
-│
-└── Tabs chi tiết
-    ├── 📊 Tổng hợp (combined view)
-    ├── 💰 Ví Rút Thưởng (0x4163...)
-    └── 🎁 Ví Lì Xì Tết (0x02D5...)
-```
+**C. Bố cục tổng thể**
+- Chuyển từ layout hàng ngang (Facebook style) sang layout **căn giữa** (như hình tham khảo)
+- Cover photo giữ nguyên phía trên
+- Avatar + orbital circles căn giữa, nổi lên từ cover (-mt-[70px])
+- Tên, handle, bio, thông tin → căn giữa bên dưới avatar
+- Bỏ `SocialLinksDisplay` dạng danh sách dọc (vì social links đã được hiển thị qua orbital circles)
 
-### Tab 1 — Tổng hợp:
-- Biểu đồ timeline (recharts BarChart) hiển thị giao dịch theo ngày của cả 2 ví
-- Bảng thống kê so sánh 2 ví (cạnh nhau)
-- Tổng cộng toàn hệ thống
+---
 
-### Tab 2 — Ví Rút Thưởng (`0x416336...`):
+### 2. `src/components/public-profile/SocialLinksDisplay.tsx` — CẬP NHẬT
 
-**Summary section:**
-```
-┌─────────────────────────────────────────────────────┐
-│ 🏦 Ví: 0x416336c3...DA159ac8 [BSCScan ↗]            │
-│ Hoạt động: 27/01/2026 → 13/02/2026 (18 ngày)        │
-│                                                      │
-│ 166 giao dịch    42,117,639    60 pending            │
-│ hoàn thành       Camly phát    chờ xử lý             │
-└─────────────────────────────────────────────────────┘
-```
+- Giữ nguyên file này nhưng không dùng trong `PublicProfileHeader` nữa (thay bằng orbital)
+- Hoặc export thêm hàm `getSocialPlatformMeta(platform)` để `PublicProfileHeader` tái sử dụng icon/màu của từng platform
 
-**Biểu đồ theo ngày** (BarChart - recharts):
-- X-axis: ngày (27/01 → 13/02)
-- Y-axis: số Camly gửi đi
-- Highlight ngày 28/01 (9.65M) và 02/02 (11.2M) là cao nhất
+---
 
-**Bảng lịch sử chi tiết** (có phân trang, tìm kiếm):
-| Thời gian | Người nhận | Ví nhận | Số Camly | Tx Hash | Trạng thái |
-|---|---|---|---|---|---|
-| 13/02 16:10 | Thu Sang | 0x942c... | 200,000 | 0xe949...↗ | ✅ |
-| 07/02 02:03 | joni | 0xcbb9... | 208,276 | 0xf5ef...↗ | ✅ |
-| ... | | | | | |
+## Chi Tiết Kỹ Thuật
 
-### Tab 3 — Ví Lì Xì Tết (`0x02D557...`):
-
-**Summary section:**
-```
-┌─────────────────────────────────────────────────────┐
-│ 🧧 Ví: 0x02D5578...E6D9a0D [BSCScan ↗]              │
-│ Hoạt động: 12/02/2026 → 18/02/2026 (7 ngày)         │
-│                                                      │
-│ 136 giao dịch    148,501,000   15 pending            │
-│ hoàn thành       Camly phát    chờ claim             │
-└─────────────────────────────────────────────────────┘
-```
-
-**Biểu đồ theo ngày** (BarChart):
-- Peak ngày 15/02: 144.3M Camly (125 giao dịch Tết)
-
-**Bảng lịch sử chi tiết** (có phân trang, tìm kiếm):
-| Thời gian | Người nhận | Ví nhận | Camly | FUN | Tx Hash | Trạng thái |
-|---|---|---|---|---|---|---|
-| 18/02 16:12 | Hoàng Tỷ Đô | 0x... | 403,000 | 403 | 0xe50c...↗ | ✅ |
-| 18/02 10:20 | Angel Huỳnh Thủy | 0x... | 73,000 | 73 | 0xabbd...↗ | ✅ |
-| ... | | | | | | |
-
-## Technical Implementation
-
-### Data fetching trong `AdminTreasury.tsx`:
-
-```typescript
-const TREASURY_WALLET_WITHDRAWAL = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
-const TREASURY_WALLET_LIXI = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D";
-
-// Fetch withdrawal history
-const { data: withdrawals } = await supabase
-  .from("coin_withdrawals")
-  .select(`
-    id, wallet_address, amount, tx_hash, 
-    created_at, processed_at, status,
-    profiles:user_id (display_name, handle, avatar_url)
-  `)
-  .eq("status", "completed")
-  .order("created_at", { ascending: false });
-
-// Fetch lixi_claims history  
-const { data: lixiClaims } = await supabase
-  .from("lixi_claims")
-  .select(`
-    id, wallet_address, camly_amount, fun_amount, 
-    tx_hash, claimed_at, status,
-    profiles:user_id (display_name, handle, avatar_url)
-  `)
-  .eq("status", "completed")
-  .order("claimed_at", { ascending: false });
-```
-
-### Computed stats:
-```typescript
-// Summary stats per wallet
-const withdrawalStats = {
-  totalTx: withdrawals.length,
-  totalCamly: withdrawals.reduce((s, w) => s + w.amount, 0),
-  firstDate: withdrawals.at(-1)?.created_at,
-  lastDate: withdrawals.at(0)?.created_at,
-  daysActive: diffInDays(firstDate, lastDate),
-};
-
-// Daily chart data
-const dailyWithdrawals = groupByDate(withdrawals); // recharts compatible
-```
-
-### Thêm vào NavToolbar:
-```typescript
-// Thêm vào group "Tài chính"
-{ to: "/admin/treasury", icon: Vault, label: "Ví Treasury" }
-```
-
-## Thứ tự thực thi
+### Orbital Animation Logic
 
 ```text
-Bước 1: Tạo AdminTreasury.tsx với đầy đủ logic fetch + UI
-  ↓
-Bước 2: Thêm route /admin/treasury vào App.tsx
-  ↓
-Bước 3: Thêm "Ví Treasury" vào AdminNavToolbar group "Tài chính"
+Mỗi icon được đặt tại:
+  x = cx + R * cos(angle + time * speed)
+  y = cy + R * sin(angle + time * speed)
+
+Trong framer-motion, dùng:
+  animate={{ rotate: 360 }}
+  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+
+Wrapper xoay tròn → icon children counter-rotate ngược lại để icon thẳng đứng
 ```
 
-## UX Details
+### Platform Icons trong Orbital Circles
 
-- **Địa chỉ ví rút gọn**: `0x4163...9ac8` kèm nút copy + link BSCScan
-- **Tx Hash**: rút gọn `0xe949...6322` kèm link BSCScan cho từng giao dịch
-- **Số Camly**: format có dấu phẩy ngàn (42,117,639)
-- **Bảng có phân trang**: 20 dòng/trang với nút Next/Prev
-- **Tìm kiếm**: theo tên người nhận hoặc địa chỉ ví
-- **Export**: nút Export Excel tương tự các trang admin khác
-- **Loading state**: skeleton cards trong khi fetch data
+| Platform | Màu nền | Icon |
+|----------|---------|------|
+| Facebook | Xanh dương | `Facebook` lucide |
+| Instagram | Hồng tím gradient | `Instagram` lucide |
+| TikTok | Đen | 🎵 |
+| YouTube | Đỏ | `Youtube` lucide |
+| LinkedIn | Xanh navy | `in` text |
+| Twitter/X | Đen | 𝕏 |
+| Website | Xanh lá | `Globe` lucide |
+| Telegram | Xanh trời | `MessageCircle` lucide |
+| Discord | Tím | `D` text |
+
+### Màu Sắc Angel AI Áp Dụng
+
+- Avatar border: `linear-gradient(135deg, #b8860b, #daa520, #ffd700, #ffec8b, #daa520, #b8860b)`
+- Vòng tròn social: border `ring-1 ring-amber-400/60`, `shadow-[0_2px_8px_rgba(0,0,0,0.3)]`
+- Nền vòng tròn: màu đặc trưng của platform nhưng thêm shimmer edge vàng khi hover
+- Quỹ đạo path: có thể vẽ một vòng tròn nhạt `border border-primary/10 rounded-full absolute` làm "đường ray" cho đẹp
+
+---
+
+## Các Bước Thực Hiện
+
+1. **Cập nhật `PublicProfileHeader.tsx`:**
+   - Thêm `OrbitalSocialLinks` component
+   - Dùng `framer-motion` `motion.div` với `animate={{ rotate: 360 }}` cho wrapper quỹ đạo
+   - Đặt avatar ở giữa wrapper, các icon ở positions tuyệt đối theo góc phân bổ
+   - Chuyển layout từ hàng ngang sang căn giữa
+   - Xóa `<SocialLinksDisplay>` khỏi header (đã thay bằng orbital)
+
+2. **Cập nhật `src/pages/HandleProfile.tsx`:**
+   - Xóa phần render `<SocialLinksDisplay>` riêng lẻ nếu có (vì đã tích hợp vào header)
+
+3. **Không cần migration database** — chỉ thay đổi UI, dữ liệu `social_links` từ database vẫn dùng như cũ.
+
+---
+
+## Kết Quả Cuối Cùng
+
+```text
+┌──────────────────────────────────────────────┐
+│          [COVER PHOTO — full width]          │
+│                                              │
+│         ╭─────────────────────╮             │
+│    TG ○ │  ╭─────────────╮  │ ○ FB        │
+│         │  │  [AVATAR]   │  │              │
+│   YT ○  │  │             │  │  ○ IG        │
+│         │  ╰─────────────╯  │              │
+│    DC ○ ╰─────────────────────╯ ○ TW       │
+│                                              │
+│           Tên Hiển Thị                      │
+│      @handle · angel.fun.rich/handle         │
+│            Bio của người dùng                │
+│         [Wallet] · [Joined date]             │
+└──────────────────────────────────────────────┘
+```
+
+Các vòng tròn icon xoay liên tục theo chiều kim đồng hồ. Hover = dừng + tooltip. Click = mở link mới.
