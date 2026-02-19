@@ -30,7 +30,7 @@ interface MusicThemeSelectorProps {
 }
 
 export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorProps) => {
-const [track, setTrack] = useState<MusicTrack>(getStoredTrack);
+  const [track, setTrack] = useState<MusicTrack>(getStoredTrack);
   const [volume, setVolume] = useState(getStoredVolume);
   const [isPlaying, setIsPlaying] = useState(getStoredPlaying);
   const [open, setOpen] = useState(false);
@@ -53,17 +53,20 @@ const [track, setTrack] = useState<MusicTrack>(getStoredTrack);
     return audio;
   }, [volume]);
 
+  // Play with mobile-safe fallback
   const playAudio = useCallback((audio: HTMLAudioElement) => {
     const attempt = () => {
       audio.play().catch(() => {
-        // Browser blocked autoplay, wait for interaction
-        const handler = () => {
+        // Autoplay blocked — wait for any user interaction (works on iOS & Android)
+        const resume = () => {
           audio.play().catch(() => {});
-          document.removeEventListener("click", handler, true);
-          document.removeEventListener("touchstart", handler, true);
+          document.removeEventListener("touchstart", resume, true);
+          document.removeEventListener("click", resume, true);
+          document.removeEventListener("touchend", resume, true);
         };
-        document.addEventListener("click", handler, { capture: true, once: false });
-        document.addEventListener("touchstart", handler, { capture: true, once: false });
+        document.addEventListener("touchstart", resume, { capture: true, passive: true });
+        document.addEventListener("touchend", resume, { capture: true, passive: true });
+        document.addEventListener("click", resume, { capture: true });
       });
     };
 
@@ -73,6 +76,18 @@ const [track, setTrack] = useState<MusicTrack>(getStoredTrack);
       audio.addEventListener("canplaythrough", attempt, { once: true });
     }
   }, []);
+
+  // Resume music on visibility change (iOS pauses audio on tab switch / home button)
+  useEffect(() => {
+    const onVisibility = () => {
+      const audio = audioRef.current;
+      if (!document.hidden && audio && isPlaying && track !== "none") {
+        audio.play().catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [isPlaying, track]);
 
   // Init audio on mount
   useEffect(() => {

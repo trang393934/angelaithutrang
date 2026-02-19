@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { type VideoTheme, getVideoTheme } from "./VideoThemeSelector";
 
 const THEME_VIDEOS: Record<VideoTheme, string[]> = {
@@ -13,6 +13,7 @@ const THEME_VIDEOS: Record<VideoTheme, string[]> = {
 export const ValentineVideoBackground = () => {
   const [theme, setTheme] = useState<VideoTheme>(getVideoTheme);
   const [videoIndex, setVideoIndex] = useState(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     const handler = () => {
@@ -22,6 +23,34 @@ export const ValentineVideoBackground = () => {
     window.addEventListener("video-theme-change", handler);
     return () => window.removeEventListener("video-theme-change", handler);
   }, []);
+
+  // On mobile, browsers may pause video on tab switch or interaction — resume it
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const tryPlay = () => {
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
+    };
+
+    // Resume on visibility change (tab switch, lock screen)
+    const onVisibility = () => {
+      if (!document.hidden) tryPlay();
+    };
+
+    // Resume on any user interaction (required by iOS Safari)
+    document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener("touchstart", tryPlay, { once: false, passive: true });
+    document.addEventListener("click", tryPlay, { once: false, passive: true });
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("touchstart", tryPlay);
+      document.removeEventListener("click", tryPlay);
+    };
+  }, [theme, videoIndex]);
 
   const videos = THEME_VIDEOS[theme] || [];
 
@@ -35,11 +64,19 @@ export const ValentineVideoBackground = () => {
 
   return (
     <video
+      ref={videoRef}
       key={`bg-${theme}-${videoIndex}`}
       autoPlay
       muted
       playsInline
+      loop={videos.length === 1}
       onEnded={handleEnded}
+      // On some mobile browsers the video stalls — try to resume
+      onStalled={() => videoRef.current?.load()}
+      onSuspend={() => {
+        const v = videoRef.current;
+        if (v && v.paused) v.play().catch(() => {});
+      }}
       style={{
         position: "fixed",
         top: 0,
@@ -50,6 +87,9 @@ export const ValentineVideoBackground = () => {
         pointerEvents: "none",
         zIndex: 0,
         filter: "saturate(1.3) contrast(1.1)",
+        // iOS Safari needs this to prevent full-screen takeover
+        WebkitTransform: "translateZ(0)",
+        transform: "translateZ(0)",
       }}
     >
       <source src={src} type="video/mp4" />
