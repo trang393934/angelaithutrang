@@ -19,13 +19,14 @@ import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { vi } from "date-fns/locale";
 
-// Ví 1: 0x02D557... — đã dừng hoạt động
-// Ví 2: 0x416336... — đang hoạt động (cả lì xì Tết + rút thưởng)
-// Phân tách dữ liệu theo ngày processed_at/claimed_at
+// Ví 1: 0x02D5578... — Ví Lì Xì Tết, đã DỪNG hoạt động (12/02/2026 → 18/02/2026)
+// Ví 2: 0x416336... — Ví Rút Thưởng Camly, đang HOẠT ĐỘNG (từ 27/01/2026 đến nay)
 const TREASURY_WALLET_1 = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D";
 const TREASURY_WALLET_2 = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
-// Ngày ví 2 bắt đầu hoạt động
-const VI2_START_DATE = new Date("2026-02-12T00:00:00Z");
+// Ngày hoạt động thực tế (xác minh từ database + BSCScan)
+const VI1_START = "12/02/2026"; // Ví 1: lì xì bắt đầu
+const VI1_END = "18/02/2026";   // Ví 1: lì xì kết thúc (đã dừng)
+const VI2_START = "27/01/2026"; // Ví 2: rút thưởng bắt đầu
 const BSCSCAN_TX = "https://bscscan.com/tx/";
 const BSCSCAN_ADDR = "https://bscscan.com/address/";
 const PAGE_SIZE = 20;
@@ -213,178 +214,123 @@ export default function AdminTreasury() {
   }, []);
 
   // ─── Phân tách dữ liệu theo ví ───
-  // Ví 1 (0x416336...): coin_withdrawals được tạo TRƯỚC 12/02/2026
-  const vi1Records = useMemo(() =>
-    allWithdrawals.filter(w => new Date(w.created_at) < VI2_START_DATE),
-  [allWithdrawals]);
+  // Ví 1 (0x02D5...): toàn bộ lixi_claims — Lì Xì Tết (đã dừng)
+  // (lixiClaims đã được fetch riêng — dùng trực tiếp)
 
-  // Ví 2 (0x02D557...): coin_withdrawals từ 12/02 + tất cả lixi_claims
-  const vi2Withdrawals = useMemo(() =>
-    allWithdrawals.filter(w => new Date(w.created_at) >= VI2_START_DATE),
-  [allWithdrawals]);
+  // Ví 2 (0x4163...): toàn bộ coin_withdrawals — Rút Thưởng (đang hoạt động)
+  // (allWithdrawals đã được fetch riêng — dùng trực tiếp)
 
-  // Pending cho Ví 1 (tạo trước 12/02) vs Ví 2 (từ 12/02)
-  const pendingV1 = useMemo(() =>
-    pendingWithdrawals.filter(w => new Date(w.created_at) < VI2_START_DATE),
-  [pendingWithdrawals]);
-  const pendingV2Withdrawals = useMemo(() =>
-    pendingWithdrawals.filter(w => new Date(w.created_at) >= VI2_START_DATE),
-  [pendingWithdrawals]);
+  // Pending: phân theo loại
+  const pendingV1 = pendingLixi;       // Ví 1 pending = lixi pending
+  const pendingV2 = pendingWithdrawals; // Ví 2 pending = withdrawal pending
 
-  // Stats Ví 1
+  // Stats Ví 1: lì xì Tết (12/02 → 18/02, đã dừng)
   const v1Stats = useMemo(() => {
-    if (!vi1Records.length) return null;
-    const totalCamly = vi1Records.reduce((s, w) => s + w.amount, 0);
-    const sorted = [...vi1Records].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    if (!lixiClaims.length) return null;
+    const totalCamly = lixiClaims.reduce((s, l) => s + l.camly_amount, 0);
+    const totalFun = lixiClaims.reduce((s, l) => s + (l.fun_amount || 0), 0);
+    const sorted = [...lixiClaims].sort((a, b) =>
+      (a.claimed_at || "").localeCompare(b.claimed_at || "")
+    );
+    const first = sorted[0]?.claimed_at;
+    const last = sorted[sorted.length - 1]?.claimed_at;
+    const days = first && last ? differenceInDays(new Date(last), new Date(first)) + 1 : 0;
+    return { totalTx: lixiClaims.length, totalCamly, totalFun, first, last, days, pending: pendingV1.length };
+  }, [lixiClaims, pendingV1]);
+
+  // Stats Ví 2: rút thưởng Camly (27/01 → nay, đang hoạt động)
+  const v2Stats = useMemo(() => {
+    if (!allWithdrawals.length) return null;
+    const totalCamly = allWithdrawals.reduce((s, w) => s + w.amount, 0);
+    const sorted = [...allWithdrawals].sort((a, b) => a.created_at.localeCompare(b.created_at));
     const first = sorted[0]?.created_at;
     const last = sorted[sorted.length - 1]?.created_at;
     const days = first && last ? differenceInDays(new Date(last), new Date(first)) + 1 : 0;
-    return { totalTx: vi1Records.length, totalCamly, first, last, days, pending: pendingV1.length };
-  }, [vi1Records, pendingV1]);
+    return { totalTx: allWithdrawals.length, totalCamly, first, last, days, pending: pendingV2.length };
+  }, [allWithdrawals, pendingV2]);
 
-  // Stats Ví 2: rút thưởng mới + lì xì
-  const v2Stats = useMemo(() => {
-    const totalCamlyW = vi2Withdrawals.reduce((s, w) => s + w.amount, 0);
-    const totalCamlyL = lixiClaims.reduce((s, l) => s + l.camly_amount, 0);
-    const totalFun = lixiClaims.reduce((s, l) => s + (l.fun_amount || 0), 0);
-    const totalTx = vi2Withdrawals.length + lixiClaims.length;
-    const totalCamly = totalCamlyW + totalCamlyL;
-    const allDates = [
-      ...vi2Withdrawals.map(w => w.created_at),
-      ...lixiClaims.map(l => l.claimed_at || ""),
-    ].filter(Boolean).sort();
-    const first = allDates[0];
-    const last = allDates[allDates.length - 1];
-    const days = first && last ? differenceInDays(new Date(last), new Date(first)) + 1 : 0;
-    const pending = pendingV2Withdrawals.length + pendingLixi.length;
-    return { totalTx, totalCamly, totalCamlyW, totalCamlyL, totalFun, first, last, days, pending };
-  }, [vi2Withdrawals, lixiClaims, pendingV2Withdrawals, pendingLixi]);
-
-  // Chart Ví 1: rút thưởng theo ngày (dùng created_at)
+  // Chart Ví 1: lì xì Tết theo ngày (dùng claimed_at)
   const v1ChartData = useMemo(() =>
-    groupByDate(vi1Records.map(w => ({
+    groupByDate(lixiClaims.map(l => ({
+      date: fmtDateShort(l.claimed_at || ""),
+      amount: l.camly_amount / 1_000_000,
+    }))), [lixiClaims]);
+
+  // Chart Ví 2: rút thưởng Camly theo ngày (dùng created_at)
+  const v2ChartData = useMemo(() =>
+    groupByDate(allWithdrawals.map(w => ({
       date: fmtDateShort(w.created_at),
       amount: w.amount / 1_000_000,
-    }))), [vi1Records]);
-
-  // Chart Ví 2: rút thưởng mới + lì xì theo ngày
-  const v2ChartData = useMemo(() => {
-    const entries = [
-      ...vi2Withdrawals.map(w => ({ date: fmtDateShort(w.created_at), amount: w.amount / 1_000_000 })),
-      ...lixiClaims.map(l => ({ date: fmtDateShort(l.claimed_at || ""), amount: l.camly_amount / 1_000_000 })),
-    ];
-    return groupByDate(entries);
-  }, [vi2Withdrawals, lixiClaims]);
+    }))), [allWithdrawals]);
 
   // Combined chart
   const combinedChart = useMemo(() => {
     const v1Map: Record<string, number> = {};
     const v2Map: Record<string, number> = {};
-    vi1Records.forEach(w => {
-      const d = fmtDateShort(w.created_at);
-      v1Map[d] = (v1Map[d] || 0) + w.amount / 1_000_000;
-    });
-    vi2Withdrawals.forEach(w => {
-      const d = fmtDateShort(w.created_at);
-      v2Map[d] = (v2Map[d] || 0) + w.amount / 1_000_000;
-    });
     lixiClaims.forEach(l => {
       const d = fmtDateShort(l.claimed_at || "");
-      v2Map[d] = (v2Map[d] || 0) + l.camly_amount / 1_000_000;
+      v1Map[d] = (v1Map[d] || 0) + l.camly_amount / 1_000_000;
+    });
+    allWithdrawals.forEach(w => {
+      const d = fmtDateShort(w.created_at);
+      v2Map[d] = (v2Map[d] || 0) + w.amount / 1_000_000;
     });
     const allDates = [...new Set([...Object.keys(v1Map), ...Object.keys(v2Map)])].sort();
     return allDates.map(date => ({
       date,
-      "Ví 1": +(v1Map[date] || 0).toFixed(2),
-      "Ví 2": +(v2Map[date] || 0).toFixed(2),
+      "Ví 1 (Lì Xì)": +(v1Map[date] || 0).toFixed(2),
+      "Ví 2 (Rút Thưởng)": +(v2Map[date] || 0).toFixed(2),
     }));
-  }, [vi1Records, vi2Withdrawals, lixiClaims]);
+  }, [lixiClaims, allWithdrawals]);
 
-  // Ví 1: chỉ có coin_withdrawals trước 12/02
+  // Ví 1: tất cả lixi_claims
   const filteredV1 = useMemo(() => {
-    const base = vi1Records;
-    if (!v1Search) return base;
+    if (!v1Search) return lixiClaims;
     const q = v1Search.toLowerCase();
-    return base.filter(w =>
+    return lixiClaims.filter(l =>
+      (l.profiles?.display_name?.toLowerCase().includes(q)) ||
+      (l.profiles?.handle?.toLowerCase().includes(q)) ||
+      (l.wallet_address?.toLowerCase().includes(q))
+    );
+  }, [lixiClaims, v1Search]);
+
+  // Ví 2: tất cả coin_withdrawals
+  const filteredV2 = useMemo(() => {
+    if (!v2Search) return allWithdrawals;
+    const q = v2Search.toLowerCase();
+    return allWithdrawals.filter(w =>
       (w.profiles?.display_name?.toLowerCase().includes(q)) ||
       (w.profiles?.handle?.toLowerCase().includes(q)) ||
       (w.wallet_address?.toLowerCase().includes(q))
     );
-  }, [vi1Records, v1Search]);
-
-  // Ví 2: coin_withdrawals mới + tất cả lixi_claims, gộp và sort theo ngày
-  const v2AllRecords = useMemo(() => {
-    type V2Row = {
-      id: string;
-      date: string;
-      wallet_address: string | null;
-      camly: number;
-      fun?: number | null;
-      tx_hash: string | null;
-      profiles: { display_name: string | null; handle: string | null; avatar_url: string | null } | null;
-      type: "withdrawal" | "lixi";
-    };
-    const rows: V2Row[] = [
-      ...vi2Withdrawals.map(w => ({
-        id: w.id,
-        date: w.created_at,
-        wallet_address: w.wallet_address,
-        camly: w.amount,
-        fun: null as null,
-        tx_hash: w.tx_hash,
-        profiles: w.profiles,
-        type: "withdrawal" as const,
-      })),
-      ...lixiClaims.map(l => ({
-        id: l.id,
-        date: l.claimed_at || "",
-        wallet_address: l.wallet_address,
-        camly: l.camly_amount,
-        fun: l.fun_amount,
-        tx_hash: l.tx_hash,
-        profiles: l.profiles,
-        type: "lixi" as const,
-      })),
-    ];
-    rows.sort((a, b) => b.date.localeCompare(a.date));
-    return rows;
-  }, [vi2Withdrawals, lixiClaims]);
-
-  const filteredV2 = useMemo(() => {
-    if (!v2Search) return v2AllRecords;
-    const q = v2Search.toLowerCase();
-    return v2AllRecords.filter(r =>
-      (r.profiles?.display_name?.toLowerCase().includes(q)) ||
-      (r.profiles?.handle?.toLowerCase().includes(q)) ||
-      (r.wallet_address?.toLowerCase().includes(q))
-    );
-  }, [v2AllRecords, v2Search]);
+  }, [allWithdrawals, v2Search]);
 
   const v1Pagination = usePagination(filteredV1, PAGE_SIZE);
   const v2Pagination = usePagination(filteredV2, PAGE_SIZE);
 
   // Export handlers
+  // Ví 1: xuất lixi_claims
   const exportV1 = () => exportCSV(
-    filteredV1.map(w => ({
+    filteredV1.map(l => ({
+      "Thời gian": fmtDate(l.claimed_at || ""),
+      "Người nhận": l.profiles?.display_name || l.profiles?.handle || "—",
+      "Ví nhận": l.wallet_address || "",
+      "Camly": l.camly_amount,
+      "FUN": l.fun_amount || "",
+      "Tx Hash": l.tx_hash || "",
+    })),
+    `vi-1-lixi-tet-${format(new Date(), "yyyyMMdd")}.csv`
+  );
+  // Ví 2: xuất coin_withdrawals
+  const exportV2 = () => exportCSV(
+    filteredV2.map(w => ({
       "Thời gian": fmtDate(w.created_at),
       "Người nhận": w.profiles?.display_name || w.profiles?.handle || "—",
       "Ví nhận": w.wallet_address,
       "Camly": w.amount,
       "Tx Hash": w.tx_hash || "",
     })),
-    `vi-1-phat-thuong-${format(new Date(), "yyyyMMdd")}.csv`
-  );
-  const exportV2 = () => exportCSV(
-    filteredV2.map(r => ({
-      "Thời gian": fmtDate(r.date),
-      "Loại": r.type === "lixi" ? "Lì xì Tết" : "Rút thưởng",
-      "Người nhận": r.profiles?.display_name || r.profiles?.handle || "—",
-      "Ví nhận": r.wallet_address || "",
-      "Camly": r.camly,
-      "FUN": r.fun || "",
-      "Tx Hash": r.tx_hash || "",
-    })),
-    `vi-2-phat-thuong-${format(new Date(), "yyyyMMdd")}.csv`
+    `vi-2-rut-thuong-${format(new Date(), "yyyyMMdd")}.csv`
   );
 
   if (loading) {
@@ -508,8 +454,8 @@ export default function AdminTreasury() {
               </div>
               <div className="w-px h-10 bg-amber-200 dark:bg-amber-700 hidden sm:block" />
               <div>
-                <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{fmt(v2Stats.totalFun)}</div>
-                <div className="text-xs text-muted-foreground">Tổng FUN đã phát (Lì Xì)</div>
+                <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{fmt(v1Stats?.totalFun || 0)}</div>
+                <div className="text-xs text-muted-foreground">Tổng FUN đã phát (Lì Xì Ví 1)</div>
               </div>
             </div>
           </CardContent>
@@ -584,18 +530,18 @@ export default function AdminTreasury() {
             </Card>
           </TabsContent>
 
-          {/* ─── Tab: Ví 1 ─── */}
+          {/* ─── Tab: Ví 1 — Lì Xì Tết (đã dừng) ─── */}
           <TabsContent value="vi1" className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatCard label="GD hoàn thành" value={v1Stats?.totalTx || 0} icon={CheckCircle2} color="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20" />
               <StatCard label="Camly phát ra" value={v1Stats?.totalCamly || 0} icon={Wallet} color="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20" />
+              <StatCard label="FUN phát ra" value={v1Stats?.totalFun || 0} icon={Gift} color="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20" />
               <StatCard label="Chờ xử lý" value={v1Stats?.pending || 0} icon={Clock} color="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20" />
-              <StatCard label="Ngày hoạt động" value={v1Stats?.days || 0} sub="ngày" icon={TrendingUp} color="border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20" />
             </div>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm text-muted-foreground">Camly phát theo ngày — Ví 1 (triệu Camly)</CardTitle>
+                <CardTitle className="text-sm text-muted-foreground">Camly phát theo ngày — Ví 1 Lì Xì (triệu Camly)</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={240}>
@@ -613,7 +559,7 @@ export default function AdminTreasury() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <CardTitle className="text-base">Lịch sử Ví 1 ({filteredV1.length} giao dịch)</CardTitle>
+                  <CardTitle className="text-base">Lịch sử Ví 1 — Lì Xì Tết ({filteredV1.length} giao dịch)</CardTitle>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -632,32 +578,37 @@ export default function AdminTreasury() {
                   <table className="w-full text-xs">
                     <thead className="bg-muted/50">
                       <tr>
-                        {["Thời gian", "Người nhận", "Ví nhận", "Camly", "Tx Hash", "Trạng thái"].map(h => (
+                        {["Thời gian", "Người nhận", "Ví nhận", "Camly", "FUN", "Tx Hash", "Trạng thái"].map(h => (
                           <th key={h} className="text-left py-2.5 px-3 text-muted-foreground font-medium whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {v1Pagination.paged.map((w: Withdrawal) => (
-                        <tr key={w.id} className="hover:bg-muted/30">
-                          <td className="py-2 px-3 whitespace-nowrap text-muted-foreground">{fmtDate(w.created_at)}</td>
-                          <td className="py-2 px-3 font-medium">{w.profiles?.display_name || w.profiles?.handle || "—"}</td>
+                      {v1Pagination.paged.map((l: LixiClaim) => (
+                        <tr key={l.id} className="hover:bg-muted/30">
+                          <td className="py-2 px-3 whitespace-nowrap text-muted-foreground">{fmtDate(l.claimed_at || "")}</td>
+                          <td className="py-2 px-3 font-medium">{l.profiles?.display_name || l.profiles?.handle || "—"}</td>
                           <td className="py-2 px-3 font-mono">
-                            <div className="flex items-center gap-1">
-                              <span>{shortAddr(w.wallet_address)}</span>
-                              <button onClick={() => copyToClipboard(w.wallet_address)} className="text-muted-foreground hover:text-foreground">
-                                <Copy className="w-3 h-3" />
-                              </button>
-                            </div>
+                            {l.wallet_address ? (
+                              <div className="flex items-center gap-1">
+                                <span>{shortAddr(l.wallet_address)}</span>
+                                <button onClick={() => copyToClipboard(l.wallet_address!)} className="text-muted-foreground hover:text-foreground">
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ) : <span className="text-muted-foreground">—</span>}
                           </td>
-                          <td className="py-2 px-3 text-right font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                            {fmt(w.amount)}
+                          <td className="py-2 px-3 text-right font-semibold whitespace-nowrap">
+                            {fmt(l.camly_amount)}
+                          </td>
+                          <td className="py-2 px-3 text-right whitespace-nowrap">
+                            {l.fun_amount ? fmt(l.fun_amount) : "—"}
                           </td>
                           <td className="py-2 px-3 font-mono">
-                            {w.tx_hash ? (
-                              <a href={`${BSCSCAN_TX}${w.tx_hash}`} target="_blank" rel="noopener noreferrer"
+                            {l.tx_hash ? (
+                              <a href={`${BSCSCAN_TX}${l.tx_hash}`} target="_blank" rel="noopener noreferrer"
                                 className="flex items-center gap-1 text-primary hover:underline">
-                                {shortHash(w.tx_hash)} <ExternalLink className="w-3 h-3" />
+                                {shortHash(l.tx_hash)} <ExternalLink className="w-3 h-3" />
                               </a>
                             ) : <span className="text-muted-foreground">—</span>}
                           </td>
@@ -669,7 +620,7 @@ export default function AdminTreasury() {
                         </tr>
                       ))}
                       {v1Pagination.paged.length === 0 && (
-                        <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Không có dữ liệu</td></tr>
+                        <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">Không có dữ liệu</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -697,18 +648,18 @@ export default function AdminTreasury() {
             </Card>
           </TabsContent>
 
-          {/* ─── Tab: Ví 2 ─── */}
+          {/* ─── Tab: Ví 2 — Rút Thưởng Camly (đang hoạt động) ─── */}
           <TabsContent value="vi2" className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <StatCard label="GD hoàn thành" value={v2Stats.totalTx} icon={CheckCircle2} color="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20" />
-              <StatCard label="Camly phát ra" value={v2Stats.totalCamly} icon={Wallet} color="border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20" />
-              <StatCard label="FUN phát ra" value={v2Stats.totalFun} icon={Gift} color="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20" />
-              <StatCard label="Chờ xử lý" value={v2Stats.pending} icon={Clock} color="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20" />
+              <StatCard label="GD hoàn thành" value={v2Stats?.totalTx || 0} icon={CheckCircle2} color="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20" />
+              <StatCard label="Camly phát ra" value={v2Stats?.totalCamly || 0} icon={Wallet} color="border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20" />
+              <StatCard label="Ngày hoạt động" value={v2Stats?.days || 0} sub="ngày" icon={TrendingUp} color="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20" />
+              <StatCard label="Chờ xử lý" value={v2Stats?.pending || 0} icon={Clock} color="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20" />
             </div>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm text-muted-foreground">Camly phát theo ngày — Ví 2 (triệu Camly)</CardTitle>
+                <CardTitle className="text-sm text-muted-foreground">Camly phát theo ngày — Ví 2 Rút Thưởng (triệu Camly)</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={240}>
@@ -726,7 +677,7 @@ export default function AdminTreasury() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <CardTitle className="text-base">Lịch sử Ví 2 ({filteredV2.length} giao dịch)</CardTitle>
+                  <CardTitle className="text-base">Lịch sử Ví 2 — Rút Thưởng ({filteredV2.length} giao dịch)</CardTitle>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -745,42 +696,32 @@ export default function AdminTreasury() {
                   <table className="w-full text-xs">
                     <thead className="bg-muted/50">
                       <tr>
-                        {["Thời gian", "Loại", "Người nhận", "Ví nhận", "Camly", "FUN", "Tx Hash", "Trạng thái"].map(h => (
+                        {["Thời gian", "Người nhận", "Ví nhận", "Camly", "Tx Hash", "Trạng thái"].map(h => (
                           <th key={h} className="text-left py-2.5 px-3 text-muted-foreground font-medium whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {v2Pagination.paged.map(r => (
-                        <tr key={r.id} className="hover:bg-muted/30">
-                          <td className="py-2 px-3 whitespace-nowrap text-muted-foreground">{fmtDate(r.date)}</td>
-                          <td className="py-2 px-3">
-                            <Badge variant="outline" className={`text-[10px] ${r.type === "lixi" ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800" : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800"}`}>
-                              {r.type === "lixi" ? "🧧 Lì Xì" : "💰 Rút thưởng"}
-                            </Badge>
-                          </td>
-                          <td className="py-2 px-3 font-medium">{r.profiles?.display_name || r.profiles?.handle || "—"}</td>
+                      {v2Pagination.paged.map((w: Withdrawal) => (
+                        <tr key={w.id} className="hover:bg-muted/30">
+                          <td className="py-2 px-3 whitespace-nowrap text-muted-foreground">{fmtDate(w.created_at)}</td>
+                          <td className="py-2 px-3 font-medium">{w.profiles?.display_name || w.profiles?.handle || "—"}</td>
                           <td className="py-2 px-3 font-mono">
-                            {r.wallet_address ? (
-                              <div className="flex items-center gap-1">
-                                <span>{shortAddr(r.wallet_address)}</span>
-                                <button onClick={() => copyToClipboard(r.wallet_address!)} className="text-muted-foreground hover:text-foreground">
-                                  <Copy className="w-3 h-3" />
-                                </button>
-                              </div>
-                            ) : <span className="text-muted-foreground">—</span>}
+                            <div className="flex items-center gap-1">
+                              <span>{shortAddr(w.wallet_address)}</span>
+                              <button onClick={() => copyToClipboard(w.wallet_address)} className="text-muted-foreground hover:text-foreground">
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
                           </td>
-                          <td className="py-2 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                            {fmt(r.camly)}
-                          </td>
-                          <td className="py-2 px-3 text-right text-orange-600 dark:text-orange-400 whitespace-nowrap">
-                            {r.fun ? fmt(r.fun) : "—"}
+                          <td className="py-2 px-3 text-right font-semibold whitespace-nowrap">
+                            {fmt(w.amount)}
                           </td>
                           <td className="py-2 px-3 font-mono">
-                            {r.tx_hash ? (
-                              <a href={`${BSCSCAN_TX}${r.tx_hash}`} target="_blank" rel="noopener noreferrer"
+                            {w.tx_hash ? (
+                              <a href={`${BSCSCAN_TX}${w.tx_hash}`} target="_blank" rel="noopener noreferrer"
                                 className="flex items-center gap-1 text-primary hover:underline">
-                                {shortHash(r.tx_hash)} <ExternalLink className="w-3 h-3" />
+                                {shortHash(w.tx_hash)} <ExternalLink className="w-3 h-3" />
                               </a>
                             ) : <span className="text-muted-foreground">—</span>}
                           </td>
@@ -792,7 +733,7 @@ export default function AdminTreasury() {
                         </tr>
                       ))}
                       {v2Pagination.paged.length === 0 && (
-                        <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">Không có dữ liệu</td></tr>
+                        <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Không có dữ liệu</td></tr>
                       )}
                     </tbody>
                   </table>
