@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Copy, Check, Share2, Calendar, Facebook, Youtube, MessageCircle, Plus } from "lucide-react";
+import { Copy, Check, Share2, Calendar, Plus } from "lucide-react";
 import funProfileLogo from "@/assets/fun-profile-logo.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
 import { useState } from "react";
@@ -19,63 +19,53 @@ import type { PublicProfileData, PublicProfileStats } from "@/hooks/usePublicPro
 // ─── Platform Meta ────────────────────────────────────────────────────────────
 const PLATFORM_META: Record<string, {
   label: string;
-  icon: React.ReactNode;
+  logoUrl: string;
   bg: string;
-  color: string;
 }> = {
   fun_profile: {
     label: "Fun Profile",
-    icon: <img src={funProfileLogo} className="w-4 h-4 object-contain" alt="Fun Profile" />,
-    bg: "#1a2e1a",
-    color: "#ffd700",
+    logoUrl: funProfileLogo,
+    bg: "#b8860b",
   },
   fun_play: {
     label: "Fun Play",
-    icon: <img src={funPlayLogo} className="w-4 h-4 object-contain" alt="Fun Play" />,
+    logoUrl: funPlayLogo,
     bg: "#0a1a3a",
-    color: "#ffd700",
   },
   facebook: {
     label: "Facebook",
-    icon: <Facebook className="w-4 h-4" />,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/2023_Facebook_icon.svg/240px-2023_Facebook_icon.svg.png",
     bg: "#1877F2",
-    color: "#fff",
   },
   youtube: {
     label: "YouTube",
-    icon: <Youtube className="w-4 h-4" />,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/240px-YouTube_full-color_icon_%282017%29.svg.png",
     bg: "#FF0000",
-    color: "#fff",
   },
   twitter: {
     label: "X (Twitter)",
-    icon: <span className="text-xs font-black leading-none">𝕏</span>,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/X_logo_2023.svg/240px-X_logo_2023.svg.png",
     bg: "#14171A",
-    color: "#fff",
   },
   telegram: {
     label: "Telegram",
-    icon: <MessageCircle className="w-4 h-4" />,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/240px-Telegram_logo.svg.png",
     bg: "#26A5E4",
-    color: "#fff",
   },
   tiktok: {
     label: "TikTok",
-    icon: <span className="text-xs font-black leading-none">TK</span>,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/240px-TikTok_logo.svg.png",
     bg: "#010101",
-    color: "#fff",
   },
   linkedin: {
     label: "LinkedIn",
-    icon: <span className="text-xs font-black leading-none">in</span>,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/240px-LinkedIn_logo_initials.png",
     bg: "#0A66C2",
-    color: "#fff",
   },
   zalo: {
     label: "Zalo",
-    icon: <span className="text-xs font-black leading-none">Z</span>,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Icon_of_Zalo.svg/240px-Icon_of_Zalo.svg.png",
     bg: "#0068FF",
-    color: "#fff",
   },
 };
 
@@ -220,7 +210,7 @@ function OrbitalSocialLinks({
 interface OrbitalIconProps {
   platform: string;
   url: string;
-  meta: { label: string; icon: React.ReactNode; bg: string; color: string };
+  meta: { label: string; logoUrl: string; bg: string };
   x: number;
   y: number;
   durationSecs: number;
@@ -237,19 +227,19 @@ function OrbitalIcon({ platform, url, meta, x, y, durationSecs }: OrbitalIconPro
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute flex items-center justify-center rounded-full pointer-events-auto cursor-pointer"
+            className="absolute flex items-center justify-center rounded-full pointer-events-auto cursor-pointer overflow-hidden"
             style={{
               left: x,
               top: y,
               width: 36,
               height: 36,
-              background: meta.bg,
-              color: meta.color,
+              background: "#fff",
               boxShadow: hovered
-                ? "0 0 16px rgba(251,191,36,0.7), 0 2px 10px rgba(0,0,0,0.4)"
+                ? `0 0 16px ${meta.bg}cc, 0 2px 10px rgba(0,0,0,0.4)`
                 : "0 2px 8px rgba(0,0,0,0.35)",
-              outline: hovered ? "2px solid #fbbf24" : "1.5px solid rgba(251,191,36,0.45)",
-              outlineOffset: 1,
+              border: `2.5px solid ${meta.bg}`,
+              outline: hovered ? `2px solid ${meta.bg}` : "none",
+              outlineOffset: 2,
               zIndex: 20,
             }}
             // Counter-rotate so icon stays upright
@@ -263,7 +253,12 @@ function OrbitalIcon({ platform, url, meta, x, y, durationSecs }: OrbitalIconPro
             onHoverStart={() => setHovered(true)}
             onHoverEnd={() => setHovered(false)}
           >
-            {meta.icon}
+            <img
+              src={meta.logoUrl}
+              alt={meta.label}
+              className="w-5 h-5 object-contain"
+              style={{ display: "block" }}
+            />
           </motion.a>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs font-semibold bg-background border border-amber-400/40 text-foreground">
