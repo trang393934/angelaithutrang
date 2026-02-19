@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { FUNMoneyBalanceCard } from "@/components/mint/FUNMoneyBalanceCard";
@@ -9,67 +9,102 @@ import { useUnmintedCount } from "@/hooks/useUnmintedCount";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, Coins, Sparkles, Shield, Zap, ExternalLink, Info, Lock, ChevronDown, Wallet, CheckCircle2, Download, AlertTriangle } from "lucide-react";
+import { ArrowRight, Coins, Sparkles, Shield, Zap, ExternalLink, Info, Lock, ChevronDown, Wallet, CheckCircle2, Download, AlertTriangle, PauseCircle } from "lucide-react";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Mint() {
   const { user } = useAuth();
   const { unmintedCount } = useUnmintedCount(user?.id);
   const [guideOpen, setGuideOpen] = useState(true);
- 
-    return (
-     <>
-       <div className="min-h-screen flex flex-col bg-background">
-         <Header />
- 
-         <main className="flex-1 container mx-auto px-4 py-8 pt-28">
-           <div className="max-w-6xl mx-auto space-y-8">
-             {/* Header */}
-             <div className="text-center space-y-4">
-               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-medium">
-                 <Sparkles className="h-4 w-4" />
-                 Proof of Pure Love Protocol
-               </div>
-               <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                 Mint FUN Money
-               </h1>
-               <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-                 Claim FUN Money token (BEP-20) về ví của bạn từ các Light Actions đã được Angel AI xác nhận.
-               </p>
-             </div>
- 
-             {/* Important Notice */}
-             <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/30">
-               <Info className="h-4 w-4 text-amber-600" />
-               <AlertTitle className="text-amber-700 dark:text-amber-400">Quan trọng</AlertTitle>
-               <AlertDescription className="text-amber-600 dark:text-amber-300">
-                 FUN Money đang chạy trên <strong>BSC Testnet</strong>. Bạn cần tBNB (testnet BNB) để trả phí gas.
-                 <Button 
-                   variant="link" 
-                   size="sm" 
-                   className="text-amber-700 dark:text-amber-400 p-0 h-auto ml-1"
-                   onClick={() => window.open("https://testnet.bnbchain.org/faucet-smart", "_blank")}
-                 >
-                   Lấy tBNB miễn phí <ExternalLink className="h-3 w-3 ml-1" />
-                 </Button>
-               </AlertDescription>
-              </Alert>
+  const [mintPaused, setMintPaused] = useState(false);
+  const [pausedReason, setPausedReason] = useState("");
+  const [settingsLoading, setSettingsLoading] = useState(true);
 
-              {/* Unminted Actions Banner */}
-              {unmintedCount > 0 && (
-                <Alert className="border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30">
-                  <AlertTriangle className="h-4 w-4 text-orange-600" />
-                  <AlertTitle className="text-orange-700 dark:text-orange-400">
-                    ⚡ {unmintedCount} Light Actions chưa gửi yêu cầu mint!
-                  </AlertTitle>
-                  <AlertDescription className="text-orange-600 dark:text-orange-300">
-                    Bạn có {unmintedCount} hành động đã đạt điểm nhưng chưa gửi yêu cầu mint FUN Money.
-                    Cuộn xuống và nhấn <strong>"Gửi tất cả yêu cầu mint"</strong> để Admin duyệt nhé!
-                  </AlertDescription>
-                </Alert>
-              )}
+  useEffect(() => {
+    supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "mint_system")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.value) {
+          const val = data.value as Record<string, unknown>;
+          setMintPaused(!!val.paused);
+          setPausedReason((val.paused_reason as string) || "");
+        }
+        setSettingsLoading(false);
+      });
+  }, []);
+ 
+  return (
+    <>
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+
+        <main className="flex-1 container mx-auto px-4 py-8 pt-28">
+          <div className="max-w-6xl mx-auto space-y-8">
+            {/* Header */}
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-medium">
+                <Sparkles className="h-4 w-4" />
+                Proof of Pure Love Protocol
+              </div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                Mint FUN Money
+              </h1>
+              <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+                Claim FUN Money token (BEP-20) về ví của bạn từ các Light Actions đã được Angel AI xác nhận.
+              </p>
+            </div>
+
+            {/* 🚨 MINT PAUSED BANNER - Hiển thị nổi bật khi hệ thống dừng */}
+            {mintPaused && (
+              <Alert className="border-red-400 bg-red-50 dark:bg-red-950/40">
+                <PauseCircle className="h-5 w-5 text-red-600" />
+                <AlertTitle className="text-red-700 dark:text-red-400 text-base font-bold">
+                  🚨 Hệ thống Mint FUN Money đang tạm dừng
+                </AlertTitle>
+                <AlertDescription className="text-red-600 dark:text-red-300 text-sm mt-1">
+                  {pausedReason || "Hệ thống đúc FUN Money đang tạm dừng để bảo trì và kiểm tra an ninh."}
+                  <br />
+                  <span className="font-medium">Vui lòng quay lại sau. Các Light Actions của bạn vẫn được ghi nhận và sẽ được xử lý khi hệ thống hoạt động trở lại. 🙏</span>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Important Notice */}
+            <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/30">
+              <Info className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-700 dark:text-amber-400">Quan trọng</AlertTitle>
+              <AlertDescription className="text-amber-600 dark:text-amber-300">
+                FUN Money đang chạy trên <strong>BSC Testnet</strong>. Bạn cần tBNB (testnet BNB) để trả phí gas.
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="text-amber-700 dark:text-amber-400 p-0 h-auto ml-1"
+                  onClick={() => window.open("https://testnet.bnbchain.org/faucet-smart", "_blank")}
+                >
+                  Lấy tBNB miễn phí <ExternalLink className="h-3 w-3 ml-1" />
+                </Button>
+              </AlertDescription>
+            </Alert>
+
+            {/* Unminted Actions Banner */}
+            {!mintPaused && unmintedCount > 0 && (
+              <Alert className="border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                <AlertTitle className="text-orange-700 dark:text-orange-400">
+                  ⚡ {unmintedCount} Light Actions chưa gửi yêu cầu mint!
+                </AlertTitle>
+                <AlertDescription className="text-orange-600 dark:text-orange-300">
+                  Bạn có {unmintedCount} hành động đã đạt điểm nhưng chưa gửi yêu cầu mint FUN Money.
+                  Cuộn xuống và nhấn <strong>"Gửi tất cả yêu cầu mint"</strong> để Admin duyệt nhé!
+                </AlertDescription>
+              </Alert>
+            )}
 
                {/* Hướng dẫn Activate & Claim - Collapsible Stepper */}
               <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
