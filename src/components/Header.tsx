@@ -236,43 +236,11 @@ export const Header = () => {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-56">
-                        {/* User Info Header */}
-                        <div className="px-3 py-2 border-b border-border">
+                        {/* User Info Header - clickable to go to profile */}
+                        <Link to={`/user/${user.id}`} className="block px-3 py-2 border-b border-border hover:bg-accent rounded-t-md transition-colors">
                           <p className="font-semibold text-sm text-foreground truncate">{getDisplayName()}</p>
                           <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                        </div>
-                        
-                        {/* Profile Link */}
-                        <DropdownMenuItem asChild className="cursor-pointer">
-                          <Link to={`/user/${user.id}`} className="flex items-center gap-2">
-                            <User className="w-4 h-4" />
-                            <span>{t("header.viewProfile") || "Trang cá nhân"}</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        
-                        {/* Messages Link */}
-                        <DropdownMenuItem asChild className="cursor-pointer">
-                          <Link to="/messages" className="flex items-center gap-2">
-                            <MessageCircle className="w-4 h-4" />
-                            <span>{t("nav.messages") || "Tin nhắn"}</span>
-                            {unreadCount > 0 && (
-                              <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                {unreadCount > 9 ? "9+" : unreadCount}
-                              </span>
-                            )}
-                          </Link>
-                        </DropdownMenuItem>
-                        
-                        {/* Earn Link */}
-                        <DropdownMenuItem asChild className="cursor-pointer">
-                          <Link to="/earn" className="flex items-center gap-2">
-                            <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4 rounded-full" />
-                            <span>{t("nav.earn") || "Kiếm xu"}</span>
-                            <span className="ml-auto text-xs font-semibold text-amber-600">
-                              {Math.floor(balance).toLocaleString()}
-                            </span>
-                          </Link>
-                        </DropdownMenuItem>
+                        </Link>
                         
                         {isAdmin && (
                           <>
