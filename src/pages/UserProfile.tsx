@@ -238,6 +238,7 @@ const UserProfile = () => {
   const { t } = useLanguage();
   const { balance, lifetimeEarned, lixiReward } = useUserCamlyCoin(userId);
   const naturalLifetimeEarned = lifetimeEarned - lixiReward;
+  const tongThu = balance + lixiReward;
   const { score: poplScore, badgeLevel, positiveActions } = usePoPLScore(userId);
   const funMoneyStats = useFUNMoneyStats(userId);
   const navigate = useNavigate();
@@ -486,7 +487,7 @@ const UserProfile = () => {
     { icon: "🎁", label: "Có thể rút", value: Math.floor(balance).toLocaleString() },
     { icon: "⭐", label: "PoPL", value: `${poplScore}/100` },
     { icon: "🧧", label: "Lì xì Tết", value: lixiReward > 0 ? Math.floor(lixiReward).toLocaleString() : "—" },
-    { icon: "💰", label: "Tổng thu", value: Math.floor(naturalLifetimeEarned).toLocaleString() },
+    { icon: "💰", label: "Tổng thu", value: Math.floor(tongThu).toLocaleString() },
     { icon: "💎", label: "FUN Money", value: funMoneyStats.totalAmount > 0 ? funMoneyStats.totalAmount.toLocaleString() : "—" },
   ];
 
@@ -813,8 +814,8 @@ const UserProfile = () => {
               <div className="mt-3 p-2.5 rounded-xl flex items-center gap-2.5 bg-amber-50 border border-amber-200">
                 <img src={camlyCoinLogo} alt="CAMLY" className="w-7 h-7 rounded-full flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-gray-400">Số dư · Tổng tích lũy</p>
-                  <p className="text-sm font-bold text-amber-600">{Math.floor(balance).toLocaleString()} · {Math.floor(naturalLifetimeEarned).toLocaleString()} <span className="text-xs font-normal text-amber-500">CAMLY</span></p>
+                  <p className="text-[10px] text-gray-400">Có thể rút · Tổng thu</p>
+                  <p className="text-sm font-bold text-amber-600">{Math.floor(balance).toLocaleString()} · {Math.floor(tongThu).toLocaleString()} <span className="text-xs font-normal text-amber-500">CAMLY</span></p>
                 </div>
               </div>
 
