@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, Link, useSearchParams, useParams, Navigate } from "react-router-dom";
+import { useNavigate, Link, useSearchParams, useParams, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLightAgreement } from "@/hooks/useLightAgreement";
@@ -119,6 +119,7 @@ function UsernameDisplay() {
 
 const Profile = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { tab } = useParams<{ tab?: string }>();
   const [searchParams] = useSearchParams();
   const currentTab = tab || "info";
@@ -190,6 +191,21 @@ const Profile = () => {
       fetchWalletAddress();
     }
   }, [user, authLoading, hasAgreed, isCheckingAgreement]);
+
+  // Auto-scroll to a section if navigated with state.scrollTo
+  useEffect(() => {
+    const scrollTo = (location.state as { scrollTo?: string } | null)?.scrollTo;
+    if (scrollTo) {
+      // Small delay to ensure tab renders
+      const timer = setTimeout(() => {
+        const el = document.getElementById(scrollTo);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -1211,7 +1227,9 @@ const Profile = () => {
             </Card>
 
             {/* Social Links */}
-            <SocialLinksEditor />
+            <div id="social-links">
+              <SocialLinksEditor />
+            </div>
           </TabsContent>
 
           {/* Tab 2: Tài sản */}

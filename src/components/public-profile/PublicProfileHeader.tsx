@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Copy, Check, Share2, Calendar, Facebook, Instagram, Youtube, Globe, MessageCircle } from "lucide-react";
+import { Copy, Check, Share2, Calendar, Facebook, Instagram, Youtube, Globe, MessageCircle, Plus } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PoPLBadge } from "@/components/profile/PoPLBadge";
 import { WalletAddressDisplay } from "@/components/profile/WalletAddressDisplay";
@@ -8,6 +9,7 @@ import { ProfileBadge } from "@/components/public-profile/ProfileBadge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import type { PublicProfileData, PublicProfileStats } from "@/hooks/usePublicProfile";
@@ -75,24 +77,89 @@ const PLATFORM_META: Record<string, {
   },
 };
 
+// ─── Orbital Add Button (shown when owner has no social links) ────────────────
+function OrbitalAddButton({ orbitRadius, onAdd }: { orbitRadius: number; onAdd: () => void }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className="absolute inset-0 flex items-center justify-center pointer-events-none"
+      style={{ zIndex: 10 }}
+    >
+      {/* Dashed orbit track ring */}
+      <div
+        className="absolute rounded-full border border-dashed border-amber-400/30"
+        style={{ width: orbitRadius * 2, height: orbitRadius * 2 }}
+      />
+
+      {/* Floating + button at top of orbit */}
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <motion.button
+              onClick={onAdd}
+              className="absolute flex items-center justify-center rounded-full pointer-events-auto cursor-pointer border-0"
+              style={{
+                left: "50%",
+                top: "50%",
+                marginLeft: -18,
+                marginTop: -(orbitRadius + 18),
+                width: 36,
+                height: 36,
+                background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)",
+                color: "#1a1209",
+                boxShadow: hovered
+                  ? "0 0 20px rgba(251,191,36,0.9), 0 2px 14px rgba(0,0,0,0.5)"
+                  : "0 0 10px rgba(251,191,36,0.5), 0 2px 8px rgba(0,0,0,0.35)",
+                outline: "1.5px solid rgba(251,191,36,0.7)",
+                outlineOffset: 2,
+              }}
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+              whileHover={{ scale: 1.3 }}
+              onHoverStart={() => setHovered(true)}
+              onHoverEnd={() => setHovered(false)}
+            >
+              <Plus className="w-4 h-4" strokeWidth={3} />
+            </motion.button>
+          </TooltipTrigger>
+          <TooltipContent
+            side="top"
+            className="text-xs font-semibold bg-background border border-amber-400/40 text-foreground"
+          >
+            ✨ Thêm Social Links
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+}
+
 // ─── Orbital Social Links ─────────────────────────────────────────────────────
 interface OrbitalSocialLinksProps {
   socialLinks: Record<string, string>;
   orbitRadius?: number;
   durationSecs?: number;
+  isOwner?: boolean;
+  onAddLinks?: () => void;
 }
 
 function OrbitalSocialLinks({
   socialLinks,
   orbitRadius = 90,
   durationSecs = 20,
+  isOwner = false,
+  onAddLinks,
 }: OrbitalSocialLinksProps) {
   const activeLinks = Object.entries(socialLinks).filter(([, url]) => url?.trim());
-  if (activeLinks.length === 0) return null;
+
+  // No links + owner → show + placeholder
+  if (activeLinks.length === 0) {
+    if (!isOwner) return null;
+    return <OrbitalAddButton orbitRadius={orbitRadius} onAdd={onAddLinks || (() => {})} />;
+  }
 
   const count = activeLinks.length;
-  const containerSize = (orbitRadius + 20) * 2; // padding for icon overflow
-  const center = containerSize / 2;
 
   return (
     <div
@@ -123,9 +190,9 @@ function OrbitalSocialLinks({
         transition={{ duration: durationSecs, repeat: Infinity, ease: "linear" }}
       >
         {activeLinks.map(([platform, url], i) => {
-          const angle = (360 / count) * i; // initial offset in degrees
+          const angle = (360 / count) * i;
           const rad = (angle * Math.PI) / 180;
-          const x = orbitRadius + orbitRadius * Math.cos(rad) - 18; // -18 = half icon
+          const x = orbitRadius + orbitRadius * Math.cos(rad) - 18;
           const y = orbitRadius + orbitRadius * Math.sin(rad) - 18;
           const meta = PLATFORM_META[platform];
           if (!meta) return null;
@@ -217,7 +284,12 @@ interface PublicProfileHeaderProps {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function PublicProfileHeader({ profile, stats, tagline, badgeType, socialLinks }: PublicProfileHeaderProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+
+  // Is the viewer the owner of this profile?
+  const isOwner = !!user && user.id === profile.user_id;
 
   const activeSocialLinks = socialLinks
     ? Object.fromEntries(Object.entries(socialLinks).filter(([, v]) => v?.trim()))
@@ -326,14 +398,14 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
             </div>
           </div>
 
-          {/* Orbiting social icons */}
-          {hasSocialLinks && (
-            <OrbitalSocialLinks
-              socialLinks={activeSocialLinks}
-              orbitRadius={orbitRadius}
-              durationSecs={22}
-            />
-          )}
+          {/* Orbital social links or + placeholder */}
+          <OrbitalSocialLinks
+            socialLinks={activeSocialLinks}
+            orbitRadius={orbitRadius}
+            durationSecs={22}
+            isOwner={isOwner}
+            onAddLinks={() => navigate("/profile", { state: { scrollTo: "social-links" } })}
+          />
         </div>
 
         {/* Name + Handle + Badge */}
