@@ -19,14 +19,10 @@ import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { vi } from "date-fns/locale";
 
-// Ví 1: 0x02D5578... — Ví Lì Xì Tết, đã DỪNG hoạt động (12/02/2026 → 18/02/2026)
-// Ví 2: 0x416336... — Ví Rút Thưởng Camly, đang HOẠT ĐỘNG (từ 27/01/2026 đến nay)
+// Ví 1: 0x02D5578... — ĐÃ DỪNG hoạt động (12/02/2026 → 18/02/2026)
+// Ví 2: 0x416336... — ĐANG HOẠT ĐỘNG (từ 27/01/2026 đến nay, xử lý toàn bộ rút thưởng + lì xì)
 const TREASURY_WALLET_1 = "0x02D5578173bd0DB25462BB32A254Cd4b2E6D9a0D";
 const TREASURY_WALLET_2 = "0x416336c3b7ACAe89F47EAD2707412f20DA159ac8";
-// Ngày hoạt động thực tế (xác minh từ database + BSCScan)
-const VI1_START = "12/02/2026"; // Ví 1: lì xì bắt đầu
-const VI1_END = "18/02/2026";   // Ví 1: lì xì kết thúc (đã dừng)
-const VI2_START = "27/01/2026"; // Ví 2: rút thưởng bắt đầu
 const BSCSCAN_TX = "https://bscscan.com/tx/";
 const BSCSCAN_ADDR = "https://bscscan.com/address/";
 const PAGE_SIZE = 20;
@@ -214,17 +210,14 @@ export default function AdminTreasury() {
   }, []);
 
   // ─── Phân tách dữ liệu theo ví ───
-  // Ví 1 (0x02D5...): toàn bộ lixi_claims — Lì Xì Tết (đã dừng)
-  // (lixiClaims đã được fetch riêng — dùng trực tiếp)
+  // Ví 1 (0x02D5...): dữ liệu từ lixi_claims — đã DỪNG (12/02/2026 → 18/02/2026)
+  // Ví 2 (0x4163...): dữ liệu từ coin_withdrawals — đang HOẠT ĐỘNG (từ 27/01/2026)
+  //   → Ví 2 xử lý toàn bộ: rút thưởng Camly + lì xì Tết hiện tại
 
-  // Ví 2 (0x4163...): toàn bộ coin_withdrawals — Rút Thưởng (đang hoạt động)
-  // (allWithdrawals đã được fetch riêng — dùng trực tiếp)
+  const pendingV1 = pendingLixi;
+  const pendingV2 = pendingWithdrawals;
 
-  // Pending: phân theo loại
-  const pendingV1 = pendingLixi;       // Ví 1 pending = lixi pending
-  const pendingV2 = pendingWithdrawals; // Ví 2 pending = withdrawal pending
-
-  // Stats Ví 1: lì xì Tết (12/02 → 18/02, đã dừng)
+  // Stats Ví 1: 12/02 → 18/02/2026 (đã dừng)
   const v1Stats = useMemo(() => {
     if (!lixiClaims.length) return null;
     const totalCamly = lixiClaims.reduce((s, l) => s + l.camly_amount, 0);
@@ -238,9 +231,8 @@ export default function AdminTreasury() {
     return { totalTx: lixiClaims.length, totalCamly, totalFun, first, last, days, pending: pendingV1.length };
   }, [lixiClaims, pendingV1]);
 
-  // Stats Ví 2: rút thưởng Camly (27/01 → nay, đang hoạt động)
+  // Stats Ví 2: từ 27/01/2026 (đang hoạt động — rút thưởng + lì xì hiện tại)
   const v2Stats = useMemo(() => {
-    if (!allWithdrawals.length) return null;
     const totalCamly = allWithdrawals.reduce((s, w) => s + w.amount, 0);
     const sorted = [...allWithdrawals].sort((a, b) => a.created_at.localeCompare(b.created_at));
     const first = sorted[0]?.created_at;
@@ -249,14 +241,14 @@ export default function AdminTreasury() {
     return { totalTx: allWithdrawals.length, totalCamly, first, last, days, pending: pendingV2.length };
   }, [allWithdrawals, pendingV2]);
 
-  // Chart Ví 1: lì xì Tết theo ngày (dùng claimed_at)
+  // Chart Ví 1: theo ngày (claimed_at)
   const v1ChartData = useMemo(() =>
     groupByDate(lixiClaims.map(l => ({
       date: fmtDateShort(l.claimed_at || ""),
       amount: l.camly_amount / 1_000_000,
     }))), [lixiClaims]);
 
-  // Chart Ví 2: rút thưởng Camly theo ngày (dùng created_at)
+  // Chart Ví 2: theo ngày (created_at)
   const v2ChartData = useMemo(() =>
     groupByDate(allWithdrawals.map(w => ({
       date: fmtDateShort(w.created_at),
@@ -278,8 +270,8 @@ export default function AdminTreasury() {
     const allDates = [...new Set([...Object.keys(v1Map), ...Object.keys(v2Map)])].sort();
     return allDates.map(date => ({
       date,
-      "Ví 1 (Lì Xì)": +(v1Map[date] || 0).toFixed(2),
-      "Ví 2 (Rút Thưởng)": +(v2Map[date] || 0).toFixed(2),
+      "Ví 1": +(v1Map[date] || 0).toFixed(2),
+      "Ví 2": +(v2Map[date] || 0).toFixed(2),
     }));
   }, [lixiClaims, allWithdrawals]);
 
@@ -372,12 +364,12 @@ export default function AdminTreasury() {
               <CardTitle className="text-base flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-blue-500" />
                 Ví 1
-                <span className="text-xs font-normal text-muted-foreground ml-1">(đã dừng hoạt động)</span>
+                <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/30 ml-1">Đã dừng</Badge>
               </CardTitle>
               <WalletAddressChip address={TREASURY_WALLET_1} label="Địa chỉ:" />
               {v1Stats && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  🗓️ {fmtDate(v1Stats.first!)} → {fmtDate(v1Stats.last!)} ({v1Stats.days} ngày)
+                  🗓️ 12/02/2026 → 18/02/2026 ({v1Stats.days} ngày hoạt động)
                 </p>
               )}
             </CardHeader>
@@ -407,12 +399,12 @@ export default function AdminTreasury() {
               <CardTitle className="text-base flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-emerald-500" />
                 Ví 2
-                <span className="text-xs font-normal text-muted-foreground ml-1">(đang hoạt động)</span>
+                <Badge variant="outline" className="text-[10px] bg-green-100 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800 ml-1">Đang hoạt động</Badge>
               </CardTitle>
               <WalletAddressChip address={TREASURY_WALLET_2} label="Địa chỉ:" />
               {v2Stats.first && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  🗓️ {fmtDate(v2Stats.first)} → {fmtDate(v2Stats.last!)} ({v2Stats.days} ngày)
+                  🗓️ 27/01/2026 → nay ({v2Stats.days} ngày hoạt động)
                 </p>
               )}
             </CardHeader>
@@ -455,7 +447,7 @@ export default function AdminTreasury() {
               <div className="w-px h-10 bg-amber-200 dark:bg-amber-700 hidden sm:block" />
               <div>
                 <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{fmt(v1Stats?.totalFun || 0)}</div>
-                <div className="text-xs text-muted-foreground">Tổng FUN đã phát (Lì Xì Ví 1)</div>
+                <div className="text-xs text-muted-foreground">Tổng FUN đã phát (Ví 1)</div>
               </div>
             </div>
           </CardContent>
@@ -465,8 +457,8 @@ export default function AdminTreasury() {
         <Tabs defaultValue="overview">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">📊 Tổng hợp</TabsTrigger>
-            <TabsTrigger value="vi1">💰 Ví 1</TabsTrigger>
-            <TabsTrigger value="vi2">💰 Ví 2</TabsTrigger>
+            <TabsTrigger value="vi1">🔴 Ví 1 (đã dừng)</TabsTrigger>
+            <TabsTrigger value="vi2">🟢 Ví 2 (đang hoạt động)</TabsTrigger>
           </TabsList>
 
           {/* ─── Tab: Tổng hợp ─── */}
@@ -513,8 +505,8 @@ export default function AdminTreasury() {
                         ["GD hoàn thành", fmt(v1Stats?.totalTx || 0), fmt(v2Stats.totalTx)],
                         ["Tổng Camly phát ra", fmt(v1Stats?.totalCamly || 0), fmt(v2Stats.totalCamly)],
                         ["Chờ xử lý", fmt(v1Stats?.pending || 0), fmt(v2Stats.pending)],
-                        ["Ngày bắt đầu", v1Stats?.first ? format(new Date(v1Stats.first), "dd/MM/yyyy") : "—", v2Stats.first ? format(new Date(v2Stats.first), "dd/MM/yyyy") : "—"],
-                        ["Ngày cuối", v1Stats?.last ? format(new Date(v1Stats.last), "dd/MM/yyyy") : "—", v2Stats.last ? format(new Date(v2Stats.last), "dd/MM/yyyy") : "—"],
+                        ["Ngày bắt đầu", "12/02/2026", "27/01/2026"],
+                        ["Ngày dừng hoạt động", "18/02/2026", "—"],
                         ["Trạng thái", "Đã dừng", "Đang hoạt động"],
                       ].map(([label, v1, v2]) => (
                         <tr key={label as string} className="hover:bg-muted/30">
@@ -541,7 +533,7 @@ export default function AdminTreasury() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm text-muted-foreground">Camly phát theo ngày — Ví 1 Lì Xì (triệu Camly)</CardTitle>
+                <CardTitle className="text-sm text-muted-foreground">Camly phát theo ngày — Ví 1 (triệu Camly)</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={240}>
@@ -559,7 +551,7 @@ export default function AdminTreasury() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <CardTitle className="text-base">Lịch sử Ví 1 — Lì Xì Tết ({filteredV1.length} giao dịch)</CardTitle>
+                  <CardTitle className="text-base">Lịch sử Ví 1 — đã dừng 18/02/2026 ({filteredV1.length} giao dịch)</CardTitle>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -659,7 +651,7 @@ export default function AdminTreasury() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm text-muted-foreground">Camly phát theo ngày — Ví 2 Rút Thưởng (triệu Camly)</CardTitle>
+                <CardTitle className="text-sm text-muted-foreground">Camly phát theo ngày — Ví 2 (triệu Camly)</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={240}>
@@ -677,7 +669,7 @@ export default function AdminTreasury() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <CardTitle className="text-base">Lịch sử Ví 2 — Rút Thưởng ({filteredV2.length} giao dịch)</CardTitle>
+                  <CardTitle className="text-base">Lịch sử Ví 2 — đang hoạt động ({filteredV2.length} giao dịch)</CardTitle>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
