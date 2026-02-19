@@ -538,9 +538,11 @@ const UserProfile = () => {
               <div
                 className="absolute right-3 top-2.5 z-20 hidden sm:block w-[268px] rounded-xl p-2.5"
                 style={{
-                  background: "linear-gradient(145deg, #1a0a00, #2d1500, #1a0a00)",
-                  border: "2px solid #daa520",
-                  boxShadow: "0 0 20px rgba(218,165,32,0.35), 0 4px 20px rgba(0,0,0,0.4)",
+                  background: "rgba(255,255,255,0.18)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  border: "2px solid #b8860b",
+                  boxShadow: "0 0 22px rgba(218,165,32,0.45), 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)",
                 }}
               >
                 {/* Header: logo + title centered + avatar */}
@@ -570,13 +572,13 @@ const UserProfile = () => {
                       key={i}
                       className="flex items-center justify-between px-2 py-1.5 rounded-full"
                       style={{
-                        background: "linear-gradient(135deg, #0d3320, #1a6b3a, #0d3320)",
-                        border: "1px solid #daa520",
-                        boxShadow: "inset 0 1px 0 rgba(255,215,0,0.15)",
+                        background: "linear-gradient(135deg, rgba(255,236,139,0.35), rgba(255,215,0,0.20), rgba(218,165,32,0.28))",
+                        border: "1.5px solid #b8860b",
+                        boxShadow: "0 0 6px rgba(218,165,32,0.4), inset 0 1px 0 rgba(255,255,255,0.4)",
                       }}
                     >
-                      <span className="text-[9px] text-white/90 leading-none font-medium">{s.icon} {s.label}</span>
-                      <span className="text-[9px] font-extrabold ml-1 leading-none" style={{ color: "#4ade80" }}>{s.value}</span>
+                      <span className="text-[9px] leading-none font-semibold" style={{ color: "#7a4e00" }}>{s.icon} {s.label}</span>
+                      <span className="text-[9px] font-extrabold ml-1 leading-none" style={{ color: "#b8860b" }}>{s.value}</span>
                     </div>
                   ))}
                 </div>
