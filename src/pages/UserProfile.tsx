@@ -265,6 +265,7 @@ const UserProfile = () => {
   const [isSuspending, setIsSuspending] = useState(false);
   const [giftDialogOpen, setGiftDialogOpen] = useState(false);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const [coverBrightness, setCoverBrightness] = useState<"light" | "dark" | "unknown">("unknown");
 
   const { friendshipStatus, isLoading: friendshipLoading, sendFriendRequest, acceptFriendRequest, cancelFriendRequest } = useFriendship(userId);
   const { toggleLike, sharePost, addComment, fetchComments, editPost, deletePost } = useCommunityPosts();
@@ -383,6 +384,44 @@ const UserProfile = () => {
       setBanDialogOpen(false); setSuspendReason(""); setHealingMessage("");
     } catch { toast.error("Không thể cấm người dùng"); } finally { setIsSuspending(false); }
   };
+
+  // ── Analyse cover image brightness (Canvas API) ──────────────────────────
+  useEffect(() => {
+    if (!profile?.cover_photo_url) {
+      setCoverBrightness("unknown");
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        // Sample a small region (top-right) where the board sits
+        const sampleW = 300;
+        const sampleH = 120;
+        canvas.width = sampleW;
+        canvas.height = sampleH;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        // Draw the right portion of the image (where honor board overlays)
+        const srcX = img.naturalWidth > sampleW ? img.naturalWidth - sampleW : 0;
+        ctx.drawImage(img, srcX, 0, sampleW, sampleH, 0, 0, sampleW, sampleH);
+        const data = ctx.getImageData(0, 0, sampleW, sampleH).data;
+        let totalBrightness = 0;
+        const pixels = data.length / 4;
+        for (let i = 0; i < data.length; i += 4) {
+          // Perceived brightness (ITU-R BT.709)
+          totalBrightness += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+        }
+        const avg = totalBrightness / pixels;
+        setCoverBrightness(avg > 140 ? "light" : "dark");
+      } catch {
+        setCoverBrightness("unknown");
+      }
+    };
+    img.onerror = () => setCoverBrightness("unknown");
+    img.src = profile.cover_photo_url;
+  }, [profile?.cover_photo_url]);
 
   // ── Fetch data ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -562,55 +601,84 @@ const UserProfile = () => {
                 </div>
               )}
 
-              {/* ── Bảng Danh Dự — top-right overlay on cover ── */}
-              <div
-                className="absolute right-3 top-2.5 z-20 hidden sm:block w-[268px] rounded-xl p-2.5"
-                style={{
-                  background: "rgba(255,255,255,0.18)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  border: "2px solid #b8860b",
-                  boxShadow: "0 0 22px rgba(218,165,32,0.45), 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)",
-                }}
-              >
-                {/* Header: logo + title centered + avatar */}
-                <div className="flex items-center justify-between mb-2">
-                  <img src={angelAiGoldenLogo} className="w-6 h-6 object-contain flex-shrink-0" alt="Angel AI" />
-                  <span
-                    className="text-[10px] font-extrabold tracking-widest uppercase text-center flex-1 mx-1"
+              {/* ── Bảng Danh Dự — top-right overlay on cover (adaptive color) ── */}
+              {(() => {
+                // Adaptive theme based on cover brightness
+                const isDark = coverBrightness === "dark";
+                const isLight = coverBrightness === "light";
+                // Dark cover → use white/light glass card so text is readable
+                // Light cover → use dark/amber opaque card so text pops
+                const boardBg = isDark
+                  ? "rgba(255,255,255,0.92)"
+                  : isLight
+                  ? "rgba(20,10,0,0.72)"
+                  : "rgba(255,255,255,0.18)";
+                const boardBorder = isDark ? "2px solid #b8860b" : isLight ? "2px solid #ffd700" : "2px solid #b8860b";
+                const boardShadow = isDark
+                  ? "0 0 22px rgba(218,165,32,0.5), 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)"
+                  : isLight
+                  ? "0 0 22px rgba(0,0,0,0.6), 0 4px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,215,0,0.15)"
+                  : "0 0 22px rgba(218,165,32,0.45), 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)";
+                const pillBg = isDark
+                  ? "linear-gradient(135deg, rgba(255,236,139,0.5), rgba(255,215,0,0.30), rgba(218,165,32,0.40))"
+                  : isLight
+                  ? "linear-gradient(135deg, rgba(180,130,0,0.3), rgba(255,215,0,0.15), rgba(218,165,32,0.20))"
+                  : "linear-gradient(135deg, rgba(255,236,139,0.35), rgba(255,215,0,0.20), rgba(218,165,32,0.28))";
+                const pillBorder = isDark ? "1.5px solid #b8860b" : isLight ? "1.5px solid rgba(255,215,0,0.7)" : "1.5px solid #b8860b";
+                const labelColor = isDark ? "#5c3800" : isLight ? "#ffd700" : "#7a4e00";
+                const valueColor = isDark ? "#b8860b" : isLight ? "#ffec8b" : "#b8860b";
+
+                return (
+                  <div
+                    className="absolute right-3 top-2.5 z-20 hidden sm:block w-[268px] rounded-xl p-2.5 transition-all duration-500"
                     style={{
-                      background: "linear-gradient(90deg, #ff0000, #ff7700, #ffdd00, #00ff00, #0099ff, #8800ff, #ff00ff)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
+                      background: boardBg,
+                      backdropFilter: "blur(14px)",
+                      WebkitBackdropFilter: "blur(14px)",
+                      border: boardBorder,
+                      boxShadow: boardShadow,
                     }}
                   >
-                    ✦ Bảng Danh Dự ✦
-                  </span>
-                  <Avatar className="w-6 h-6 flex-shrink-0">
-                    <AvatarImage src={profile?.avatar_url || angelAvatar} className="object-cover" />
-                    <AvatarFallback className="text-[9px] bg-amber-900 text-amber-200">{profile?.display_name?.charAt(0) || "U"}</AvatarFallback>
-                  </Avatar>
-                </div>
-                {/* Divider line */}
-                <div className="w-full h-px mb-2" style={{ background: "linear-gradient(90deg, transparent, #daa520, transparent)" }} />
-                <div className="grid grid-cols-2 gap-1">
-                  {honorStats.map((s, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between px-2 py-1.5 rounded-full"
-                      style={{
-                        background: "linear-gradient(135deg, rgba(255,236,139,0.35), rgba(255,215,0,0.20), rgba(218,165,32,0.28))",
-                        border: "1.5px solid #b8860b",
-                        boxShadow: "0 0 6px rgba(218,165,32,0.4), inset 0 1px 0 rgba(255,255,255,0.4)",
-                      }}
-                    >
-                      <span className="text-[9px] leading-none font-semibold" style={{ color: "#7a4e00" }}>{s.icon} {s.label}</span>
-                      <span className="text-[9px] font-extrabold ml-1 leading-none" style={{ color: "#b8860b" }}>{s.value}</span>
+                    {/* Header: logo + title centered + avatar */}
+                    <div className="flex items-center justify-between mb-2">
+                      <img src={angelAiGoldenLogo} className="w-6 h-6 object-contain flex-shrink-0" alt="Angel AI" />
+                      <span
+                        className="text-[10px] font-extrabold tracking-widest uppercase text-center flex-1 mx-1"
+                        style={{
+                          background: "linear-gradient(90deg, #ff0000, #ff7700, #ffdd00, #00ff00, #0099ff, #8800ff, #ff00ff)",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          backgroundClip: "text",
+                        }}
+                      >
+                        ✦ Bảng Danh Dự ✦
+                      </span>
+                      <Avatar className="w-6 h-6 flex-shrink-0">
+                        <AvatarImage src={profile?.avatar_url || angelAvatar} className="object-cover" />
+                        <AvatarFallback className="text-[9px] bg-amber-900 text-amber-200">{profile?.display_name?.charAt(0) || "U"}</AvatarFallback>
+                      </Avatar>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    {/* Divider line */}
+                    <div className="w-full h-px mb-2" style={{ background: "linear-gradient(90deg, transparent, #daa520, transparent)" }} />
+                    <div className="grid grid-cols-2 gap-1">
+                      {honorStats.map((s, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between px-2 py-1.5 rounded-full"
+                          style={{
+                            background: pillBg,
+                            border: pillBorder,
+                            boxShadow: "0 0 6px rgba(218,165,32,0.3), inset 0 1px 0 rgba(255,255,255,0.2)",
+                          }}
+                        >
+                          <span className="text-[9px] leading-none font-semibold" style={{ color: labelColor }}>{s.icon} {s.label}</span>
+                          <span className="text-[9px] font-extrabold ml-1 leading-none" style={{ color: valueColor }}>{s.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* ── Profile info section ─────────────────────────────────── */}
