@@ -1,85 +1,110 @@
 
-# Sửa Trang Cá Nhân `/user/:userId` — Fix Nền Trắng + Cải Thiện Layout
+# Sửa Trang Cá Nhân — Fix Nền Trắng Thực Sự + Chuẩn Hóa Màu Vàng Angel AI
 
-## Nguyên Nhân Gốc Rễ
+## Nguyên Nhân Chính Xác Của Nền Trắng
 
-Class `dark` trong Tailwind chỉ hoạt động khi được đặt ở thẻ `<html>` (do `next-themes` kiểm soát). Khi thêm `class="dark"` vào một `<div>` con, các CSS variables như `--background`, `--card`, `--foreground` vẫn đọc từ `:root` (light mode). Vì vậy tất cả `Card`, `text-foreground`, `text-muted-foreground`, `bg-card`, `border-border`... đều vẫn hiển thị màu sáng.
+Qua đọc toàn bộ `UserProfile.tsx`, vấn đề nằm ở **3 nguồn**:
 
-## Giải Pháp
+1. **`PostCard` component** — component này dùng `Card` từ Radix/shadcn, bên trong có `bg-card`, `text-card-foreground` từ CSS variables. Khi render trong một `<div>` bình thường (không phải `<html>`), các biến này đọc từ `:root` (light mode) → trắng.
 
-Thay vì dựa vào CSS variables của Tailwind dark mode, **dùng màu hardcoded hoàn toàn** (inline styles + Tailwind classes cụ thể như `text-white`, `text-amber-400`, `bg-[#0d2137]`) cho mọi phần tử trong trang. Đây là cách duy nhất đảm bảo trang luôn tối bất kể theme hệ thống.
+2. **`WalletAddressDisplay`** — có thể dùng `bg-background` hoặc `border-border`
 
-## Các Thay Đổi Cụ Thể
+3. **`SocialLinksDisplay`** — render bên trong sidebar, cũng có thể dùng semantic classes
 
-### 1. Xóa class `dark` khỏi wrapper chính
-Thay `className="dark min-h-screen"` → `className="min-h-screen"`, giữ nguyên `style` background gradient.
+## Giải Pháp Đúng: CSS Custom Properties Override
 
-### 2. Thay tất cả Tailwind "semantic" classes bằng màu cụ thể
-
-| Thay thế | Bằng |
-|---|---|
-| `text-foreground` | `text-white` |
-| `text-muted-foreground` | `text-white/60` |
-| `bg-card` | `bg-[#0d1f3a]` |
-| `border-border` | `border-amber-900/30` |
-| `bg-background` | `bg-[#060d1a]` |
-| `text-card-foreground` | `text-white` |
-
-### 3. Các Component cần đổi màu cụ thể
-
-- **`<h1>` tên người dùng**: `className="... text-white"` (không dùng `text-foreground`)
-- **Badge level chip**: `text-amber-300` (đã đúng), giữ nguyên
-- **`@handle`**: `text-amber-400` (đã đúng)
-- **Muted text** (ngày tham gia, FUN Ecosystem, v.v.): `text-white/60`
-- **`<Separator />`**: Thêm `className="bg-amber-900/30"` (đã có)
-- **Tab buttons** — tab không active: `text-white/60 hover:text-white` (bỏ `hover:text-foreground`)
-- **Intro Card (sidebar trái)**: Tất cả text → `text-white` / `text-white/60`
-- **"Bảng Danh Dự"**: Đã đúng (dùng inline styles)
-
-### 4. Cải thiện ảnh bìa
-
-Từ hình tham khảo: ảnh bìa hiện tại đang hiển thị content FUN Ecosystem (banner). Chiều cao sẽ điều chỉnh:
-- Desktop: `h-[260px] sm:h-[320px]` — tăng lên để cân đối hơn với avatar
-- `object-cover` giữ nguyên để ảnh fill đẹp
-- Gradient overlay bottom dày hơn: `from-[#060d1a]/90` để transition mượt vào nền tối
-
-### 5. Thiết kế Avatar
-
-Từ hình tham khảo người dùng gửi trước (hình reference): avatar có viền tròn vàng, kim cương ở góc trên phải, orbital icons xung quanh. Hiện tại code đã có logic này nhưng chưa hiển thị đúng vì CSS variables bị ảnh hưởng. Sau khi fix màu hardcoded:
-- Avatar size tăng lên: `w-[130px] h-[130px] sm:w-[160px] sm:h-[160px]`  
-- Orbital wrapper tăng tương ứng: `orbitRadius = 100`
-- Kim cương badge `💎` giữ nguyên logic hiện có
-
-### 6. Layout tổng thể
-
-Giữ nguyên cấu trúc 2 cột (avatar trái + info phải) và "Bảng Danh Dự" bên phải — chỉ fix màu sắc để đảm bảo tối hoàn toàn.
-
-## Kỹ Thuật
-
-Cụ thể sẽ scan toàn bộ file `src/pages/UserProfile.tsx` và thay thế:
+Thay vì chỉ đổi Tailwind classes trong `UserProfile.tsx`, cần **ghi đè CSS variables tại root wrapper** của trang này bằng `style` attribute trực tiếp:
 
 ```tsx
-// TRƯỚC (dùng CSS variables, bị light mode):
-<h1 className="text-2xl font-extrabold text-foreground">
-<span className="text-xs text-muted-foreground">
-<div className="hover:text-foreground">
-
-// SAU (màu hardcoded, luôn tối):
-<h1 className="text-2xl font-extrabold text-white">
-<span className="text-xs text-white/60">
-<div className="hover:text-white">
+<div
+  className="min-h-screen"
+  style={{
+    background: "linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #060d1a 100%)",
+    // Override CSS variables để ép dark mode cho toàn bộ cây component
+    "--background": "13 33 55",         // #0d2137
+    "--card": "13 33 55",               // #0d2137
+    "--card-foreground": "255 255 255", // white
+    "--foreground": "255 255 255",      // white
+    "--muted-foreground": "255 255 255 / 0.6",
+    "--border": "180 144 30 / 0.25",    // amber-ish
+    "--popover": "13 33 55",
+    "--popover-foreground": "255 255 255",
+    "--muted": "13 25 45",
+    "--accent": "180 144 30 / 0.15",
+    "--accent-foreground": "255 255 255",
+    "--input": "13 33 55",
+    "--ring": "180 144 30",
+  } as React.CSSProperties}
+>
 ```
+
+Cách này **ghi đè CSS variables tại mức DOM node**, khiến tất cả con (kể cả `PostCard`, `Card`, `Dialog`) đọc giá trị mới. Đây là kỹ thuật đúng nhất và sẽ thực sự hoạt động.
+
+## Đổi Màu Xanh Cyan → Vàng Angel AI
+
+Hiện tại `DiamondBadge` dùng màu cyan (`#22d3ee`, `border-cyan-400`). Theo yêu cầu, cần đổi sang vàng ánh kim:
+
+```tsx
+// Trước:
+border: "2px solid #22d3ee",
+boxShadow: "0 0 12px rgba(34,211,238,0.6), ...",
+
+// Sau (vàng kim):
+border: "2px solid #ffd700",
+boxShadow: "0 0 12px rgba(255,215,0,0.7), 0 0 24px rgba(218,165,32,0.3)",
+background: "linear-gradient(135deg, #b8860b, #0a1628)",
+```
+
+## Cải Thiện Cover Photo & Avatar
+
+Nhìn hình tham khảo: cover photo chiếm ~35% viewport height, avatar nổi đè lên bottom-left của cover:
+- Cover: `h-[220px] sm:h-[280px]` (giảm một chút để cân đối)
+- Avatar wrapper: giảm `marginTop` để avatar không bị quá thấp
+- Gradient overlay trên cover: `from-[#060d1a]/80` (đủ tối nhưng vẫn thấy ảnh)
+
+## Thêm "Sửa ảnh bìa" Button Cho Owner
+
+Từ hình tham khảo: button "Sửa ảnh bìa" xuất hiện ở góc dưới phải ảnh bìa với icon camera — đã có code này nhưng cần giữ.
+
+## Cải Thiện Bảng Danh Dự
+
+Theo hình: các ô thống kê có màu nền xanh đậm, chữ vàng cho số, bo tròn lớn (pill shape). Cập nhật:
+- Mỗi ô: `rounded-full px-4 py-2` (pill style như hình)
+- Màu nền ô: `#0d3320` (xanh đậm)
+- Icon bên trái, số bên phải màu vàng `#ffd700`
+- Border: `border-amber-500/40`
+
+## Chi Tiết Các Thay Đổi
+
+### 1. Main wrapper — Ghi đè CSS Variables
+Thay `style={{ background: "..." }}` → thêm đầy đủ CSS variable overrides
+
+### 2. `DiamondBadge` — Đổi cyan → gold
+```tsx
+style={{
+  background: "linear-gradient(135deg, #b8860b, #0a1628)",
+  border: "2px solid #ffd700",
+  boxShadow: "0 0 14px rgba(255,215,0,0.7), 0 0 28px rgba(218,165,32,0.3)",
+}}
+```
+
+### 3. Orbital track ring — Đổi từ `border-amber-400/20` → giữ nguyên (đã đúng)
+
+### 4. "Bảng Danh Dự" ô thống kê — Pill style
+Từ `rounded-lg` → `rounded-full`, layout `flex justify-between` giữ nguyên, tăng padding
+
+### 5. Tab active indicator — Giữ nguyên `border-amber-400` (đã đúng)
+
+### 6. PostCard wrapper — Không cần thêm gì vì CSS var override sẽ fix toàn bộ
 
 ## File Sẽ Sửa
 
 **1 file duy nhất**: `src/pages/UserProfile.tsx`
 
 Thay đổi:
-1. Xóa class `dark` khỏi wrapper (không cần thiết và gây nhầm lẫn)
-2. Thay toàn bộ `text-foreground` → `text-white`
-3. Thay toàn bộ `text-muted-foreground` → `text-white/60`
-4. Thay `hover:text-foreground` → `hover:text-white`
-5. Thay `hover:bg-white/5` → `hover:bg-white/10`
-6. Tăng chiều cao ảnh bìa lên `h-[260px] sm:h-[320px]`
-7. Tăng kích thước avatar `orbitRadius` lên `100` và avatar size tăng lên `w-[130px] h-[130px] sm:w-[160px] sm:h-[160px]`
-8. Đảm bảo gradient overlay ảnh bìa đủ đậm để blend vào nền tối
+1. **Main wrapper**: Thêm CSS custom properties override vào `style` attribute để ép dark mode cho toàn bộ cây component
+2. **`DiamondBadge`**: Đổi màu cyan → vàng ánh kim (#ffd700, gold gradient)
+3. **Cover height**: `h-[220px] sm:h-[280px]` (tối ưu cân đối)
+4. **Bảng Danh Dự**: Ô thống kê dạng pill (rounded-full), màu nền/chữ chuẩn hơn theo hình
+5. **Tab navigation**: Giữ nguyên vị trí "..." bên phải (đã đúng)
+6. **Orbital wrapper**: Đảm bảo `wrapperSize` và `marginTop` phù hợp với avatar mới
