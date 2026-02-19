@@ -48,71 +48,70 @@ import { Facebook, Youtube, MessageCircle as TelegramIcon } from "lucide-react";
 import { CoverPositionEditor } from "@/components/profile/CoverPositionEditor";
 
 // ─── Platform Meta (for orbital) ─────────────────────────────────────────────
-const PLATFORM_META: Record<string, { label: string; icon: React.ReactNode; bg: string; color: string }> = {
+const PLATFORM_META: Record<string, { label: string; logoUrl: string; bg: string; color: string }> = {
   fun_profile: {
     label: "Fun Profile",
-    icon: <img src={funProfileLogo} className="w-4 h-4 object-contain" alt="Fun Profile" />,
-    bg: "#1a2e1a",
+    logoUrl: funProfileLogo,
+    bg: "#b8860b",
     color: "#ffd700",
   },
   fun_play: {
     label: "Fun Play",
-    icon: <img src={funPlayLogo} className="w-4 h-4 object-contain" alt="Fun Play" />,
+    logoUrl: funPlayLogo,
     bg: "#0a1a3a",
     color: "#ffd700",
   },
   facebook: {
     label: "Facebook",
-    icon: <Facebook className="w-4 h-4" />,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/2023_Facebook_icon.svg/240px-2023_Facebook_icon.svg.png",
     bg: "#1877F2",
     color: "#fff",
   },
   youtube: {
     label: "YouTube",
-    icon: <Youtube className="w-4 h-4" />,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/240px-YouTube_full-color_icon_%282017%29.svg.png",
     bg: "#FF0000",
     color: "#fff",
   },
   twitter: {
     label: "X (Twitter)",
-    icon: <span className="text-xs font-black leading-none">𝕏</span>,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/X_logo_2023.svg/240px-X_logo_2023.svg.png",
     bg: "#14171A",
     color: "#fff",
   },
   telegram: {
     label: "Telegram",
-    icon: <TelegramIcon className="w-4 h-4" />,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/240px-Telegram_logo.svg.png",
     bg: "#26A5E4",
     color: "#fff",
   },
   tiktok: {
     label: "TikTok",
-    icon: <span className="text-xs font-black leading-none">TK</span>,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/240px-TikTok_logo.svg.png",
     bg: "#010101",
     color: "#fff",
   },
   linkedin: {
     label: "LinkedIn",
-    icon: <span className="text-xs font-black leading-none">in</span>,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/240px-LinkedIn_logo_initials.png",
     bg: "#0A66C2",
     color: "#fff",
   },
   zalo: {
     label: "Zalo",
-    icon: <span className="text-xs font-black leading-none">Z</span>,
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Icon_of_Zalo.svg/240px-Icon_of_Zalo.svg.png",
     bg: "#0068FF",
     color: "#fff",
   },
 };
 
-// ─── Orbital Icon — shows user's own avatar, overflowing the circle ──────────
+// ─── Orbital Icon — shows platform logo ──────────────────────────────────────
 function OrbitalIcon({
-  platform, url, meta, x, y, durationSecs, userAvatarUrl,
+  platform, url, meta, x, y, durationSecs,
 }: {
   platform: string; url: string;
-  meta: { label: string; icon: React.ReactNode; bg: string; color: string };
+  meta: { label: string; logoUrl: string; bg: string; color: string };
   x: number; y: number; durationSecs: number;
-  userAvatarUrl?: string | null;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -121,10 +120,10 @@ function OrbitalIcon({
         <TooltipTrigger asChild>
           <motion.a
             href={url} target="_blank" rel="noopener noreferrer"
-            className="absolute rounded-full pointer-events-auto cursor-pointer overflow-hidden"
+            className="absolute rounded-full pointer-events-auto cursor-pointer overflow-hidden flex items-center justify-center"
             style={{
               left: x, top: y, width: 36, height: 36,
-              background: meta.bg,
+              background: "#fff",
               boxShadow: hovered
                 ? `0 0 16px ${meta.bg}cc, 0 2px 10px rgba(0,0,0,0.4)`
                 : `0 2px 8px rgba(0,0,0,0.35)`,
@@ -139,21 +138,15 @@ function OrbitalIcon({
             onHoverStart={() => setHovered(true)}
             onHoverEnd={() => setHovered(false)}
           >
-            {userAvatarUrl ? (
-              <img
-                src={userAvatarUrl}
-                alt={meta.label}
-                className="w-full h-full object-cover"
-                style={{ display: "block" }}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center" style={{ color: meta.color }}>
-                {meta.icon}
-              </div>
-            )}
+            <img
+              src={meta.logoUrl}
+              alt={meta.label}
+              className="w-5 h-5 object-contain"
+              style={{ display: "block" }}
+            />
           </motion.a>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs font-semibold bg-gray-800 border border-amber-400/40 text-white">
+        <TooltipContent side="top" className="text-xs font-semibold bg-background border border-amber-400/40 text-foreground">
           {meta.label}
         </TooltipContent>
       </Tooltip>
@@ -162,9 +155,8 @@ function OrbitalIcon({
 }
 
 // ─── Orbital Social Links ─────────────────────────────────────────────────────
-function OrbitalSocialLinks({ socialLinks, orbitRadius = 90, durationSecs = 22, userAvatarUrl }: {
+function OrbitalSocialLinks({ socialLinks, orbitRadius = 90, durationSecs = 22 }: {
   socialLinks: Record<string, string>; orbitRadius?: number; durationSecs?: number;
-  userAvatarUrl?: string | null;
 }) {
   const activeLinks = Object.entries(socialLinks).filter(([, url]) => url?.trim());
   if (activeLinks.length === 0) return null;
@@ -186,7 +178,7 @@ function OrbitalSocialLinks({ socialLinks, orbitRadius = 90, durationSecs = 22, 
           const y = orbitRadius + orbitRadius * Math.sin(rad) - 18;
           const meta = PLATFORM_META[platform];
           if (!meta) return null;
-          return <OrbitalIcon key={platform} platform={platform} url={url} meta={meta} x={x} y={y} durationSecs={durationSecs} userAvatarUrl={userAvatarUrl} />;
+          return <OrbitalIcon key={platform} platform={platform} url={url} meta={meta} x={x} y={y} durationSecs={durationSecs} />;
         })}
       </motion.div>
     </div>
@@ -629,7 +621,6 @@ const UserProfile = () => {
                     socialLinks={activeSocialLinks}
                     orbitRadius={orbitRadius}
                     durationSecs={22}
-                    userAvatarUrl={profile?.avatar_url}
                   />
 
                   {/* Avatar */}
