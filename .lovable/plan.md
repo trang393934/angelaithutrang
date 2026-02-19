@@ -1,169 +1,85 @@
 
-# Redesign Trang Cá Nhân `/user/:userId` — Angel AI Style
+# Sửa Trang Cá Nhân `/user/:userId` — Fix Nền Trắng + Cải Thiện Layout
 
-## Phân Tích Hình Tham Khảo
+## Nguyên Nhân Gốc Rễ
 
-Từ hình người dùng cung cấp, layout mới cần có:
+Class `dark` trong Tailwind chỉ hoạt động khi được đặt ở thẻ `<html>` (do `next-themes` kiểm soát). Khi thêm `class="dark"` vào một `<div>` con, các CSS variables như `--background`, `--card`, `--foreground` vẫn đọc từ `:root` (light mode). Vì vậy tất cả `Card`, `text-foreground`, `text-muted-foreground`, `bg-card`, `border-border`... đều vẫn hiển thị màu sáng.
 
-1. **Ảnh bìa** — Full width, chiều cao vừa phải, không quá cao
-2. **Khu vực avatar** — Nằm bên **trái** (không căn giữa), nổi đè lên cover, có:
-   - Vòng tròn xanh (hoặc vàng Angel AI) bao quanh avatar
-   - Icon **kim cương 💎** nổi bật phía trên-phải avatar (tương tự hình)
-   - Các orbital social icons xoay xung quanh (đã có từ trước, tích hợp lại cho trang này)
-   - Icon social links (Facebook v.v.) nổi xung quanh avatar
-3. **Thông tin tên** — Nằm cạnh phải avatar (không phải bên dưới)
-   - Tên to, đậm
-   - `@handle · angel.fun.rich/handle` với nút copy
-   - Địa chỉ ví (có chip copy)
-   - Vị trí + Ecosystem label (🌏 Việt Nam · 🏢 FUN Ecosystem)
-   - Avatar bạn bè xếp chồng nhau bên dưới
-4. **Nút hành động** — Bên phải (Chỉnh sửa / Kết bạn / Nhắn tin / Tặng)
-5. **Bảng Danh Dự** (góc phải trên) — Card xanh đậm với lưới 2×4 thống kê: Bài viết, Bạn bè, Cảm xúc, Có thể rút, Bình luận, Đã rút, Hôm nay, Tổng thu
-6. **Navigation Tabs** — Ngang hàng bên dưới: Tất cả | Giới thiệu | Bạn bè | Ảnh | Reels | Chỉnh sửa hồ sơ — **nút "..." (3 chấm) góc PHẢI của tab bar**
+## Giải Pháp
 
-## Màu Sắc Angel AI áp dụng cho `/user/:userId`
+Thay vì dựa vào CSS variables của Tailwind dark mode, **dùng màu hardcoded hoàn toàn** (inline styles + Tailwind classes cụ thể như `text-white`, `text-amber-400`, `bg-[#0d2137]`) cho mọi phần tử trong trang. Đây là cách duy nhất đảm bảo trang luôn tối bất kể theme hệ thống.
 
-- **Nền tổng thể**: Gradient dark `from-[#0a1628] via-[#0d1f3a] to-[#0a1628]` thay vì `bg-[#f0f2f5]` (Facebook trắng)
-- **Card**: `bg-[#0d2137]/80` với border `border-amber-900/30`
-- **Avatar border**: Vàng kim loại gradient (giống `PublicProfileHeader`)
-- **Tab active**: `border-b-[3px] border-amber-400 text-amber-400`
-- **"Bảng Danh Dự"**: Nền xanh đậm gradient `from-[#0d3320] to-[#1a4a2e]` với border vàng, chữ trắng/vàng
+## Các Thay Đổi Cụ Thể
 
-## Các Thay Đổi Cần Thực Hiện
+### 1. Xóa class `dark` khỏi wrapper chính
+Thay `className="dark min-h-screen"` → `className="min-h-screen"`, giữ nguyên `style` background gradient.
 
-### File duy nhất: `src/pages/UserProfile.tsx` — REFACTOR TOÀN BỘ PHẦN RENDER
+### 2. Thay tất cả Tailwind "semantic" classes bằng màu cụ thể
 
-#### A. Nền tổng thể
-- Đổi `bg-[#f0f2f5]` → `min-h-screen bg-gradient-to-b from-[#060d1a] via-[#0a1628] to-[#060d1a]`
+| Thay thế | Bằng |
+|---|---|
+| `text-foreground` | `text-white` |
+| `text-muted-foreground` | `text-white/60` |
+| `bg-card` | `bg-[#0d1f3a]` |
+| `border-border` | `border-amber-900/30` |
+| `bg-background` | `bg-[#060d1a]` |
+| `text-card-foreground` | `text-white` |
 
-#### B. Cover Photo
-- Giữ nguyên logic hiển thị ảnh bìa
-- Chiều cao: `h-[220px] sm:h-[280px]` — hợp lý hơn
-- Thêm gradient overlay bottom đậm hơn cho cảm giác Angel AI
+### 3. Các Component cần đổi màu cụ thể
 
-#### C. Avatar Section — BÊN TRÁI, có Orbital + Diamond Icon
+- **`<h1>` tên người dùng**: `className="... text-white"` (không dùng `text-foreground`)
+- **Badge level chip**: `text-amber-300` (đã đúng), giữ nguyên
+- **`@handle`**: `text-amber-400` (đã đúng)
+- **Muted text** (ngày tham gia, FUN Ecosystem, v.v.): `text-white/60`
+- **`<Separator />`**: Thêm `className="bg-amber-900/30"` (đã có)
+- **Tab buttons** — tab không active: `text-white/60 hover:text-white` (bỏ `hover:text-foreground`)
+- **Intro Card (sidebar trái)**: Tất cả text → `text-white` / `text-white/60`
+- **"Bảng Danh Dự"**: Đã đúng (dùng inline styles)
 
-Thay khối avatar hiện tại bằng:
-- **Wrapper** `relative inline-block` với orbital social links giống `PublicProfileHeader`
-- **Gold gradient border** (`linear-gradient(135deg, #b8860b, #daa520, #ffd700...)`) 5px
-- **Kim cương 💎 badge** — Nổi ở góc trên-phải của avatar, dùng emoji hoặc icon gem màu cyan, kích thước 28px với nền tối và glow effect
-  - Logic: hiển thị theo `badgeLevel` (angel → 💎 kim cương, lightworker → ⭐, v.v.) hoặc luôn hiển thị một icon nhất định
-- **Orbital social links**: Tích hợp component `OrbitalSocialLinks` từ `PublicProfileHeader` (import hoặc tạo local copy) vào trang này
+### 4. Cải thiện ảnh bìa
 
-#### D. Khu vực thông tin — Layout 2 cột: [Avatar + Orbital | Thông tin]
+Từ hình tham khảo: ảnh bìa hiện tại đang hiển thị content FUN Ecosystem (banner). Chiều cao sẽ điều chỉnh:
+- Desktop: `h-[260px] sm:h-[320px]` — tăng lên để cân đối hơn với avatar
+- `object-cover` giữ nguyên để ảnh fill đẹp
+- Gradient overlay bottom dày hơn: `from-[#060d1a]/90` để transition mượt vào nền tối
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ [cover photo full width]                                    │
-├─────────────────────────────────────────────────────────────┤
-│  [💎+Orbital+Avatar]  │ Tên Người Dùng                     │
-│  (trái, -mt overlap) │ @handle · fun.rich/handle [copy]   │
-│                       │ [📋 0xf398...C7A6] [copy]          │
-│                       │ 🌏 Việt Nam · 🏢 FUN Ecosystem     │
-│                       │ [friend avatars]                    │
-│                       │           [Chỉnh sửa] [Nhắn tin]  │
-└─────────────────────────────────────────────────────────────┘
-```
+### 5. Thiết kế Avatar
 
-#### E. "Bảng Danh Dự" — Card thống kê Angel AI style
+Từ hình tham khảo người dùng gửi trước (hình reference): avatar có viền tròn vàng, kim cương ở góc trên phải, orbital icons xung quanh. Hiện tại code đã có logic này nhưng chưa hiển thị đúng vì CSS variables bị ảnh hưởng. Sau khi fix màu hardcoded:
+- Avatar size tăng lên: `w-[130px] h-[130px] sm:w-[160px] sm:h-[160px]`  
+- Orbital wrapper tăng tương ứng: `orbitRadius = 100`
+- Kim cương badge `💎` giữ nguyên logic hiện có
 
-Thay thế sidebar thống kê hiện tại bằng một card nổi bật phía bên phải (hoặc bên dưới thông tin trên mobile):
-- Header: Logo FUN Profile + "BẢNG DANH DỰ" chữ in đậm
-- Grid 2×4 các ô thống kê:
-  - ↑ Bài viết | 👥 Bạn bè
-  - ⭐ Cảm xúc (likes) | 🎁 Có thể rút (balance)
-  - 💬 Bình luận | 💸 Đã rút
-  - 📅 Hôm nay | 💰 Tổng thu (lifetimeEarned)
-- Mỗi ô: border vàng, nền xanh gradient, icon + label + số
+### 6. Layout tổng thể
 
-#### F. Navigation Tabs — Thêm nút "..." bên phải
+Giữ nguyên cấu trúc 2 cột (avatar trái + info phải) và "Bảng Danh Dự" bên phải — chỉ fix màu sắc để đảm bảo tối hoàn toàn.
 
-Tabs mới:
-- **Tất cả** | **Giới thiệu** | **Bạn bè** | + nút **"..."** (3 chấm) góc PHẢI
-- Nút "..." là `ProfileMoreMenu` component, đặt ở `flex justify-between items-center`
-- Xóa nút "..." ở góc cover photo (không cần nữa vì đã chuyển xuống tabs)
+## Kỹ Thuật
 
-#### G. Content layout bên dưới tabs
-
-Giữ nguyên grid `[360px 1fr]` nhưng:
-- Card trái ("Giới thiệu"): cập nhật theme Angel AI (dark bg, gold borders)
-- Card phải (Posts): giữ nguyên `PostCard` components
-
-## Chi Tiết Kỹ Thuật
-
-### Import mới cần thêm
-
-```typescript
-import { OrbitalSocialLinks } from "@/components/public-profile/PublicProfileHeader"; 
-// Hoặc trích xuất OrbitalSocialLinks thành file riêng để tái sử dụng
-```
-
-> Vì `OrbitalSocialLinks` và `OrbitalIcon` hiện là hàm nội bộ trong `PublicProfileHeader.tsx`, cần **export** chúng hoặc tạo lại local trong `UserProfile.tsx`.
-
-Cách đơn giản nhất: **tạo local copy** của `OrbitalSocialLinks` + `OrbitalIcon` + `PLATFORM_META` trong `UserProfile.tsx` (copy từ `PublicProfileHeader.tsx`).
-
-### Kim cương / Badge trên avatar
-
-```typescript
-// Icon theo badge level
-const getDiamondIcon = (level: string) => {
-  if (level === "angel") return "💎";
-  if (level === "lightworker") return "✨";
-  if (level === "guardian") return "🛡️";
-  return "⭐";
-};
-```
-
-Rendered as:
-```tsx
-<div className="absolute -top-1 -right-1 z-30 w-8 h-8 rounded-full bg-[#0a1628] border-2 border-cyan-400 flex items-center justify-center text-sm shadow-[0_0_12px_rgba(34,211,238,0.5)]">
-  💎
-</div>
-```
-
-### "Bảng Danh Dự" Grid
+Cụ thể sẽ scan toàn bộ file `src/pages/UserProfile.tsx` và thay thế:
 
 ```tsx
-const statItems = [
-  { icon: "↑", label: "Bài viết", value: stats.posts },
-  { icon: "👥", label: "Bạn bè", value: stats.friends },
-  { icon: "⭐", label: "Cảm xúc", value: stats.likes },
-  { icon: "🎁", label: "Có thể rút", value: Math.floor(balance) },
-  { icon: "💬", label: "Bình luận", value: 0 }, // future
-  { icon: "💸", label: "Đã rút", value: 0 }, // future
-  { icon: "📅", label: "Hôm nay", value: 0 }, // future
-  { icon: "💰", label: "Tổng thu", value: Math.floor(naturalLifetimeEarned) },
-];
+// TRƯỚC (dùng CSS variables, bị light mode):
+<h1 className="text-2xl font-extrabold text-foreground">
+<span className="text-xs text-muted-foreground">
+<div className="hover:text-foreground">
+
+// SAU (màu hardcoded, luôn tối):
+<h1 className="text-2xl font-extrabold text-white">
+<span className="text-xs text-white/60">
+<div className="hover:text-white">
 ```
 
-Style: `grid grid-cols-2 gap-2`, mỗi ô `flex justify-between items-center px-3 py-2 rounded-lg bg-[#0a2e18] border border-amber-600/40`
-
-### Tab Navigation mới
-
-```tsx
-<div className="flex items-center justify-between gap-1 overflow-x-auto pb-1">
-  <div className="flex gap-1">
-    {["posts", "about", "friends"].map(tab => (
-      <button key={tab} ...>{tabLabel}</button>
-    ))}
-  </div>
-  {/* Nút 3 chấm bên phải */}
-  <ProfileMoreMenu userId={userId} ... />
-</div>
-```
-
-## Tóm Tắt File Sẽ Sửa
+## File Sẽ Sửa
 
 **1 file duy nhất**: `src/pages/UserProfile.tsx`
 
-Các thay đổi:
-1. Đổi background tổng thể → Angel AI dark gradient
-2. Refactor khối cover + avatar → layout 2 cột (trái: avatar+orbital+diamond; phải: tên+info+actions)
-3. Thêm local `OrbitalSocialLinks` component (copy từ PublicProfileHeader)
-4. Thêm kim cương badge trên avatar
-5. Thêm "Bảng Danh Dự" card (xanh đậm, lưới 2×4 thống kê)
-6. Di chuyển nút "..." từ cover → cuối tab bar (góc phải)
-7. Cập nhật style tab navigation → amber/gold active state
-8. Điều chỉnh theme card sidebar (Giới thiệu, Bạn bè) → Angel AI dark
-
-Không cần thay đổi database hay edge functions.
+Thay đổi:
+1. Xóa class `dark` khỏi wrapper (không cần thiết và gây nhầm lẫn)
+2. Thay toàn bộ `text-foreground` → `text-white`
+3. Thay toàn bộ `text-muted-foreground` → `text-white/60`
+4. Thay `hover:text-foreground` → `hover:text-white`
+5. Thay `hover:bg-white/5` → `hover:bg-white/10`
+6. Tăng chiều cao ảnh bìa lên `h-[260px] sm:h-[320px]`
+7. Tăng kích thước avatar `orbitRadius` lên `100` và avatar size tăng lên `w-[130px] h-[130px] sm:w-[160px] sm:h-[160px]`
+8. Đảm bảo gradient overlay ảnh bìa đủ đậm để blend vào nền tối
