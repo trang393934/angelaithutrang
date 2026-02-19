@@ -45,6 +45,7 @@ import { WalletAddressDisplay } from "@/components/profile/WalletAddressDisplay"
 import { SocialLinksDisplay } from "@/components/public-profile/SocialLinksDisplay";
 import { ProfileMoreMenu } from "@/components/public-profile/ProfileMoreMenu";
 import { Facebook, Youtube, MessageCircle as TelegramIcon } from "lucide-react";
+import { CoverPositionEditor } from "@/components/profile/CoverPositionEditor";
 
 // ─── Platform Meta (for orbital) ─────────────────────────────────────────────
 const PLATFORM_META: Record<string, { label: string; icon: React.ReactNode; bg: string; color: string }> = {
@@ -198,6 +199,7 @@ interface UserProfileData {
   avatar_url: string | null;
   bio: string | null;
   cover_photo_url: string | null;
+  cover_position?: number | null;
   handle: string | null;
   created_at: string;
   social_links: Record<string, string> | null;
@@ -241,6 +243,7 @@ const UserProfile = () => {
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [userPosts, setUserPosts] = useState<CommunityPost[]>([]);
   const [friends, setFriends] = useState<FriendData[]>([]);
+  const [coverEditorOpen, setCoverEditorOpen] = useState(false);
   const [stats, setStats] = useState({ posts: 0, friends: 0, coins: 0, likes: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -287,7 +290,14 @@ const UserProfile = () => {
     }
   };
 
-  // ── Post interaction handlers ─────────────────────────────────────────────
+  // ── Save cover photo display position ────────────────────────────────────
+  const handleSaveCoverPosition = async (position: number) => {
+    if (!userId) return;
+    await supabase.from("profiles").update({ cover_position: position } as any).eq("user_id", userId);
+    setProfile(prev => prev ? { ...prev, cover_position: position } : prev);
+  };
+
+
   const handleLike = async (postId: string) => {
     if (!user) { setShowSignupPrompt(true); return { success: false }; }
     const currentPost = userPosts.find(p => p.id === postId);
@@ -494,8 +504,7 @@ const UserProfile = () => {
       {/* ── Music selector floating button ───────────────────────────────── */}
       <MusicThemeSelector variant="floating" />
 
-      {/* ── Overlay for readability ───────────────────────────────────────── */}
-      <div className="fixed inset-0 pointer-events-none z-[1]" style={{ background: "rgba(240,242,245,0.72)" }} />
+      {/* ── Overlay for readability — REMOVED (no overlay on video bg) ── */}
 
       {/* ── Header (same as homepage) ────────────────────────────────────── */}
       <div className="relative z-[50]">
@@ -517,6 +526,7 @@ const UserProfile = () => {
                     src={profile.cover_photo_url}
                     alt="Cover"
                     className="w-full h-full object-cover cursor-pointer"
+                    style={{ objectPosition: `center ${profile.cover_position ?? 50}%` }}
                     onClick={() => setCoverLightboxOpen(true)}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
@@ -525,12 +535,23 @@ const UserProfile = () => {
                 <div className="w-full h-full bg-gradient-to-br from-emerald-100 via-teal-50 to-amber-50" />
               )}
 
-              {/* Edit cover button */}
+              {/* Cover buttons — own profile */}
               {isOwnProfile && (
-                <Link to="/profile" className="absolute bottom-3 right-4 z-10 flex items-center gap-2 px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-lg text-sm font-medium text-white transition-colors">
-                  <Camera className="w-4 h-4" />
-                  {profile?.cover_photo_url ? "Đổi ảnh bìa" : "Thêm ảnh bìa"}
-                </Link>
+                <div className="absolute bottom-3 right-4 z-10 flex items-center gap-2">
+                  {profile?.cover_photo_url && (
+                    <button
+                      onClick={() => setCoverEditorOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-lg text-sm font-medium text-white transition-colors"
+                    >
+                      <Camera className="w-4 h-4" />
+                      Điều chỉnh vị trí
+                    </button>
+                  )}
+                  <Link to="/profile" className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-lg text-sm font-medium text-white transition-colors">
+                    <Camera className="w-4 h-4" />
+                    {profile?.cover_photo_url ? "Đổi ảnh bìa" : "Thêm ảnh bìa"}
+                  </Link>
+                </div>
               )}
 
               {/* ── Bảng Danh Dự — top-right overlay on cover ── */}
@@ -1024,6 +1045,17 @@ const UserProfile = () => {
       )}
       {profile?.cover_photo_url && (
         <ProfileImageLightbox isOpen={coverLightboxOpen} onClose={() => setCoverLightboxOpen(false)} imageUrl={profile.cover_photo_url} type="cover" alt={profile.display_name || "User"} />
+      )}
+
+      {/* ── Cover Position Editor ────────────────────────────────────────── */}
+      {profile?.cover_photo_url && isOwnProfile && (
+        <CoverPositionEditor
+          imageUrl={profile.cover_photo_url}
+          isOpen={coverEditorOpen}
+          onClose={() => setCoverEditorOpen(false)}
+          onSave={handleSaveCoverPosition}
+          initialPosition={profile.cover_position ?? 50}
+        />
       )}
 
       {/* ── Gift Dialog ───────────────────────────────────────────────────── */}
