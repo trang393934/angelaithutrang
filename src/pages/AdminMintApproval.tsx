@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   CheckCircle2,
@@ -28,6 +28,8 @@ import {
   TrendingUp,
   Coins,
   BarChart3,
+  PauseCircle,
+  PlayCircle,
 } from "lucide-react";
 import { MintExportButton } from "@/components/admin/MintExportButton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -97,6 +99,9 @@ export default function AdminMintApproval() {
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 });
   const [globalCounts, setGlobalCounts] = useState<{ pending: number; signed: number; minted: number; pendingFun: number; signedFun: number; mintedFun: number } | null>(null);
   const [visibleCount, setVisibleCount] = useState(50);
+  const [mintPaused, setMintPaused] = useState(false);
+  const [pausedReason, setPausedReason] = useState("");
+  const [isTogglingPause, setIsTogglingPause] = useState(false);
 
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
@@ -180,10 +185,52 @@ export default function AdminMintApproval() {
     }
   }, []);
 
+  // Fetch mint pause status
+  const fetchMintPauseStatus = useCallback(async () => {
+    const { data } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "mint_system")
+      .maybeSingle();
+    if (data?.value) {
+      const val = data.value as Record<string, unknown>;
+      setMintPaused(!!val.paused);
+      setPausedReason((val.paused_reason as string) || "");
+    }
+  }, []);
+
+  // Toggle mint pause (admin only)
+  const handleTogglePause = useCallback(async () => {
+    setIsTogglingPause(true);
+    try {
+      const newPaused = !mintPaused;
+      const { error } = await supabase
+        .from("system_settings")
+        .upsert({
+          key: "mint_system",
+          value: {
+            paused: newPaused,
+            paused_reason: newPaused
+              ? "Tạm dừng bởi Admin - đang kiểm tra an ninh hệ thống"
+              : "Hệ thống hoạt động bình thường",
+          },
+          updated_at: new Date().toISOString(),
+        });
+      if (error) throw error;
+      setMintPaused(newPaused);
+      toast.success(newPaused ? "🚨 Đã tạm dừng hệ thống mint" : "✅ Đã mở lại hệ thống mint");
+    } catch (e) {
+      toast.error("Lỗi cập nhật trạng thái mint");
+    } finally {
+      setIsTogglingPause(false);
+    }
+  }, [mintPaused]);
+
   useEffect(() => {
     fetchRequests();
     fetchGlobalCounts();
-  }, [fetchRequests, fetchGlobalCounts]);
+    fetchMintPauseStatus();
+  }, [fetchRequests, fetchGlobalCounts, fetchMintPauseStatus]);
 
   // Helper: extract error body from FunctionsHttpError (409 returns body in context)
   const extractErrorBody = async (error: unknown): Promise<string> => {
@@ -534,7 +581,26 @@ export default function AdminMintApproval() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <MintExportButton />
-              {counts.signed > 0 && (
+              {/* Toggle Pause Button */}
+              <Button
+                variant={mintPaused ? "default" : "outline"}
+                size="sm"
+                onClick={handleTogglePause}
+                disabled={isTogglingPause}
+                className={mintPaused
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "border-red-400 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"}
+              >
+                {isTogglingPause ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : mintPaused ? (
+                  <PlayCircle className="h-4 w-4 mr-1" />
+                ) : (
+                  <PauseCircle className="h-4 w-4 mr-1" />
+                )}
+                {mintPaused ? "Mở lại Mint" : "Tạm dừng Mint"}
+              </Button>
+              {!mintPaused && counts.signed > 0 && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -561,6 +627,20 @@ export default function AdminMintApproval() {
               </Button>
             </div>
           </div>
+
+          {/* 🚨 MINT PAUSED BANNER */}
+          {mintPaused && (
+            <Alert className="border-red-500 bg-red-50 dark:bg-red-950/40">
+              <PauseCircle className="h-5 w-5 text-red-600" />
+              <AlertTitle className="text-red-700 dark:text-red-400 font-bold text-base">
+                🚨 HỆ THỐNG MINT ĐANG TẠM DỪNG
+              </AlertTitle>
+              <AlertDescription className="text-red-600 dark:text-red-300 text-sm mt-1">
+                {pausedReason && <span className="block mb-1 font-medium">{pausedReason}</span>}
+                Tất cả nút Sign / Mint / Retry đã bị vô hiệu hóa. Nhấn <strong>"Mở lại Mint"</strong> ở trên để khôi phục hệ thống.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Info Alert */}
           <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/30">
@@ -711,8 +791,9 @@ export default function AdminMintApproval() {
                       <Button
                         size="sm"
                         onClick={handleBatchApprove}
-                        disabled={isBatchProcessing}
+                        disabled={isBatchProcessing || mintPaused}
                         className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                        title={mintPaused ? "Hệ thống mint đang tạm dừng" : undefined}
                       >
                         {isBatchProcessing ? (
                           <Loader2 className="h-4 w-4 animate-spin mr-1" />
@@ -725,7 +806,7 @@ export default function AdminMintApproval() {
                         size="sm"
                         variant="outline"
                         onClick={handleBatchReject}
-                        disabled={isBatchProcessing}
+                        disabled={isBatchProcessing || mintPaused}
                         className="text-red-600 hover:bg-red-50"
                       >
                         <XCircle className="h-4 w-4 mr-1" />
@@ -758,6 +839,7 @@ export default function AdminMintApproval() {
                       onToggleSelect={() => toggleSelect(req.id)}
                       onApprove={() => handleApproveAndSign(req)}
                       onReject={() => handleReject(req)}
+                      mintPaused={mintPaused}
                     />
                   ))}
                   {hasMore && (
@@ -791,6 +873,7 @@ function MintRequestCard({
   onToggleSelect,
   onApprove,
   onReject,
+  mintPaused,
 }: {
   request: MintRequestRow;
   isProcessing: boolean;
@@ -798,6 +881,7 @@ function MintRequestCard({
   onToggleSelect: () => void;
   onApprove: () => void;
   onReject: () => void;
+  mintPaused: boolean;
 }) {
   const actionType = (request.pplp_actions as any)?.action_type || "UNKNOWN";
   const displayName = request.profiles?.display_name || request.actor_id.slice(0, 8);
@@ -864,14 +948,15 @@ function MintRequestCard({
             )}
           </div>
 
-          {/* Right: Actions */}
+          {/* Right: Actions - Disabled when mint is paused */}
           {request.status === "pending" && (
             <div className="flex gap-2 shrink-0">
               <Button
                 size="sm"
                 onClick={onApprove}
-                disabled={isProcessing}
-                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                disabled={isProcessing || mintPaused}
+                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:opacity-50"
+                title={mintPaused ? "Hệ thống mint đang tạm dừng" : undefined}
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1" />
@@ -884,7 +969,7 @@ function MintRequestCard({
                 size="sm"
                 variant="outline"
                 onClick={onReject}
-                disabled={isProcessing}
+                disabled={isProcessing || mintPaused}
                 className="text-red-600 hover:bg-red-50"
               >
                 <XCircle className="h-4 w-4 mr-1" />
@@ -898,8 +983,9 @@ function MintRequestCard({
               <Button
                 size="sm"
                 onClick={onApprove}
-                disabled={isProcessing}
-                className="bg-gradient-to-r from-amber-500 to-orange-500"
+                disabled={isProcessing || mintPaused}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 disabled:opacity-50"
+                title={mintPaused ? "Hệ thống mint đang tạm dừng" : undefined}
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1" />
