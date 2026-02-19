@@ -134,6 +134,7 @@ interface OrbitalSocialLinksProps {
   durationSecs?: number;
   isOwner?: boolean;
   onAddLinks?: () => void;
+  userAvatarUrl?: string | null;
 }
 
 function OrbitalSocialLinks({
@@ -142,6 +143,7 @@ function OrbitalSocialLinks({
   durationSecs = 20,
   isOwner = false,
   onAddLinks,
+  userAvatarUrl,
 }: OrbitalSocialLinksProps) {
   const activeLinks = Object.entries(socialLinks).filter(([, url]) => url?.trim());
 
@@ -198,6 +200,7 @@ function OrbitalSocialLinks({
               x={x}
               y={y}
               durationSecs={durationSecs}
+              userAvatarUrl={userAvatarUrl}
             />
           );
         })}
@@ -214,9 +217,10 @@ interface OrbitalIconProps {
   x: number;
   y: number;
   durationSecs: number;
+  userAvatarUrl?: string | null;
 }
 
-function OrbitalIcon({ platform, url, meta, x, y, durationSecs }: OrbitalIconProps) {
+function OrbitalIcon({ platform, url, meta, x, y, durationSecs, userAvatarUrl }: OrbitalIconProps) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -233,10 +237,10 @@ function OrbitalIcon({ platform, url, meta, x, y, durationSecs }: OrbitalIconPro
               top: y,
               width: 36,
               height: 36,
-              background: "#fff",
+              background: meta.bg,
               boxShadow: hovered
-                ? `0 0 16px ${meta.bg}cc, 0 2px 10px rgba(0,0,0,0.4)`
-                : "0 2px 8px rgba(0,0,0,0.35)",
+                ? `0 0 18px ${meta.bg}dd, 0 2px 10px rgba(0,0,0,0.4)`
+                : `0 0 8px ${meta.bg}88, 0 2px 6px rgba(0,0,0,0.3)`,
               border: `2.5px solid ${meta.bg}`,
               outline: hovered ? `2px solid ${meta.bg}` : "none",
               outlineOffset: 2,
@@ -253,12 +257,21 @@ function OrbitalIcon({ platform, url, meta, x, y, durationSecs }: OrbitalIconPro
             onHoverStart={() => setHovered(true)}
             onHoverEnd={() => setHovered(false)}
           >
-            <img
-              src={meta.logoUrl}
-              alt={meta.label}
-              className="w-5 h-5 object-contain"
-              style={{ display: "block" }}
-            />
+            {userAvatarUrl ? (
+              <img
+                src={userAvatarUrl}
+                alt={meta.label}
+                className="w-full h-full object-cover"
+                style={{ display: "block" }}
+              />
+            ) : (
+              <img
+                src={meta.logoUrl}
+                alt={meta.label}
+                className="w-5 h-5 object-contain"
+                style={{ display: "block" }}
+              />
+            )}
           </motion.a>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs font-semibold bg-background border border-amber-400/40 text-foreground">
@@ -402,6 +415,7 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
             durationSecs={22}
             isOwner={isOwner}
             onAddLinks={() => navigate("/profile", { state: { scrollTo: "social-links" } })}
+            userAvatarUrl={profile.avatar_url}
           />
         </div>
 
