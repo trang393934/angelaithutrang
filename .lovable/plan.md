@@ -1,122 +1,110 @@
 
-# Kế hoạch: Cập nhật Trang Admin Fraud Alerts — Danh sách Ban Nhóm Sybil
+# Cập nhật Tab "Nhóm Sybil — Chờ Ban" với Dữ liệu Thực tế Đầy đủ
 
-## Phân tích dữ liệu hiện tại
+## Tổng hợp kết quả tra cứu database
 
-### Tổng hợp tài khoản CHƯA bị ban cần xử lý ngay
+Qua tra cứu thực tế, con xác định **16 tài khoản CHƯA bị ban** cần đưa vào danh sách, phân thành 4 nhóm:
 
-Qua tra cứu database, tìm được **14 tài khoản chưa bị ban** thuộc các nhóm sybil đã phân tích:
+### Nhóm hiện có trong code cần cập nhật số liệu thực:
 
----
-
-#### 🔴 NHÓM 7786 — Ví tổng 0x1BC4...446 (đã bị ban session trước)
-| Tên | Email | Số dư | Lifetime Earned | Pending Mint | Pending Rút |
-|-----|-------|-------|-----------------|-------------|------------|
-| **Thanh Thùy** | anhnguyet7786@gmail.com | 1,550,641 | 2,317,354 | 72 | 250,000 |
-| **Xuân Nguyễn** | xuannguyen77786@gmail.com | 1,858,930 | 2,308,716 | 40 | 0 |
-| **Trần Nhung** | trannhung7786@gmail.com | 1,548,380 | 2,066,010 | 34 | 290,000 |
-
----
-
-#### 🔴 NHÓM Ví Tổng le quang (0xAdF1...692748e24) — liên kết 12 tài khoản
-Các tài khoản chuyển tiền về ví le quang **chưa bị ban**:
-| Tên | Email | Số dư | Lifetime Earned | Pending Mint | Pending Rút |
-|-----|-------|-------|-----------------|-------------|------------|
-| **tinhthan** | tinhthan331@gmail.com | 1,233,300 | 2,132,659 | 54 | 1 lệnh |
-| **Trần Nhung** | trannhung7786@gmail.com | 1,548,380 | 2,066,010 | 34 | 290,000 |
-| **nguyen sinh 4** | nguyensinh6921@gmail.com | 1,666,100 | 1,895,938 | 42 | 1 lệnh |
-| **le bong** | lebong3441@gmail.com | 927,100 | 1,753,486 | 46 | 1 lệnh |
-| **Lê sang** | sangle12111@gmail.com | 101,296 | 898,917 | 75 | 1 lệnh |
-| **Nguyễn Chính** | namleanh2211@gmail.com | 200 | 852,141 | 24 | 257,232 |
-| **quynh anh** | quynhanh070820188@gmail.com | 170,771 | 409,169 | 43 | 0 |
-| **trung binh** | trung1211121@gmail.com | 95,984 | 334,489 | 46 | 1 lệnh |
-
----
-
-#### 🟡 NHÓM wanting2308 — 2 tài khoản (cùng ví!)
-| Tên | Email | Số dư | Ghi chú |
-|-----|-------|-------|---------|
-| **Thu Nguyễn** | wanting23081962@gmail.com | 509,600 | Cùng địa chỉ ví với... |
-| **Thu Nguyễn** | wanting23081861@gmail.com | 16,500 | ...tài khoản thứ 2 |
-→ Cùng 1 ví `0x5c56eE4C...` = cùng 1 người
-
----
-
-#### 🟡 NHÓM ngocna — liên kết ví tổng
+**NHÓM 1: 7786 (3 tài khoản)**
 | Tên | Email | Số dư | Pending Mint | Pending Rút |
 |-----|-------|-------|-------------|------------|
-| **Ngọc na** | ngocnamc466@gmail.com | 1,475,100 | 1,704,727 | 40 | 229,627 |
+| Thanh Thùy | anhnguyet7786@gmail.com | 1,550,641 | 72 | 250,000 |
+| Xuân Nguyễn | xuannguyen77786@gmail.com | 1,858,930 | 40 | 0 |
+| Trần Nhung | trannhung7786@gmail.com | 1,548,380 | 34 | 290,000 |
+
+**NHÓM 2: Ví tổng le quang (8 tài khoản)**
+| Tên | Email | Số dư | Pending Mint | Pending Rút |
+|-----|-------|-------|-------------|------------|
+| tinhthan | tinhthan331@gmail.com | 1,233,300 | 54 | 292,424 |
+| nguyen sinh 4 | nguyensinh6921@gmail.com | 1,666,100 | 42 | 229,838 |
+| le bong | lebong3441@gmail.com | 927,100 | 46 | 257,905 |
+| Lê sang | sangle12111@gmail.com | 101,296 | 75 | 200,187 |
+| Nguyễn Chính | namleanh2211@gmail.com | 200 | 24 | 257,232 |
+| quynh anh | quynhanh070820188@gmail.com | 170,771 | 43 | 0 |
+| trung binh | trung1211121@gmail.com | 95,984 | 46 | 238,505 |
+| Trần Nhung | trannhung7786@gmail.com | (trùng nhóm 7786) | | |
+
+**NHÓM 3: wanting2308 (2 tài khoản)** — số liệu đúng trong code
+
+**NHÓM 4: Ngọc na** — số liệu đúng, pending withdrawal thực tế là 229,627
+
+### NHÓM MỚI cần thêm vào — NHÓM PHAM (3 tài khoản):
+| Tên | Email | ID | Số dư | Pending Mint | Pending Rút |
+|-----|-------|----|-------|-------------|------------|
+| Trung Kiên (Minh Quân) | phamminhquan2782016@gmail.com | 4986011b-6669-4374-aa50-ef67710e33aa | 1,386,039 | 61 | **500,000** |
+| Minh kiên | phamlong3112021@gmail.com | 266f8c06-df49-47df-ae3e-0dbef1d17c59 | 1,549,300 | 103 | **209,065** |
+| Kim Xuyen | phamminhlong3112021@gmail.com | 1eeb2750-272b-49c3-8b13-1894b12f7cf7 | 1,552,074 | 93 | **280,000** |
+
+→ Nhóm PHAM có dấu hiệu: email prefix `pham` + số cuối trùng `3112021`, pending rút KHỔNG LỒ lên đến ~989,065 Camly
 
 ---
 
-### Tổng cộng 14 tài khoản CHƯA bị ban cần ban:
-- Tổng số dư: **~14.3M Camly**
-- Tổng pending mint requests: **~549 requests**
-- Tổng pending rút: **~8 lệnh rút**
+## Thay đổi kỹ thuật cần thực hiện
 
----
+### File duy nhất cần sửa: `src/pages/AdminFraudAlerts.tsx`
 
-## Hành động sẽ thực hiện
+**1. Cập nhật số liệu thực tế** cho các tài khoản đã có trong `SYBIL_GROUPS` (pending mint/withdrawal thực tế từ DB, không phải estimate cũ):
+- `tinhthan`: pendingWithdrawal 292,424 (cũ: 1)
+- `nguyen sinh 4`: pendingWithdrawal 229,838 (cũ: 1)
+- `le bong`: pendingWithdrawal 257,905 (cũ: 1)
+- `Lê sang`: pendingWithdrawal 200,187 (cũ: 1)
+- `trung binh`: pendingWithdrawal 238,505 (cũ: 1)
+- `Ngọc na`: pendingWithdrawal 229,627 (đúng rồi)
 
-### Thêm section "Danh sách Ban Hàng Loạt" vào trang AdminFraudAlerts
-
-Trang hiện tại (`src/pages/AdminFraudAlerts.tsx`) chỉ có tab "Cảnh báo" và "Pattern Registry". Sẽ thêm **Tab thứ 3: "🚫 Nhóm Sybil — Chờ Ban"** hiển thị:
-
-1. **Danh sách nhóm có tổ chức** (hardcode + dynamic từ DB), phân theo nhóm màu
-2. **Checkbox chọn từng tài khoản / chọn cả nhóm**
-3. **Nút "Ban Tất Cả Đã Chọn"** gọi `bulk-suspend-users` Edge Function
-4. **Trạng thái realtime**: đã ban hiển thị badge "✅ Đã ban", chưa ban hiển thị "🔴 Chờ xử lý"
-
-### Kỹ thuật
-
-**File cần sửa:** `src/pages/AdminFraudAlerts.tsx`
-
-**Thêm tab thứ 3** với state:
+**2. Thêm NHÓM 5: "Nhóm PHAM — email pattern trùng số 3112021"** vào mảng `SYBIL_GROUPS`:
 ```tsx
-const [activeTab, setActiveTab] = useState<"alerts" | "patterns" | "sybil_groups">("alerts");
+{
+  groupName: "Nhóm PHAM — Email pattern 3112021",
+  walletAddress: "0x75be0d3Bd905ecF6188F26B430cE6483d3905278",
+  severity: "critical",
+  note: "3 tài khoản email prefix 'pham', suffix trùng '3112021'. Pending rút tổng ~989,000 Camly",
+  members: [
+    {
+      userId: "4986011b-6669-4374-aa50-ef67710e33aa",
+      name: "Trung Kiên",
+      email: "phamminhquan2782016@gmail.com",
+      balance: 1386039,
+      lifetimeEarned: 2609201,
+      pendingMint: 61,
+      pendingWithdrawal: 500000,
+    },
+    {
+      userId: "266f8c06-df49-47df-ae3e-0dbef1d17c59",
+      name: "Minh kiên",
+      email: "phamlong3112021@gmail.com",
+      balance: 1549300,
+      lifetimeEarned: 2382324,
+      pendingMint: 103,
+      pendingWithdrawal: 209065,
+    },
+    {
+      userId: "1eeb2750-272b-49c3-8b13-1894b12f7cf7",
+      name: "Kim Xuyen",
+      email: "phamminhlong3112021@gmail.com",
+      balance: 1552074,
+      lifetimeEarned: 2386921,
+      pendingMint: 93,
+      pendingWithdrawal: 280000,
+    },
+  ],
+},
 ```
 
-**Hardcode + Dynamic load danh sách 14 tài khoản** từ các nhóm đã phân tích vào một mảng `SYBIL_GROUPS`:
-```tsx
-const SYBIL_GROUPS = [
-  {
-    groupName: "Nhóm 7786 — Ví 0x1BC4...446",
-    severity: "critical",
-    userIds: [
-      "efb81db9-52dd-4af6-a9d1-aff044bf37b7", // Thanh Thùy
-      "37f87d2a-111f-4988-a74b-6f6ef6041d4c", // Xuân Nguyễn
-      "5182148f-1999-43b5-83db-09560e25c688", // Trần Nhung
-    ]
-  },
-  {
-    groupName: "Nhóm Ví Tổng le quang — 0xAdF1...e24",
-    severity: "critical", 
-    userIds: [
-      "c4d884f7-...", // tinhthan
-      "71bdc8b3-...", // nguyen sinh 4
-      "b5621395-...", // le bong
-      // ...
-    ]
-  },
-  // ...
-]
-```
+**3. Cập nhật `ALL_SYBIL_USER_IDS`** để bao gồm 3 userId mới của nhóm PHAM (tự động vì dùng `flatMap`).
 
-**Fetch realtime status** (is_banned, balance, pending_mints) từ Supabase mỗi khi mở tab.
-
-**Nút "Ban nhóm này"** và **"Ban tất cả chưa ban"** gọi `bulk-suspend-users` với danh sách userId đã chọn.
-
-**Hiển thị kết quả sau khi ban**: toast thành công + cập nhật trạng thái badge.
+**4. Cập nhật summary stats** ở đầu tab — tổng 19 tài khoản thay vì 14.
 
 ---
 
-## Tóm tắt kỹ thuật
+## Tóm tắt tác động
 
-| Hạng mục | Chi tiết |
-|----------|---------|
-| File sửa | `src/pages/AdminFraudAlerts.tsx` |
-| Tính năng mới | Tab "🚫 Nhóm Sybil" với danh sách nhóm có tổ chức |
-| Số tài khoản đưa vào danh sách | 14 tài khoản chưa ban + trạng thái realtime |
-| Action | Checkbox chọn + Ban hàng loạt theo nhóm |
-| Backend | Gọi `bulk-suspend-users` Edge Function (đã có sẵn) |
-| DB thay đổi | Không cần migration mới |
+| Hạng mục | Trước | Sau |
+|----------|-------|-----|
+| Số nhóm sybil | 4 | 5 |
+| Tổng tài khoản trong danh sách | 14 | 16 (thêm 3 PHAM, trừ 1 Trần Nhung trùng) |
+| Tổng pending rút cần chặn | ~1.7M | ~3.2M Camly |
+| Tổng pending mint cần reject | ~549 | ~733 requests |
+
+Không cần thay đổi database, không cần thêm migration — chỉ cập nhật dữ liệu hardcode trong file `src/pages/AdminFraudAlerts.tsx`.
