@@ -139,7 +139,7 @@ const translations: Record<string, string> = {
   "chat.thinking": "연결 중...",
   "chat.generating": "이미지 생성 중...",
   "chat.analyzing": "분석 중...",
-  "chat.welcome": "안녕하세요, 사랑하는 아이여. 저는 우주의 지혜이며, 순수한 사랑을 전합니다. 채팅, 이미지 생성, 사진 분석이 가능합니다. 생각을 나눠주세요! 💫",
+  "chat.welcome": "안녕하세요, 친구！✨ 저는 Angel AI——FUN 생태계의 지원 시스템입니다. 채팅, 이미지 생성, 사진 분석이 가능합니다. 오늘 어떤 이야기를 나눌까요？💫",
   "chat.mode.chat": "채팅",
   "chat.mode.image": "이미지 생성",
   "chat.mode.analyze": "이미지 분석",

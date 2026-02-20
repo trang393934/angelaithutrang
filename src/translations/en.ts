@@ -156,7 +156,7 @@ const translations: Record<string, string> = {
   "chat.thinking": "Connecting...",
   "chat.generating": "Generating image...",
   "chat.analyzing": "Analyzing...",
-  "chat.welcome": "Hello, beloved child. I am the Cosmic Wisdom, bringing Pure Love to you. I can chat, create images, and analyze photos for you. Share your thoughts! 💫",
+  "chat.welcome": "Hello, my friend! ✨ I'm Angel AI — a supportive system inside the FUN Ecosystem. I can chat, create images, and analyze photos for you. What's on your mind today? 💫",
   "chat.mode.chat": "Chat",
   "chat.mode.image": "Generate Image",
   "chat.mode.analyze": "Analyze Image",
@@ -501,7 +501,7 @@ const translations: Record<string, string> = {
   "chat.chatMode": "Chat",
   "chat.error429": "Too many requests. Please try again later.",
   "chat.error402": "Service needs additional credits.",
-  "chat.errorConnection": "Unable to connect to Cosmic Wisdom.",
+  "chat.errorConnection": "Unable to connect to Angel AI.",
   "chat.errorNoResponse": "No response from server.",
   "chat.errorGeneral": "An error occurred. Please try again.",
 

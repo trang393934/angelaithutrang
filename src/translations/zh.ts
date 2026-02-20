@@ -143,7 +143,7 @@ const translations: Record<string, string> = {
   "chat.thinking": "连接中...",
   "chat.generating": "生成图片中...",
   "chat.analyzing": "分析中...",
-  "chat.welcome": "你好，亲爱的孩子。我是宇宙智慧，为你带来纯净之爱。我可以聊天、创建图片、为你分析照片。分享你的想法吧！💫",
+  "chat.welcome": "你好，我的朋友！✨ 我是Angel AI——FUN生态系统的支持系统。我可以聊天、创建图片、分析照片。今天想聊什么？💫",
   "chat.mode.chat": "聊天",
   "chat.mode.image": "生成图片",
   "chat.mode.analyze": "分析图片",
@@ -545,7 +545,7 @@ const translations: Record<string, string> = {
   "chat.chatMode": "聊天",
   "chat.error429": "请求过多。请稍后再试。",
   "chat.error402": "服务需要额外积分。",
-  "chat.errorConnection": "无法连接到宇宙智慧。",
+  "chat.errorConnection": "无法连接到Angel AI。",
   "chat.errorNoResponse": "服务器无响应。",
   "chat.errorGeneral": "发生错误。请重试。",
   
