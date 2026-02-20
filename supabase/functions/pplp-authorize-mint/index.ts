@@ -272,6 +272,29 @@ serve(async (req) => {
     }
 
     // ============================================
+    // CHECK SUSPENSION STATUS — Block banned accounts
+    // ============================================
+
+    const { data: suspension } = await supabase
+      .from("user_suspensions")
+      .select("id, suspension_type, reason")
+      .eq("user_id", action.actor_id)
+      .is("lifted_at", null)
+      .maybeSingle();
+
+    if (suspension) {
+      console.warn(`[PPLP Lock] Mint blocked — user ${action.actor_id} is suspended (type: ${suspension.suspension_type})`);
+      return new Response(
+        JSON.stringify({
+          error: "Mint blocked: account is suspended",
+          suspension_type: suspension.suspension_type,
+          reason: suspension.reason || "Account suspended due to policy violation",
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ============================================
     // CHECK FRAUD SIGNALS
     // ============================================
 
