@@ -1270,13 +1270,23 @@ const Chat = () => {
                 />
               </div>
 
-              <div className="flex-1 relative">
-                <input
-                  type="text"
+              <div className="flex-1 relative flex items-end gap-1.5 sm:gap-2 bg-white rounded-2xl border border-primary-pale focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all duration-300 px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px]">
+                <textarea
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    // Auto-resize
+                    e.target.style.height = "auto";
+                    e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px";
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (input.trim()) handleSubmit(e as any);
+                    }
+                  }}
                   placeholder={
-                    chatMode === "generate-image" 
+                    chatMode === "generate-image"
                       ? t("chat.placeholderImage")
                       : chatMode === "analyze-image"
                       ? t("chat.placeholderAnalyze")
@@ -1285,15 +1295,16 @@ const Chat = () => {
                       : t("chat.placeholder")
                   }
                   disabled={isLoading || isGenerating || isAnalyzing || isEditing}
-                  enterKeyHint="send"
                   autoComplete="off"
                   autoCorrect="off"
-                  className="w-full px-3 sm:px-5 py-2.5 sm:py-3 pr-10 sm:pr-12 rounded-full border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-300 disabled:opacity-50 text-sm sm:text-base"
+                  rows={1}
+                  className="flex-1 resize-none bg-transparent outline-none text-sm sm:text-base placeholder:text-muted-foreground disabled:opacity-50 leading-relaxed py-0.5 max-h-[200px] overflow-y-auto scrollbar-thin"
+                  style={{ height: "auto" }}
                 />
                 <button
                   type="submit"
                   disabled={!input.trim() || isLoading || isGenerating || isAnalyzing || isEditing}
-                  className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full bg-sapphire-gradient text-white hover:shadow-sacred transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-shrink-0 self-end mb-0.5 p-1.5 sm:p-2 rounded-full bg-sapphire-gradient text-white hover:shadow-sacred transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading || isGenerating || isAnalyzing || isEditing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
