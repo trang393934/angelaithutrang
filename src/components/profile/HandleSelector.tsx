@@ -3,7 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Loader2, Link as LinkIcon, Clock, Sparkles } from "lucide-react";
+import { Check, X, Loader2, Link as LinkIcon, Clock, Sparkles, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +61,7 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
       {showLabel && (
         <Label className="text-sm font-medium flex items-center gap-2">
           <LinkIcon className="w-4 h-4 text-divine-gold" />
-          {source === "signup" ? "Chọn FUN Link của bạn" : "FUN Profile Link"}
+          {source === "signup" ? "Chọn Angel AI Profile Link của bạn" : "Angel AI Profile Link"}
         </Label>
       )}
 
@@ -73,14 +74,13 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
       {/* Clickable profile link */}
       <div className="text-sm mb-1">
         {currentHandle ? (
-          <a
-            href={`/@${currentHandle}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-divine-gold hover:underline font-medium"
+          <Link
+            to={`/@${currentHandle}`}
+            className="text-divine-gold hover:underline font-medium inline-flex items-center gap-1"
           >
+            <ExternalLink className="w-3 h-3" />
             angel.fun.rich/{currentHandle}
-          </a>
+          </Link>
         ) : (
           <span className="text-muted-foreground">angel.fun.rich/</span>
         )}
