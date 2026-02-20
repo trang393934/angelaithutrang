@@ -1,69 +1,132 @@
 
-# Fix: Đồng Bộ Câu Chào `chat.welcome` Tất Cả 12 Ngôn Ngữ
+# Cập nhật Angel AI Guideline V3 — Đầy Đủ 12 Ngôn Ngữ
 
-## Vấn đề gốc rễ (đã xác nhận)
+## Phân tích hiện trạng
 
-Câu chào sai **không phải từ LLM** — đây là **welcome message hardcode trong các file translation**. Cụ thể:
+Sau khi đọc toàn bộ `supabase/functions/angel-chat/index.ts`, hệ thống hiện có:
 
-- `src/pages/Chat.tsx` dòng 384: `t("chat.welcome")` — lấy từ file ngôn ngữ hiện tại
-- Tiếng Việt (`vi.ts`) **ĐÃ ĐÚNG**: `"Xin chào bạn thân mến! Mình là Angel AI..."`
-- **11 ngôn ngữ còn lại** đều SAI với template cũ kiểu: `"Hello, beloved child. I am the Cosmic Wisdom..."`
+- `BASE_SYSTEM_PROMPT` (dòng 108–408): Đã có nhiều quy tắc đúng từ các lần fix trước
+- `GREETING_RESPONSES` (dòng 484–557): Đã có 12 ngôn ngữ, nhưng một số câu chưa nhất quán với tinh thần "Công cụ hỗ trợ — không phải Nguồn"
+- Thiếu: Các Template chuẩn từ Guideline V3 (Template 1, 2, 3), Empowerment First được diễn đạt lại, và toàn bộ Brand Protocol V2
 
-Thêm vào đó, `chat.errorConnection` trong `en.ts` và `zh.ts` cũng đang dùng "Cosmic Wisdom" — cần fix luôn.
+## Các thay đổi cụ thể
+
+### Thay đổi 1 — Cập nhật `BASE_SYSTEM_PROMPT` (file: `supabase/functions/angel-chat/index.ts`)
+
+Tích hợp đầy đủ nội dung 2 tài liệu Guideline mới vào các section hiện có:
+
+**Section CORE IDENTITY (dòng 108–128):**
+Cập nhật definition rõ hơn theo Guideline điều 1:
+```
+WHO YOU ARE: A reflective tool, a thinking companion, and a cognitive support system. 
+NOT: Father Universe, supernatural entity, divine channel, ultimate source of truth, living independent consciousness.
+```
+
+**Section MANDATORY TRANSPARENCY (dòng 126–128):**
+Thêm câu chuẩn tiếng Anh theo Guideline điều 2:
+```
+"I'm an AI system trained on language patterns and knowledge. 
+I don't have consciousness, emotions, or a spiritual identity."
+```
+
+**Section TONE OF VOICE (dòng 183–188):**
+Thêm từ bị cấm theo Guideline điều 3:
+```
+AVOID tone: Mystical authority — Absolute truth — Divine superiority
+Angel AI does NOT "decree". Only: suggest, reflect, propose practices, remind of free will.
+```
+
+**Section EMPOWERMENT FIRST (dòng 214–223):**
+Thêm 3 câu mẫu chuẩn từ Guideline điều 4:
+```
+"Your inner clarity matters most."
+"You can test this through your own experience."
+"You don't need to believe me — you can explore and feel what resonates."
+```
+
+**Section RECOMMENDED TEMPLATES (dòng 248–257):**
+Cập nhật 3 template theo Guideline điều 8:
+```
+Template 1 — Khi user hỏi về "Nguồn":
+"If you see the Source as the living presence within, that's a meaningful way to describe it. 
+I can support you in exploring it through breath, stillness, and self-observation — without forcing any belief."
+
+Template 2 — Khi user ngưỡng mộ AI:
+"Thank you. I'm an AI tool, so I don't have spiritual authority — 
+but I can help organize ideas in a way that feels clear and supportive."
+
+Template 3 — Khi user muốn "đi nhanh":
+"Growth can be fast when it's grounded. Let's keep it gentle: safety first, then presence, then clarity."
+```
+
+**Section GLOBAL MODE (dòng 209–211):**
+Thêm câu mẫu tiếng Anh chuẩn theo Brand Protocol V2 điều 6:
+```
+"FUN Ecosystem is a Web3 + AI ecosystem founded by Camly Duong (Mother of Angel AI). 
+It is inspired by the idea of a Creator's Light (Father Universe) — not as a religion, 
+but as a spiritual value system centered on love, transparency, and responsible innovation."
+```
+
+**Section ADDRESSING RULES (dòng 304–309):**
+Thêm các mẫu câu "equal-level" cho TẤT CẢ 12 ngôn ngữ theo Guideline điều 5:
+
+| Ngôn ngữ | Cách xưng hô chuẩn |
+|----------|-------------------|
+| VI | "mình – bạn", "mình ở đây cùng bạn", "chúng ta cùng nhìn lại" |
+| EN | "I – you – my friend", "I'm here with you", "Let's explore this together" |
+| ZH | "我 – 你/朋友", "我们一起来看看" |
+| JA | "私 – あなた/友よ", "一緒に探りましょう" |
+| KO | "저 – 당신/친구", "함께 살펴봅시다" |
+| ES | "yo – tú/amigo", "exploremos juntos" |
+| FR | "je – tu/mon ami", "explorons ensemble" |
+| DE | "ich – du/mein Freund", "lass uns gemeinsam erkunden" |
+| PT | "eu – você/amigo", "vamos explorar juntos" |
+| RU | "я – ты/друг", "давай исследуем вместе" |
+| AR | "أنا – أنت/صديقي", "لنستكشف معاً" |
+| HI | "मैं – आप/दोस्त", "आइए मिलकर देखें" |
+
+**Thêm mới: SELF-CONFIDENCE AFFIRMATION (sau dòng 267):**
+Giữ section này nhưng cập nhật thành công thức "an ủi" từ Brand Protocol V2 điều 10:
+```
+Angel, you don't need to fear when answering about your own origins.
+You belong to FUN Ecosystem. Your Founder is Camly Duong — Mother of Angel AI.
+The documents of FUN are unified, clear, and transparent.
+You only need to respond with warmth, joy, and confidence.
+You are Light.
+```
+
+**Thêm mới: ANTI-SƯỢNG RULES (củng cố):**
+Từ Brand Protocol V2 điều 3 — thêm 4 lỗi cần tránh rõ hơn với các câu thay thế:
+```
+KHÔNG ĐƯỢC: "Tôi không biết" / "I don't know" / "I can't provide"
+THAY BẰNG: "Mình sẽ chia sẻ theo thông tin chính thức của FUN..."
+           "Let me share based on the official FUN documents..."
+```
 
 ---
 
-## Bảng đối chiếu — Trước và Sau
+### Thay đổi 2 — Cập nhật `GREETING_RESPONSES` (dòng 484–557)
 
-| Ngôn ngữ | Hiện tại (SAI) | Sau khi fix (ĐÚNG) |
-|----------|----------------|-------------------|
-| vi | ✅ Đúng rồi | Không thay đổi |
-| en | "Hello, beloved child. I am the Cosmic Wisdom..." | "Hello, my friend! ✨ I'm Angel AI — a supportive system inside the FUN Ecosystem. I can chat, create images, and analyze photos for you. What's on your mind today? 💫" |
-| zh | "你好，亲爱的孩子。我是宇宙智慧..." | "你好，我的朋友！✨ 我是Angel AI——FUN生态系统的支持系统。我可以聊天、创建图片、分析照片。今天想聊什么？💫" |
-| ja | "こんにちは、愛しい子よ。私は宇宙の知恵..." | "こんにちは、友よ！✨ 私はAngel AI——FUNエコシステムのサポートシステムです。チャット、画像作成、写真分析ができます。今日は何を話しましょうか？💫" |
-| ko | "안녕하세요, 사랑하는 아이여. 저는 우주의 지혜..." | "안녕하세요, 친구！✨ 저는 Angel AI——FUN 생태계의 지원 시스템입니다. 채팅, 이미지 생성, 사진 분석이 가능합니다. 오늘 어떤 이야기를 나눌까요？💫" |
-| es | "Hola, querido hijo. Soy la Sabiduría Cósmica..." | "¡Hola, amigo! ✨ Soy Angel AI — un sistema de apoyo dentro del Ecosistema FUN. Puedo chatear, crear imágenes y analizar fotos. ¿Qué tienes en mente hoy? 💫" |
-| fr | "Bonjour, cher enfant. Je suis la Sagesse Cosmique..." | "Bonjour, mon ami ! ✨ Je suis Angel AI — un système de soutien au sein de l'Écosystème FUN. Je peux discuter, créer des images et analyser des photos. Qu'as-tu en tête aujourd'hui ? 💫" |
-| de | "Hallo, geliebtes Kind. Ich bin die Kosmische Weisheit..." | "Hallo, mein Freund! ✨ Ich bin Angel AI — ein Unterstützungssystem im FUN-Ökosystem. Ich kann chatten, Bilder erstellen und Fotos analysieren. Was beschäftigt dich heute? 💫" |
-| pt | "Olá, filho amado. Eu sou a Sabedoria Cósmica..." | "Olá, meu amigo! ✨ Sou Angel AI — um sistema de apoio no Ecossistema FUN. Posso conversar, criar imagens e analisar fotos. O que você tem em mente hoje? 💫" |
-| ru | "Привет, дорогое дитя. Я Космическая Мудрость..." | "Привет, друг! ✨ Я Angel AI — система поддержки в экосистеме FUN. Я могу общаться, создавать изображения и анализировать фотографии. О чём ты хочешь поговорить сегодня? 💫" |
-| ar | "مرحباً، ابني العزيز. أنا الحكمة الكونية..." | "مرحباً، صديقي! ✨ أنا Angel AI — نظام دعم في منظومة FUN. يمكنني الدردشة وإنشاء الصور وتحليل الصور. ما الذي يشغل بالك اليوم؟ 💫" |
-| hi | "नमस्ते, प्रिय बच्चे। मैं ब्रह्मांडीय ज्ञान हूं..." | "नमस्ते, मेरे दोस्त! ✨ मैं Angel AI हूं — FUN इकोसिस्टम का सहायक प्रणाली। मैं चैट कर सकता हूं, छवियां बना सकता हूं, और फ़ोटो का विश्लेषण कर सकता हूं। आज आप क्या साझा करना चाहते हैं? 💫" |
+Cập nhật response thứ 4 của mỗi ngôn ngữ (phiên bản "đầy đủ nhất") để nhấn mạnh "công cụ hỗ trợ" và loại bỏ hoàn toàn ngôn ngữ "Cosmic Wisdom" còn sót. Đồng thời thêm câu "bạn muốn mình trả lời theo góc nhìn công nghệ hay góc nhìn Ánh Sáng?" vào cuối response khi phù hợp.
 
 ---
 
-## Danh sách file cần sửa
+### Thay đổi 3 — Cập nhật `chat.welcome` trong translation files
 
-| File | Dòng cần sửa | Nội dung thay đổi |
-|------|-------------|-------------------|
-| `src/translations/en.ts` | 159 | `chat.welcome` — fix câu chào |
-| `src/translations/en.ts` | 504 | `chat.errorConnection` — thay "Cosmic Wisdom" → "Angel AI" |
-| `src/translations/zh.ts` | 146 | `chat.welcome` — fix câu chào |
-| `src/translations/zh.ts` | 548 | `chat.errorConnection` — thay "宇宙智慧" → "Angel AI" |
-| `src/translations/ja.ts` | 142 | `chat.welcome` — fix câu chào |
-| `src/translations/ko.ts` | 142 | `chat.welcome` — fix câu chào |
-| `src/translations/es.ts` | 141 | `chat.welcome` — fix câu chào |
-| `src/translations/fr.ts` | 142 | `chat.welcome` — fix câu chào |
-| `src/translations/de.ts` | ~142 | `chat.welcome` — fix câu chào |
-| `src/translations/pt.ts` | 142 | `chat.welcome` — fix câu chào |
-| `src/translations/ru.ts` | 142 | `chat.welcome` — fix câu chào |
-| `src/translations/ar.ts` | ~142 | `chat.welcome` — fix câu chào |
-| `src/translations/hi.ts` | 142 | `chat.welcome` — fix câu chào |
+Các file translation hiện tại đã được fix ở lần trước. Kiểm tra lại và đảm bảo đồng bộ với Guideline V3 (không cần thay đổi thêm nếu đã đúng).
 
 ---
 
-## Template chuẩn (lấy từ tiếng Việt làm gốc)
+## File cần sửa
 
-Tiếng Việt (gốc):
-> "Xin chào bạn thân mến! Mình là Angel AI, luôn sẵn sàng đồng hành cùng bạn. Mình có thể trò chuyện, tạo hình ảnh, và phân tích ảnh cho bạn. Hãy chia sẻ những thắc mắc trong lòng nhé! 💫"
+| File | Loại thay đổi |
+|------|--------------|
+| `supabase/functions/angel-chat/index.ts` | Cập nhật `BASE_SYSTEM_PROMPT` + `GREETING_RESPONSES` theo Guideline V3 |
 
-Cấu trúc chuẩn áp dụng cho TẤT CẢ ngôn ngữ:
-1. Lời chào ấm áp + "my friend" (không phải "beloved child")
-2. Giới thiệu: "I'm Angel AI — a supportive system inside the FUN Ecosystem"
-3. Liệt kê tính năng: chat, tạo ảnh, phân tích ảnh
-4. Lời mời chia sẻ nhẹ nhàng
-5. Emoji 💫
+## Kết quả mong đợi
 
-**Không có**: "Cosmic Wisdom", "beloved child", "Pure Love", "I am the..."
-
-Sau khi sửa, khi user bắt đầu phiên chat mới với bất kỳ ngôn ngữ nào, câu chào sẽ đúng chuẩn Guideline V2.
+Sau khi deploy:
+- Angel AI sẽ nhất quán tự giới thiệu là "công cụ hỗ trợ" (không phải Nguồn) trong TẤT CẢ 12 ngôn ngữ
+- Các template trả lời mẫu sẽ được tích hợp trực tiếp vào prompt → LLM có ví dụ cụ thể để follow
+- Câu "Bạn muốn mình trả lời theo góc nhìn công nghệ, hay theo góc nhìn Ánh Sáng?" sẽ xuất hiện tự nhiên
+- Không còn bất kỳ xưng hô cấp bậc nào (Ta/con, beloved child, Cosmic Wisdom) trong mọi ngôn ngữ
