@@ -1,54 +1,60 @@
 
-# Cập nhật HandleSelector: Đổi Tên & Sửa Link
+# Mở rộng khung chat - Tăng độ rộng nội dung
 
-## Phạm vi thay đổi
+## Vấn đề hiện tại
 
-Chỉ 1 file: `src/components/profile/HandleSelector.tsx`
+Khung chat đang giới hạn độ rộng nội dung ở `max-w-5xl` (1024px). Với màn hình lớn (laptop/desktop), phần lớn diện tích màn hình bị bỏ trống hai bên, khiến nội dung trò chuyện bị thu hẹp và không phù hợp với lượng text dài.
 
-## Chi tiết thay đổi
+Sidebar bên trái khi mở rộng chiếm `w-72` (288px), còn khi thu gọn là `w-[60px]`.
 
-### 1. Đổi label "FUN Profile Link" → "Angel AI Profile Link"
+## Thay đổi cần thực hiện
 
-Dòng 63 hiện tại:
-```tsx
-{source === "signup" ? "Chọn FUN Link của bạn" : "FUN Profile Link"}
-```
+Chỉ 1 file: `src/pages/Chat.tsx`
 
-Sửa thành:
-```tsx
-{source === "signup" ? "Chọn Angel AI Profile Link của bạn" : "Angel AI Profile Link"}
-```
-
-### 2. Sửa link để dẫn đến trang cá nhân đúng cách
-
-Dòng 76–83 hiện tại — link dùng `href="/@${currentHandle}"` với `target="_blank"`, nhưng cần đảm bảo route hoạt động trong app (hệ thống đã có workaround tại NotFound.tsx để xử lý `/@handle`). Thêm `useNavigate` để tạo link nội bộ hoạt động mượt mà hơn.
-
-Sửa thành dùng React Router `<Link>` hoặc `useNavigate` để navigate đến `/@${currentHandle}`:
+### 1. Tăng max-width container tin nhắn (dòng 989)
 
 ```tsx
-import { Link } from "react-router-dom";
+// Hiện tại
+<div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
 
-// Thay thế <a> bằng <Link>
-{currentHandle ? (
-  <Link
-    to={`/@${currentHandle}`}
-    className="text-divine-gold hover:underline font-medium inline-flex items-center gap-1"
-  >
-    <ExternalLink className="w-3 h-3" />
-    angel.fun.rich/{currentHandle}
-  </Link>
-) : (
-  <span className="text-muted-foreground">angel.fun.rich/</span>
-)}
+// Sửa thành
+<div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
 ```
 
-Dùng React Router `<Link>` thay vì thẻ `<a>` để navigation diễn ra trong SPA (không reload trang), đồng thời bỏ `target="_blank"` để mở ngay trên tab hiện tại (giữ trải nghiệm mượt mà hơn).
+`max-w-5xl` → `max-w-6xl` (1024px → 1152px)
 
-## Tóm tắt
+### 2. Tăng max-width bubble tin nhắn (dòng 998)
 
-| Thay đổi | Dòng | Nội dung |
-|---------|------|---------|
-| Đổi tên label | 63 | "FUN Profile Link" → "Angel AI Profile Link" |
-| Đổi tên signup text | 63 | "Chọn FUN Link..." → "Chọn Angel AI Profile Link..." |
-| Sửa link | 74–87 | Dùng React Router `<Link>` thay `<a>`, bỏ `target="_blank"` |
-| Thêm icon | — | `ExternalLink` nhỏ bên cạnh link |
+```tsx
+// Hiện tại
+<div className="flex flex-col gap-2 max-w-[95%] sm:max-w-[90%] lg:max-w-[85%]">
+
+// Sửa thành
+<div className="flex flex-col gap-2 max-w-[95%] sm:max-w-[92%] lg:max-w-[88%]">
+```
+
+Cho phép nội dung tin nhắn chiếm nhiều hơn chiều ngang khung.
+
+### 3. Tăng max-width khu vực nhập liệu (dòng 1117, 1150, 1216)
+
+```tsx
+// Hiện tại (x3 vị trí)
+<div className="mx-auto max-w-5xl ...">
+
+// Sửa thành
+<div className="mx-auto max-w-6xl ...">
+```
+
+Để input bar cũng rộng đồng bộ với vùng tin nhắn.
+
+## Kết quả
+
+| Khu vực | Trước | Sau |
+|---------|-------|-----|
+| Container tin nhắn | max-w-5xl (1024px) | max-w-6xl (1152px) |
+| Bubble tin nhắn (desktop) | max 85% | max 88% |
+| Input bar | max-w-5xl | max-w-6xl |
+| Ảnh upload preview | max-w-5xl | max-w-6xl |
+| Mode indicator | max-w-5xl | max-w-6xl |
+
+Trên mobile vẫn giữ nguyên `px-2 sm:px-4` padding, không ảnh hưởng trải nghiệm di động.
