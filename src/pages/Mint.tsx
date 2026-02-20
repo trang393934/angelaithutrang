@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { FUNMoneyBalanceCard } from "@/components/mint/FUNMoneyBalanceCard";
@@ -8,36 +8,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUnmintedCount } from "@/hooks/useUnmintedCount";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link } from "react-router-dom";
-import { ArrowRight, Coins, Sparkles, Shield, Zap, ExternalLink, Info, Lock, ChevronDown, Wallet, CheckCircle2, Download, AlertTriangle, PauseCircle } from "lucide-react";
-import funMoneyLogo from "@/assets/fun-money-logo.png";
+import { Coins, Sparkles, Shield, Zap, ExternalLink, Info, Lock, ChevronDown, CheckCircle2, Download, AlertTriangle } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { supabase } from "@/integrations/supabase/client";
 
 export default function Mint() {
   const { user } = useAuth();
   const { unmintedCount } = useUnmintedCount(user?.id);
   const [guideOpen, setGuideOpen] = useState(true);
-  const [mintPaused, setMintPaused] = useState(false);
-  const [pausedReason, setPausedReason] = useState("");
-  const [settingsLoading, setSettingsLoading] = useState(true);
-
-  useEffect(() => {
-    supabase
-      .from("system_settings")
-      .select("value")
-      .eq("key", "mint_system")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.value) {
-          const val = data.value as Record<string, unknown>;
-          setMintPaused(!!val.paused);
-          setPausedReason((val.paused_reason as string) || "");
-        }
-        setSettingsLoading(false);
-      });
-  }, []);
  
   return (
     <>
@@ -60,20 +38,6 @@ export default function Mint() {
               </p>
             </div>
 
-            {/* 🚨 MINT PAUSED BANNER - Hiển thị nổi bật khi hệ thống dừng */}
-            {mintPaused && (
-              <Alert className="border-red-400 bg-red-50 dark:bg-red-950/40">
-                <PauseCircle className="h-5 w-5 text-red-600" />
-                <AlertTitle className="text-red-700 dark:text-red-400 text-base font-bold">
-                  🚨 Hệ thống Mint FUN Money đang tạm dừng
-                </AlertTitle>
-                <AlertDescription className="text-red-600 dark:text-red-300 text-sm mt-1">
-                  {pausedReason || "Hệ thống đúc FUN Money đang tạm dừng để bảo trì và kiểm tra an ninh."}
-                  <br />
-                  <span className="font-medium">Vui lòng quay lại sau. Các Light Actions của bạn vẫn được ghi nhận và sẽ được xử lý khi hệ thống hoạt động trở lại. 🙏</span>
-                </AlertDescription>
-              </Alert>
-            )}
 
             {/* Important Notice */}
             <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/30">
@@ -93,7 +57,7 @@ export default function Mint() {
             </Alert>
 
             {/* Unminted Actions Banner */}
-            {!mintPaused && unmintedCount > 0 && (
+            {unmintedCount > 0 && (
               <Alert className="border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30">
                 <AlertTriangle className="h-4 w-4 text-orange-600" />
                 <AlertTitle className="text-orange-700 dark:text-orange-400">
