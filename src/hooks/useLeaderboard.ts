@@ -213,6 +213,28 @@ export function useLeaderboard() {
           fetchLeaderboard();
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+        },
+        () => {
+          fetchLeaderboard();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_suspensions",
+        },
+        () => {
+          fetchLeaderboard();
+        }
+      )
       .subscribe();
 
     return () => {
