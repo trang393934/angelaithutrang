@@ -79,6 +79,7 @@ const RESPONSE_STYLES = [
 // Username display sub-component (Telegram-style)
 function UsernameDisplay() {
   const { currentHandle } = useHandle();
+  const { user } = useAuth();
   const [copied, setCopied] = useState(false);
 
   if (!currentHandle) {
@@ -91,7 +92,7 @@ function UsernameDisplay() {
 
   const handleCopy = async () => {
     try {
-      const fullUrl = `${window.location.origin}/@${currentHandle}`;
+      const fullUrl = `${window.location.origin}/user/${user?.id}`;
       await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -100,12 +101,12 @@ function UsernameDisplay() {
 
   return (
     <div className="flex items-center gap-1.5 text-sm text-primary">
-      <a
-        href={`/@${currentHandle}`}
+      <Link
+        to={`/user/${user?.id}`}
         className="font-medium hover:underline"
       >
-        @{currentHandle}
-      </a>
+        angel.fun.rich/{currentHandle}
+      </Link>
       <button onClick={handleCopy} className="hover:text-primary/80 transition-colors group">
         {copied ? (
           <Check className="w-3.5 h-3.5 text-green-500" />

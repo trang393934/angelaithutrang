@@ -310,7 +310,7 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
   // Avatar wrapper size must accommodate orbit
   const wrapperSize = (orbitRadius + 36) * 2; // 36 = icon diameter
 
-  const profileUrl = `${window.location.origin}/@${profile.handle}`;
+  const profileUrl = `${window.location.origin}/user/${profile.user_id}`;
 
   const handleCopyLink = async () => {
     try {
