@@ -986,7 +986,7 @@ const Chat = () => {
 
         {/* Messages - Scrollable area with wider container */}
         <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-4 lg:px-8 py-4 sm:py-6 relative">
-          <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
+          <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -995,7 +995,7 @@ const Chat = () => {
                 {message.role === "assistant" && (
                   <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shadow-soft flex-shrink-0" />
                 )}
-                <div className="flex flex-col gap-2 max-w-[95%] sm:max-w-[90%] lg:max-w-[85%]">
+                <div className="flex flex-col gap-2 max-w-[95%] sm:max-w-[92%] lg:max-w-[88%]">
                   {/* Image in message */}
                   {message.imageUrl && message.type === "image-analysis" && (
                     <div 
@@ -1114,7 +1114,7 @@ const Chat = () => {
         {/* Uploaded Image Preview */}
         {uploadedImage && (
           <div className="flex-shrink-0 px-3 sm:px-4 lg:px-8 py-2 bg-muted/50 border-t border-border">
-            <div className="mx-auto max-w-5xl flex items-center gap-2 sm:gap-3">
+            <div className="mx-auto max-w-6xl flex items-center gap-2 sm:gap-3">
               <div className="relative flex-shrink-0">
                 <img src={uploadedImage} alt="To process" className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover" />
                 <button
@@ -1147,7 +1147,7 @@ const Chat = () => {
         {/* Mode Indicator - for generate-image only */}
         {chatMode === "generate-image" && !uploadedImage && (
           <div className="flex-shrink-0 px-3 sm:px-4 lg:px-8 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-t border-border">
-            <div className="mx-auto max-w-5xl flex items-center justify-between gap-2">
+            <div className="mx-auto max-w-6xl flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={() => setChatMode("chat")}
@@ -1213,7 +1213,7 @@ const Chat = () => {
 
         {/* Input - Fixed at bottom with safe area padding */}
         <div className="flex-shrink-0 bg-background-pure/95 backdrop-blur-lg border-t border-primary-pale px-3 sm:px-4 lg:px-8 py-2 sm:py-3 safe-area-bottom">
-          <form onSubmit={handleSubmit} className="mx-auto max-w-5xl">
+          <form onSubmit={handleSubmit} className="mx-auto max-w-6xl">
             <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Mode buttons - Compact on mobile */}
               <div className="flex items-center">
