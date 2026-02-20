@@ -60,35 +60,44 @@ const AdminKnowledge = () => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   
+  // Helper: load from sessionStorage with fallback
+  const loadSession = <T,>(key: string, fallback: T): T => {
+    try {
+      const raw = sessionStorage.getItem(`admin_knowledge_${key}`);
+      return raw !== null ? JSON.parse(raw) : fallback;
+    } catch { return fallback; }
+  };
+  const saveSession = <T,>(key: string, value: T) => {
+    try { sessionStorage.setItem(`admin_knowledge_${key}`, JSON.stringify(value)); } catch {}
+  };
+
   // Search and filter state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterFolder, setFilterFolder] = useState<string | null | "all" | "uncategorized">("all");
-  const [filterProcessed, setFilterProcessed] = useState<ProcessedFilter>("all");
+  const [searchQuery, setSearchQuery] = useState<string>(() => loadSession("searchQuery", ""));
+  const [filterFolder, setFilterFolder] = useState<string | null | "all" | "uncategorized">(() => loadSession("filterFolder", "all"));
+  const [filterProcessed, setFilterProcessed] = useState<ProcessedFilter>(() => loadSession("filterProcessed", "all" as ProcessedFilter));
   
   // Drag and drop state
   const [draggedDoc, setDraggedDoc] = useState<KnowledgeDocument | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null | "uncategorized">(null);
   
   // Folder form
-  const [showFolderForm, setShowFolderForm] = useState(false);
+  const [showFolderForm, setShowFolderForm] = useState<boolean>(() => loadSession("showFolderForm", false));
   const [editingFolder, setEditingFolder] = useState<KnowledgeFolder | null>(null);
-  const [folderForm, setFolderForm] = useState({ name: "", description: "" });
+  const [folderForm, setFolderForm] = useState<{ name: string; description: string }>(() => loadSession("folderForm", { name: "", description: "" }));
   
   // Upload form
-  const [uploadForm, setUploadForm] = useState({
-    title: "",
-    description: "",
-    file: null as File | null,
-    folderId: null as string | null,
-  });
+  const [uploadForm, setUploadForm] = useState<{ title: string; description: string; file: File | null; folderId: string | null }>(() => ({
+    ...loadSession("uploadForm", { title: "", description: "", folderId: null }),
+    file: null, // File objects cannot be serialized
+  }));
 
   // Google URL import
-  const [googleUrlForm, setGoogleUrlForm] = useState({
+  const [googleUrlForm, setGoogleUrlForm] = useState<{ url: string; title: string; description: string; folderId: string | null }>(() => loadSession("googleUrlForm", {
     url: "",
     title: "",
     description: "",
-    folderId: null as string | null,
-  });
+    folderId: null,
+  }));
   const [isFetchingGoogle, setIsFetchingGoogle] = useState(false);
   const [googlePreview, setGooglePreview] = useState<{ content: string; sourceType: string } | null>(null);
   const [syncingDocId, setSyncingDocId] = useState<string | null>(null);
@@ -128,6 +137,28 @@ const AdminKnowledge = () => {
     setFilterFolder("all");
     setFilterProcessed("all");
   };
+
+  // Persist form states to sessionStorage whenever they change
+  useEffect(() => { saveSession("searchQuery", searchQuery); }, [searchQuery]);
+  useEffect(() => { saveSession("filterFolder", filterFolder); }, [filterFolder]);
+  useEffect(() => { saveSession("filterProcessed", filterProcessed); }, [filterProcessed]);
+  useEffect(() => { saveSession("showFolderForm", showFolderForm); }, [showFolderForm]);
+  useEffect(() => { saveSession("folderForm", folderForm); }, [folderForm]);
+  useEffect(() => {
+    saveSession("uploadForm", { title: uploadForm.title, description: uploadForm.description, folderId: uploadForm.folderId });
+  }, [uploadForm.title, uploadForm.description, uploadForm.folderId]);
+  useEffect(() => { saveSession("googleUrlForm", googleUrlForm); }, [googleUrlForm]);
+
+  // Save & restore scroll position
+  useEffect(() => {
+    const savedScroll = loadSession<number>("scrollY", 0);
+    if (savedScroll) {
+      requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: "instant" as ScrollBehavior }));
+    }
+    const handleScroll = () => saveSession("scrollY", window.scrollY);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && isAdminChecked) {
@@ -556,6 +587,7 @@ const AdminKnowledge = () => {
 
       toast.success("Upload tài liệu thành công! ✨");
       setUploadForm({ title: "", description: "", file: null, folderId: selectedFolderId });
+      saveSession("uploadForm", { title: "", description: "", folderId: selectedFolderId });
       fetchDocuments();
     } catch (error) {
       console.error("Upload error:", error);
@@ -744,6 +776,7 @@ const AdminKnowledge = () => {
 
       toast.success("Đã lưu tài liệu thành công! ✨");
       setGoogleUrlForm({ url: "", title: "", description: "", folderId: selectedFolderId });
+      saveSession("googleUrlForm", { url: "", title: "", description: "", folderId: selectedFolderId });
       setGooglePreview(null);
       fetchDocuments();
     } catch (error) {
