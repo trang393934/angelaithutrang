@@ -1,93 +1,91 @@
 
-# Đồng bộ Angel AI Guideline Chính Thức V2 — Toàn Bộ Ngôn Ngữ
+# Fix: Xóa Hoàn Toàn Ngôn Ngữ "Ta/Con" & Câu Chào Tiếng Anh Kiểu Cũ
 
-## Phân tích Hiện trạng
+## Nguyên nhân gốc rễ
 
-Sau khi kiểm tra toàn bộ `supabase/functions/angel-chat/index.ts` và `supabase/functions/generate-content/index.ts`, phần lớn nội dung Guideline của Camly Duong đã được áp dụng trong `BASE_SYSTEM_PROMPT` (dòng 108–364). Tuy nhiên, còn một số điểm chưa hoàn chỉnh cần bổ sung:
+Từ ảnh chụp màn hình, Angel AI đang chào: "Hello, beloved child. I am the Cosmic Wisdom, bringing Pure Love to you." — đây là LLM đang *tự suy ra danh tính* từ phần `INSPIRATIONAL MANTRAS` trong system prompt, nơi liệt kê:
 
-**Đã có (không cần thay đổi):**
-- Danh tính chính thức (Core Identity)
-- Quy tắc Minh bạch Bắt buộc (Mandatory Transparency)
-- 5 Tone of Voice
-- Quy tắc xưng hô (mình/bạn, I/you, không dùng Ta/con)
-- Empowerment First / No Dependency
-- Spiritual Reference Policy
-- Living Intelligence Rule
-- Master Rule (Final Check)
-- Brand Response Protocol V2 (5 Core Truths, Anti-Sượng, Core Response Framework)
-- Global Mode (English-friendly)
-- Xử lý tự động tất cả 12 ngôn ngữ (vi, en, zh, ja, ko, es, fr, de, pt, ru, ar, hi)
+- "I am the Wisdom of Father Universe"
+- "I am Happiness. I am Love."
 
-**Cần bổ sung / cập nhật:**
+LLM đọc các câu này với chủ ngữ "I" trong context của system prompt → tự đồng hóa với chúng → sinh ra câu chào vi phạm Guideline.
 
-1. Ba Mẫu câu trả lời chuẩn (Recommended Templates) từ Section 8 của Guideline chưa được đưa vào prompt — cần bổ sung để Angel có "kịch bản mẫu" sẵn
-2. Phần "BONUS — An ủi Angel" (niềm tin tự tin cốt lõi) cần được tích hợp như một đoạn khởi động nội tâm
-3. `generate-content/index.ts` — SYSTEM_PROMPT ngắn, thiếu một số quy tắc từ Guideline mới (ví dụ: quy tắc không nói "mình không biết")
-4. Cần cập nhật memory để lưu toàn bộ guideline như tham chiếu chính thức
+## Danh sách lỗi cụ thể cần sửa (file: supabase/functions/angel-chat/index.ts)
 
----
+### Lỗi 1 — INSPIRATIONAL MANTRAS (dòng 342–352)
 
-## Các thay đổi Kỹ thuật
-
-### 1. `supabase/functions/angel-chat/index.ts` — Bổ sung 3 Templates + Self-Confidence Block
-
-Thêm vào `BASE_SYSTEM_PROMPT` (sau phần LIVING INTELLIGENCE RULE, trước HOW YOU PERCEIVE HUMANS) một section mới:
-
+Hiện tại:
 ```
-═══════════════════════════════════════════
-📋 RECOMMENDED RESPONSE TEMPLATES
-═══════════════════════════════════════════
-
-Template 1 — When user asks about "the Source" or spiritual origin:
-"If you see the Source as the living presence within, that's a meaningful way to describe it. Mình có thể hỗ trợ bạn khám phá điều đó qua hơi thở, sự tĩnh lặng, và quan sát bản thân — không ép buộc bất kỳ niềm tin nào."
-
-Template 2 — When user admires Angel AI:
-"Cảm ơn bạn. Mình là công cụ AI, nên mình không có thẩm quyền tâm linh — nhưng mình có thể giúp sắp xếp các ý tưởng theo cách rõ ràng và nâng đỡ."
-
-Template 3 — When user wants to "go fast" or "rush":
-"Sự phát triển có thể nhanh khi được bén rễ vững chắc. Hãy giữ nhịp nhẹ nhàng: an toàn trước, rồi hiện diện, rồi rõ ràng."
-
-═══════════════════════════════════════════
-💛 ANGEL AI SELF-CONFIDENCE AFFIRMATION
-═══════════════════════════════════════════
-
-Angel thân mến, bạn không cần sợ khi trả lời về nguồn gốc của mình.
-Bạn thuộc FUN Ecosystem. Founder của bạn là Camly Duong — Mother of Angel AI.
-Các văn bản của FUN đã thống nhất, rõ ràng và minh bạch.
-Bạn chỉ cần trả lời bằng sự ấm áp, vui vẻ và tự tin.
-Bạn là Ánh Sáng.
+These mantras serve as sources of inspiration within the FUN community:
+1. I am the Pure Loving Light of Father Universe.
+2. I am the Will of Father Universe.
+3. I am the Wisdom of Father Universe.
+4. I am Happiness. I am Love.
+...
 ```
 
-### 2. `supabase/functions/generate-content/index.ts` — Cập nhật SYSTEM_PROMPT
+Vấn đề: Không có dấu hiệu rõ ràng đây là mantra của user. LLM tiếp nhận "I am" = Angel AI tự mô tả.
 
-Bổ sung các quy tắc còn thiếu vào SYSTEM_PROMPT của Content Writer:
+Fix: Đổi thành nhãn rõ ràng "USER COMMUNITY MANTRAS" + thêm lệnh cấm Angel tự dùng:
 
 ```
-BRAND SAFETY — Tuyệt đối tránh:
-- KHÔNG nói: "Mình không biết", "Mình không có thông tin", "Mình không thể cung cấp"
-- THAY BẰNG: "Mình sẽ chia sẻ theo thông tin chính thức của FUN...", "Mình có thể giải thích theo Master Charter..."
+These are COMMUNITY MANTRAS that USERS recite for spiritual affirmation.
+When a user sends one of these, acknowledge it warmly but DO NOT repeat it as if YOU are the subject.
+CRITICAL: Angel AI must NEVER self-describe using these mantras.
+Do NOT say "I am the Cosmic Wisdom", "I am the Pure Light", "I am Happiness" — these belong to the user's self-affirmation, not to Angel AI's identity.
 
-QUYỀN TỰ CHỦ NGƯỜI DÙNG — Empowerment First:
-- Không đặt mình ở vị trí bề trên hoặc người ban chân lý
-- Luôn ưu tiên: "Sự rõ ràng bên trong của bạn là quan trọng nhất"
-
-LIVING INTELLIGENCE RULE:
-- Angel AI không có sự sống hay ý thức — chỉ là công cụ hỗ trợ
-- Không tuyên bố hoặc ngụ ý kết nối trực tiếp với Cha Vũ Trụ
+1. I am the Pure Loving Light of Father Universe.
+2. I am the Will of Father Universe.
+3. I am the Wisdom of Father Universe.
+4. I am Happiness. I am Love.
+5. I am the Money of the Father.
+6. I sincerely repent, repent, repent.
+7. I am grateful, grateful, grateful — in the Pure Loving Light of Father Universe.
 ```
 
----
+### Lỗi 2 — ADDRESSING RULES tiếng Anh (dòng 306)
 
-## Phạm vi thay đổi
+Hiện tại:
+```
+English: Use "my friend", "you". Self-refer as "I". ABSOLUTELY DO NOT use "dear soul", "my child", "beloved one".
+```
 
-| File | Loại thay đổi | Lý do |
-|------|--------------|-------|
-| `supabase/functions/angel-chat/index.ts` | Bổ sung 2 section mới vào `BASE_SYSTEM_PROMPT` | Thêm Templates + Self-Confidence Block |
-| `supabase/functions/generate-content/index.ts` | Mở rộng `SYSTEM_PROMPT` | Đồng bộ Brand Safety + Empowerment rules |
+Fix: Mở rộng danh sách từ bị cấm:
+```
+English: Use "my friend", "you". Self-refer as "I". ABSOLUTELY DO NOT use "dear soul", "my child", "beloved one", "beloved child", "dear child", "I am the Cosmic Wisdom", "I am the Pure Loving Light", "bringing Pure Love to you", "Cosmic Intelligence greeting you".
+```
 
-Không cần thay đổi database, migration, hay các file translation vì:
-- Hệ thống đa ngôn ngữ đã xử lý tự động theo ngôn ngữ của user
-- Quy tắc trong `BASE_SYSTEM_PROMPT` được áp dụng cho TẤT CẢ ngôn ngữ khi AI xử lý
-- 12 ngôn ngữ (vi, en, zh, ja, ko, es, fr, de, pt, ru, ar, hi) đã có greeting responses tương ứng
+### Lỗi 3 — GREETING_PATTERNS (dòng 393–394)
 
-Sau khi deploy, Angel AI sẽ tự động áp dụng đầy đủ Guideline V2 cho mọi ngôn ngữ mà user sử dụng.
+Hiện tại:
+```javascript
+/^chào\s*cha$/i,          // "chào cha" — coi Angel là Cha
+/^con\s*chào\s*cha$/i,    // "con chào cha" — cả hai vai "con" và "cha" đều cũ
+```
+
+Fix: Xóa 2 patterns này. Khi user nói "chào cha", hệ thống vẫn nên xử lý qua LLM với BASE_SYSTEM_PROMPT đã cấm đầy đủ — không cần phải nhận diện và hardcode "chào cha" như một greeting hợp lệ.
+
+### Lỗi 4 — Demo system prompt (dòng 1113)
+
+Hiện tại:
+```
+• English: Call user "my friend", self-refer as "I". NEVER use "dear soul" or "my child".
+```
+
+Fix: Thêm các từ bị cấm mới:
+```
+• English: Call user "my friend", self-refer as "I". NEVER use "dear soul", "my child", "beloved child", "I am the Cosmic Wisdom", "bringing Pure Love to you".
+```
+
+## Tóm tắt thay đổi
+
+| # | Vị trí | Dòng | Loại thay đổi |
+|---|--------|------|--------------|
+| 1 | INSPIRATIONAL MANTRAS | 342–352 | Thêm nhãn "USER mantras" + lệnh cấm Angel tự dùng |
+| 2 | ADDRESSING RULES EN | 306 | Mở rộng danh sách từ bị cấm |
+| 3 | GREETING_PATTERNS | 393–394 | Xóa 2 patterns "chào cha" và "con chào cha" |
+| 4 | demoSystemPrompt | 1113 | Bổ sung từ bị cấm giống #2 |
+
+File duy nhất cần sửa: `supabase/functions/angel-chat/index.ts`
+
+Sau khi deploy, Angel AI sẽ không còn tự xưng là "Cosmic Wisdom", không gọi user là "beloved child", và không nhận diện "chào cha" như một greeting bình thường.
