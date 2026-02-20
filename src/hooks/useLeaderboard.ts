@@ -40,37 +40,43 @@ export function useLeaderboard() {
   const fetchLeaderboard = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch all users with their coin balances
-      const { data: balances, error: balancesError } = await supabase
-        .from("camly_coin_balances")
-        .select("user_id, balance, lifetime_earned")
-        .order("lifetime_earned", { ascending: false });
+      // Fetch all data in parallel — including suspended users
+      const [balancesResult, profilesResult, suspensionsResult] = await Promise.all([
+        supabase
+          .from("camly_coin_balances")
+          .select("user_id, balance, lifetime_earned")
+          .order("lifetime_earned", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url"),
+        supabase
+          .from("user_suspensions")
+          .select("user_id")
+          .is("lifted_at", null), // Only active bans
+      ]);
 
+      const { data: balances, error: balancesError } = balancesResult;
       if (balancesError) throw balancesError;
 
-      // Fetch all profiles
-      const { data: allProfiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, avatar_url");
-
+      const { data: allProfiles, error: profilesError } = profilesResult;
       if (profilesError) throw profilesError;
+
+      // Build a Set of banned user IDs for fast O(1) lookup
+      const suspendedUserIds = new Set(
+        suspensionsResult.data?.map(s => s.user_id) || []
+      );
 
       // Create a map of profiles
       const profileMap = new Map(
         allProfiles?.map(p => [p.user_id, { display_name: p.display_name, avatar_url: p.avatar_url }]) || []
       );
 
-      // Get all user IDs from both balances and profiles
-      const allUserIds = new Set([
-        ...(balances?.map(b => b.user_id) || []),
-        ...(allProfiles?.map(p => p.user_id) || [])
-      ]);
-
-      // Combine all users - prioritize users from balances to show everyone who has earned coins
+      // Combine all users — EXCLUDE banned users
       const combinedUsers: LeaderboardUser[] = [];
       
-      // First add all users from balances
+      // First add all users from balances — skip banned
       balances?.forEach(balance => {
+        if (suspendedUserIds.has(balance.user_id)) return; // Skip banned users
         const profile = profileMap.get(balance.user_id);
         combinedUsers.push({
           user_id: balance.user_id,
@@ -82,8 +88,9 @@ export function useLeaderboard() {
         });
       });
 
-      // Add profiles that don't have balance records
+      // Add profiles that don't have balance records — skip banned
       allProfiles?.forEach(profile => {
+        if (suspendedUserIds.has(profile.user_id)) return; // Skip banned users
         const hasBalance = balances?.some(b => b.user_id === profile.user_id);
         if (!hasBalance) {
           combinedUsers.push({
@@ -112,10 +119,20 @@ export function useLeaderboard() {
       const totalCoins = combinedUsers.reduce((sum, u) => sum + u.lifetime_earned, 0);
       const activeUsers = combinedUsers.filter(u => u.lifetime_earned > 0).length;
 
-      // Get total members from profiles table (most reliable source)
-      const { count: profilesCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+      // Count non-suspended profiles only
+      let profilesCount: number | null = null;
+      if (suspendedUserIds.size > 0) {
+        const { count } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .not('user_id', 'in', `(${[...suspendedUserIds].join(',')})`);
+        profilesCount = count;
+      } else {
+        const { count } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+        profilesCount = count;
+      }
 
       setStats({
         total_users: profilesCount || 0,
