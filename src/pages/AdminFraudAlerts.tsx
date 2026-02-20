@@ -97,9 +97,10 @@ interface SybilGroup {
 }
 
 // ============================================================
-// 📋 DANH SÁCH 19 TÀI KHOẢN SYBIL — DỮ LIỆU ĐÃ XÁC MINH TỪ DB
-// Cập nhật: 5 nhóm, 16 tài khoản duy nhất (Trần Nhung chỉ đếm 1 lần)
-// Tổng pending rút ~3.2M Camly | Tổng pending mint ~733 requests
+// 📋 DANH SÁCH SYBIL — DỮ LIỆU ĐÃ XÁC MINH TỪ DB
+// Cập nhật: 6 nhóm, 21 tài khoản (Trần Nhung chỉ đếm 1 lần)
+// Tổng pending rút ~4.5M Camly | Tổng pending mint ~1,059 requests
+// Cập nhật 20/02/2026: Thêm Nhóm Lưu Dung & Nguyễn Viết Soạn (5 TK)
 // ============================================================
 const SYBIL_GROUPS: SybilGroup[] = [
   {
@@ -284,6 +285,19 @@ const SYBIL_GROUPS: SybilGroup[] = [
         pendingMint: 93,
         pendingWithdrawal: 280000,
       },
+    ],
+  },
+  {
+    groupName: "Nhóm Lưu Dung & Nguyễn Viết Soạn — Đăng ký 20/01 cùng joni",
+    walletAddress: "0x77dfa842... | 0x848393bc... | 0x68ae9ad0... (tinhthan)",
+    severity: "critical",
+    note: "5 tài khoản gia đình Lưu đăng ký cùng ngày 20/01 trong 50 phút với joni (đã ban). Lưu Quang Trung rút về ví 0x68ae9ad0 = ví tinhthan trong mạng le quang — hai nhóm là một mạng lưới duy nhất. Tổng pending rút: ~1.33M Camly.",
+    members: [
+      { userId: "bb52286d-5a6b-4908-99e2-7c2795856f9a", name: "luu dung", email: "dungluu1717@gmail.com", balance: 1997696, lifetimeEarned: 2825722, pendingMint: 81, pendingWithdrawal: 207744 },
+      { userId: "afa4b518-c75d-4692-8b5c-f4b5cfb11b6a", name: "Lưu Hiếu", email: "builoi1131@gmail.com", balance: 200, lifetimeEarned: 915964, pendingMint: 66, pendingWithdrawal: 299369 },
+      { userId: "c86cae53-4692-485d-a2b5-6e1f2464bcba", name: "Lưu Quang Trung", email: "chung121112@gmail.com", balance: 300, lifetimeEarned: 951350, pendingMint: 89, pendingWithdrawal: 348155 },
+      { userId: "4122bb9f-7d76-436f-862a-aab1a974906c", name: "thuy dung", email: "dunganh2223@gmail.com", balance: 1471100, lifetimeEarned: 1949003, pendingMint: 54, pendingWithdrawal: 262448 },
+      { userId: "c20b1112-38ca-44ea-862e-b07b1d59a668", name: "thuy thuy", email: "thuydungluu626@gmail.com", balance: 300, lifetimeEarned: 412429, pendingMint: 36, pendingWithdrawal: 208235 },
     ],
   },
 ];
