@@ -3,10 +3,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Loader2, Link as LinkIcon, Clock, Sparkles, ExternalLink } from "lucide-react";
+import { Check, X, Loader2, Link as LinkIcon, Sparkles, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface HandleSelectorProps {
   onClaimed?: (handle: string) => void;
@@ -16,6 +17,7 @@ interface HandleSelectorProps {
 }
 
 export function HandleSelector({ onClaimed, showLabel = true, compact = false, source = "settings" }: HandleSelectorProps) {
+  const { user } = useAuth();
   const {
     handle,
     currentHandle,
@@ -73,9 +75,9 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
 
       {/* Clickable profile link */}
       <div className="text-sm mb-1">
-        {currentHandle ? (
+        {currentHandle && user ? (
           <Link
-            to={`/@${currentHandle}`}
+            to={`/user/${user.id}`}
             className="text-divine-gold hover:underline font-medium inline-flex items-center gap-1"
           >
             <ExternalLink className="w-3 h-3" />
