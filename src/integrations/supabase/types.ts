@@ -1012,6 +1012,124 @@ export type Database = {
         }
         Relationships: []
       }
+      coordinator_chat_messages: {
+        Row: {
+          ai_role: string | null
+          content: string
+          created_at: string
+          id: string
+          mode: string | null
+          project_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          ai_role?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          mode?: string | null
+          project_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          ai_role?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          mode?: string | null
+          project_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coordinator_chat_messages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "coordinator_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coordinator_project_versions: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          id: string
+          project_id: string
+          snapshot_data: Json | null
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          snapshot_data?: Json | null
+          version_number?: number
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          snapshot_data?: Json | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coordinator_project_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "coordinator_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coordinator_projects: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          name: string
+          platform_type: string
+          status: string
+          token_flow_model: string | null
+          updated_at: string
+          user_id: string
+          value_model: string | null
+          vision_statement: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          name: string
+          platform_type?: string
+          status?: string
+          token_flow_model?: string | null
+          updated_at?: string
+          user_id: string
+          value_model?: string | null
+          vision_statement?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          name?: string
+          platform_type?: string
+          status?: string
+          token_flow_model?: string | null
+          updated_at?: string
+          user_id?: string
+          value_model?: string | null
+          vision_statement?: string | null
+        }
+        Relationships: []
+      }
       daily_gratitude: {
         Row: {
           created_at: string
@@ -3883,6 +4001,7 @@ export type Database = {
         Returns: number
       }
       is_admin: { Args: never; Returns: boolean }
+      is_coordinator_or_admin: { Args: { _user_id: string }; Returns: boolean }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
       is_user_suspended: { Args: { _user_id: string }; Returns: boolean }
       process_daily_login: {
@@ -3972,7 +4091,7 @@ export type Database = {
       validate_policy_version: { Args: { _version: string }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "coordinator"
       approval_status: "pending" | "approved" | "rejected" | "trial"
       coin_transaction_type:
         | "chat_reward"
@@ -4198,7 +4317,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "coordinator"],
       approval_status: ["pending", "approved", "rejected", "trial"],
       coin_transaction_type: [
         "chat_reward",

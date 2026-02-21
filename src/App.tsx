@@ -63,7 +63,8 @@ import AdminUserManagement from "./pages/AdminUserManagement";
 import AdminWalletManagement from "./pages/AdminWalletManagement";
 import AdminFraudAlerts from "./pages/AdminFraudAlerts";
 import AdminTreasury from "./pages/AdminTreasury";
-
+import CoordinatorGate from "./pages/CoordinatorGate";
+import CoordinatorProject from "./pages/CoordinatorProject";
 // Note: Global error handling is in main.tsx (registered before React renders)
 
 const queryClient = new QueryClient();
@@ -134,6 +135,8 @@ const App = () => (
               <Route path="/docs/popl" element={<PoPLWhitepaper />} />
               <Route path="/docs/master-charter" element={<MasterCharter />} />
               <Route path="/docs/fun-governance" element={<FunGovernance />} />
+              <Route path="/coordinator-gate" element={<CoordinatorGate />} />
+              <Route path="/coordinator-gate/:projectId" element={<CoordinatorProject />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
