@@ -123,16 +123,16 @@ Tier 3-4:          Như hiện tại (không giới hạn cứng)
 ## Thứ Tự Triển Khai Đề Xuất
 
 ```text
-Ưu tiên 1 (Làm ngay):
-  [Bước 1] Cổng thời gian tài khoản
-  [Bước 4] Tự động xử lý khi rủi ro cao
+Ưu tiên 1 (Làm ngay): ✅ HOÀN THÀNH
+  [Bước 1] ✅ Cổng thời gian tài khoản — anti-sybil.ts + 5 edge functions
+  [Bước 4] ✅ Tự động xử lý khi rủi ro cao — auto_suspend_high_risk() + pplp-detect-fraud
 
-Ưu tiên 2 (Tuần sau):
-  [Bước 3] Giới hạn hành động theo cấp bậc
-  [Bước 5] Kiểm tra ngẫu nhiên
+Ưu tiên 2: ✅ HOÀN THÀNH
+  [Bước 3] ✅ Giới hạn hành động theo cấp bậc — check_user_cap_and_update() tier-based
+  [Bước 5] ✅ Kiểm tra ngẫu nhiên — pg_cron mỗi 6h + auto-suspend 3 flags
 
 Ưu tiên 3 (Giai đoạn 2):
-  [Bước 2] Trì hoãn phần thưởng (thay đổi lớn, cần kiểm tra kỹ)
+  [Bước 2] ⬜ Trì hoãn phần thưởng (thay đổi lớn, cần kiểm tra kỹ)
 ```
 
 ---
