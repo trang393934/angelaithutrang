@@ -112,6 +112,8 @@ interface SuspendedUser {
   balance: number;
   lifetime_earned: number;
   wallet_address: string | null;
+  pending_mint: number;
+  pending_withdrawal: number;
 }
 
 // ============================================================
@@ -454,10 +456,12 @@ const AdminFraudAlerts = () => {
 
       const userIds = [...new Set(suspensions.map((s) => s.user_id))];
 
-      const [{ data: profiles }, { data: balances }, { data: wallets }] = await Promise.all([
+      const [{ data: profiles }, { data: balances }, { data: wallets }, { data: pendingWithdrawals }, { data: mintActions }] = await Promise.all([
         supabase.from("profiles").select("user_id, display_name, avatar_url, handle").in("user_id", userIds),
         supabase.from("camly_coin_balances").select("user_id, balance, lifetime_earned").in("user_id", userIds),
         supabase.from("user_wallet_addresses").select("user_id, wallet_address").in("user_id", userIds),
+        supabase.from("coin_withdrawals").select("user_id, amount").in("user_id", userIds).in("status", ["pending", "processing"]),
+        supabase.from("pplp_actions").select("actor_id").in("actor_id", userIds).in("status", ["scored", "pending"]),
       ]);
 
       const profileMap: Record<string, any> = {};
@@ -466,6 +470,13 @@ const AdminFraudAlerts = () => {
       balances?.forEach((b) => (balanceMap[b.user_id] = b));
       const walletMap: Record<string, string> = {};
       wallets?.forEach((w) => (walletMap[w.user_id] = w.wallet_address));
+      
+      // Pending withdrawal by user
+      const withdrawalMap: Record<string, number> = {};
+      pendingWithdrawals?.forEach((w) => { withdrawalMap[w.user_id] = (withdrawalMap[w.user_id] || 0) + w.amount; });
+      // Pending mint count by user
+      const mintMap: Record<string, number> = {};
+      mintActions?.forEach((a) => { mintMap[a.actor_id] = (mintMap[a.actor_id] || 0) + 1; });
 
       // Deduplicate by user_id (keep latest suspension)
       const seenUserIds = new Set<string>();
@@ -482,6 +493,8 @@ const AdminFraudAlerts = () => {
           balance: balanceMap[s.user_id]?.balance ?? 0,
           lifetime_earned: balanceMap[s.user_id]?.lifetime_earned ?? 0,
           wallet_address: walletMap[s.user_id] ?? null,
+          pending_mint: mintMap[s.user_id] ?? 0,
+          pending_withdrawal: withdrawalMap[s.user_id] ?? 0,
         });
       }
       setSuspendedUsers(merged);
@@ -1237,6 +1250,36 @@ const AdminFraudAlerts = () => {
               </div>
             </div>
 
+            {/* Aggregate Stats */}
+            {!loadingSuspended && suspendedUsers.length > 0 && (() => {
+              const totals = suspendedUsers.reduce((acc, u) => ({
+                balance: acc.balance + u.balance,
+                earned: acc.earned + u.lifetime_earned,
+                mint: acc.mint + u.pending_mint,
+                withdrawal: acc.withdrawal + u.pending_withdrawal,
+              }), { balance: 0, earned: 0, mint: 0, withdrawal: 0 });
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-card border border-border rounded-xl px-4 py-3">
+                    <p className="text-lg font-bold font-mono text-foreground">{fmtNum(totals.balance)}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1"><Coins className="w-3 h-3" /> Tổng Số dư</p>
+                  </div>
+                  <div className="bg-card border border-border rounded-xl px-4 py-3">
+                    <p className="text-lg font-bold font-mono text-muted-foreground">{fmtNum(totals.earned)}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1"><Wallet className="w-3 h-3" /> Tổng Lifetime Earned</p>
+                  </div>
+                  <div className="bg-card border border-border rounded-xl px-4 py-3">
+                    <p className="text-lg font-bold font-mono text-amber-600 dark:text-amber-400">{fmtNum(totals.mint)}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Tổng Mint Pending</p>
+                  </div>
+                  <div className="bg-card border border-border rounded-xl px-4 py-3">
+                    <p className="text-lg font-bold font-mono text-destructive">{fmtNum(totals.withdrawal)}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Tổng Rút chờ</p>
+                  </div>
+                </div>
+              );
+            })()}
+
             {loadingSuspended ? (
               <div className="text-center py-12 text-muted-foreground">Đang tải danh sách...</div>
             ) : (
@@ -1249,8 +1292,9 @@ const AdminFraudAlerts = () => {
                       <TableHead>Lý do đình chỉ</TableHead>
                       <TableHead>Số dư</TableHead>
                       <TableHead>Lifetime Earned</TableHead>
+                      <TableHead>Mint pending</TableHead>
+                      <TableHead>Rút chờ</TableHead>
                       <TableHead>Ví BSC</TableHead>
-                      <TableHead>Hạn đình chỉ</TableHead>
                       <TableHead>Ngày đình chỉ</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1270,7 +1314,7 @@ const AdminFraudAlerts = () => {
                       if (filteredSuspended.length === 0) {
                         return (
                           <TableRow>
-                            <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                            <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
                               Không có tài khoản bị đình chỉ
                             </TableCell>
                           </TableRow>
@@ -1322,6 +1366,24 @@ const AdminFraudAlerts = () => {
                             </span>
                           </TableCell>
                           <TableCell>
+                            {user.pending_mint > 0 ? (
+                              <Badge variant="outline" className="font-mono text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">
+                                {fmtNum(user.pending_mint)}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {user.pending_withdrawal > 0 ? (
+                              <span className="font-mono text-sm font-medium text-destructive">
+                                {fmtNum(user.pending_withdrawal)}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
                             {user.wallet_address ? (
                               <a
                                 href={`https://bscscan.com/address/${user.wallet_address}`}
@@ -1333,15 +1395,6 @@ const AdminFraudAlerts = () => {
                               </a>
                             ) : (
                               <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {user.suspended_until ? (
-                              <span className="text-xs text-amber-600 dark:text-amber-400">
-                                {fmt(user.suspended_until)}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-destructive font-medium">Vĩnh viễn</span>
                             )}
                           </TableCell>
                           <TableCell>
