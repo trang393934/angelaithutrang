@@ -76,6 +76,7 @@ const AdminUserManagement = () => {
   const [funFilter, setFunFilter] = useState<"all" | "has" | "none">("all");
   const [withdrawFilter, setWithdrawFilter] = useState<"all" | "has" | "none">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended" | "banned">("all");
+  const [walletFilter, setWalletFilter] = useState<"all" | "has" | "none">("all");
 
   // Sort
   const [sortField, setSortField] = useState<SortField>("joined_at");
@@ -184,6 +185,10 @@ const AdminUserManagement = () => {
     // Account status filter
     if (statusFilter !== "all") result = result.filter(u => u.account_status === statusFilter);
 
+    // Wallet filter
+    if (walletFilter === "has") result = result.filter(u => !!u.wallet_address);
+    else if (walletFilter === "none") result = result.filter(u => !u.wallet_address);
+
     // Sort
     result.sort((a, b) => {
       let va: any = a[sortField];
@@ -196,13 +201,13 @@ const AdminUserManagement = () => {
     });
 
     return result;
-  }, [users, searchText, lightFilter, funFilter, withdrawFilter, statusFilter, sortField, sortDir]);
+  }, [users, searchText, lightFilter, funFilter, withdrawFilter, statusFilter, walletFilter, sortField, sortDir]);
 
   const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
   const pagedUsers = filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [searchText, lightFilter, funFilter, withdrawFilter, statusFilter]);
+  useEffect(() => { setPage(1); }, [searchText, lightFilter, funFilter, withdrawFilter, statusFilter, walletFilter]);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -224,6 +229,8 @@ const AdminUserManagement = () => {
     totalPosts: users.reduce((s, u) => s + u.post_count, 0),
     totalComments: users.reduce((s, u) => s + u.comment_count, 0),
     totalWithdrawalCount: users.reduce((s, u) => s + u.withdrawal_count, 0),
+    usersWithWallet: users.filter(u => !!u.wallet_address).length,
+    usersWithoutWallet: users.filter(u => !u.wallet_address).length,
   }), [users]);
 
   if (isLoading) {
@@ -479,6 +486,16 @@ const AdminUserManagement = () => {
               <SelectItem value="banned">🔴 Cấm vĩnh viễn</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={walletFilter} onValueChange={v => setWalletFilter(v as any)}>
+            <SelectTrigger className="w-[140px] h-9 text-xs">
+              <SelectValue placeholder="Ví Web3" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả ví</SelectItem>
+              <SelectItem value="has">🟢 Có ví</SelectItem>
+              <SelectItem value="none">🔴 Chưa có ví</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Results count */}
@@ -632,10 +649,22 @@ const AdminUserManagement = () => {
                           <span className="font-medium text-rose-600">{formatNumber(u.total_withdrawn)}</span>
                         ) : "—"}
                       </TableCell>
-                      <TableCell className="text-xs text-foreground-muted">
+                      <TableCell className="text-xs">
                         {u.wallet_address ? (
-                          <span className="font-mono text-[10px]">{u.wallet_address.slice(0, 6)}...{u.wallet_address.slice(-4)}</span>
-                        ) : "—"}
+                          <a 
+                            href={`https://bscscan.com/address/${u.wallet_address}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="font-mono text-[10px] text-primary hover:underline"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            {u.wallet_address.slice(0, 6)}...{u.wallet_address.slice(-4)}
+                          </a>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-destructive border-destructive/30">
+                            Chưa kết nối
+                          </Badge>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
