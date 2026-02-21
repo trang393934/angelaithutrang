@@ -151,6 +151,7 @@ const Chat = () => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
   const { isGenerating, generateImage } = useImageGeneration();
@@ -778,6 +779,10 @@ const Chat = () => {
 
     const userMessage = input.trim();
     setInput("");
+    // Reset textarea height after sending
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
     await sendMessage(userMessage);
   };
 
@@ -1272,6 +1277,7 @@ const Chat = () => {
 
               <div className="flex-1 relative flex items-end gap-1.5 sm:gap-2 bg-white rounded-2xl border border-primary-pale focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all duration-300 px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px]">
                 <textarea
+                  ref={textareaRef}
                   value={input}
                   onChange={(e) => {
                     setInput(e.target.value);
