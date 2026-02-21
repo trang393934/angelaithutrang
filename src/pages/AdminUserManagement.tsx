@@ -15,7 +15,7 @@ import {
 import {
   ArrowLeft, Users, Coins, Sparkles, Gift, Wallet, Search,
   RefreshCw, LogOut, Loader2, ArrowUpDown, ChevronLeft, ChevronRight,
-  TrendingDown, ArrowDownToLine, MessageSquare, FileText, Hash
+  TrendingDown, ArrowDownToLine, MessageSquare, FileText, Hash, ShieldCheck, ShieldAlert, ShieldOff
 } from "lucide-react";
 import AdminNavToolbar from "@/components/admin/AdminNavToolbar";
 import { UserDetailDialog } from "@/components/admin/UserDetailDialog";
@@ -47,6 +47,8 @@ interface UserRow {
   pplp_action_count: number;
   pplp_minted_count: number;
   wallet_address: string | null;
+  account_status: "active" | "suspended" | "banned";
+  suspended_until: string | null;
 }
 
 type SortField = "display_name" | "joined_at" | "light_score" | "camly_balance" | "camly_lifetime_earned" | "fun_money_received" | "total_withdrawn" | "post_count";
@@ -73,6 +75,7 @@ const AdminUserManagement = () => {
   const [lightFilter, setLightFilter] = useState<"all" | "high" | "medium" | "low">("all");
   const [funFilter, setFunFilter] = useState<"all" | "has" | "none">("all");
   const [withdrawFilter, setWithdrawFilter] = useState<"all" | "has" | "none">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended" | "banned">("all");
 
   // Sort
   const [sortField, setSortField] = useState<SortField>("joined_at");
@@ -93,34 +96,55 @@ const AdminUserManagement = () => {
   const fetchUsers = async () => {
     setIsRefreshing(true);
     try {
-      const { data, error } = await supabase.rpc("get_admin_user_management_data" as any);
+      const [{ data, error }, { data: suspensions }] = await Promise.all([
+        supabase.rpc("get_admin_user_management_data" as any),
+        supabase.from("user_suspensions").select("user_id, suspension_type, suspended_until, lifted_at").is("lifted_at", null),
+      ]);
       if (error) throw error;
-      setUsers((data as any[])?.map((d: any) => ({
-        user_id: d.user_id,
-        display_name: d.display_name,
-        avatar_url: d.avatar_url,
-        handle: d.handle,
-        joined_at: d.joined_at,
-        post_count: Number(d.post_count) || 0,
-        comment_count: Number(d.comment_count) || 0,
-        light_score: Number(d.light_score) || 0,
-        popl_score: Number(d.popl_score) || 0,
-        positive_actions: Number(d.positive_actions) || 0,
-        negative_actions: Number(d.negative_actions) || 0,
-        camly_balance: Number(d.camly_balance) || 0,
-        camly_lifetime_earned: Number(d.camly_lifetime_earned) || 0,
-        camly_lifetime_spent: Number(d.camly_lifetime_spent) || 0,
-        fun_money_received: Number(d.fun_money_received) || 0,
-        gift_internal_sent: Number(d.gift_internal_sent) || 0,
-        gift_internal_received: Number(d.gift_internal_received) || 0,
-        gift_web3_sent: Number(d.gift_web3_sent) || 0,
-        gift_web3_received: Number(d.gift_web3_received) || 0,
-        total_withdrawn: Number(d.total_withdrawn) || 0,
-        withdrawal_count: Number(d.withdrawal_count) || 0,
-        pplp_action_count: Number(d.pplp_action_count) || 0,
-        pplp_minted_count: Number(d.pplp_minted_count) || 0,
-        wallet_address: d.wallet_address,
-      })) || []);
+
+      // Build suspension map
+      const suspMap = new Map<string, { type: string; until: string | null }>();
+      (suspensions || []).forEach((s: any) => {
+        const isActive = s.suspension_type === "permanent" || (s.suspended_until && new Date(s.suspended_until) > new Date());
+        if (isActive) {
+          suspMap.set(s.user_id, { type: s.suspension_type, until: s.suspended_until });
+        }
+      });
+
+      setUsers((data as any[])?.map((d: any) => {
+        const susp = suspMap.get(d.user_id);
+        const account_status: "active" | "suspended" | "banned" = susp
+          ? susp.type === "permanent" ? "banned" : "suspended"
+          : "active";
+        return {
+          user_id: d.user_id,
+          display_name: d.display_name,
+          avatar_url: d.avatar_url,
+          handle: d.handle,
+          joined_at: d.joined_at,
+          post_count: Number(d.post_count) || 0,
+          comment_count: Number(d.comment_count) || 0,
+          light_score: Number(d.light_score) || 0,
+          popl_score: Number(d.popl_score) || 0,
+          positive_actions: Number(d.positive_actions) || 0,
+          negative_actions: Number(d.negative_actions) || 0,
+          camly_balance: Number(d.camly_balance) || 0,
+          camly_lifetime_earned: Number(d.camly_lifetime_earned) || 0,
+          camly_lifetime_spent: Number(d.camly_lifetime_spent) || 0,
+          fun_money_received: Number(d.fun_money_received) || 0,
+          gift_internal_sent: Number(d.gift_internal_sent) || 0,
+          gift_internal_received: Number(d.gift_internal_received) || 0,
+          gift_web3_sent: Number(d.gift_web3_sent) || 0,
+          gift_web3_received: Number(d.gift_web3_received) || 0,
+          total_withdrawn: Number(d.total_withdrawn) || 0,
+          withdrawal_count: Number(d.withdrawal_count) || 0,
+          pplp_action_count: Number(d.pplp_action_count) || 0,
+          pplp_minted_count: Number(d.pplp_minted_count) || 0,
+          wallet_address: d.wallet_address,
+          account_status,
+          suspended_until: susp?.until || null,
+        };
+      }) || []);
     } catch (err) {
       console.error(err);
       toast.error("Không thể tải dữ liệu người dùng");
@@ -157,6 +181,9 @@ const AdminUserManagement = () => {
     if (withdrawFilter === "has") result = result.filter(u => u.total_withdrawn > 0);
     else if (withdrawFilter === "none") result = result.filter(u => u.total_withdrawn === 0);
 
+    // Account status filter
+    if (statusFilter !== "all") result = result.filter(u => u.account_status === statusFilter);
+
     // Sort
     result.sort((a, b) => {
       let va: any = a[sortField];
@@ -169,13 +196,13 @@ const AdminUserManagement = () => {
     });
 
     return result;
-  }, [users, searchText, lightFilter, funFilter, withdrawFilter, sortField, sortDir]);
+  }, [users, searchText, lightFilter, funFilter, withdrawFilter, statusFilter, sortField, sortDir]);
 
   const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
   const pagedUsers = filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [searchText, lightFilter, funFilter, withdrawFilter]);
+  useEffect(() => { setPage(1); }, [searchText, lightFilter, funFilter, withdrawFilter, statusFilter]);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -441,6 +468,17 @@ const AdminUserManagement = () => {
               <SelectItem value="none">Chưa rút</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={statusFilter} onValueChange={v => setStatusFilter(v as any)}>
+            <SelectTrigger className="w-[160px] h-9 text-xs">
+              <SelectValue placeholder="Trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả trạng thái</SelectItem>
+              <SelectItem value="active">🟢 Hoạt động</SelectItem>
+              <SelectItem value="suspended">🟠 Đình chỉ</SelectItem>
+              <SelectItem value="banned">🔴 Cấm vĩnh viễn</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Results count */}
@@ -461,6 +499,7 @@ const AdminUserManagement = () => {
                       Người dùng <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </TableHead>
+                  <TableHead className="text-xs font-semibold">Trạng thái</TableHead>
                   <TableHead className="text-xs">
                     <button onClick={() => toggleSort("joined_at")} className="flex items-center gap-1 font-semibold">
                       Tham gia <ArrowUpDown className="w-3 h-3" />
@@ -504,7 +543,7 @@ const AdminUserManagement = () => {
               <TableBody>
                 {pagedUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-foreground-muted">
+                    <TableCell colSpan={12} className="text-center py-8 text-foreground-muted">
                       Không tìm thấy người dùng nào
                     </TableCell>
                   </TableRow>
@@ -536,6 +575,23 @@ const AdminUserManagement = () => {
                             {u.handle && <p className="text-[10px] text-foreground-muted">@{u.handle}</p>}
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {u.account_status === "active" && (
+                          <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[10px] px-1.5 py-0">
+                            <ShieldCheck className="w-3 h-3 mr-0.5" /> Hoạt động
+                          </Badge>
+                        )}
+                        {u.account_status === "suspended" && (
+                          <Badge className="bg-orange-500/15 text-orange-700 border-orange-500/30 text-[10px] px-1.5 py-0">
+                            <ShieldAlert className="w-3 h-3 mr-0.5" /> Đình chỉ
+                          </Badge>
+                        )}
+                        {u.account_status === "banned" && (
+                          <Badge className="bg-red-500/15 text-red-700 border-red-500/30 text-[10px] px-1.5 py-0">
+                            <ShieldOff className="w-3 h-3 mr-0.5" /> Cấm vĩnh viễn
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-xs text-foreground-muted whitespace-nowrap">
                         {u.joined_at ? new Date(u.joined_at).toLocaleDateString("vi-VN") : "—"}
