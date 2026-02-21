@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
+import { checkAntiSybil, applyAgeGateReward } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -60,6 +61,26 @@ serve(async (req) => {
 
     // Get action and other params from body (NOT userId)
     const { action, postId, content, imageUrl, imageUrls } = await req.json();
+
+    // ============= ANTI-SYBIL: Account Age Gate (chỉ cho reward actions) =============
+    let antiSybil: Awaited<ReturnType<typeof checkAntiSybil>> | null = null;
+    if (['create_post', 'add_comment', 'share_post'].includes(action)) {
+      antiSybil = await checkAntiSybil(supabase, userId, action);
+      if (!antiSybil.allowed) {
+        // Vẫn cho đăng bài nhưng không thưởng nếu bị frozen
+        // Chỉ chặn hoàn toàn nếu bị suspended
+        if (antiSybil.is_suspended) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              message: antiSybil.reason || "Tài khoản đang bị đình chỉ",
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+    // ============= End Anti-Sybil Check =============
 
     console.log(`Processing action: ${action} for user: ${userId}`);
 
@@ -163,10 +184,11 @@ serve(async (req) => {
       let rewarded = false;
       
       // Award immediate post creation reward: 1000 coins for posting
-      if (postsRewarded < MAX_POSTS_REWARDED_PER_DAY) {
+      const ageGatedPostReward = antiSybil ? applyAgeGateReward(POST_CREATION_REWARD, antiSybil.reward_multiplier) : POST_CREATION_REWARD;
+      if (postsRewarded < MAX_POSTS_REWARDED_PER_DAY && ageGatedPostReward > 0) {
         await supabase.rpc("add_camly_coins", {
           _user_id: userId,
-          _amount: POST_CREATION_REWARD,
+          _amount: ageGatedPostReward,
           _transaction_type: "community_support",
           _description: "Đăng bài viết mới",
         });
@@ -180,9 +202,9 @@ serve(async (req) => {
           })
           .eq("id", tracking.id);
         
-        coinsEarned = POST_CREATION_REWARD;
+        coinsEarned = ageGatedPostReward;
         rewarded = true;
-        console.log(`Post creation reward given to user ${userId}: ${POST_CREATION_REWARD} coins`);
+        console.log(`Post creation reward given to user ${userId}: ${ageGatedPostReward} coins (age gate: x${antiSybil?.reward_multiplier || 1})`);
 
         // ============= PPLP Integration (Real-time scoring for FUN Money) =============
         const pplpResult = await submitAndScorePPLPAction(supabase, {

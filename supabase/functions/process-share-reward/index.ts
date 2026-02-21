@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
+import { checkAntiSybil, applyAgeGateReward } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -69,10 +70,25 @@ Deno.serve(async (req) => {
     if (rewardAmount !== ALLOWED_REWARD) {
       console.warn(`Attempted reward manipulation: requested ${rewardAmount}, allowed ${ALLOWED_REWARD}`);
     }
-    const actualReward = ALLOWED_REWARD; // Always use server-side amount
+    // ============= ANTI-SYBIL: Áp dụng hệ số Age Gate =============
+    const actualReward = applyAgeGateReward(ALLOWED_REWARD, antiSybil.reward_multiplier);
 
     // Use service role for database operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // ============= ANTI-SYBIL: Account Age Gate + Suspension Check =============
+    const antiSybil = await checkAntiSybil(supabaseAdmin, userId, 'share');
+    if (!antiSybil.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: antiSybil.is_suspended ? 'suspended' : 'frozen',
+          message: antiSybil.reason || 'Tài khoản đang bị giới hạn',
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // ============= End Anti-Sybil Check =============
 
     // Get today's date in Vietnam timezone
     const today = new Date().toLocaleString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).split(',')[0];

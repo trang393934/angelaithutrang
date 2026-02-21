@@ -3557,6 +3557,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      auto_suspend_high_risk: {
+        Args: { _risk_score: number; _signals?: Json; _user_id: string }
+        Returns: Json
+      }
       calculate_light_score: {
         Args: { _c: number; _h: number; _s: number; _t: number; _u: number }
         Returns: number
@@ -3599,6 +3603,16 @@ export type Database = {
       cleanup_expired_stories: { Args: never; Returns: undefined }
       compute_policy_hash: { Args: { _policy_json: Json }; Returns: string }
       expire_old_mint_requests: { Args: never; Returns: number }
+      get_account_age_days: { Args: { _user_id: string }; Returns: number }
+      get_account_age_gate: {
+        Args: { _user_id: string }
+        Returns: {
+          account_age_days: number
+          gate_level: string
+          max_actions_per_day: number
+          reward_multiplier: number
+        }[]
+      }
       get_active_policy: {
         Args: never
         Returns: {
