@@ -96,6 +96,24 @@ interface SybilGroup {
   members: SybilMember[];
 }
 
+interface SuspendedUser {
+  id: string;
+  user_id: string;
+  suspension_type: string;
+  reason: string;
+  healing_message: string | null;
+  suspended_until: string | null;
+  created_at: string;
+  lifted_at: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  handle: string | null;
+  email: string | null;
+  balance: number;
+  lifetime_earned: number;
+  wallet_address: string | null;
+}
+
 // ============================================================
 // 📋 DANH SÁCH SYBIL — DỮ LIỆU ĐÃ XÁC MINH TỪ DB
 // Cập nhật: 6 nhóm, 21 tài khoản (Trần Nhung chỉ đếm 1 lần)
@@ -329,7 +347,12 @@ const AdminFraudAlerts = () => {
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [reviewedFilter, setReviewedFilter] = useState<string>("unreviewed");
-  const [activeTab, setActiveTab] = useState<"alerts" | "patterns" | "sybil_groups">("alerts");
+  const [activeTab, setActiveTab] = useState<"alerts" | "patterns" | "sybil_groups" | "suspended">("alerts");
+
+  // Suspended users state
+  const [suspendedUsers, setSuspendedUsers] = useState<SuspendedUser[]>([]);
+  const [loadingSuspended, setLoadingSuspended] = useState(false);
+  const [suspendedSearch, setSuspendedSearch] = useState("");
 
   // Sybil groups state
   const [suspendedIds, setSuspendedIds] = useState<Set<string>>(new Set());
@@ -417,6 +440,58 @@ const AdminFraudAlerts = () => {
     }
   };
 
+  const fetchSuspendedUsers = async () => {
+    setLoadingSuspended(true);
+    try {
+      const { data: suspensions, error } = await supabase
+        .from("user_suspensions")
+        .select("*")
+        .is("lifted_at", null)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      if (!suspensions || suspensions.length === 0) { setSuspendedUsers([]); return; }
+
+      const userIds = [...new Set(suspensions.map((s) => s.user_id))];
+
+      const [{ data: profiles }, { data: balances }, { data: wallets }] = await Promise.all([
+        supabase.from("profiles").select("user_id, display_name, avatar_url, handle").in("user_id", userIds),
+        supabase.from("camly_coin_balances").select("user_id, balance, lifetime_earned").in("user_id", userIds),
+        supabase.from("user_wallet_addresses").select("user_id, wallet_address").in("user_id", userIds),
+      ]);
+
+      const profileMap: Record<string, any> = {};
+      profiles?.forEach((p) => (profileMap[p.user_id] = p));
+      const balanceMap: Record<string, any> = {};
+      balances?.forEach((b) => (balanceMap[b.user_id] = b));
+      const walletMap: Record<string, string> = {};
+      wallets?.forEach((w) => (walletMap[w.user_id] = w.wallet_address));
+
+      // Deduplicate by user_id (keep latest suspension)
+      const seenUserIds = new Set<string>();
+      const merged: SuspendedUser[] = [];
+      for (const s of suspensions) {
+        if (seenUserIds.has(s.user_id)) continue;
+        seenUserIds.add(s.user_id);
+        merged.push({
+          ...s,
+          display_name: profileMap[s.user_id]?.display_name ?? null,
+          avatar_url: profileMap[s.user_id]?.avatar_url ?? null,
+          handle: profileMap[s.user_id]?.handle ?? null,
+          email: null,
+          balance: balanceMap[s.user_id]?.balance ?? 0,
+          lifetime_earned: balanceMap[s.user_id]?.lifetime_earned ?? 0,
+          wallet_address: walletMap[s.user_id] ?? null,
+        });
+      }
+      setSuspendedUsers(merged);
+    } catch (err) {
+      console.error("Error fetching suspended users:", err);
+    } finally {
+      setLoadingSuspended(false);
+    }
+  };
+
   useEffect(() => {
     fetchAlerts();
     fetchPatterns();
@@ -425,6 +500,9 @@ const AdminFraudAlerts = () => {
   useEffect(() => {
     if (activeTab === "sybil_groups") {
       fetchSybilStatus();
+    }
+    if (activeTab === "suspended") {
+      fetchSuspendedUsers();
     }
   }, [activeTab]);
 
@@ -608,7 +686,7 @@ const AdminFraudAlerts = () => {
             </p>
           </div>
           <div className="ml-auto">
-            <Button variant="outline" size="sm" onClick={() => { fetchAlerts(); fetchPatterns(); if (activeTab === "sybil_groups") fetchSybilStatus(); }}>
+            <Button variant="outline" size="sm" onClick={() => { fetchAlerts(); fetchPatterns(); if (activeTab === "sybil_groups") fetchSybilStatus(); if (activeTab === "suspended") fetchSuspendedUsers(); }}>
               <RefreshCw className="w-4 h-4 mr-1" /> Làm mới
             </Button>
           </div>
@@ -664,6 +742,18 @@ const AdminFraudAlerts = () => {
             {notBannedCount > 0 && (
               <span className="ml-1.5 bg-destructive text-destructive-foreground text-[10px] rounded-full px-1.5 py-0.5">
                 {notBannedCount}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant={activeTab === "suspended" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab("suspended")}
+          >
+            <Ban className="w-4 h-4 mr-1" /> Đã đình chỉ
+            {suspendedUsers.length > 0 && (
+              <span className="ml-1.5 bg-destructive text-destructive-foreground text-[10px] rounded-full px-1.5 py-0.5">
+                {suspendedUsers.length}
               </span>
             )}
           </Button>
@@ -1113,6 +1203,156 @@ const AdminFraudAlerts = () => {
                   </div>
                 );
               })
+            )}
+          </div>
+        )}
+
+        {/* ============ TAB: SUSPENDED ============ */}
+        {activeTab === "suspended" && (
+          <div className="space-y-4">
+            {/* Search */}
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Tìm tên, handle, lý do..."
+                value={suspendedSearch}
+                onChange={(e) => setSuspendedSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Summary */}
+            <div className="flex gap-4 flex-wrap">
+              <div className="bg-card border border-border rounded-xl px-4 py-3">
+                <p className="text-xl font-bold text-destructive">{suspendedUsers.filter(u => u.suspension_type === "permanent").length}</p>
+                <p className="text-xs text-muted-foreground">Vĩnh viễn</p>
+              </div>
+              <div className="bg-card border border-border rounded-xl px-4 py-3">
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{suspendedUsers.filter(u => u.suspension_type === "temporary").length}</p>
+                <p className="text-xs text-muted-foreground">Tạm thời</p>
+              </div>
+              <div className="bg-card border border-border rounded-xl px-4 py-3">
+                <p className="text-xl font-bold text-foreground">{suspendedUsers.length}</p>
+                <p className="text-xs text-muted-foreground">Tổng đình chỉ</p>
+              </div>
+            </div>
+
+            {loadingSuspended ? (
+              <div className="text-center py-12 text-muted-foreground">Đang tải danh sách...</div>
+            ) : (
+              <div className="border border-border rounded-xl overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/40">
+                      <TableHead>Tài khoản</TableHead>
+                      <TableHead>Loại</TableHead>
+                      <TableHead>Lý do đình chỉ</TableHead>
+                      <TableHead>Số dư</TableHead>
+                      <TableHead>Lifetime Earned</TableHead>
+                      <TableHead>Ví BSC</TableHead>
+                      <TableHead>Hạn đình chỉ</TableHead>
+                      <TableHead>Ngày đình chỉ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(() => {
+                      const q = suspendedSearch.toLowerCase();
+                      const filteredSuspended = suspendedUsers.filter(u => {
+                        if (!q) return true;
+                        return (
+                          (u.display_name?.toLowerCase().includes(q)) ||
+                          (u.handle?.toLowerCase().includes(q)) ||
+                          (u.reason?.toLowerCase().includes(q)) ||
+                          u.user_id.toLowerCase().includes(q)
+                        );
+                      });
+
+                      if (filteredSuspended.length === 0) {
+                        return (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                              Không có tài khoản bị đình chỉ
+                            </TableCell>
+                          </TableRow>
+                        );
+                      }
+
+                      return filteredSuspended.map((user) => (
+                        <TableRow key={user.id} className={user.suspension_type === "permanent" ? "bg-destructive/5" : ""}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="w-7 h-7">
+                                <AvatarImage src={user.avatar_url || undefined} />
+                                <AvatarFallback className="text-xs">
+                                  {user.display_name?.charAt(0) ?? "U"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-sm leading-tight">
+                                  {user.display_name || "Ẩn danh"}
+                                </p>
+                                {user.handle && (
+                                  <p className="text-xs text-muted-foreground">@{user.handle}</p>
+                                )}
+                                <p className="text-[10px] text-muted-foreground/60 font-mono">{user.user_id.slice(0, 8)}...</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={user.suspension_type === "permanent" 
+                              ? "bg-destructive text-destructive-foreground text-[10px]" 
+                              : "bg-amber-500 text-white text-[10px]"
+                            }>
+                              {user.suspension_type === "permanent" ? "🔴 Vĩnh viễn" : "🟡 Tạm thời"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-xs text-foreground max-w-[250px] line-clamp-3">
+                              {user.reason}
+                            </p>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-sm font-medium">
+                              {fmtNum(user.balance)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-sm text-muted-foreground">
+                              {fmtNum(user.lifetime_earned)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {user.wallet_address ? (
+                              <a
+                                href={`https://bscscan.com/address/${user.wallet_address}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-mono text-primary hover:underline"
+                              >
+                                {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
+                              </a>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {user.suspended_until ? (
+                              <span className="text-xs text-amber-600 dark:text-amber-400">
+                                {fmt(user.suspended_until)}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-destructive font-medium">Vĩnh viễn</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs text-muted-foreground">{fmt(user.created_at)}</span>
+                          </TableCell>
+                        </TableRow>
+                      ));
+                    })()}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </div>
         )}
