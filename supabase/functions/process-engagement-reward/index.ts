@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { submitAndScorePPLPAction, PPLP_ACTION_TYPES } from "../_shared/pplp-helper.ts";
+import { checkAntiSybil, applyAgeGateReward } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -138,10 +139,17 @@ serve(async (req) => {
         .maybeSingle();
 
       if (!existingReward) {
+        // ============= ANTI-SYBIL: Kiểm tra tác giả câu hỏi =============
+        const authorAntiSybil = await checkAntiSybil(supabase, question.user_id, 'engagement');
+        const ageGatedEngagementReward = authorAntiSybil.allowed 
+          ? applyAgeGateReward(ENGAGEMENT_REWARD, authorAntiSybil.reward_multiplier) 
+          : 0;
+        
+        if (ageGatedEngagementReward > 0) {
         // Award engagement reward to question author
         await supabase.rpc("add_camly_coins", {
           _user_id: question.user_id,
-          _amount: ENGAGEMENT_REWARD,
+          _amount: ageGatedEngagementReward,
           _transaction_type: "engagement_reward",
           _description: `Câu hỏi đạt ${newLikesCount} lượt thích! 🎉`,
           _purity_score: null,
@@ -149,6 +157,7 @@ serve(async (req) => {
         });
 
         engagementRewarded = true;
+        } // End ageGatedEngagementReward > 0
 
         // ============= PPLP Integration: Engagement reward (10+ likes) =============
         submitAndScorePPLPAction(supabase, {

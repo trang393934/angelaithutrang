@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
+import { checkAntiSybil, applyAgeGateReward } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,6 +91,22 @@ serve(async (req) => {
 
     // Use service role for database operations
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ============= ANTI-SYBIL: Account Age Gate + Suspension Check =============
+    const antiSybil = await checkAntiSybil(supabase, userId, 'journal');
+    if (!antiSybil.allowed) {
+      console.log(`[AntiSybil] Blocked user ${userId}: ${antiSybil.reason}`);
+      return new Response(
+        JSON.stringify({ 
+          rewarded: false, 
+          reason: antiSybil.is_suspended ? "suspended" : "frozen",
+          message: antiSybil.reason || "Tài khoản đang bị giới hạn",
+          coins: 0,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // ============= End Anti-Sybil Check =============
 
     // Check if it's after 8pm Vietnam time
     const vietnamTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
@@ -350,6 +367,14 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
     
     // Cap at 2000-3000 range
     rewardAmount = Math.min(3000, Math.max(2000, rewardAmount));
+
+    // ============= ANTI-SYBIL: Áp dụng hệ số Account Age Gate =============
+    const originalReward = rewardAmount;
+    rewardAmount = applyAgeGateReward(rewardAmount, antiSybil.reward_multiplier);
+    if (rewardAmount !== originalReward) {
+      console.log(`[AntiSybil] Journal reward adjusted: ${originalReward} → ${rewardAmount} (x${antiSybil.reward_multiplier}, age=${antiSybil.account_age_days}d)`);
+    }
+    // ============= End Age Gate Reward =============
 
     // Save journal entry - use todayDate for consistency
     const { data: journalRecord, error: insertError } = await supabase

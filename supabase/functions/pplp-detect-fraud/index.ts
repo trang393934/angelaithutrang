@@ -276,6 +276,25 @@ serve(async (req) => {
       .eq('actor_id', body.actor_id)
       .eq('is_resolved', false);
 
+    // ============= ANTI-SYBIL Bước 4: Tự động xử lý khi risk score cao =============
+    let autoActionResult = null;
+    if (riskScore > 25) {
+      try {
+        const { data: actionResult } = await supabase
+          .rpc('auto_suspend_high_risk', {
+            _user_id: body.actor_id,
+            _risk_score: riskScore,
+            _signals: JSON.stringify(signals),
+          });
+        
+        autoActionResult = actionResult;
+        console.log(`[PPLP Fraud] Auto-action for ${body.actor_id}: risk=${riskScore}, action=${actionResult?.action}`);
+      } catch (autoErr) {
+        console.error('[PPLP Fraud] Auto-action error:', autoErr);
+      }
+    }
+    // ============= End Auto-Action =============
+
     console.log(`[PPLP Fraud] Actor ${body.actor_id}: ${signals.length} new signals, risk score: ${riskScore}`);
 
     return new Response(
@@ -286,7 +305,8 @@ serve(async (req) => {
         signals,
         risk_score: riskScore,
         historical_unresolved_signals: historicalSignals || 0,
-        recommendation: riskScore > 50 ? 'REVIEW_REQUIRED' : riskScore > 25 ? 'MONITOR' : 'CLEAR',
+        auto_action: autoActionResult,
+        recommendation: riskScore > 70 ? 'AUTO_SUSPENDED' : riskScore > 50 ? 'REWARDS_FROZEN' : riskScore > 25 ? 'MONITOR' : 'CLEAR',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
