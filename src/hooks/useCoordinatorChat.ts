@@ -95,6 +95,18 @@ export function useCoordinatorChat(projectId: string | undefined) {
 
         if (!resp.ok) {
           const errorData = await resp.json().catch(() => ({}));
+          if (resp.status === 402) {
+            toast.error("⚡ AI credits đã hết. Vui lòng nạp thêm credits trong Settings → Workspace → Usage.");
+            setIsStreaming(false);
+            setStreamingContent("");
+            return;
+          }
+          if (resp.status === 429) {
+            toast.error("⏳ Quá nhiều yêu cầu. Vui lòng thử lại sau vài giây.");
+            setIsStreaming(false);
+            setStreamingContent("");
+            return;
+          }
           throw new Error(errorData.error || `Error ${resp.status}`);
         }
 
