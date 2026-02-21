@@ -204,29 +204,59 @@ ${projectContextStr}
 - Flag any conflicts with PPLP or ecosystem architecture
 `;
 
+    // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
+    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+    const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+
+    if (!CF_API_TOKEN && !LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "AI service not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
-      }),
+    const useCF = !!CF_API_TOKEN;
+    const primaryUrl = useCF ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
+    const primaryModel = useCF ? "google-ai-studio/gemini-3-flash-preview" : "google/gemini-3-flash-preview";
+    const primaryAuth = useCF ? `Bearer ${CF_API_TOKEN}` : `Bearer ${LOVABLE_API_KEY}`;
+
+    console.log(`[coordinator-chat] Using gateway: ${useCF ? "Cloudflare" : "Lovable"}`);
+
+    const aiBody = JSON.stringify({
+      model: primaryModel,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+      stream: true,
     });
+
+    let response = await fetch(primaryUrl, {
+      method: "POST",
+      headers: { Authorization: primaryAuth, "Content-Type": "application/json" },
+      body: aiBody,
+    });
+
+    // Fallback: Cloudflare lỗi (trừ 429/402) → retry qua Lovable
+    if (!response.ok && useCF && response.status !== 429 && response.status !== 402) {
+      console.log(`[coordinator-chat] Cloudflare error ${response.status}, falling back to Lovable Gateway`);
+      if (LOVABLE_API_KEY) {
+        response = await fetch(LOVABLE_GATEWAY_URL, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: [
+              { role: "system", content: systemPrompt },
+              ...messages,
+            ],
+            stream: true,
+          }),
+        });
+      }
+    }
 
     if (!response.ok) {
       if (response.status === 429) {
