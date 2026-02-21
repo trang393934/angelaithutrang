@@ -81,6 +81,35 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    // ========== RELEASE PENDING REWARDS MODE ==========
+    if (action === 'release_pending_rewards') {
+      console.log('[PPLP Batch] Releasing pending rewards...');
+      
+      const { data: releaseResult, error: releaseError } = await supabase
+        .rpc('release_pending_rewards');
+      
+      if (releaseError) {
+        console.error('[PPLP Batch] Release error:', releaseError);
+        return new Response(
+          JSON.stringify({ error: 'Release failed', details: releaseError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const result = releaseResult?.[0] || { released_count: 0, total_amount: 0, frozen_count: 0 };
+      console.log(`[PPLP Batch] Released ${result.released_count} rewards (${result.total_amount} coins), frozen ${result.frozen_count}`);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          action: 'release_pending_rewards',
+          ...result,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // ========== END RELEASE PENDING REWARDS ==========
+
     // ========== END RANDOM AUDIT ==========
 
     console.log(`[PPLP Batch] Starting batch processor | batch_size: ${batch_size} | dry_run: ${dry_run}`);

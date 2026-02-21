@@ -186,7 +186,7 @@ serve(async (req) => {
       // Award immediate post creation reward: 1000 coins for posting
       const ageGatedPostReward = antiSybil ? applyAgeGateReward(POST_CREATION_REWARD, antiSybil.reward_multiplier) : POST_CREATION_REWARD;
       if (postsRewarded < MAX_POSTS_REWARDED_PER_DAY && ageGatedPostReward > 0) {
-        await supabase.rpc("add_camly_coins", {
+        const { data: rewardResult } = await supabase.rpc("add_pending_or_instant_reward", {
           _user_id: userId,
           _amount: ageGatedPostReward,
           _transaction_type: "community_support",
