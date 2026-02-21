@@ -367,9 +367,10 @@ const UserProfile = () => {
     if (!userId || !suspendReason.trim()) { toast.error("Vui lòng nhập lý do đình chỉ"); return; }
     setIsSuspending(true);
     try {
-      const response = await supabase.functions.invoke("suspend-user", { body: { targetUserId: userId, suspensionType: "temporary", reason: suspendReason, durationDays: parseInt(suspendDuration), healingMessage: healingMessage || undefined } });
+      const isIndefinite = suspendDuration === "0";
+      const response = await supabase.functions.invoke("suspend-user", { body: { targetUserId: userId, suspensionType: isIndefinite ? "permanent" : "temporary", reason: suspendReason, durationDays: isIndefinite ? undefined : parseInt(suspendDuration), healingMessage: healingMessage || undefined } });
       if (response.error) throw response.error;
-      toast.success(`Đã đình chỉ người dùng ${suspendDuration} ngày`);
+      toast.success(isIndefinite ? "Đã đình chỉ người dùng vô thời hạn" : `Đã đình chỉ người dùng ${suspendDuration} ngày`);
       setSuspendDialogOpen(false); setSuspendReason(""); setHealingMessage("");
     } catch { toast.error("Không thể đình chỉ người dùng"); } finally { setIsSuspending(false); }
   };
@@ -955,7 +956,8 @@ const UserProfile = () => {
                           <Select value={suspendDuration} onValueChange={setSuspendDuration}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              {["1","3","7","14","30"].map(d => <SelectItem key={d} value={d}>{d} ngày</SelectItem>)}
+                              {["1","3","7","14","30","60"].map(d => <SelectItem key={d} value={d}>{d} ngày</SelectItem>)}
+                              <SelectItem value="0">Vô thời hạn (cho đến khi mở lại)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
