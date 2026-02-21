@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Search, X, Loader2, BookOpen, Users, MessageCircle, Sparkles, ArrowRight } from "lucide-react";
+import { Search, X, Loader2, BookOpen, Users, MessageCircle, Sparkles, ArrowRight, User, Wallet } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +24,7 @@ interface SearchResults {
   knowledge: SearchResult[];
   community: SearchResult[];
   questions: SearchResult[];
+  users: SearchResult[];
   aiSummary: { content: string; source: string } | null;
 }
 
@@ -256,6 +257,8 @@ export function GlobalSearch({
         return <Users className="w-4 h-4 text-blue-600" />;
       case "question":
         return <MessageCircle className="w-4 h-4 text-purple-600" />;
+      case "user":
+        return <User className="w-4 h-4 text-amber-600" />;
       default:
         return <Search className="w-4 h-4" />;
     }
@@ -275,7 +278,7 @@ export function GlobalSearch({
   };
 
   const totalResults = results 
-    ? results.knowledge.length + results.community.length + results.questions.length 
+    ? results.knowledge.length + results.community.length + results.questions.length + (results.users?.length || 0)
     : 0;
 
   const inputClasses = variant === "community"
@@ -435,6 +438,26 @@ export function GlobalSearch({
                           result={result} 
                           onClick={() => handleResultClick(result)}
                           icon={getTypeIcon(result.type)}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* User Results */}
+                  {results.users && results.users.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-muted/30 border-b">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          {t("search.users") || "Thành viên"} ({results.users.length})
+                        </span>
+                      </div>
+                      {results.users.map((result) => (
+                        <ResultItem 
+                          key={result.id} 
+                          result={result} 
+                          onClick={() => handleResultClick(result)}
+                          icon={getTypeIcon(result.type)}
+                          showAvatar
                         />
                       ))}
                     </div>

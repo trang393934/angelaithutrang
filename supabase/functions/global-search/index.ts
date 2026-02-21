@@ -30,6 +30,7 @@ serve(async (req) => {
       knowledge: [],
       community: [],
       questions: [],
+      users: [],
       aiSummary: null,
     };
 
@@ -98,11 +99,70 @@ serve(async (req) => {
       }
     }
 
+    // Search users by display_name, handle, or wallet address
+    if (searchType === "all" || searchType === "users") {
+      // Search in profiles
+      const { data: usersByName } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, avatar_url, bio, handle")
+        .or(`display_name.ilike.%${searchQuery}%,handle.ilike.%${searchQuery}%`)
+        .limit(10);
+
+      // Search by wallet address in saved_wallet_addresses
+      const { data: usersByWallet } = await supabase
+        .from("saved_wallet_addresses")
+        .select("user_id, wallet_address")
+        .ilike("wallet_address", `%${searchQuery}%`)
+        .limit(5);
+
+      const userMap = new Map<string, any>();
+
+      if (usersByName) {
+        for (const u of usersByName) {
+          userMap.set(u.user_id, {
+            id: u.user_id,
+            type: "user",
+            title: u.display_name || "Thành viên",
+            description: u.handle ? `@${u.handle}` : (u.bio?.substring(0, 100) || ""),
+            url: `/user/${u.user_id}`,
+            createdAt: "",
+            avatar: u.avatar_url,
+          });
+        }
+      }
+
+      if (usersByWallet) {
+        for (const w of usersByWallet) {
+          if (!userMap.has(w.user_id)) {
+            // Fetch profile for this wallet user
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("display_name, avatar_url, handle")
+              .eq("user_id", w.user_id)
+              .maybeSingle();
+
+            userMap.set(w.user_id, {
+              id: w.user_id,
+              type: "user",
+              title: profile?.display_name || "Thành viên",
+              description: `Ví: ${w.wallet_address.substring(0, 6)}...${w.wallet_address.slice(-4)}`,
+              url: `/user/${w.user_id}`,
+              createdAt: "",
+              avatar: profile?.avatar_url,
+            });
+          }
+        }
+      }
+
+      results.users = Array.from(userMap.values());
+    }
+
     // If no local results found, use AI to provide an answer
     const totalLocalResults = 
       results.knowledge.length + 
       results.community.length + 
-      results.questions.length;
+      results.questions.length +
+      results.users.length;
 
     if (totalLocalResults < 3) {
       // Use Lovable AI to provide additional context
@@ -183,6 +243,7 @@ serve(async (req) => {
           results.knowledge.length + 
           results.community.length + 
           results.questions.length +
+          results.users.length +
           (results.aiSummary ? 1 : 0),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
