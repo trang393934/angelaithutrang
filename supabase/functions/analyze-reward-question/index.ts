@@ -632,8 +632,8 @@ serve(async (req) => {
         });
     }
 
-    // Add Camly coins
-    const { data: newBalance } = await supabase.rpc("add_camly_coins", {
+    // Add Camly coins (sử dụng pending hoặc instant tùy tier/tuổi)
+    const { data: rewardResult } = await supabase.rpc("add_pending_or_instant_reward", {
       _user_id: userId,
       _amount: rewardAmount,
       _transaction_type: "chat_reward",
@@ -641,6 +641,10 @@ serve(async (req) => {
       _purity_score: purityScore,
       _metadata: { question_id: questionRecord?.id }
     });
+
+    const rewardMode = rewardResult?.mode || 'instant';
+    const newBalance = rewardResult?.new_balance;
+    console.log(`[Reward] Question reward mode=${rewardMode}, amount=${rewardAmount}`);
 
     // Increment early adopter question count (atomic, server-side)
     // This ensures the count is updated even if client disconnects
@@ -689,12 +693,15 @@ serve(async (req) => {
         purityScore,
         newBalance,
         questionsRemaining: questionsRemaining - 1,
-        message: `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% ✨`,
+        message: rewardMode === 'pending'
+          ? `+${rewardAmount.toLocaleString()} Camly Coin đang chờ xác nhận (${rewardResult?.delay_hours || 24}h) ⏳`
+          : `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% ✨`,
         questionId: questionRecord?.id,
         isGreeting: false,
         isSpam: false,
         isDuplicate: false,
         isResponseRecycled: false,
+        rewardMode,
         pplpActionId: pplpResult.success ? pplpResult.action_id : undefined
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

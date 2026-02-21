@@ -146,8 +146,8 @@ serve(async (req) => {
           : 0;
         
         if (ageGatedEngagementReward > 0) {
-        // Award engagement reward to question author
-        await supabase.rpc("add_camly_coins", {
+        // Award engagement reward to question author (pending or instant)
+        await supabase.rpc("add_pending_or_instant_reward", {
           _user_id: question.user_id,
           _amount: ageGatedEngagementReward,
           _transaction_type: "engagement_reward",

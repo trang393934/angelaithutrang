@@ -409,8 +409,8 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
         onConflict: 'user_id,reward_date'
       });
 
-    // Add Camly coins
-    const { data: newBalance } = await supabase.rpc("add_camly_coins", {
+    // Add Camly coins (sử dụng pending hoặc instant tùy tier/tuổi)
+    const { data: rewardResult } = await supabase.rpc("add_pending_or_instant_reward", {
       _user_id: userId,
       _amount: rewardAmount,
       _transaction_type: "journal_reward",
@@ -418,6 +418,8 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
       _purity_score: purityScore,
       _metadata: { journal_id: journalRecord?.id, content_length: contentLength }
     });
+    const rewardMode = rewardResult?.mode || 'instant';
+    const newBalance = rewardResult?.new_balance;
 
     // ============= PPLP Integration =============
     const actionType = journalType === 'gratitude' 
@@ -469,8 +471,11 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
         journalsRemaining: remainingAfterThis,
         journalsToday: newJournalCount,
         limit: MAX_JOURNALS_PER_DAY,
-        message: `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% 📝✨`,
+        message: rewardMode === 'pending'
+          ? `+${rewardAmount.toLocaleString()} Camly Coin đang chờ xác nhận ⏳📝`
+          : `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% 📝✨`,
         journalId: journalRecord?.id,
+        rewardMode,
         pplpActionId: pplpResult.success ? pplpResult.action_id : undefined
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

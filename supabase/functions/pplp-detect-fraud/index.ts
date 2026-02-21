@@ -289,6 +289,16 @@ serve(async (req) => {
         
         autoActionResult = actionResult;
         console.log(`[PPLP Fraud] Auto-action for ${body.actor_id}: risk=${riskScore}, action=${actionResult?.action}`);
+
+        // Bước 2: Đóng băng pending rewards khi risk > 50
+        if (riskScore > 50) {
+          const { data: frozenCount } = await supabase
+            .rpc('freeze_user_pending_rewards', {
+              _user_id: body.actor_id,
+              _reason: `Risk score ${riskScore}/100 - ${signals.length} tín hiệu bất thường`
+            });
+          console.log(`[PPLP Fraud] Frozen ${frozenCount} pending rewards for ${body.actor_id}`);
+        }
       } catch (autoErr) {
         console.error('[PPLP Fraud] Auto-action error:', autoErr);
       }

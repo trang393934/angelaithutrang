@@ -180,8 +180,8 @@ Deno.serve(async (req) => {
       console.error('Error updating tracking:', trackingError);
     }
 
-    // Add coins using service role
-    const { error: coinError } = await supabaseAdmin.rpc('add_camly_coins', {
+    // Add coins using pending or instant
+    const { data: rewardResult, error: coinError } = await supabaseAdmin.rpc('add_pending_or_instant_reward', {
       _user_id: userId,
       _amount: actualReward,
       _transaction_type: 'content_share',

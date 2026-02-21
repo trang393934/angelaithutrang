@@ -131,8 +131,8 @@ Tier 3-4:          Như hiện tại (không giới hạn cứng)
   [Bước 3] ✅ Giới hạn hành động theo cấp bậc — check_user_cap_and_update() tier-based
   [Bước 5] ✅ Kiểm tra ngẫu nhiên — pg_cron mỗi 6h + auto-suspend 3 flags
 
-Ưu tiên 3 (Giai đoạn 2):
-  [Bước 2] ⬜ Trì hoãn phần thưởng (thay đổi lớn, cần kiểm tra kỹ)
+Ưu tiên 3: ✅ HOÀN THÀNH
+  [Bước 2] ✅ Trì hoãn phần thưởng — pending_rewards + cron hourly + 5 edge functions
 ```
 
 ---

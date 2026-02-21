@@ -1853,6 +1853,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_rewards: {
+        Row: {
+          amount: number
+          cancelled_at: string | null
+          created_at: string
+          description: string | null
+          frozen_reason: string | null
+          id: string
+          metadata: Json | null
+          purity_score: number | null
+          reason: string
+          release_at: string
+          released_at: string | null
+          status: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          cancelled_at?: string | null
+          created_at?: string
+          description?: string | null
+          frozen_reason?: string | null
+          id?: string
+          metadata?: Json | null
+          purity_score?: number | null
+          reason?: string
+          release_at: string
+          released_at?: string | null
+          status?: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          cancelled_at?: string | null
+          created_at?: string
+          description?: string | null
+          frozen_reason?: string | null
+          id?: string
+          metadata?: Json | null
+          purity_score?: number | null
+          reason?: string
+          release_at?: string
+          released_at?: string | null
+          status?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pplp_action_caps: {
         Row: {
           action_type: string
@@ -3557,6 +3611,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      add_pending_or_instant_reward: {
+        Args: {
+          _amount: number
+          _description: string
+          _metadata?: Json
+          _purity_score?: number
+          _transaction_type: Database["public"]["Enums"]["coin_transaction_type"]
+          _user_id: string
+        }
+        Returns: Json
+      }
       auto_suspend_high_risk: {
         Args: { _risk_score: number; _signals?: Json; _user_id: string }
         Returns: Json
@@ -3603,6 +3668,10 @@ export type Database = {
       cleanup_expired_stories: { Args: never; Returns: undefined }
       compute_policy_hash: { Args: { _policy_json: Json }; Returns: string }
       expire_old_mint_requests: { Args: never; Returns: number }
+      freeze_user_pending_rewards: {
+        Args: { _reason?: string; _user_id: string }
+        Returns: number
+      }
       get_account_age_days: { Args: { _user_id: string }; Returns: number }
       get_account_age_gate: {
         Args: { _user_id: string }
@@ -3840,6 +3909,14 @@ export type Database = {
         Returns: Json
       }
       register_early_adopter: { Args: { p_user_id: string }; Returns: boolean }
+      release_pending_rewards: {
+        Args: never
+        Returns: {
+          frozen_count: number
+          released_count: number
+          total_amount: number
+        }[]
+      }
       request_coin_withdrawal: {
         Args: { _amount: number; _user_id: string; _wallet_address: string }
         Returns: {
