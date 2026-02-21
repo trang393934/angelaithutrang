@@ -184,3 +184,6 @@ verify_jwt = false
 
 [functions.fetch-wallet-transactions]
 verify_jwt = false
+
+[functions.coordinator-chat]
+verify_jwt = false
