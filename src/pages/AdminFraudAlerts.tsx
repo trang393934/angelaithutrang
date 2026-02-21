@@ -38,7 +38,9 @@ import {
   Wallet,
   Coins,
   AlertCircle,
+  FileText,
 } from "lucide-react";
+import AntiSybilProcessTab from "@/components/admin/AntiSybilProcessTab";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -349,7 +351,7 @@ const AdminFraudAlerts = () => {
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [reviewedFilter, setReviewedFilter] = useState<string>("unreviewed");
-  const [activeTab, setActiveTab] = useState<"alerts" | "patterns" | "sybil_groups" | "suspended">("alerts");
+  const [activeTab, setActiveTab] = useState<"alerts" | "patterns" | "sybil_groups" | "suspended" | "process">("alerts");
 
   // Suspended users state
   const [suspendedUsers, setSuspendedUsers] = useState<SuspendedUser[]>([]);
@@ -769,6 +771,13 @@ const AdminFraudAlerts = () => {
                 {suspendedUsers.length}
               </span>
             )}
+          </Button>
+          <Button
+            variant={activeTab === "process" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab("process")}
+          >
+            <FileText className="w-4 h-4 mr-1" /> Quy trình
           </Button>
         </div>
 
@@ -1409,6 +1418,9 @@ const AdminFraudAlerts = () => {
             )}
           </div>
         )}
+
+        {/* ============ TAB: PROCESS ============ */}
+        {activeTab === "process" && <AntiSybilProcessTab />}
       </div>
 
       {/* Ban Dialog (single from alerts tab) */}
