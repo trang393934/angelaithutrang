@@ -10,8 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Coins, Sparkles, Gift, Wallet, MessageSquare, BookOpen,
-  Clock, Share2, Award, TrendingUp, ArrowUpRight, ArrowDownLeft
+  Clock, Share2, Award, TrendingUp, ArrowUpRight, ArrowDownLeft, Copy, Check
 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface UserRow {
   user_id: string;
@@ -51,6 +52,7 @@ interface RecentTransaction {
   amount: number;
   date: string;
   description: string;
+  wallet_address?: string;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -154,7 +156,8 @@ export function UserDetailDialog({ user, open, onOpenChange }: Props) {
           type: "Rút tiền",
           amount: -w.amount,
           date: w.created_at,
-          description: `${w.status} → ${w.wallet_address?.slice(0, 6)}...`,
+          description: w.status,
+          wallet_address: w.wallet_address || undefined,
         });
       });
 
@@ -301,15 +304,32 @@ export function UserDetailDialog({ user, open, onOpenChange }: Props) {
                   <p className="text-xs text-foreground-muted text-center py-4">Chưa có giao dịch</p>
                 ) : (
                   recentTx.map((tx, i) => (
-                    <div key={i} className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50">
+                    <div key={i} className="flex items-start gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50">
                       {tx.amount > 0 ? (
-                        <ArrowDownLeft className="w-4 h-4 text-green-600 shrink-0" />
+                        <ArrowDownLeft className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                       ) : (
-                        <ArrowUpRight className="w-4 h-4 text-rose-600 shrink-0" />
+                        <ArrowUpRight className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium">{tx.type}</p>
                         <p className="text-[10px] text-foreground-muted truncate">{tx.description}</p>
+                        {tx.wallet_address && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="font-mono text-[10px] text-foreground-muted break-all">
+                              {tx.wallet_address}
+                            </span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(tx.wallet_address!);
+                                toast({ title: "Đã copy địa chỉ ví" });
+                              }}
+                              className="shrink-0 p-0.5 rounded hover:bg-muted"
+                              title="Copy địa chỉ ví"
+                            >
+                              <Copy className="w-3 h-3 text-foreground-muted hover:text-foreground" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="text-right shrink-0">
                         <p className={`text-xs font-semibold ${tx.amount > 0 ? "text-green-600" : "text-rose-600"}`}>
