@@ -55,19 +55,18 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
           .maybeSingle();
 
         if (existing) {
+          // Wallet already saved - DO NOT allow changes (locked)
           if (existing.wallet_address !== address) {
-            await supabase
-              .from("user_wallet_addresses")
-              .update({ wallet_address: address })
-              .eq("user_id", user.id);
-            console.log("[Web3] Auto-saved updated wallet address to DB");
-            refetchSaved();
+            console.log("[Web3] Wallet address locked. Cannot change from", existing.wallet_address, "to", address);
+            toast.info("Địa chỉ ví đã được khóa. Không thể thay đổi ví đã lưu.", { duration: 5000 });
           }
         } else {
+          // First time saving - allow
           await supabase
             .from("user_wallet_addresses")
             .insert({ user_id: user.id, wallet_address: address });
           console.log("[Web3] Auto-saved new wallet address to DB");
+          toast.success("Đã lưu địa chỉ ví thành công! Ví này sẽ được khóa vĩnh viễn.");
           refetchSaved();
         }
       } catch (err) {
