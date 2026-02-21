@@ -1,8 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Sparkles, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +25,20 @@ export const ChatDemoWidget = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const resetTextareaHeight = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "40px";
+    }
+  }, []);
+
+  const adjustTextareaHeight = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "40px";
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + "px";
+    }
+  }, []);
 
   // Initialize from localStorage
   useEffect(() => {
@@ -126,8 +139,10 @@ export const ChatDemoWidget = () => {
     }
   };
 
+
+
   return (
-    <div className="w-full max-w-2xl mx-auto my-8 opacity-0 animate-fade-in animate-delay-500">
+    <div className="w-full max-w-6xl mx-auto my-8 px-2 sm:px-4 opacity-0 animate-fade-in animate-delay-500">
       <div className="bg-card/80 backdrop-blur-sm border border-primary/20 rounded-2xl shadow-xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-primary/10">
@@ -140,7 +155,7 @@ export const ChatDemoWidget = () => {
         </div>
 
         {/* Messages Area */}
-        <ScrollArea className="h-[280px] p-4" ref={scrollRef}>
+        <ScrollArea className="h-[350px] sm:h-[400px] md:h-[450px] p-4" ref={scrollRef}>
           {/* Welcome message if no messages yet */}
           {messages.length === 0 && !hasReachedLimit && (
             <div className="flex gap-3 mb-4 animate-fade-in">
@@ -149,7 +164,7 @@ export const ChatDemoWidget = () => {
                 alt="Angel AI" 
                 className="w-10 h-10 rounded-full object-cover flex-shrink-0"
               />
-              <div className="bg-primary/5 rounded-2xl rounded-tl-md px-4 py-3 max-w-[85%]">
+              <div className="bg-primary/5 rounded-2xl rounded-tl-md px-4 py-3 max-w-[88%]">
                 <p className="text-sm text-foreground leading-relaxed">
                   {t("chatDemo.welcomeMessage")}
                 </p>
@@ -173,7 +188,7 @@ export const ChatDemoWidget = () => {
                 />
               )}
               <div
-                className={`rounded-2xl px-4 py-3 max-w-[85%] ${
+                className={`rounded-2xl px-4 py-3 max-w-[88%] ${
                   message.role === "user"
                     ? "bg-primary text-primary-foreground rounded-tr-md"
                     : "bg-primary/5 rounded-tl-md"
@@ -226,23 +241,38 @@ export const ChatDemoWidget = () => {
           )}
         </ScrollArea>
 
-        {/* Input Area */}
+        {/* Input Area - Auto-expanding textarea */}
         {!hasReachedLimit && (
-          <div className="p-4 border-t border-primary/10 bg-background/50">
-            <div className="flex gap-2">
-              <Input
+          <div className="p-3 sm:p-4 border-t border-primary/10 bg-background/50">
+            <div className="flex gap-2 items-end">
+              <textarea
+                ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  adjustTextareaHeight();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                    resetTextareaHeight();
+                  }
+                }}
                 placeholder={t("chatDemo.placeholder")}
                 disabled={isLoading}
-                className="flex-1 bg-background border-primary/20 focus:border-primary/40"
+                rows={1}
+                className="flex-1 bg-background border border-primary/20 focus:border-primary/40 rounded-xl px-4 py-2.5 text-sm resize-none outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                style={{ height: "40px", maxHeight: "200px", overflowY: "auto" }}
               />
               <Button
-                onClick={handleSend}
+                onClick={() => {
+                  handleSend();
+                  resetTextareaHeight();
+                }}
                 disabled={!input.trim() || isLoading}
                 size="icon"
-                className="bg-primary hover:bg-primary/90"
+                className="bg-primary hover:bg-primary/90 flex-shrink-0"
               >
                 <Send className="w-4 h-4" />
               </Button>
