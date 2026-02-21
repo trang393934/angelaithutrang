@@ -25,7 +25,63 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Parse options
-    const { batch_size = 50, dry_run = false } = await req.json().catch(() => ({}));
+    const { batch_size = 50, dry_run = false, action = 'process' } = await req.json().catch(() => ({}));
+
+    // ========== RANDOM AUDIT MODE ==========
+    if (action === 'random_audit') {
+      console.log('[PPLP Batch] Running random audit...');
+      
+      const { data: auditCount, error: auditError } = await supabase
+        .rpc('schedule_random_audit');
+      
+      if (auditError) {
+        console.error('[PPLP Batch] Random audit error:', auditError);
+        return new Response(
+          JSON.stringify({ error: 'Random audit failed', details: auditError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Kiểm tra user nào có >= 3 audit flags chưa xử lý → tự động đình chỉ
+      const { data: flaggedUsers } = await supabase
+        .from('pplp_audits')
+        .select('actor_id')
+        .eq('result', 'FLAGGED')
+        .eq('is_resolved', false);
+      
+      if (flaggedUsers && flaggedUsers.length > 0) {
+        // Đếm flags per user
+        const flagCounts: Record<string, number> = {};
+        for (const f of flaggedUsers) {
+          flagCounts[f.actor_id] = (flagCounts[f.actor_id] || 0) + 1;
+        }
+        
+        let suspendedCount = 0;
+        for (const [userId, count] of Object.entries(flagCounts)) {
+          if (count >= 3) {
+            await supabase.rpc('auto_suspend_high_risk', {
+              _user_id: userId,
+              _risk_score: 75,
+              _signals: JSON.stringify([{ type: 'RANDOM_AUDIT', flags: count }])
+            });
+            suspendedCount++;
+            console.log(`[PPLP Batch] Auto-suspended user ${userId.slice(0, 8)}... with ${count} audit flags`);
+          }
+        }
+        
+        console.log(`[PPLP Batch] Random audit complete: ${auditCount} audits scheduled, ${suspendedCount} users auto-suspended`);
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          action: 'random_audit',
+          audits_scheduled: auditCount,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // ========== END RANDOM AUDIT ==========
 
     console.log(`[PPLP Batch] Starting batch processor | batch_size: ${batch_size} | dry_run: ${dry_run}`);
 
