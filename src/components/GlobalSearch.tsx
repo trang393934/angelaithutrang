@@ -183,10 +183,10 @@ export function GlobalSearch({
 
         if (fnError) throw fnError;
 
-        if (data.success) {
+        if (data && data.success) {
           setResults(data.results);
         } else {
-          setError(data.error || t("common.error"));
+          setError(data?.error || t("common.error"));
         }
         setUserResults([]);
       }
