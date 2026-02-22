@@ -223,7 +223,7 @@ function DiamondBadge() {
       className="absolute z-30 flex items-center justify-center"
       style={{
         width: 42, height: 42,
-        top: -16, left: "50%",
+        top: -22, left: "50%",
         transform: "translateX(-50%)",
         filter: "drop-shadow(0 0 6px rgba(255,215,0,0.8)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
       }}
