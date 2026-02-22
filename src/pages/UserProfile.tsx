@@ -267,6 +267,9 @@ const UserProfile = () => {
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [coverBrightness, setCoverBrightness] = useState<"light" | "dark" | "unknown">("unknown");
 
+  // Suspension status for this user
+  const [suspensionInfo, setSuspensionInfo] = useState<{ isSuspended: boolean; isPermanent: boolean; reason: string | null } | null>(null);
+
   const { friendshipStatus, isLoading: friendshipLoading, sendFriendRequest, acceptFriendRequest, cancelFriendRequest } = useFriendship(userId);
   const { toggleLike, sharePost, addComment, fetchComments, editPost, deletePost } = useCommunityPosts();
 
@@ -423,6 +426,28 @@ const UserProfile = () => {
     img.onerror = () => setCoverBrightness("unknown");
     img.src = profile.cover_photo_url;
   }, [profile?.cover_photo_url]);
+
+  // ── Fetch suspension status ────────────────────────────────────────────
+  useEffect(() => {
+    const fetchSuspension = async () => {
+      if (!userId) return;
+      const { data } = await supabase
+        .from("user_suspensions")
+        .select("reason, suspended_until")
+        .eq("user_id", userId)
+        .is("lifted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        const isPermanent = !data.suspended_until || new Date(data.suspended_until) > new Date("2099-01-01");
+        setSuspensionInfo({ isSuspended: true, isPermanent, reason: data.reason });
+      } else {
+        setSuspensionInfo({ isSuspended: false, isPermanent: false, reason: null });
+      }
+    };
+    fetchSuspension();
+  }, [userId]);
 
   // ── Fetch data ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -684,6 +709,35 @@ const UserProfile = () => {
 
             {/* ── Profile info section ─────────────────────────────────── */}
             <div className="px-4 sm:px-6 pb-4 sm:pb-5">
+
+              {/* ── Suspension/Ban Banner ─────────────────────────────── */}
+              {suspensionInfo?.isSuspended && (
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-4 border ${
+                  suspensionInfo.isPermanent
+                    ? "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800"
+                    : "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800"
+                }`}>
+                  {suspensionInfo.isPermanent ? (
+                    <Ban className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  ) : (
+                    <ShieldAlert className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold ${
+                      suspensionInfo.isPermanent ? "text-red-700 dark:text-red-400" : "text-orange-700 dark:text-orange-400"
+                    }`}>
+                      {suspensionInfo.isPermanent
+                        ? "🚫 Tài khoản đã bị cấm vĩnh viễn"
+                        : "⚠️ Tài khoản đang bị đình chỉ"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {suspensionInfo.isPermanent
+                        ? "Tài khoản này đã vi phạm điều khoản sử dụng và bị cấm vĩnh viễn khỏi hệ sinh thái."
+                        : "Tài khoản này đang bị đình chỉ tạm thời do vi phạm điều khoản sử dụng."}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Two-column: [Avatar+Orbital] + [Info] */}
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
