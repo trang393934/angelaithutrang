@@ -627,43 +627,7 @@ const UserProfile = () => {
                 </div>
               )}
 
-              {/* ── Suspension/Ban Badge — bottom-right below honor board ── */}
-              {suspensionInfo?.isSuspended && (
-                <div
-                  className="absolute right-3 bottom-3 z-30 hidden sm:flex items-center gap-2.5 px-4 py-2.5 rounded-xl max-w-[240px]"
-                  style={{
-                    background: suspensionInfo.isPermanent
-                      ? "linear-gradient(135deg, rgba(185, 28, 28, 0.95), rgba(153, 27, 27, 0.95))"
-                      : "linear-gradient(135deg, rgba(194, 65, 12, 0.95), rgba(154, 52, 18, 0.95))",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
-                    border: suspensionInfo.isPermanent
-                      ? "2px solid rgba(248, 113, 113, 0.8)"
-                      : "2px solid rgba(251, 191, 36, 0.8)",
-                    boxShadow: suspensionInfo.isPermanent
-                      ? "0 4px 24px rgba(220, 38, 38, 0.5), 0 2px 8px rgba(0,0,0,0.4)"
-                      : "0 4px 24px rgba(234, 88, 12, 0.5), 0 2px 8px rgba(0,0,0,0.4)",
-                  }}
-                >
-                  {suspensionInfo.isPermanent ? (
-                    <Ban className="w-5 h-5 text-white flex-shrink-0 drop-shadow" />
-                  ) : (
-                    <ShieldAlert className="w-5 h-5 text-white flex-shrink-0 drop-shadow" />
-                  )}
-                  <div>
-                    <p className="text-[11px] font-bold text-white leading-tight drop-shadow">
-                      {suspensionInfo.isPermanent
-                        ? "🚫 Cấm vĩnh viễn"
-                        : "⚠️ Đang bị đình chỉ"}
-                    </p>
-                    <p className="text-[10px] text-white/90 leading-tight mt-0.5 drop-shadow">
-                      {suspensionInfo.isPermanent
-                        ? "Vi phạm điều khoản"
-                        : "Đình chỉ tạm thời"}
-                    </p>
-                  </div>
-                </div>
-              )}
+              {/* Suspension badge removed from cover overlay — now shown below cover */}
 
               {/* ── Bảng Danh Dự — top-right overlay on cover (adaptive color) ── */}
               {(() => {
@@ -748,12 +712,12 @@ const UserProfile = () => {
             {/* ── Profile info section ─────────────────────────────────── */}
             <div className="px-4 sm:px-6 pb-4 sm:pb-5">
 
-              {/* Suspension banner on mobile (sm:hidden, since cover overlay is hidden on mobile) */}
+              {/* Suspension/Ban banner — below cover, visible on all screens */}
               {suspensionInfo?.isSuspended && (
-                <div className={`flex sm:hidden items-center gap-3 px-4 py-3 rounded-xl mb-4 border ${
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-4 border sm:ml-[240px] ${
                   suspensionInfo.isPermanent
-                    ? "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800"
-                    : "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800"
+                    ? "bg-red-50 border-red-300 dark:bg-red-950/30 dark:border-red-800"
+                    : "bg-orange-50 border-orange-300 dark:bg-orange-950/30 dark:border-orange-800"
                 }`}>
                   {suspensionInfo.isPermanent ? (
                     <Ban className="w-5 h-5 text-red-500 flex-shrink-0" />
@@ -761,15 +725,17 @@ const UserProfile = () => {
                     <ShieldAlert className="w-5 h-5 text-orange-500 flex-shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold ${
+                    <p className={`text-sm font-bold ${
                       suspensionInfo.isPermanent ? "text-red-700 dark:text-red-400" : "text-orange-700 dark:text-orange-400"
                     }`}>
-                      {suspensionInfo.isPermanent ? "🚫 Cấm vĩnh viễn" : "⚠️ Đang bị đình chỉ"}
+                      {suspensionInfo.isPermanent ? "🚫 Tài khoản bị cấm vĩnh viễn" : "⚠️ Tài khoản đang bị đình chỉ"}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className={`text-xs mt-0.5 ${
+                      suspensionInfo.isPermanent ? "text-red-600/80 dark:text-red-300/80" : "text-orange-600/80 dark:text-orange-300/80"
+                    }`}>
                       {suspensionInfo.isPermanent
-                        ? "Vi phạm điều khoản sử dụng."
-                        : "Đình chỉ tạm thời do vi phạm."}
+                        ? "Tài khoản này đã vi phạm điều khoản sử dụng và bị cấm vĩnh viễn."
+                        : "Tài khoản này đang bị đình chỉ tạm thời do vi phạm quy định."}
                     </p>
                   </div>
                 </div>
