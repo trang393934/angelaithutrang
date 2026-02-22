@@ -460,13 +460,14 @@ const AdminFraudAlerts = () => {
 
       const userIds = [...new Set(suspensions.map((s) => s.user_id))];
 
-      const [{ data: profiles }, { data: balances }, { data: wallets }, { data: pendingWithdrawals }, { data: mintActions }, { data: rewardTxs }] = await Promise.all([
+      const [{ data: profiles }, { data: balances }, { data: wallets }, { data: pendingWithdrawals }, { data: mintActions }, { data: completedWithdrawals }, { data: lixiClaims }] = await Promise.all([
         supabase.from("profiles").select("user_id, display_name, avatar_url, handle").in("user_id", userIds),
         supabase.from("camly_coin_balances").select("user_id, balance, lifetime_earned").in("user_id", userIds),
         supabase.from("user_wallet_addresses").select("user_id, wallet_address").in("user_id", userIds),
         supabase.from("coin_withdrawals").select("user_id, amount").in("user_id", userIds).in("status", ["pending", "processing"]),
         supabase.from("pplp_actions").select("actor_id").in("actor_id", userIds).in("status", ["scored", "pending"]),
-        supabase.from("camly_coin_transactions").select("user_id, amount").in("user_id", userIds).gt("amount", 0),
+        supabase.from("coin_withdrawals").select("user_id, amount").in("user_id", userIds).eq("status", "completed"),
+        supabase.from("lixi_claims").select("user_id, camly_amount").in("user_id", userIds).eq("status", "completed"),
       ]);
 
       const profileMap: Record<string, any> = {};
@@ -482,9 +483,10 @@ const AdminFraudAlerts = () => {
       // Pending mint count by user
       const mintMap: Record<string, number> = {};
       mintActions?.forEach((a) => { mintMap[a.actor_id] = (mintMap[a.actor_id] || 0) + 1; });
-      // Total rewards received from system
+      // Total rewards actually received to wallet (withdrawals + lixi claims completed)
       const rewardMap: Record<string, number> = {};
-      rewardTxs?.forEach((t) => { rewardMap[t.user_id] = (rewardMap[t.user_id] || 0) + t.amount; });
+      completedWithdrawals?.forEach((w) => { rewardMap[w.user_id] = (rewardMap[w.user_id] || 0) + w.amount; });
+      lixiClaims?.forEach((l) => { rewardMap[l.user_id] = (rewardMap[l.user_id] || 0) + l.camly_amount; });
 
       // Deduplicate by user_id (keep latest suspension)
       const seenUserIds = new Set<string>();
