@@ -92,6 +92,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
   const [showConfetti, setShowConfetti] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationData, setCelebrationData] = useState<CelebrationData | null>(null);
+  const [recipientSuspended, setRecipientSuspended] = useState<{ isSuspended: boolean; isPermanent: boolean } | null>(null);
 
   // Step flow for internal Camly Coin: 1 = input, 2 = confirm
   const [internalStep, setInternalStep] = useState<1 | 2>(1);
@@ -130,8 +131,31 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
       setSearchQuery("");
       setSearchResults([]);
       setInternalStep(1);
+      setRecipientSuspended(null);
     }
   }, [open, preselectedUser]);
+
+  // Check if selected user is suspended
+  useEffect(() => {
+    const checkSuspension = async () => {
+      if (!selectedUser) { setRecipientSuspended(null); return; }
+      const { data } = await supabase
+        .from("user_suspensions")
+        .select("suspended_until")
+        .eq("user_id", selectedUser.user_id)
+        .is("lifted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        const isPermanent = !data.suspended_until || new Date(data.suspended_until) > new Date("2099-01-01");
+        setRecipientSuspended({ isSuspended: true, isPermanent });
+      } else {
+        setRecipientSuspended(null);
+      }
+    };
+    checkSuspension();
+  }, [selectedUser?.user_id]);
 
   const searchUsers = async (query: string) => {
     if (query.length < 2) {
@@ -508,6 +532,22 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                             </Button>
                           )}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Suspended Recipient Warning */}
+                    {recipientSuspended?.isSuspended && (
+                      <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${
+                        recipientSuspended.isPermanent
+                          ? "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800"
+                          : "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800"
+                      }`}>
+                        <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${recipientSuspended.isPermanent ? "text-red-500" : "text-orange-500"}`} />
+                        <p className={`text-xs font-medium ${recipientSuspended.isPermanent ? "text-red-700 dark:text-red-400" : "text-orange-700 dark:text-orange-400"}`}>
+                          {recipientSuspended.isPermanent
+                            ? "🚫 Tài khoản này đã bị cấm vĩnh viễn. Phần thưởng sẽ không được chuyển đến."
+                            : "⚠️ Tài khoản này đang bị đình chỉ. Phần thưởng có thể bị đóng băng."}
+                        </p>
                       </div>
                     )}
 
