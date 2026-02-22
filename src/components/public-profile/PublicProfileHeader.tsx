@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Copy, Check, Share2, Calendar, Plus } from "lucide-react";
 import funProfileLogo from "@/assets/fun-profile-logo.png";
+import goldDiamondBadge from "@/assets/gold-diamond-badge.jpeg";
 import funPlayLogo from "@/assets/fun-play-logo.png";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -378,6 +379,18 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
 
           {/* Avatar */}
           <div className="relative z-20">
+            {/* Diamond Badge — top-center */}
+            <div
+              className="absolute z-30 flex items-center justify-center rounded-full border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-white overflow-hidden"
+              style={{
+                width: 38, height: 38,
+                top: -20, left: "50%",
+                transform: "translateX(-50%)",
+                filter: "drop-shadow(0 0 6px rgba(255,215,0,0.8)) drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
+              }}
+            >
+              <img src={goldDiamondBadge} alt="Gold Diamond Badge" className="w-[85%] h-[85%] object-contain" />
+            </div>
             {/* Gold gradient border via wrapper */}
             <div
               className="rounded-full p-[3px]"
