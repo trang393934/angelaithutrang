@@ -116,7 +116,8 @@ export function useLeaderboard() {
       setTopUsers(combinedUsers.slice(0, 10));
 
       // Calculate stats - use profiles count as the source of truth for total members
-      const totalCoins = combinedUsers.reduce((sum, u) => sum + u.lifetime_earned, 0);
+      // Total coins includes ALL users (including suspended) for transparency
+      const totalCoins = (balances || []).reduce((sum, b) => sum + (b.lifetime_earned || 0), 0);
       const activeUsers = combinedUsers.filter(u => u.lifetime_earned > 0).length;
 
       // Count non-suspended profiles only
