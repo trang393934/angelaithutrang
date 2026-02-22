@@ -17,7 +17,7 @@ import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
 import angelAiGoldenLogo from "@/assets/angel-ai-golden-logo.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
-import goldDiamondBadge from "@/assets/gold-diamond-badge.jpeg";
+import goldDiamondBadge from "@/assets/gold-diamond-badge.png";
 import funProfileLogo from "@/assets/fun-profile-logo.png";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { Button } from "@/components/ui/button";
@@ -220,18 +220,18 @@ interface FriendData {
 function DiamondBadge() {
   return (
     <div
-      className="absolute z-30 flex items-center justify-center rounded-full border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-white overflow-hidden"
+      className="absolute z-30 flex items-center justify-center"
       style={{
-        width: 38, height: 38,
-        top: -20, left: "50%",
+        width: 46, height: 46,
+        top: -24, left: "50%",
         transform: "translateX(-50%)",
-        filter: "drop-shadow(0 0 6px rgba(255,215,0,0.8)) drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
+        filter: "drop-shadow(0 0 8px rgba(255,215,0,0.7)) drop-shadow(0 2px 4px rgba(0,0,0,0.15))",
       }}
     >
       <img
         src={goldDiamondBadge}
         alt="Gold Diamond Badge"
-        className="w-[85%] h-[85%] object-contain"
+        className="w-full h-full object-contain"
       />
     </div>
   );
