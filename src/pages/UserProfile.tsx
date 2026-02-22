@@ -17,6 +17,7 @@ import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
 import angelAiGoldenLogo from "@/assets/angel-ai-golden-logo.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
+import goldDiamondBadge from "@/assets/gold-diamond-badge.jpeg";
 import funProfileLogo from "@/assets/fun-profile-logo.png";
 import { ProfileImageLightbox } from "@/components/profile/ProfileImageLightbox";
 import { Button } from "@/components/ui/button";
@@ -215,21 +216,23 @@ interface FriendData {
   avatar_url: string | null;
 }
 
-// ─── Diamond Badge icon — top-center, always 💎, gold gradient ───────────────
+// ─── Diamond Badge icon — top-center, gold diamond image ───────────────
 function DiamondBadge() {
   return (
     <div
-      className="absolute z-30 flex items-center justify-center rounded-full text-sm"
+      className="absolute z-30 flex items-center justify-center"
       style={{
-        width: 32, height: 32,
-        top: -16, left: "50%",
+        width: 36, height: 36,
+        top: -18, left: "50%",
         transform: "translateX(-50%)",
-        background: "linear-gradient(135deg, #b8860b, #daa520, #ffd700)",
-        border: "2px solid #fff",
-        boxShadow: "0 0 14px rgba(255,215,0,0.8), 0 2px 8px rgba(0,0,0,0.3)",
+        filter: "drop-shadow(0 0 6px rgba(255,215,0,0.8)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
       }}
     >
-      💎
+      <img
+        src={goldDiamondBadge}
+        alt="Gold Diamond Badge"
+        className="w-full h-full object-contain"
+      />
     </div>
   );
 }
