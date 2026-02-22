@@ -627,6 +627,42 @@ const UserProfile = () => {
                 </div>
               )}
 
+              {/* ── Suspension/Ban Badge — bottom-right overlay on cover ── */}
+              {suspensionInfo?.isSuspended && (
+                <div
+                  className="absolute right-3 bottom-3 z-20 hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg"
+                  style={{
+                    background: suspensionInfo.isPermanent
+                      ? "rgba(220, 38, 38, 0.85)"
+                      : "rgba(234, 88, 12, 0.85)",
+                    backdropFilter: "blur(10px)",
+                    WebkitBackdropFilter: "blur(10px)",
+                    border: suspensionInfo.isPermanent
+                      ? "1.5px solid rgba(248, 113, 113, 0.6)"
+                      : "1.5px solid rgba(251, 191, 36, 0.6)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {suspensionInfo.isPermanent ? (
+                    <Ban className="w-4 h-4 text-white flex-shrink-0" />
+                  ) : (
+                    <ShieldAlert className="w-4 h-4 text-white flex-shrink-0" />
+                  )}
+                  <div>
+                    <p className="text-xs font-bold text-white leading-tight">
+                      {suspensionInfo.isPermanent
+                        ? "🚫 Tài khoản bị cấm vĩnh viễn"
+                        : "⚠️ Tài khoản đang bị đình chỉ"}
+                    </p>
+                    <p className="text-[10px] text-white/80 leading-tight mt-0.5">
+                      {suspensionInfo.isPermanent
+                        ? "Vi phạm điều khoản sử dụng"
+                        : "Đình chỉ tạm thời do vi phạm"}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* ── Bảng Danh Dự — top-right overlay on cover (adaptive color) ── */}
               {(() => {
                 // Adaptive theme based on cover brightness
@@ -710,9 +746,9 @@ const UserProfile = () => {
             {/* ── Profile info section ─────────────────────────────────── */}
             <div className="px-4 sm:px-6 pb-4 sm:pb-5">
 
-              {/* ── Suspension/Ban Banner ─────────────────────────────── */}
+              {/* Suspension banner on mobile (sm:hidden, since cover overlay is hidden on mobile) */}
               {suspensionInfo?.isSuspended && (
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-4 border ${
+                <div className={`flex sm:hidden items-center gap-3 px-4 py-3 rounded-xl mb-4 border ${
                   suspensionInfo.isPermanent
                     ? "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800"
                     : "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800"
@@ -726,14 +762,12 @@ const UserProfile = () => {
                     <p className={`text-sm font-semibold ${
                       suspensionInfo.isPermanent ? "text-red-700 dark:text-red-400" : "text-orange-700 dark:text-orange-400"
                     }`}>
-                      {suspensionInfo.isPermanent
-                        ? "🚫 Tài khoản đã bị cấm vĩnh viễn"
-                        : "⚠️ Tài khoản đang bị đình chỉ"}
+                      {suspensionInfo.isPermanent ? "🚫 Cấm vĩnh viễn" : "⚠️ Đang bị đình chỉ"}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {suspensionInfo.isPermanent
-                        ? "Tài khoản này đã vi phạm điều khoản sử dụng và bị cấm vĩnh viễn khỏi hệ sinh thái."
-                        : "Tài khoản này đang bị đình chỉ tạm thời do vi phạm điều khoản sử dụng."}
+                        ? "Vi phạm điều khoản sử dụng."
+                        : "Đình chỉ tạm thời do vi phạm."}
                     </p>
                   </div>
                 </div>
