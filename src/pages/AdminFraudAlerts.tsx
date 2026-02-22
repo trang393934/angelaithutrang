@@ -39,6 +39,7 @@ import {
   Coins,
   AlertCircle,
   FileText,
+  TrendingUp,
 } from "lucide-react";
 import AntiSybilProcessTab from "@/components/admin/AntiSybilProcessTab";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -116,6 +117,7 @@ interface SuspendedUser {
   wallet_address: string | null;
   pending_mint: number;
   pending_withdrawal: number;
+  total_rewards_received: number;
 }
 
 // ============================================================
@@ -458,12 +460,13 @@ const AdminFraudAlerts = () => {
 
       const userIds = [...new Set(suspensions.map((s) => s.user_id))];
 
-      const [{ data: profiles }, { data: balances }, { data: wallets }, { data: pendingWithdrawals }, { data: mintActions }] = await Promise.all([
+      const [{ data: profiles }, { data: balances }, { data: wallets }, { data: pendingWithdrawals }, { data: mintActions }, { data: rewardTxs }] = await Promise.all([
         supabase.from("profiles").select("user_id, display_name, avatar_url, handle").in("user_id", userIds),
         supabase.from("camly_coin_balances").select("user_id, balance, lifetime_earned").in("user_id", userIds),
         supabase.from("user_wallet_addresses").select("user_id, wallet_address").in("user_id", userIds),
         supabase.from("coin_withdrawals").select("user_id, amount").in("user_id", userIds).in("status", ["pending", "processing"]),
         supabase.from("pplp_actions").select("actor_id").in("actor_id", userIds).in("status", ["scored", "pending"]),
+        supabase.from("camly_coin_transactions").select("user_id, amount").in("user_id", userIds).gt("amount", 0),
       ]);
 
       const profileMap: Record<string, any> = {};
@@ -479,6 +482,9 @@ const AdminFraudAlerts = () => {
       // Pending mint count by user
       const mintMap: Record<string, number> = {};
       mintActions?.forEach((a) => { mintMap[a.actor_id] = (mintMap[a.actor_id] || 0) + 1; });
+      // Total rewards received from system
+      const rewardMap: Record<string, number> = {};
+      rewardTxs?.forEach((t) => { rewardMap[t.user_id] = (rewardMap[t.user_id] || 0) + t.amount; });
 
       // Deduplicate by user_id (keep latest suspension)
       const seenUserIds = new Set<string>();
@@ -497,6 +503,7 @@ const AdminFraudAlerts = () => {
           wallet_address: walletMap[s.user_id] ?? null,
           pending_mint: mintMap[s.user_id] ?? 0,
           pending_withdrawal: withdrawalMap[s.user_id] ?? 0,
+          total_rewards_received: rewardMap[s.user_id] ?? 0,
         });
       }
       setSuspendedUsers(merged);
@@ -1266,9 +1273,10 @@ const AdminFraudAlerts = () => {
                 earned: acc.earned + u.lifetime_earned,
                 mint: acc.mint + u.pending_mint,
                 withdrawal: acc.withdrawal + u.pending_withdrawal,
-              }), { balance: 0, earned: 0, mint: 0, withdrawal: 0 });
+                rewards: acc.rewards + u.total_rewards_received,
+              }), { balance: 0, earned: 0, mint: 0, withdrawal: 0, rewards: 0 });
               return (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div className="bg-card border border-border rounded-xl px-4 py-3">
                     <p className="text-lg font-bold font-mono text-foreground">{fmtNum(totals.balance)}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1"><Coins className="w-3 h-3" /> Tổng Số dư</p>
@@ -1276,6 +1284,10 @@ const AdminFraudAlerts = () => {
                   <div className="bg-card border border-border rounded-xl px-4 py-3">
                     <p className="text-lg font-bold font-mono text-muted-foreground">{fmtNum(totals.earned)}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1"><Wallet className="w-3 h-3" /> Tổng Lifetime Earned</p>
+                  </div>
+                  <div className="bg-card border border-border rounded-xl px-4 py-3">
+                    <p className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">{fmtNum(totals.rewards)}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Tổng Đã nhận thưởng</p>
                   </div>
                   <div className="bg-card border border-border rounded-xl px-4 py-3">
                     <p className="text-lg font-bold font-mono text-amber-600 dark:text-amber-400">{fmtNum(totals.mint)}</p>
@@ -1301,6 +1313,7 @@ const AdminFraudAlerts = () => {
                       <TableHead>Lý do đình chỉ</TableHead>
                       <TableHead>Số dư</TableHead>
                       <TableHead>Lifetime Earned</TableHead>
+                      <TableHead className="text-emerald-600 dark:text-emerald-400">Đã nhận thưởng</TableHead>
                       <TableHead>Mint pending</TableHead>
                       <TableHead>Rút chờ</TableHead>
                       <TableHead>Ví BSC</TableHead>
@@ -1323,7 +1336,7 @@ const AdminFraudAlerts = () => {
                       if (filteredSuspended.length === 0) {
                         return (
                           <TableRow>
-                            <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
+                            <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">
                               Không có tài khoản bị đình chỉ
                             </TableCell>
                           </TableRow>
@@ -1372,6 +1385,11 @@ const AdminFraudAlerts = () => {
                           <TableCell>
                             <span className="font-mono text-sm text-muted-foreground">
                               {fmtNum(user.lifetime_earned)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                              {fmtNum(user.total_rewards_received)}
                             </span>
                           </TableCell>
                           <TableCell>
