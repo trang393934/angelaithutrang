@@ -27,7 +27,7 @@ import { SocialLinksEditor } from "@/components/profile/SocialLinksEditor";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import angelAvatar from "@/assets/angel-avatar.png";
-import goldDiamondBadge from "@/assets/gold-diamond-badge.png";
+import goldDiamondBadge from "@/assets/gold-diamond-badge.jpeg";
 import LightPointsDisplay from "@/components/LightPointsDisplay";
 import DailyGratitude from "@/components/DailyGratitude";
 import HealingMessagesPanel from "@/components/HealingMessagesPanel";
@@ -1133,15 +1133,15 @@ const Profile = () => {
                     <div className="absolute -inset-2 bg-gradient-to-r from-divine-gold via-divine-light to-divine-gold rounded-full opacity-30 blur-lg group-hover:opacity-60 group-hover:blur-xl transition-all duration-500" />
                     {/* Diamond Badge */}
                     <div
-                      className="absolute z-30 flex items-center justify-center"
+                      className="absolute z-30 flex items-center justify-center rounded-full border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-white overflow-hidden"
                       style={{
-                        width: 42, height: 42,
-                        top: -22, left: "50%",
+                        width: 38, height: 38,
+                        top: -20, left: "50%",
                         transform: "translateX(-50%)",
-                        filter: "drop-shadow(0 0 6px rgba(255,215,0,0.8)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
+                        filter: "drop-shadow(0 0 6px rgba(255,215,0,0.8)) drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
                       }}
                     >
-                      <img src={goldDiamondBadge} alt="Gold Diamond Badge" className="w-full h-full object-contain" />
+                      <img src={goldDiamondBadge} alt="Gold Diamond Badge" className="w-[85%] h-[85%] object-contain" />
                     </div>
                     <div 
                       className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-divine-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] group-hover:shadow-[0_0_40px_rgba(212,175,55,0.5)] transition-all duration-500 group-hover:scale-105 cursor-pointer"
