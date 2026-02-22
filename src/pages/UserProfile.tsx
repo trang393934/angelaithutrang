@@ -627,22 +627,22 @@ const UserProfile = () => {
                 </div>
               )}
 
-              {/* ── Suspension/Ban Badge — bottom-left overlay on cover ── */}
+              {/* ── Suspension/Ban Badge — bottom-right below honor board ── */}
               {suspensionInfo?.isSuspended && (
                 <div
-                  className="absolute left-3 bottom-3 z-30 hidden sm:flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+                  className="absolute right-3 bottom-3 z-30 hidden sm:flex items-center gap-2.5 px-4 py-2.5 rounded-xl max-w-[240px]"
                   style={{
                     background: suspensionInfo.isPermanent
-                      ? "linear-gradient(135deg, rgba(185, 28, 28, 0.92), rgba(220, 38, 38, 0.88))"
-                      : "linear-gradient(135deg, rgba(194, 65, 12, 0.92), rgba(234, 88, 12, 0.88))",
+                      ? "linear-gradient(135deg, rgba(185, 28, 28, 0.95), rgba(153, 27, 27, 0.95))"
+                      : "linear-gradient(135deg, rgba(194, 65, 12, 0.95), rgba(154, 52, 18, 0.95))",
                     backdropFilter: "blur(12px)",
                     WebkitBackdropFilter: "blur(12px)",
                     border: suspensionInfo.isPermanent
-                      ? "1.5px solid rgba(248, 113, 113, 0.7)"
-                      : "1.5px solid rgba(251, 191, 36, 0.7)",
+                      ? "2px solid rgba(248, 113, 113, 0.8)"
+                      : "2px solid rgba(251, 191, 36, 0.8)",
                     boxShadow: suspensionInfo.isPermanent
-                      ? "0 4px 20px rgba(220, 38, 38, 0.4), 0 2px 8px rgba(0,0,0,0.3)"
-                      : "0 4px 20px rgba(234, 88, 12, 0.4), 0 2px 8px rgba(0,0,0,0.3)",
+                      ? "0 4px 24px rgba(220, 38, 38, 0.5), 0 2px 8px rgba(0,0,0,0.4)"
+                      : "0 4px 24px rgba(234, 88, 12, 0.5), 0 2px 8px rgba(0,0,0,0.4)",
                   }}
                 >
                   {suspensionInfo.isPermanent ? (
@@ -651,15 +651,15 @@ const UserProfile = () => {
                     <ShieldAlert className="w-5 h-5 text-white flex-shrink-0 drop-shadow" />
                   )}
                   <div>
-                    <p className="text-xs font-bold text-white leading-tight drop-shadow">
+                    <p className="text-[11px] font-bold text-white leading-tight drop-shadow">
                       {suspensionInfo.isPermanent
-                        ? "🚫 Tài khoản bị cấm vĩnh viễn"
-                        : "⚠️ Tài khoản đang bị đình chỉ"}
+                        ? "🚫 Cấm vĩnh viễn"
+                        : "⚠️ Đang bị đình chỉ"}
                     </p>
                     <p className="text-[10px] text-white/90 leading-tight mt-0.5 drop-shadow">
                       {suspensionInfo.isPermanent
-                        ? "Vi phạm điều khoản sử dụng"
-                        : "Đình chỉ tạm thời do vi phạm"}
+                        ? "Vi phạm điều khoản"
+                        : "Đình chỉ tạm thời"}
                     </p>
                   </div>
                 </div>
