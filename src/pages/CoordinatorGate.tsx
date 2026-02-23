@@ -1,17 +1,51 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCoordinatorRole } from "@/hooks/useCoordinatorRole";
 import { useCoordinatorProjects } from "@/hooks/useCoordinatorProjects";
 import { ProjectCreateDialog } from "@/components/coordinator/ProjectCreateDialog";
 import { ProjectCard } from "@/components/coordinator/ProjectCard";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShieldAlert, ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, ShieldAlert, ArrowLeft, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function CoordinatorGate() {
   const { user, isLoading: authLoading } = useAuth();
   const { hasAccess, isLoading: roleLoading } = useCoordinatorRole();
   const { projects, isLoading: projectsLoading, createProject, deleteProject } = useCoordinatorProjects();
   const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAddCoordinator = async () => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      toast.error("Vui lòng nhập email");
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("add-coordinator", {
+        body: { email: trimmed },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+      } else {
+        toast.success(data?.message || "Đã thêm Coordinator thành công!");
+        setEmail("");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Có lỗi xảy ra");
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   if (authLoading || roleLoading) {
     return (
@@ -69,6 +103,34 @@ export default function CoordinatorGate() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Add Coordinator Section */}
+        <section className="mb-8 p-5 rounded-xl border bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 border-purple-200/50 dark:border-purple-800/50">
+          <div className="flex items-center gap-2 mb-3">
+            <UserPlus className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <h2 className="text-lg font-semibold">Thêm Coordinator mới</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Nhập email của user để cấp quyền Coordinator. User phải đã đăng ký tài khoản trước đó.
+          </p>
+          <div className="flex gap-2 max-w-lg">
+            <Input
+              type="email"
+              placeholder="email@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddCoordinator()}
+              className="flex-1"
+            />
+            <Button
+              onClick={handleAddCoordinator}
+              disabled={isAdding || !email.trim()}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+            >
+              {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Thêm"}
+            </Button>
+          </div>
+        </section>
+
         {projectsLoading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />

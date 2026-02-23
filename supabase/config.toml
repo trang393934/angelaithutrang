@@ -187,3 +187,6 @@ verify_jwt = false
 
 [functions.coordinator-chat]
 verify_jwt = false
+
+[functions.add-coordinator]
+verify_jwt = false
