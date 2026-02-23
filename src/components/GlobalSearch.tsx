@@ -33,6 +33,7 @@ interface UserResult {
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  handle: string | null;
 }
 
 interface GlobalSearchProps {
@@ -106,7 +107,7 @@ export function GlobalSearch({
     try {
       const { data, error: dbError } = await supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url, bio")
+        .select("user_id, display_name, avatar_url, bio, handle")
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -168,7 +169,7 @@ export function GlobalSearch({
       if (variant === "community") {
         const { data, error: dbError } = await supabase
           .from("profiles")
-          .select("user_id, display_name, avatar_url, bio")
+          .select("user_id, display_name, avatar_url, bio, handle")
           .ilike("display_name", `%${searchQuery.trim()}%`)
           .limit(15);
 
@@ -362,7 +363,7 @@ export function GlobalSearch({
                       onClick={() => {
                         setIsOpen(false);
                         setQuery("");
-                        navigate(`/user/${user.user_id}`);
+                        navigate(`/user/${(user as any).handle || user.user_id}`);
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-b border-border/30 last:border-b-0"
                     >

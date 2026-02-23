@@ -70,9 +70,9 @@ export function FriendSearchModal({ open, onClose }: FriendSearchModalProps) {
     debounceRef.current = setTimeout(() => loadUsers(value), 300);
   };
 
-  const handleUserClick = (userId: string) => {
+  const handleUserClick = (user: UserResult) => {
     onClose();
-    navigate(`/user/${userId}`);
+    navigate(`/user/${user.handle || user.user_id}`);
   };
 
   if (!open) return null;
@@ -130,7 +130,7 @@ export function FriendSearchModal({ open, onClose }: FriendSearchModalProps) {
             {users.map((u) => (
               <button
                 key={u.user_id}
-                onClick={() => handleUserClick(u.user_id)}
+                onClick={() => handleUserClick(u)}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
               >
                 <Avatar className="w-11 h-11">

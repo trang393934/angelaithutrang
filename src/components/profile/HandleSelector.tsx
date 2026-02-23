@@ -77,7 +77,7 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
       <div className="text-sm mb-1">
         {currentHandle && user ? (
           <Link
-            to={`/user/${user.id}`}
+            to={`/user/${currentHandle}`}
             className="text-divine-gold hover:underline font-medium inline-flex items-center gap-1"
           >
             <ExternalLink className="w-3 h-3" />

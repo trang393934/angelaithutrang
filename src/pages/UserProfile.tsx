@@ -239,15 +239,45 @@ function DiamondBadge() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const UserProfile = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId: identifier } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  // Detect if identifier is UUID or handle
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(identifier || "");
+  const [resolvedUserId, setResolvedUserId] = useState<string | undefined>(isUUID ? identifier : undefined);
+
+  // Resolve handle to userId if needed
+  useEffect(() => {
+    if (!identifier) return;
+    if (isUUID) {
+      setResolvedUserId(identifier);
+      return;
+    }
+    // identifier is a handle — resolve it
+    const resolveHandle = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .ilike("handle", identifier)
+        .maybeSingle();
+      if (data) {
+        setResolvedUserId(data.user_id);
+      } else {
+        setResolvedUserId(undefined);
+      }
+    };
+    resolveHandle();
+  }, [identifier, isUUID]);
+
+  const userId = resolvedUserId;
+
   const { balance, lifetimeEarned, lixiReward } = useUserCamlyCoin(userId);
   const naturalLifetimeEarned = lifetimeEarned - lixiReward;
   const tongThu = balance + lixiReward;
   const { score: poplScore, badgeLevel, positiveActions } = usePoPLScore(userId);
   const funMoneyStats = useFUNMoneyStats(userId);
-  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [userPosts, setUserPosts] = useState<CommunityPost[]>([]);
   const [friends, setFriends] = useState<FriendData[]>([]);
@@ -287,9 +317,16 @@ const UserProfile = () => {
   const orbitRadius = 80;
   const wrapperSize = (orbitRadius + 36) * 2;
 
+  // Auto-redirect UUID URL to handle URL
+  useEffect(() => {
+    if (isUUID && profile?.handle && identifier) {
+      navigate(`/user/${profile.handle}`, { replace: true });
+    }
+  }, [isUUID, profile?.handle, identifier, navigate]);
+
   // Copy handle link
   const profileUrl = profile?.handle
-    ? `${window.location.origin}/@${profile.handle}`
+    ? `${window.location.origin}/user/${profile.handle}`
     : `${window.location.origin}/user/${userId}`;
 
   const handleCopyLink = async () => {
