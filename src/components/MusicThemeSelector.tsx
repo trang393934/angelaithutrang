@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Music, Check, VolumeX, PartyPopper, Sparkles, AudioLines } from "lucide-react";
+import { Music, Check, PartyPopper, Sparkles, AudioLines } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
 export type MusicTrack = "tet-1" | "tet-2" | "rich-4" | "none";
@@ -24,6 +24,9 @@ const getStoredVolume = (): number => {
 const getStoredPlaying = (): boolean =>
   localStorage.getItem("bg-music-playing") !== "false";
 
+// Simple touch device detection
+const isTouchDevice = () => "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
 interface MusicThemeSelectorProps {
   variant?: "header" | "floating";
 }
@@ -32,14 +35,13 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
   const [track, setTrack] = useState<MusicTrack>(getStoredTrack);
   const [volume, setVolume] = useState(getStoredVolume);
   const [isPlaying, setIsPlaying] = useState(getStoredPlaying);
-  const [hoverOpen, setHoverOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const lastTrackRef = useRef<MusicTrack>(getStoredTrack() === "none" ? "rich-4" : getStoredTrack());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasInitRef = useRef(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   // Create or get audio element
   const getOrCreateAudio = useCallback((src: string): HTMLAudioElement => {
@@ -56,7 +58,6 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
     return audio;
   }, [volume]);
 
-  // Play with mobile-safe fallback
   const playAudio = useCallback((audio: HTMLAudioElement) => {
     const attempt = () => {
       audio.play().catch(() => {
@@ -71,12 +72,8 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
         document.addEventListener("click", resume, { capture: true });
       });
     };
-
-    if (audio.readyState >= 3) {
-      attempt();
-    } else {
-      audio.addEventListener("canplaythrough", attempt, { once: true });
-    }
+    if (audio.readyState >= 3) attempt();
+    else audio.addEventListener("canplaythrough", attempt, { once: true });
   }, []);
 
   // Resume on visibility change
@@ -95,12 +92,9 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
   useEffect(() => {
     if (hasInitRef.current) return;
     hasInitRef.current = true;
-
     if (track === "none" || !isPlaying) return;
-
     const currentTrack = TRACK_OPTIONS.find((t) => t.value === track);
     if (!currentTrack) return;
-
     const audio = getOrCreateAudio(currentTrack.src);
     setTimeout(() => playAudio(audio), 300);
   }, []);
@@ -111,91 +105,115 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
     localStorage.setItem("bg-music-volume", String(volume));
   }, [volume]);
 
-  // Toggle play/pause on click
-  const handleToggle = () => {
-    if (isPlaying && track !== "none") {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-        audioRef.current.load();
-        audioRef.current = null;
-      }
-      lastTrackRef.current = track;
-      setTrack("none");
-      setIsPlaying(false);
-      localStorage.setItem("bg-music-track", "none");
-      localStorage.setItem("bg-music-playing", "false");
-    } else {
-      const restoreTrack = lastTrackRef.current;
-      const selected = TRACK_OPTIONS.find((t) => t.value === restoreTrack);
-      if (!selected) return;
+  // Close menu on outside click (for mobile)
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (buttonRef.current?.contains(target)) return;
+      const menuEl = document.getElementById("music-menu-portal");
+      if (menuEl?.contains(target)) return;
+      setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+    };
+  }, [menuOpen]);
 
-      setTrack(restoreTrack);
-      localStorage.setItem("bg-music-track", restoreTrack);
-
-      const audio = getOrCreateAudio(selected.src);
-      playAudio(audio);
-
-      setIsPlaying(true);
-      localStorage.setItem("bg-music-playing", "true");
+  const stopMusic = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+      audioRef.current = null;
     }
-  };
+    lastTrackRef.current = track === "none" ? lastTrackRef.current : track;
+    setTrack("none");
+    setIsPlaying(false);
+    localStorage.setItem("bg-music-track", "none");
+    localStorage.setItem("bg-music-playing", "false");
+  }, [track]);
 
-  // Select a specific track from hover menu
-  const selectTrack = (value: MusicTrack) => {
-    lastTrackRef.current = value;
-    setTrack(value);
-    localStorage.setItem("bg-music-track", value);
-
-    const selected = TRACK_OPTIONS.find((t) => t.value === value);
+  const startMusic = useCallback((targetTrack?: MusicTrack) => {
+    const restoreTrack = targetTrack || lastTrackRef.current;
+    const selected = TRACK_OPTIONS.find((t) => t.value === restoreTrack);
     if (!selected) return;
-
+    lastTrackRef.current = restoreTrack;
+    setTrack(restoreTrack);
+    localStorage.setItem("bg-music-track", restoreTrack);
     const audio = getOrCreateAudio(selected.src);
     playAudio(audio);
-
     setIsPlaying(true);
     localStorage.setItem("bg-music-playing", "true");
-    setHoverOpen(false);
-  };
+  }, [getOrCreateAudio, playAudio]);
 
   // Calculate menu position
   const updateMenuPos = useCallback(() => {
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
-    const isHeader = variant === "header";
-    if (isHeader) {
+    const menuWidth = 240;
+    const isHeaderVariant = variant === "header";
+    if (isHeaderVariant) {
       setMenuPos({
         top: rect.bottom + 6,
-        left: Math.max(8, rect.right - 240),
+        left: Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8),
       });
     } else {
       setMenuPos({
         top: rect.top - 6,
-        left: Math.max(8, rect.right - 240),
+        left: Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8),
       });
     }
   }, [variant]);
 
-  // Hover handlers with delay
+  // Desktop: click toggles music, hover opens menu
+  // Mobile: click opens menu (with toggle inside)
+  const handleButtonClick = () => {
+    if (isTouchDevice()) {
+      updateMenuPos();
+      setMenuOpen((prev) => !prev);
+    } else {
+      // Desktop click = toggle
+      if (isPlaying && track !== "none") stopMusic();
+      else startMusic();
+    }
+  };
+
   const handleMouseEnter = () => {
+    if (isTouchDevice()) return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     updateMenuPos();
-    setHoverOpen(true);
+    setMenuOpen(true);
   };
 
   const handleMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => setHoverOpen(false), 300);
+    if (isTouchDevice()) return;
+    hoverTimeoutRef.current = setTimeout(() => setMenuOpen(false), 300);
   };
 
   const handleMenuEnter = () => {
+    if (isTouchDevice()) return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
   };
 
   const handleMenuLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => setHoverOpen(false), 200);
+    if (isTouchDevice()) return;
+    hoverTimeoutRef.current = setTimeout(() => setMenuOpen(false), 200);
   };
 
-  // Cleanup on unmount
+  const selectTrack = (value: MusicTrack) => {
+    startMusic(value);
+    if (isTouchDevice()) {
+      // Keep menu open on mobile so user can adjust volume
+    } else {
+      setMenuOpen(false);
+    }
+  };
+
+  // Cleanup
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -210,9 +228,9 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
   const isHeader = variant === "header";
   const isActive = isPlaying && track !== "none";
 
-  const dropdownMenu = hoverOpen && menuPos && createPortal(
+  const dropdownMenu = menuOpen && menuPos && createPortal(
     <div
-      ref={menuRef}
+      id="music-menu-portal"
       onMouseEnter={handleMenuEnter}
       onMouseLeave={handleMenuLeave}
       className="fixed z-[9999] w-60 rounded-xl border border-amber-200/60 bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(180,130,20,0.18),0_2px_8px_rgba(0,0,0,0.08)] p-3 animate-fade-in"
@@ -225,6 +243,25 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
       <p className="text-xs font-bold text-amber-800/80 uppercase tracking-wider px-1 pb-2">
         🎵 Nhạc nền
       </p>
+
+      {/* Mobile: show play/stop toggle */}
+      {isTouchDevice() && (
+        <button
+          onClick={() => {
+            if (isActive) stopMusic();
+            else startMusic();
+          }}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold mb-1 transition-all ${
+            isActive
+              ? "bg-red-50 text-red-600 hover:bg-red-100"
+              : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+          }`}
+        >
+          <Music className="w-4 h-4" />
+          <span>{isActive ? "⏸ Tắt nhạc" : "▶ Bật nhạc"}</span>
+        </button>
+      )}
+
       <div className="space-y-0.5">
         {TRACK_OPTIONS.map(({ value, icon: Icon, label }) => (
           <button
@@ -267,11 +304,10 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
       onMouseLeave={handleMouseLeave}
       className={isHeader ? "relative" : ""}
     >
-      {/* Main toggle button */}
       {isHeader ? (
         <button
           ref={buttonRef}
-          onClick={handleToggle}
+          onClick={handleButtonClick}
           className={`flex items-center gap-1 px-2 lg:px-2.5 py-1 lg:py-1.5 rounded-full transition-all ${
             isActive
               ? "bg-gradient-to-r from-amber-400 to-yellow-500 shadow-[0_0_12px_rgba(245,158,11,0.5)]"
@@ -289,7 +325,7 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
       ) : (
         <button
           ref={buttonRef}
-          onClick={handleToggle}
+          onClick={handleButtonClick}
           className={`fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-sm shadow-lg border flex items-center justify-center transition-all ${
             isActive
               ? "bg-gradient-to-r from-amber-400 to-yellow-500 border-amber-300 shadow-[0_0_16px_rgba(245,158,11,0.5)]"
