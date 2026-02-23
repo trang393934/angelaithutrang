@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { Home, Users, MessageCircle, Gift, Plus, User, LogOut, Star, ChevronDown, BookOpen, PenLine, ArrowRightLeft, Settings, Shield, Bot } from "lucide-react";
+import { Home, Users, MessageCircle, Gift, Plus, LogOut, ChevronDown, Shield } from "lucide-react";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useStories } from "@/hooks/useStories";
-import { useCamlyCoin } from "@/hooks/useCamlyCoin";
-import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { StoryViewer } from "./StoryViewer";
 import { CreateStoryModal } from "./CreateStoryModal";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -24,18 +22,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 import angelAiLogo from "@/assets/angel-ai-logo.png";
-import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getProfilePath } from "@/lib/profileUrl";
 
 export function CommunityHeader() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const shouldAutoFocusSearch = searchParams.get("search") === "1";
-  const { balance } = useCamlyCoin();
-  const { unreadCount } = useDirectMessages();
   const [showStoryViewer, setShowStoryViewer] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
   const [showCreateStory, setShowCreateStory] = useState(false);
@@ -209,93 +205,26 @@ export function CommunityHeader() {
                         <ChevronDown className="w-4 h-4 text-black/60 hidden sm:block" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 max-h-[70vh] overflow-y-auto">
-                      {/* User Info Header */}
-                      <div className="px-3 py-2 border-b border-border">
+                    <DropdownMenuContent align="end" className="w-56">
+                      {/* User Info Header - clickable to go to profile */}
+                      <Link to={getProfilePath(user.id, userProfile?.handle)} className="block px-3 py-2 border-b border-border hover:bg-accent rounded-t-md transition-colors">
                         <p className="font-semibold text-sm text-foreground truncate">
                           {userProfile?.display_name || currentUserStories?.display_name || "User"}
                         </p>
-                      </div>
+                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      </Link>
                       
-                      {/* Profile Link */}
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to={getProfilePath(user.id, userProfile?.handle)} className="flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          <span>{t("header.viewProfile") || "Trang cá nhân"}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      {/* Messages Link */}
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/messages" className="flex items-center gap-2">
-                          <MessageCircle className="w-4 h-4" />
-                          <span>{t("nav.messages") || "Tin nhắn"}</span>
-                          {unreadCount > 0 && (
-                            <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                              {unreadCount > 9 ? "9+" : unreadCount}
-                            </span>
-                          )}
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      {/* Earn Link */}
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/earn" className="flex items-center gap-2">
-                          <img src={camlyCoinLogo} alt="Camly Coin" className="w-4 h-4 rounded-full" />
-                          <span>{t("nav.earn") || "Kiếm xu"}</span>
-                          <span className="ml-auto text-xs font-semibold text-amber-600">
-                            {Math.floor(balance).toLocaleString()}
-                          </span>
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuSeparator />
-                      
-                      {/* Navigation Links - giống trang chủ */}
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/" className="flex items-center gap-2">
-                          <Home className="w-4 h-4" />
-                          <span>{t("nav.home") || "Trang chủ"}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/knowledge" className="flex items-center gap-2">
-                          <BookOpen className="w-4 h-4" />
-                          <span>{t("nav.knowledge") || "Kiến thức"}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/chat" className="flex items-center gap-2">
-                          <Bot className="w-4 h-4" />
-                          <span>{t("nav.chat") || "Kết nối Angel AI"}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/content-writer" className="flex items-center gap-2">
-                          <PenLine className="w-4 h-4" />
-                          <span>{t("nav.contentWriter") || "Viết nội dung"}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/swap" className="flex items-center gap-2">
-                          <ArrowRightLeft className="w-4 h-4" />
-                          <span>{t("nav.swap") || "Swap"}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuSeparator />
-                      
-                      {/* Settings */}
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/profile" className="flex items-center gap-2">
-                          <Settings className="w-4 h-4" />
-                          <span>{t("nav.settings") || "Cài đặt hồ sơ"}</span>
-                        </Link>
-                      </DropdownMenuItem>
+                      {isAdmin && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild className="cursor-pointer">
+                            <Link to="/admin/dashboard" className="flex items-center gap-2">
+                              <Shield className="w-4 h-4 text-purple-600" />
+                              <span className="font-medium">Admin Dashboard</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       
                       <DropdownMenuSeparator />
                       
