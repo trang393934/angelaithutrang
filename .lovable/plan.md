@@ -1,60 +1,74 @@
 
-## Cap nhat URL ho so ca nhan thanh `/user/username`
+## Fix loi hien thi ky tu Tieng Viet bi mat trong chat Angel AI
 
-### Muc tieu
-Khi user truy cap ho so ca nhan, URL se hien thi `angel.fun.rich/user/angelanhnguyet` (handle) thay vi `angel.fun.rich/user/d8721926-ad98-...` (UUID).
+### Van de
+- Cac ky tu Tieng Viet co dau nhu "a", "ay" bi mat khi hien thi (vi du: "day" thanh "dy", "khac" thanh "khc")
+- Ky hieu thay the Unicode (U+FFFD) xuat hien trong cau tra loi (hien thi la "khc" hoac khi copy ra ngoai)
 
-### Cach tiep can
+### Nguyen nhan goc
 
-Thay vi sua tat ca 23+ file chua link `/user/userId`, su dung phuong phap thong minh hon:
+**1. `src/lib/stripMarkdown.ts`** - Ham nay dang xoa tat ca ky tu `\uFFFD` (dong `result = result.replace(/\uFFFD/g, '');`). Khi streaming AI tra ve ky tu bi hong (vi du "kh\uFFFD\uFFFDc"), ham nay xoa chung di va chi con lai "khc" thay vi "khac".
 
-**1. File `src/pages/UserProfile.tsx`** - Thay doi chinh:
-- Doi ten param tu `userId` thanh `identifier` (co the la UUID hoac handle)
-- Them logic phat hien: neu `identifier` la UUID → fetch binh thuong; neu la handle → tim user_id tu bang `profiles`
-- Sau khi load profile, neu URL dang la UUID va user co handle → tu dong doi URL thanh `/user/handle` bang `navigate(replace: true)` (khong reload trang)
+**2. `supabase/functions/angel-chat/index.ts`** - TransformStream dung TextDecoder de thu thap noi dung cache. Khi chunk tu AI gateway cat giua mot ky tu multi-byte (tieng Viet nhu "a" = 2 bytes), TextDecoder co the tao ra ky tu \uFFFD trong fullResponse duoc cache.
 
-**2. File `src/App.tsx`** - Thay doi route:
-- Giu nguyen route `/user/:userId` (khong can doi ten param vi chi dung noi bo)
+### Giai phap
 
-**3. Tao helper function** `src/lib/profileUrl.ts`:
-- Ham `getProfilePath(userId, handle?)` tra ve `/user/{handle}` neu co handle, nguoc lai `/user/{userId}`
-- Dan dan cap nhat cac file link quan trong nhat (PostCard, GlobalSearch, community components) de su dung helper nay
+**Buoc 1: Fix `src/lib/stripMarkdown.ts`**
+- Xoa dong `result = result.replace(/\uFFFD/g, '');` - khong nen xoa ky tu thay the vi no lam mat chu
+- Hoac thay bang logic thong minh hon: chi xoa khi ky tu nam giua 2 ky tu ASCII (truong hop khong phai tieng Viet)
 
-**4. Cap nhat cac file link chinh** (uu tien cac noi user thuong thay):
-- `src/components/community/PostCard.tsx` - link tren bai viet
-- `src/components/GlobalSearch.tsx` - ket qua tim kiem  
-- `src/components/community/SuggestedFriendsCard.tsx` - goi y ban be
-- `src/components/community/FriendSearchModal.tsx` - tim ban
-- `src/pages/Profile.tsx` - link "Angel AI Profile"
-- `src/components/profile/HandleSelector.tsx` - link handle
-- `src/components/public-profile/PublicProfileFriends.tsx` - danh sach ban be (da dung handle)
+**Buoc 2: Fix `supabase/functions/angel-chat/index.ts`**
+- Cai thien TransformStream: Tach viec thu thap fullResponse khoi viec forward stream
+- Su dung mot buffer rieng cho viec parsing JSON tu stream chunks, dam bao khong mat ky tu khi JSON line bi cat giua multi-byte character
+- Them logic xu ly: khi mot `data:` line bi cat giua 2 chunk, buffer lai va xu ly o chunk tiep theo
 
 ### Chi tiet ky thuat
 
-**UserProfile.tsx** - Logic phat hien UUID vs handle:
+**stripMarkdown.ts** - Thay doi:
 ```
-const { userId: identifier } = useParams();
-const isUUID = /^[0-9a-f]{8}-/.test(identifier);
+// XOA dong nay:
+result = result.replace(/\uFFFD/g, '');
 
-// Neu la handle → query profiles by handle de lay user_id
-// Neu la UUID → su dung truc tiep
-
-// Sau khi load xong, neu URL la UUID va profile co handle:
-useEffect(() => {
-  if (isUUID && profile?.handle) {
-    navigate(`/user/${profile.handle}`, { replace: true });
-  }
-}, [profile?.handle]);
+// KHONG thay bang gi ca - de nguyen ky tu, 
+// vi fix streaming se ngan chan \uFFFD tu dau
 ```
 
-**profileUrl.ts** - Helper:
+**angel-chat/index.ts** - TransformStream cai tien:
 ```
-export function getProfilePath(userId: string, handle?: string | null) {
-  return handle ? `/user/${handle}` : `/user/${userId}`;
-}
+let fullResponse = "";
+let parseBuffer = ""; // Buffer cho viec parsing SSE lines
+
+const { readable, writable } = new TransformStream({
+  transform(chunk, controller) {
+    controller.enqueue(chunk); // Forward nguyen chunk cho client
+    
+    // Thu thap noi dung cho cache voi buffer rieng
+    try {
+      const text = streamDecoder.decode(chunk, { stream: true });
+      parseBuffer += text;
+      
+      // Chi xu ly cac dong hoan chinh (ket thuc bang \n)
+      let newlineIdx;
+      while ((newlineIdx = parseBuffer.indexOf('\n')) !== -1) {
+        const line = parseBuffer.slice(0, newlineIdx);
+        parseBuffer = parseBuffer.slice(newlineIdx + 1);
+        
+        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+          try {
+            const parsed = JSON.parse(line.slice(6));
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) fullResponse += content;
+          } catch {}
+        }
+      }
+    } catch {}
+  },
+  // flush giu nguyen
+});
 ```
 
 ### Ket qua
-- URL hien thi dep: `angel.fun.rich/user/angelanhnguyet`
-- Tuong thich nguoc: link cu voi UUID van hoat dong (tu dong chuyen sang handle)
-- Khong bi loi khi user chua co handle (giu UUID)
+- Ky tu tieng Viet hien thi dung va day du (khong mat dau)
+- Khong con ky hieu (U+FFFD) trong cau tra loi
+- Copy text ra ngoai cung chinh xac
+- Cache response cung duoc luu dung
