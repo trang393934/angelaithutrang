@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { Home, Users, MessageCircle, Gift, Plus, LogOut, ChevronDown, Shield } from "lucide-react";
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,24 @@ import angelAiLogo from "@/assets/angel-ai-logo.png";
 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getProfilePath } from "@/lib/profileUrl";
+
+// Gift Button component for community header
+const GiftButtonCommunity = () => {
+  const [giftOpen, setGiftOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setGiftOpen(true)}
+        className="flex items-center gap-1 px-2 lg:px-2.5 py-1 lg:py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 transition-all shadow-sm hover:shadow-md"
+        title="Tặng thưởng"
+      >
+        <Gift className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-black" />
+        <span className="hidden xl:inline text-xs font-bold text-black">Tặng thưởng</span>
+      </button>
+      <GiftCoinDialog open={giftOpen} onOpenChange={setGiftOpen} />
+    </>
+  );
+};
 
 export function CommunityHeader() {
   const { user, signOut, isAdmin } = useAuth();
@@ -190,6 +209,8 @@ export function CommunityHeader() {
 
               {/* Right: Notifications & Profile */}
               <div className="flex items-center gap-1 sm:gap-3 shrink-0 justify-end">
+                {/* Gift Button */}
+                <GiftButtonCommunity />
                 <NotificationDropdown variant="community" />
                 <span className="hidden sm:block"><Web3WalletButton /></span>
                 {user ? (
