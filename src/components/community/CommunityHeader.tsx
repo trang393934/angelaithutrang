@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { Home, Users, MessageCircle, Gift, Plus, User, LogOut, Star, ChevronDown } from "lucide-react";
+import { Home, Users, MessageCircle, Gift, Plus, User, LogOut, Star, ChevronDown, BookOpen, PenLine, ArrowRightLeft, Settings, Shield, Bot } from "lucide-react";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import angelAiLogo from "@/assets/angel-ai-logo.png";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getProfilePath } from "@/lib/profileUrl";
 
 export function CommunityHeader() {
   const { user, signOut } = useAuth();
@@ -66,7 +67,7 @@ export function CommunityHeader() {
     return location.pathname === href && !location.search.includes("search=1");
   };
 
-  const [userProfile, setUserProfile] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ display_name: string | null; avatar_url: string | null; handle: string | null } | null>(null);
 
   const handleStoryClick = (groupIndex: number) => {
     setSelectedGroupIndex(groupIndex);
@@ -83,7 +84,7 @@ export function CommunityHeader() {
       
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select("display_name, avatar_url, handle")
         .eq("user_id", user.id)
         .maybeSingle();
       
@@ -140,7 +141,7 @@ export function CommunityHeader() {
                 </Link>
                 
                 {/* Search Bar - desktop only */}
-                <div className="hidden sm:block max-w-xs">
+                <div className="flex-1 min-w-0 max-w-[160px] sm:max-w-xs">
                   <GlobalSearch 
                     variant="community" 
                     placeholder={t("community.search")}
@@ -208,7 +209,7 @@ export function CommunityHeader() {
                         <ChevronDown className="w-4 h-4 text-black/60 hidden sm:block" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuContent align="end" className="w-56 max-h-[70vh] overflow-y-auto">
                       {/* User Info Header */}
                       <div className="px-3 py-2 border-b border-border">
                         <p className="font-semibold text-sm text-foreground truncate">
@@ -218,7 +219,7 @@ export function CommunityHeader() {
                       
                       {/* Profile Link */}
                       <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to={`/user/${user.id}`} className="flex items-center gap-2">
+                        <Link to={getProfilePath(user.id, userProfile?.handle)} className="flex items-center gap-2">
                           <User className="w-4 h-4" />
                           <span>{t("header.viewProfile") || "Trang cá nhân"}</span>
                         </Link>
@@ -245,6 +246,54 @@ export function CommunityHeader() {
                           <span className="ml-auto text-xs font-semibold text-amber-600">
                             {Math.floor(balance).toLocaleString()}
                           </span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuSeparator />
+                      
+                      {/* Navigation Links - giống trang chủ */}
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link to="/" className="flex items-center gap-2">
+                          <Home className="w-4 h-4" />
+                          <span>{t("nav.home") || "Trang chủ"}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link to="/knowledge" className="flex items-center gap-2">
+                          <BookOpen className="w-4 h-4" />
+                          <span>{t("nav.knowledge") || "Kiến thức"}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link to="/chat" className="flex items-center gap-2">
+                          <Bot className="w-4 h-4" />
+                          <span>{t("nav.chat") || "Kết nối Angel AI"}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link to="/content-writer" className="flex items-center gap-2">
+                          <PenLine className="w-4 h-4" />
+                          <span>{t("nav.contentWriter") || "Viết nội dung"}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link to="/swap" className="flex items-center gap-2">
+                          <ArrowRightLeft className="w-4 h-4" />
+                          <span>{t("nav.swap") || "Swap"}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuSeparator />
+                      
+                      {/* Settings */}
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link to="/profile" className="flex items-center gap-2">
+                          <Settings className="w-4 h-4" />
+                          <span>{t("nav.settings") || "Cài đặt hồ sơ"}</span>
                         </Link>
                       </DropdownMenuItem>
                       
