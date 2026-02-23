@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Music, Check, VolumeX, PartyPopper, Sparkles, AudioLines } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
@@ -32,11 +33,13 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
   const [volume, setVolume] = useState(getStoredVolume);
   const [isPlaying, setIsPlaying] = useState(getStoredPlaying);
   const [hoverOpen, setHoverOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const lastTrackRef = useRef<MusicTrack>(getStoredTrack() === "none" ? "rich-4" : getStoredTrack());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasInitRef = useRef(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Create or get audio element
   const getOrCreateAudio = useCallback((src: string): HTMLAudioElement => {
@@ -111,7 +114,6 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
   // Toggle play/pause on click
   const handleToggle = () => {
     if (isPlaying && track !== "none") {
-      // Currently playing → stop
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
@@ -124,7 +126,6 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
       localStorage.setItem("bg-music-track", "none");
       localStorage.setItem("bg-music-playing", "false");
     } else {
-      // Currently stopped → play last track
       const restoreTrack = lastTrackRef.current;
       const selected = TRACK_OPTIONS.find((t) => t.value === restoreTrack);
       if (!selected) return;
@@ -157,14 +158,41 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
     setHoverOpen(false);
   };
 
+  // Calculate menu position
+  const updateMenuPos = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const isHeader = variant === "header";
+    if (isHeader) {
+      setMenuPos({
+        top: rect.bottom + 6,
+        left: Math.max(8, rect.right - 240),
+      });
+    } else {
+      setMenuPos({
+        top: rect.top - 6,
+        left: Math.max(8, rect.right - 240),
+      });
+    }
+  }, [variant]);
+
   // Hover handlers with delay
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    updateMenuPos();
     setHoverOpen(true);
   };
 
   const handleMouseLeave = () => {
     hoverTimeoutRef.current = setTimeout(() => setHoverOpen(false), 300);
+  };
+
+  const handleMenuEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+  };
+
+  const handleMenuLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => setHoverOpen(false), 200);
   };
 
   // Cleanup on unmount
@@ -182,16 +210,67 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
   const isHeader = variant === "header";
   const isActive = isPlaying && track !== "none";
 
+  const dropdownMenu = hoverOpen && menuPos && createPortal(
+    <div
+      ref={menuRef}
+      onMouseEnter={handleMenuEnter}
+      onMouseLeave={handleMenuLeave}
+      className="fixed z-[9999] w-60 rounded-xl border border-amber-200/60 bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(180,130,20,0.18),0_2px_8px_rgba(0,0,0,0.08)] p-3 animate-fade-in"
+      style={{
+        top: isHeader ? menuPos.top : undefined,
+        bottom: isHeader ? undefined : `${window.innerHeight - menuPos.top}px`,
+        left: menuPos.left,
+      }}
+    >
+      <p className="text-xs font-bold text-amber-800/80 uppercase tracking-wider px-1 pb-2">
+        🎵 Nhạc nền
+      </p>
+      <div className="space-y-0.5">
+        {TRACK_OPTIONS.map(({ value, icon: Icon, label }) => (
+          <button
+            key={value}
+            onClick={() => selectTrack(value)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+              track === value
+                ? "bg-gradient-to-r from-amber-100 to-yellow-50 text-amber-900 font-semibold shadow-sm ring-1 ring-amber-200/50"
+                : "hover:bg-amber-50/80 text-foreground"
+            }`}
+          >
+            <Icon className={`w-4 h-4 flex-shrink-0 ${track === value ? "text-amber-600" : "text-muted-foreground"}`} />
+            <span className="flex-1 text-left">{label}</span>
+            {track === value && <Check className="w-4 h-4 flex-shrink-0 text-amber-600" />}
+          </button>
+        ))}
+      </div>
+
+      {/* Volume slider */}
+      <div className="mt-3 px-1 pt-2 border-t border-amber-100">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] font-medium text-amber-700/80">Âm lượng</p>
+          <span className="text-[11px] font-bold text-amber-600">{Math.round(volume * 100)}%</span>
+        </div>
+        <Slider
+          min={0}
+          max={100}
+          step={1}
+          value={[Math.round(volume * 100)]}
+          onValueChange={([v]) => setVolume(v / 100)}
+        />
+      </div>
+    </div>,
+    document.body
+  );
+
   return (
     <div
-      ref={containerRef}
-      className="relative"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      className={isHeader ? "relative" : ""}
     >
       {/* Main toggle button */}
       {isHeader ? (
         <button
+          ref={buttonRef}
           onClick={handleToggle}
           className={`flex items-center gap-1 px-2 lg:px-2.5 py-1 lg:py-1.5 rounded-full transition-all ${
             isActive
@@ -209,6 +288,7 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
         </button>
       ) : (
         <button
+          ref={buttonRef}
           onClick={handleToggle}
           className={`fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-sm shadow-lg border flex items-center justify-center transition-all ${
             isActive
@@ -225,43 +305,7 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
         </button>
       )}
 
-      {/* Hover dropdown */}
-      {hoverOpen && (
-        <div
-          className={`absolute z-[100] w-56 p-2 rounded-lg border bg-popover text-popover-foreground shadow-lg ${
-            isHeader ? "top-full right-0 mt-1" : "bottom-full right-0 mb-2"
-          }`}
-        >
-          <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Nhạc nền</p>
-          {TRACK_OPTIONS.map(({ value, icon: Icon, label }) => (
-            <button
-              key={value}
-              onClick={() => selectTrack(value)}
-              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors ${
-                track === value
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "hover:bg-muted text-foreground"
-              }`}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              <span className="flex-1 text-left">{label}</span>
-              {track === value && <Check className="w-4 h-4 flex-shrink-0" />}
-            </button>
-          ))}
-
-          {/* Volume slider */}
-          <div className="mt-2 px-2.5 pb-1">
-            <p className="text-[10px] text-muted-foreground mb-1.5">Âm lượng: {Math.round(volume * 100)}%</p>
-            <Slider
-              min={0}
-              max={100}
-              step={1}
-              value={[Math.round(volume * 100)]}
-              onValueChange={([v]) => setVolume(v / 100)}
-            />
-          </div>
-        </div>
-      )}
+      {dropdownMenu}
     </div>
   );
 };
