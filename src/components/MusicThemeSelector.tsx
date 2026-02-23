@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Music, Check, VolumeX, PartyPopper, Sparkles, AudioLines } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 
 export type MusicTrack = "tet-1" | "tet-2" | "rich-4" | "none";
@@ -9,7 +8,6 @@ const TRACK_OPTIONS: { value: MusicTrack; icon: React.ElementType; label: string
   { value: "tet-1", icon: PartyPopper, label: "Tết Vui Vẻ 1", src: "/audio/tet-vui-ve-1.mp3" },
   { value: "tet-2", icon: Sparkles, label: "Tết Vui Vẻ 2", src: "/audio/tet-vui-ve-2.mp3" },
   { value: "rich-4", icon: AudioLines, label: "Nhạc hiệu 2", src: "/audio/rich-4.mp3" },
-  { value: "none", icon: VolumeX, label: "Tắt nhạc", src: "" },
 ];
 
 const getStoredTrack = (): MusicTrack => {
@@ -33,12 +31,14 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
   const [track, setTrack] = useState<MusicTrack>(getStoredTrack);
   const [volume, setVolume] = useState(getStoredVolume);
   const [isPlaying, setIsPlaying] = useState(getStoredPlaying);
-  const [open, setOpen] = useState(false);
+  const [hoverOpen, setHoverOpen] = useState(false);
   const lastTrackRef = useRef<MusicTrack>(getStoredTrack() === "none" ? "rich-4" : getStoredTrack());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasInitRef = useRef(false);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Create or get audio element, ensuring only one exists
+  // Create or get audio element
   const getOrCreateAudio = useCallback((src: string): HTMLAudioElement => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -57,7 +57,6 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
   const playAudio = useCallback((audio: HTMLAudioElement) => {
     const attempt = () => {
       audio.play().catch(() => {
-        // Autoplay blocked — wait for any user interaction (works on iOS & Android)
         const resume = () => {
           audio.play().catch(() => {});
           document.removeEventListener("touchstart", resume, true);
@@ -77,7 +76,7 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
     }
   }, []);
 
-  // Resume music on visibility change (iOS pauses audio on tab switch / home button)
+  // Resume on visibility change
   useEffect(() => {
     const onVisibility = () => {
       const audio = audioRef.current;
@@ -109,44 +108,40 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
     localStorage.setItem("bg-music-volume", String(volume));
   }, [volume]);
 
-  const selectTrack = (value: MusicTrack) => {
-    if (value === "none") {
-      if (track === "none") {
-        // Already muted — restore last track
-        const restoreTrack = lastTrackRef.current;
-        setTrack(restoreTrack);
-        localStorage.setItem("bg-music-track", restoreTrack);
-
-        const selected = TRACK_OPTIONS.find((t) => t.value === restoreTrack);
-        if (!selected) return;
-
-        const audio = getOrCreateAudio(selected.src);
-        playAudio(audio);
-
-        setIsPlaying(true);
-        localStorage.setItem("bg-music-playing", "true");
-        setOpen(false);
-        return;
-      }
-
-      // First click on mute — save current track, then mute
-      lastTrackRef.current = track;
-      setTrack("none");
-      localStorage.setItem("bg-music-track", "none");
-
+  // Toggle play/pause on click
+  const handleToggle = () => {
+    if (isPlaying && track !== "none") {
+      // Currently playing → stop
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
         audioRef.current.load();
         audioRef.current = null;
       }
+      lastTrackRef.current = track;
+      setTrack("none");
       setIsPlaying(false);
+      localStorage.setItem("bg-music-track", "none");
       localStorage.setItem("bg-music-playing", "false");
-      setOpen(false);
-      return;
-    }
+    } else {
+      // Currently stopped → play last track
+      const restoreTrack = lastTrackRef.current;
+      const selected = TRACK_OPTIONS.find((t) => t.value === restoreTrack);
+      if (!selected) return;
 
-    // Selecting a specific track
+      setTrack(restoreTrack);
+      localStorage.setItem("bg-music-track", restoreTrack);
+
+      const audio = getOrCreateAudio(selected.src);
+      playAudio(audio);
+
+      setIsPlaying(true);
+      localStorage.setItem("bg-music-playing", "true");
+    }
+  };
+
+  // Select a specific track from hover menu
+  const selectTrack = (value: MusicTrack) => {
     lastTrackRef.current = value;
     setTrack(value);
     localStorage.setItem("bg-music-track", value);
@@ -159,7 +154,17 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
 
     setIsPlaying(true);
     localStorage.setItem("bg-music-playing", "true");
-    setOpen(false);
+    setHoverOpen(false);
+  };
+
+  // Hover handlers with delay
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setHoverOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => setHoverOpen(false), 300);
   };
 
   // Cleanup on unmount
@@ -170,51 +175,81 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
         audioRef.current.src = "";
         audioRef.current = null;
       }
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, []);
 
   const isHeader = variant === "header";
+  const isActive = isPlaying && track !== "none";
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        {isHeader ? (
-          <button
-            className="flex items-center gap-1 px-2 lg:px-2.5 py-1 lg:py-1.5 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
-            aria-label="Chọn nhạc nền"
-            type="button"
-          >
-            <Music className="w-5 h-5 text-amber-500" />
-          </button>
-        ) : (
-          <button
-            className="fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-primary/20 hover:bg-white/90 flex items-center justify-center"
-            aria-label="Chọn nhạc nền"
-          >
-            <Music className="w-5 h-5 text-amber-500" />
-          </button>
-        )}
-      </PopoverTrigger>
-      <PopoverContent side={isHeader ? "bottom" : "top"} align="end" className="w-56 p-2">
-        <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Nhạc nền</p>
-        {TRACK_OPTIONS.map(({ value, icon: Icon, label }) => (
-          <button
-            key={value}
-            onClick={() => selectTrack(value)}
-            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors ${
-              track === value
-                ? "bg-primary/10 text-primary font-medium"
-                : "hover:bg-muted text-foreground"
+    <div
+      ref={containerRef}
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Main toggle button */}
+      {isHeader ? (
+        <button
+          onClick={handleToggle}
+          className={`flex items-center gap-1 px-2 lg:px-2.5 py-1 lg:py-1.5 rounded-full transition-all ${
+            isActive
+              ? "bg-gradient-to-r from-amber-400 to-yellow-500 shadow-[0_0_12px_rgba(245,158,11,0.5)]"
+              : "bg-primary-pale/50 hover:bg-primary-pale"
+          }`}
+          aria-label={isActive ? "Tắt nhạc nền" : "Bật nhạc nền"}
+          type="button"
+        >
+          <Music
+            className={`w-5 h-5 ${
+              isActive ? "text-black animate-[spin_3s_linear_infinite]" : "text-amber-500"
             }`}
-          >
-            <Icon className="w-4 h-4 flex-shrink-0" />
-            <span className="flex-1 text-left">{label}</span>
-            {track === value && <Check className="w-4 h-4 flex-shrink-0" />}
-          </button>
-        ))}
+          />
+        </button>
+      ) : (
+        <button
+          onClick={handleToggle}
+          className={`fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-sm shadow-lg border flex items-center justify-center transition-all ${
+            isActive
+              ? "bg-gradient-to-r from-amber-400 to-yellow-500 border-amber-300 shadow-[0_0_16px_rgba(245,158,11,0.5)]"
+              : "bg-white/80 border-primary/20 hover:bg-white/90"
+          }`}
+          aria-label={isActive ? "Tắt nhạc nền" : "Bật nhạc nền"}
+        >
+          <Music
+            className={`w-5 h-5 ${
+              isActive ? "text-black animate-[spin_3s_linear_infinite]" : "text-amber-500"
+            }`}
+          />
+        </button>
+      )}
 
-        {/* Volume slider */}
-        {track !== "none" && (
+      {/* Hover dropdown */}
+      {hoverOpen && (
+        <div
+          className={`absolute z-[100] w-56 p-2 rounded-lg border bg-popover text-popover-foreground shadow-lg ${
+            isHeader ? "top-full right-0 mt-1" : "bottom-full right-0 mb-2"
+          }`}
+        >
+          <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Nhạc nền</p>
+          {TRACK_OPTIONS.map(({ value, icon: Icon, label }) => (
+            <button
+              key={value}
+              onClick={() => selectTrack(value)}
+              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors ${
+                track === value
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "hover:bg-muted text-foreground"
+              }`}
+            >
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              <span className="flex-1 text-left">{label}</span>
+              {track === value && <Check className="w-4 h-4 flex-shrink-0" />}
+            </button>
+          ))}
+
+          {/* Volume slider */}
           <div className="mt-2 px-2.5 pb-1">
             <p className="text-[10px] text-muted-foreground mb-1.5">Âm lượng: {Math.round(volume * 100)}%</p>
             <Slider
@@ -225,8 +260,8 @@ export const MusicThemeSelector = ({ variant = "floating" }: MusicThemeSelectorP
               onValueChange={([v]) => setVolume(v / 100)}
             />
           </div>
-        )}
-      </PopoverContent>
-    </Popover>
+        </div>
+      )}
+    </div>
   );
 };
