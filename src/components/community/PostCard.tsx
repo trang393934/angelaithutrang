@@ -346,7 +346,7 @@ export function PostCard({
         <CardContent className="p-4 sm:p-5 overflow-hidden">
           {/* Header */}
           <div className="flex items-start gap-3 mb-4 min-w-0">
-            <Link to={`/user/${post.user_id}`}>
+            <Link to={`/user/${(post as any).user_handle || post.user_id}`}>
               <Avatar className="w-11 h-11 border-2 border-primary/20 hover:border-primary/50 transition-colors cursor-pointer">
                 <AvatarImage src={post.user_avatar_url || angelAvatar} alt={post.user_display_name} />
                 <AvatarFallback>{post.user_display_name?.charAt(0) || "U"}</AvatarFallback>
@@ -355,7 +355,7 @@ export function PostCard({
 
             <div className="flex-1 min-w-0 overflow-hidden">
               <div className="flex items-center gap-2 flex-wrap">
-                <Link to={`/user/${post.user_id}`} className="hover:underline min-w-0">
+                <Link to={`/user/${(post as any).user_handle || post.user_id}`} className="hover:underline min-w-0">
                   <span className="font-semibold text-foreground truncate block max-w-[150px] sm:max-w-[200px]">
                     {post.user_display_name}
                   </span>

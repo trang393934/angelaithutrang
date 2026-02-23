@@ -14,6 +14,7 @@ interface SuggestedUser {
   user_id: string;
   display_name: string;
   avatar_url: string | null;
+  handle: string | null;
   mutualFriends?: number;
 }
 
@@ -46,7 +47,7 @@ export function SuggestedFriendsCard() {
       // Get random users not in exclude list
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url")
+        .select("user_id, display_name, avatar_url, handle")
         .limit(50);
 
       if (error) throw error;
@@ -123,7 +124,7 @@ export function SuggestedFriendsCard() {
             >
               <Avatar
                 className="w-10 h-10 cursor-pointer border-2 border-transparent hover:border-primary/30 transition-colors"
-                onClick={() => navigate(`/user/${suggestion.user_id}`)}
+                onClick={() => navigate(`/user/${suggestion.handle || suggestion.user_id}`)}
               >
                 <AvatarImage
                   src={suggestion.avatar_url || angelAvatar}
@@ -137,7 +138,7 @@ export function SuggestedFriendsCard() {
               <div className="flex-1 min-w-0">
                 <p
                   className="font-medium text-sm truncate cursor-pointer hover:text-primary transition-colors"
-                  onClick={() => navigate(`/user/${suggestion.user_id}`)}
+                  onClick={() => navigate(`/user/${suggestion.handle || suggestion.user_id}`)}
                 >
                   {suggestion.display_name || "Người dùng"}
                 </p>
