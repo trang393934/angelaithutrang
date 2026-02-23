@@ -1,57 +1,44 @@
 
-## Them button "Coordinator Gate" vao Header va form them Coordinator moi
+## Hoan thien giao dien mobile cho Coordinator Gate
 
-### 1. Them button "Coordinator Gate" vao Header (trang chu)
+### Van de hien tai
+- Nut "Create New Project" bi tran vien phai tren mobile do header dung `flex justify-between` voi nut qua lon (`size="lg"`)
+- Header chua responsive cho man hinh nho
 
-**Vi tri**: Ben trai o tim kiem (GlobalSearch), chi hien thi cho user da dang nhap va co quyen coordinator hoac admin.
+### Cac thay doi
 
-**File**: `src/components/Header.tsx`
-- Import `useCoordinatorRole` hook
-- Them button voi style noi bat: gradient tim/xanh, icon `Shield`, text "Coordinator Gate"
-- Dat truoc `<GlobalSearch>` trong phan desktop (dong 158-164)
-- Them vao mobile menu grid
+**1. File: `src/pages/CoordinatorGate.tsx`**
 
-**Style button**:
-- Gradient noi bat (purple-indigo) de phan biet voi cac nut khac
-- Icon Shield + text "Coordinator"
-- Rounded-full, shadow, hover animation
-- Chi hien khi `hasAccess === true`
+- **Header (dong 90-103)**: Chuyen layout header thanh responsive
+  - Mobile: xep doc (flex-col), title tren, buttons duoi
+  - Desktop: giu nguyen flex-row
+  - Giam padding mobile: `px-4 py-3 sm:px-6 sm:py-4`
+  - Main content: `px-4 sm:px-6`
 
-### 2. Them form "Add Coordinator" trong trang Coordinator Gate
+- **Nut Home va Create**: Wrap trong `flex-wrap gap-2` de tu dong xuong dong tren mobile
 
-**File**: `src/pages/CoordinatorGate.tsx`
-- Them mot section "Add Coordinator" trong header hoac main area
-- Form gom: input email + button "Add"
-- Chi cho phep admin hoac coordinator hien tai them nguoi moi
+**2. File: `src/components/coordinator/ProjectCreateDialog.tsx`**
 
-**Logic**:
-- Nhap email -> tim user trong bang `profiles` theo email (hoac `auth.users` qua edge function)
-- Neu tim thay user -> insert vao bang `user_roles` voi role = 'coordinator'
-- Hien thong bao thanh cong/that bai bang sonner toast
-
-**File moi**: `supabase/functions/add-coordinator/index.ts`
-- Edge function de xu ly viec them coordinator an toan
-- Kiem tra nguoi goi co quyen admin/coordinator
-- Tim user theo email trong auth.users
-- Insert vao user_roles
+- Thay `size="lg"` thanh `size="default"` hoac `size="sm"` tren mobile
+- Them class responsive: `text-sm sm:text-base` de nut khong qua lon tren mobile
 
 ### Chi tiet ky thuat
 
-**Header.tsx** thay doi:
-- Import them: `useCoordinatorRole`, `Shield` (da co)
-- Them button truoc div chua GlobalSearch (desktop)
-- Them vao mobile menu
+**CoordinatorGate.tsx - Header section** (dong 90-103):
+```
+- flex items-center justify-between
++ flex flex-col sm:flex-row sm:items-center gap-3
+```
+- Phan buttons: them `w-full sm:w-auto flex-shrink-0`
+- Padding: `px-4 sm:px-6`
 
-**CoordinatorGate.tsx** thay doi:
-- Them state cho email input
-- Them UI card "Add Coordinator" voi input + button
-- Goi edge function `add-coordinator`
+**ProjectCreateDialog.tsx** (dong 50-51):
+- Thay `size="lg"` bang `size="default"`
+- Them `w-full sm:w-auto` de nut full-width tren mobile
 
-**Edge function `add-coordinator`**:
-- Nhan `{ email: string }` trong body
-- Verify caller co role admin/coordinator
-- Tim user_id tu email qua supabase admin client
-- Insert vao `user_roles(user_id, role: 'coordinator')`
-- Tra ve ket qua
+**ProjectCard.tsx** - khong can thay doi lon, grid `grid-cols-1` da responsive
 
-**Bang `user_roles`**: da co san voi cac column `id, user_id, role, created_at` - khong can tao them bang moi.
+### Ket qua
+- Header khong bi tran tren mobile
+- Nut Create hien thi gon gang, khong bi cat
+- Layout tong the tuong thich voi tat ca kich thuoc man hinh
