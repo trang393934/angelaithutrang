@@ -47,8 +47,8 @@ export function ProjectCreateDialog({ onSubmit, isPending }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="gap-2">
-          <Plus className="h-5 w-5" /> Create New Project
+        <Button size="default" className="gap-2 w-full sm:w-auto">
+          <Plus className="h-4 w-4" /> Create New Project
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
