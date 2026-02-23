@@ -1,44 +1,60 @@
 
-## Hoan thien giao dien mobile cho Coordinator Gate
+## Cap nhat URL ho so ca nhan thanh `/user/username`
 
-### Van de hien tai
-- Nut "Create New Project" bi tran vien phai tren mobile do header dung `flex justify-between` voi nut qua lon (`size="lg"`)
-- Header chua responsive cho man hinh nho
+### Muc tieu
+Khi user truy cap ho so ca nhan, URL se hien thi `angel.fun.rich/user/angelanhnguyet` (handle) thay vi `angel.fun.rich/user/d8721926-ad98-...` (UUID).
 
-### Cac thay doi
+### Cach tiep can
 
-**1. File: `src/pages/CoordinatorGate.tsx`**
+Thay vi sua tat ca 23+ file chua link `/user/userId`, su dung phuong phap thong minh hon:
 
-- **Header (dong 90-103)**: Chuyen layout header thanh responsive
-  - Mobile: xep doc (flex-col), title tren, buttons duoi
-  - Desktop: giu nguyen flex-row
-  - Giam padding mobile: `px-4 py-3 sm:px-6 sm:py-4`
-  - Main content: `px-4 sm:px-6`
+**1. File `src/pages/UserProfile.tsx`** - Thay doi chinh:
+- Doi ten param tu `userId` thanh `identifier` (co the la UUID hoac handle)
+- Them logic phat hien: neu `identifier` la UUID → fetch binh thuong; neu la handle → tim user_id tu bang `profiles`
+- Sau khi load profile, neu URL dang la UUID va user co handle → tu dong doi URL thanh `/user/handle` bang `navigate(replace: true)` (khong reload trang)
 
-- **Nut Home va Create**: Wrap trong `flex-wrap gap-2` de tu dong xuong dong tren mobile
+**2. File `src/App.tsx`** - Thay doi route:
+- Giu nguyen route `/user/:userId` (khong can doi ten param vi chi dung noi bo)
 
-**2. File: `src/components/coordinator/ProjectCreateDialog.tsx`**
+**3. Tao helper function** `src/lib/profileUrl.ts`:
+- Ham `getProfilePath(userId, handle?)` tra ve `/user/{handle}` neu co handle, nguoc lai `/user/{userId}`
+- Dan dan cap nhat cac file link quan trong nhat (PostCard, GlobalSearch, community components) de su dung helper nay
 
-- Thay `size="lg"` thanh `size="default"` hoac `size="sm"` tren mobile
-- Them class responsive: `text-sm sm:text-base` de nut khong qua lon tren mobile
+**4. Cap nhat cac file link chinh** (uu tien cac noi user thuong thay):
+- `src/components/community/PostCard.tsx` - link tren bai viet
+- `src/components/GlobalSearch.tsx` - ket qua tim kiem  
+- `src/components/community/SuggestedFriendsCard.tsx` - goi y ban be
+- `src/components/community/FriendSearchModal.tsx` - tim ban
+- `src/pages/Profile.tsx` - link "Angel AI Profile"
+- `src/components/profile/HandleSelector.tsx` - link handle
+- `src/components/public-profile/PublicProfileFriends.tsx` - danh sach ban be (da dung handle)
 
 ### Chi tiet ky thuat
 
-**CoordinatorGate.tsx - Header section** (dong 90-103):
+**UserProfile.tsx** - Logic phat hien UUID vs handle:
 ```
-- flex items-center justify-between
-+ flex flex-col sm:flex-row sm:items-center gap-3
+const { userId: identifier } = useParams();
+const isUUID = /^[0-9a-f]{8}-/.test(identifier);
+
+// Neu la handle → query profiles by handle de lay user_id
+// Neu la UUID → su dung truc tiep
+
+// Sau khi load xong, neu URL la UUID va profile co handle:
+useEffect(() => {
+  if (isUUID && profile?.handle) {
+    navigate(`/user/${profile.handle}`, { replace: true });
+  }
+}, [profile?.handle]);
 ```
-- Phan buttons: them `w-full sm:w-auto flex-shrink-0`
-- Padding: `px-4 sm:px-6`
 
-**ProjectCreateDialog.tsx** (dong 50-51):
-- Thay `size="lg"` bang `size="default"`
-- Them `w-full sm:w-auto` de nut full-width tren mobile
-
-**ProjectCard.tsx** - khong can thay doi lon, grid `grid-cols-1` da responsive
+**profileUrl.ts** - Helper:
+```
+export function getProfilePath(userId: string, handle?: string | null) {
+  return handle ? `/user/${handle}` : `/user/${userId}`;
+}
+```
 
 ### Ket qua
-- Header khong bi tran tren mobile
-- Nut Create hien thi gon gang, khong bi cat
-- Layout tong the tuong thich voi tat ca kich thuoc man hinh
+- URL hien thi dep: `angel.fun.rich/user/angelanhnguyet`
+- Tuong thich nguoc: link cu voi UUID van hoat dong (tu dong chuyen sang handle)
+- Khong bi loi khi user chua co handle (giu UUID)
