@@ -88,12 +88,12 @@ export default function CoordinatorGate() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Coordinator Gate</h1>
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Coordinator Gate</h1>
             <p className="text-sm text-muted-foreground">Build the Light Economy Together</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:ml-auto flex-shrink-0">
             <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
               <ArrowLeft className="h-4 w-4 mr-1" /> Home
             </Button>
@@ -102,7 +102,7 @@ export default function CoordinatorGate() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Add Coordinator Section */}
         <section className="mb-8 p-5 rounded-xl border bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 border-purple-200/50 dark:border-purple-800/50">
           <div className="flex items-center gap-2 mb-3">
