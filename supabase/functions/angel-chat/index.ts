@@ -1710,24 +1710,32 @@ HƯỚNG DẪN XỬ LÝ:
 
     let fullResponse = "";
     const streamDecoder = new TextDecoder();
+    let parseBuffer = ""; // Buffer for incomplete SSE lines across chunks
     const { readable, writable } = new TransformStream({
       transform(chunk, controller) {
-        controller.enqueue(chunk);
+        controller.enqueue(chunk); // Forward raw chunk to client immediately
         
-        // Try to parse and collect content
+        // Collect content for cache using a line buffer to handle split lines
         try {
           const text = streamDecoder.decode(chunk, { stream: true });
-          const lines = text.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-              const jsonStr = line.slice(6);
+          parseBuffer += text;
+          
+          // Only process complete lines (ending with \n)
+          let newlineIdx: number;
+          while ((newlineIdx = parseBuffer.indexOf('\n')) !== -1) {
+            const line = parseBuffer.slice(0, newlineIdx);
+            parseBuffer = parseBuffer.slice(newlineIdx + 1);
+            
+            if (line.startsWith('data: ') && line.trim() !== 'data: [DONE]') {
               try {
-                const parsed = JSON.parse(jsonStr);
+                const parsed = JSON.parse(line.slice(6));
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   fullResponse += content;
                 }
-              } catch {}
+              } catch {
+                // Incomplete JSON — will be completed in next chunk
+              }
             }
           }
         } catch {}

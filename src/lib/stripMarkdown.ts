@@ -7,8 +7,8 @@ export function stripMarkdown(text: string): string {
 
   let result = text;
 
-  // Remove Unicode replacement characters (broken multi-byte UTF-8)
-  result = result.replace(/\uFFFD/g, '');
+  // Note: We intentionally do NOT strip \uFFFD (Unicode replacement characters)
+  // as this causes Vietnamese diacritics to be lost when streaming splits multi-byte chars
 
   // Remove code blocks (``` ... ```)
   result = result.replace(/```[\s\S]*?```/g, (match) => {
