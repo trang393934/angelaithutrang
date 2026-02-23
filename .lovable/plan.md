@@ -1,84 +1,68 @@
 
 
-## Cai thien giao dien mobile tab Cong dong
+## Fix loi ky tu Unicode trong Coordinator Chat
 
-### Van de hien tai
-1. **Thieu thanh tim kiem tren mobile**: GlobalSearch bi an boi class `hidden sm:block` (chi hien thi tu 640px tro len)
-2. **Menu ho so thieu muc**: Dropdown profile trong CommunityHeader chi co 4 muc (Trang ca nhan, Tin nhan, Kiem xu, Dang xuat), trong khi Header trang chu co nhieu muc hon (Kien thuc, Ket noi Angel, Cong dong, Viet noi dung, Swap, v.v.)
-3. **Link profile chua dung handle**: Van dung UUID thay vi handle moi cap nhat
+### Van de
+Du lieu trong database da luu noi dung bi hong (vi du: "Đ~~~t" thay vi "Đặt", "KH~~I" thay vi "KHỞI"). Nguyen nhan: edge function `coordinator-chat` chi pipe thang `response.body` tu AI gateway ve client ma khong xu ly gi. Client-side `TextDecoder` co the gap van de khi SSE chunks cat giua ky tu multi-byte tieng Viet.
 
 ### Giai phap
 
-**1. File `src/components/community/CommunityHeader.tsx`**
+**1. File `supabase/functions/coordinator-chat/index.ts`**
+Thay vi tra ve `response.body` truc tiep (dong 282), them TransformStream tuong tu nhu da fix trong `angel-chat`:
+- Tao `TransformStream` voi `parseBuffer` de buffer cac dong SSE chua hoan chinh
+- Dung `TextDecoder` voi `{ stream: true }` de xu ly multi-byte chars dung
+- Forward chunk nguyen ban cho client (khong lam mat du lieu)
+- Chi parse cac dong `data:` hoan chinh de dam bao JSON khong bi cat
 
-**Hien thi thanh tim kiem tren mobile:**
-- Thay `hidden sm:block` thanh hien thi tren tat ca kich thuoc
-- Thu nho kich thuoc tren mobile: `w-full sm:max-w-xs`
-- Dat thanh tim kiem ngay canh logo, giam gap de vua man hinh nho
+```
+// Thay dong:
+return new Response(response.body, { ... });
 
-**Bo sung cac muc menu trong dropdown profile (giong trang chu):**
-Them cac muc sau vao dropdown menu khi bam avatar:
-- Trang chu (/)
-- Gioi thieu (/about)
-- Kien thuc (/knowledge)
-- Ket noi Angel AI (/chat)
-- Viet noi dung (/content-writer)
-- Swap (/swap)
-- Cai dat ho so (/profile)
-- Admin Dashboard (neu la admin)
+// Bang:
+const streamDecoder = new TextDecoder();
+let parseBuffer = "";
+const { readable, writable } = new TransformStream({
+  transform(chunk, controller) {
+    controller.enqueue(chunk); // Forward nguyen chunk
+    try {
+      const text = streamDecoder.decode(chunk, { stream: true });
+      parseBuffer += text;
+      // Buffer cac dong chua hoan chinh, chi log cac dong xong
+      let idx;
+      while ((idx = parseBuffer.indexOf('\n')) !== -1) {
+        parseBuffer = parseBuffer.slice(idx + 1);
+      }
+    } catch {}
+  },
+});
 
-**Cap nhat link profile dung handle:**
-- Thay `<Link to={/user/${user.id}}>` bang su dung `getProfilePath()` tu `src/lib/profileUrl.ts`
-- Can fetch them truong `handle` tu profiles
+response.body.pipeTo(writable);
+return new Response(readable, { ... });
+```
+
+**2. File `src/hooks/useCoordinatorChat.ts`**
+Cai thien client-side streaming de tranh luu ky tu bi hong vao DB:
+- Dam bao `TextDecoder` chi duoc tao 1 lan (da dung, OK)
+- Them logic: truoc khi luu `fullContent` vao DB, loai bo bat ky ky tu `\uFFFD` con sot lai va thay bang chuoi rong (vi day la ky tu thay the bi hong, khong phai tieng Viet that)
+
+```
+// Truoc khi save:
+const cleanContent = fullContent.replace(/\uFFFD/g, '');
+if (cleanContent) {
+  await supabase.from("coordinator_chat_messages").insert({
+    ...
+    content: cleanContent,
+  });
+}
+```
 
 ### Chi tiet ky thuat
 
-**CommunityHeader.tsx - Tim kiem mobile (dong 142-150):**
-```
-// TRUOC:
-<div className="hidden sm:block max-w-xs">
+Nguyen nhan chinh: `coordinator-chat` edge function dung `return new Response(response.body, ...)` pipe thang stream tu Cloudflare/Lovable gateway. Khi AI gateway tra ve SSE chunks ma mot ky tu tieng Viet (2-3 bytes) bi cat giua 2 chunks, client decode thanh U+FFFD roi luu vao DB.
 
-// SAU:
-<div className="flex-1 min-w-0 max-w-[200px] sm:max-w-xs">
-```
-
-**CommunityHeader.tsx - Dropdown menu (dong 211-261):**
-Them cac DropdownMenuItem moi:
-```
-// Them sau "Trang ca nhan":
-<DropdownMenuSeparator />
-<DropdownMenuItem> Trang chu (/) </DropdownMenuItem>
-<DropdownMenuItem> Kien thuc (/knowledge) </DropdownMenuItem>
-<DropdownMenuItem> Ket noi Angel (/chat) </DropdownMenuItem>
-<DropdownMenuItem> Cong dong (/community) </DropdownMenuItem>
-<DropdownMenuItem> Viet noi dung (/content-writer) </DropdownMenuItem>
-<DropdownMenuItem> Swap (/swap) </DropdownMenuItem>
-<DropdownMenuSeparator />
-<DropdownMenuItem> Cai dat (/profile) </DropdownMenuItem>
-// Admin link (neu isAdmin)
-<DropdownMenuSeparator />
-<DropdownMenuItem> Dang xuat </DropdownMenuItem>
-```
-
-**CommunityHeader.tsx - Profile link (dong 221):**
-```
-// TRUOC:
-<Link to={`/user/${user.id}`}>
-
-// SAU:
-import { getProfilePath } from "@/lib/profileUrl";
-// Fetch handle cung voi profile
-// Su dung: <Link to={getProfilePath(user.id, userProfile?.handle)}>
-```
-
-**Them fetch handle trong useEffect (dong 77-96):**
-```
-// Them "handle" vao select:
-.select("display_name, avatar_url, handle")
-```
+Fix ap dung cung pattern da thanh cong voi `angel-chat`: dung TransformStream de dam bao stream duoc xu ly dung charset truoc khi gui ve client.
 
 ### Ket qua
-- Thanh tim kiem hien thi tren mobile
-- Menu profile co day du cac muc dieu huong giong trang chu
-- Bam "Trang ca nhan" se chuyen den URL dung handle (`/user/username`)
-- Giao dien mobile dong bo voi desktop
+- Cac ky tu tieng Viet trong Coordinator chat se hien thi dung
+- Noi dung moi luu vao DB se khong con bi hong
+- Noi dung cu da bi hong van giu nguyen (khong tu dong fix duoc du lieu cu)
