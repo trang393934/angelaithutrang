@@ -279,7 +279,25 @@ ${projectContextStr}
       });
     }
 
-    return new Response(response.body, {
+    // TransformStream to handle multi-byte UTF-8 chars split across chunks
+    const streamDecoder = new TextDecoder();
+    let parseBuffer = "";
+    const { readable, writable } = new TransformStream({
+      transform(chunk, controller) {
+        controller.enqueue(chunk); // Forward original chunk unchanged
+        try {
+          const text = streamDecoder.decode(chunk, { stream: true });
+          parseBuffer += text;
+          let idx;
+          while ((idx = parseBuffer.indexOf('\n')) !== -1) {
+            parseBuffer = parseBuffer.slice(idx + 1);
+          }
+        } catch { /* ignore parse errors */ }
+      },
+    });
+
+    response.body!.pipeTo(writable);
+    return new Response(readable, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {

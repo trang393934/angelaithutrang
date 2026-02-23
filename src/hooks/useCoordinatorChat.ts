@@ -146,13 +146,14 @@ export function useCoordinatorChat(projectId: string | undefined) {
           }
         }
 
-        // Save assistant message to DB
-        if (fullContent) {
+        // Save assistant message to DB (strip any U+FFFD replacement chars)
+        const cleanContent = fullContent.replace(/\uFFFD/g, '');
+        if (cleanContent) {
           await supabase.from("coordinator_chat_messages").insert({
             project_id: projectId,
             user_id: session.user.id,
             role: "assistant",
-            content: fullContent,
+            content: cleanContent,
             mode,
             ai_role: aiRole,
           });
