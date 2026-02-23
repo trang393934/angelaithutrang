@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getDeviceFingerprint } from "@/lib/deviceFingerprint";
 import { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
@@ -87,6 +88,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setIsAdminChecked(true);
             }
           });
+
+          // Register device fingerprint on sign-in events
+          if (event === "SIGNED_IN") {
+            getDeviceFingerprint().then(deviceHash => {
+              supabase.rpc("register_device_fingerprint", {
+                _user_id: session.user.id,
+                _device_hash: deviceHash,
+              } as any).then(({ error }) => {
+                if (error) console.warn("[DeviceFP] Registration failed:", error);
+              });
+            }).catch(() => {});
+          }
         } else {
           setIsAdmin(false);
           setIsAdminChecked(true);

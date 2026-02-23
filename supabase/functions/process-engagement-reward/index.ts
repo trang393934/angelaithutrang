@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { submitAndScorePPLPAction, PPLP_ACTION_TYPES } from "../_shared/pplp-helper.ts";
-import { checkAntiSybil, applyAgeGateReward } from "../_shared/anti-sybil.ts";
+import { checkAntiSybil, applyAgeGateReward, extractIpHash, registerDeviceAndIp } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,7 +50,7 @@ serve(async (req) => {
     console.log(`Processing engagement for authenticated user: ${likerId}`);
 
     // Get questionId from body (NOT likerId)
-    const { questionId } = await req.json();
+    const { questionId, device_hash } = await req.json();
 
     if (!questionId) {
       return new Response(
@@ -61,6 +61,10 @@ serve(async (req) => {
 
     // Use service role for database operations
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Register device fingerprint + IP hash for liker (fire and forget)
+    const ipHash = await extractIpHash(req);
+    registerDeviceAndIp(supabase, likerId, device_hash || null, ipHash);
 
     // Check if user already liked this question
     const { data: existingLike } = await supabase

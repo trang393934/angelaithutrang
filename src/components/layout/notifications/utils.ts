@@ -72,6 +72,8 @@ export const getNotificationIcon = (type: string): string => {
       return "🤝";
     case "account_banned":
       return "⚠️";
+    case "fraud_alert_critical":
+      return "🚨";
     default:
       return "🔔";
   }
@@ -133,6 +135,8 @@ export const getNotificationActionText = (
       return "Angel AI Treasury đã gửi đến bạn thông báo về Lì Xì Tết";
     case "lixi_claim_completed":
       return "Chúc mừng! Bạn đã nhận Camly Coin từ chương trình Lì Xì Tết";
+    case "fraud_alert_critical":
+      return t("notifications.type.fraudAlert") || "Hệ thống phát hiện hoạt động bất thường cần kiểm tra";
     default:
       return t("notifications.type.interacted");
   }
@@ -155,6 +159,9 @@ export const getNotificationLink = (notif: Notification): string | null => {
   }
   if (notif.type === "mint_approved") {
     return "/mint";
+  }
+  if (notif.type === "fraud_alert_critical") {
+    return "/admin/fraud-alerts";
   }
   return null;
 };

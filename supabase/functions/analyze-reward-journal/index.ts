@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
-import { checkAntiSybil, applyAgeGateReward } from "../_shared/anti-sybil.ts";
+import { checkAntiSybil, applyAgeGateReward, extractIpHash, registerDeviceAndIp } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -80,7 +80,7 @@ serve(async (req) => {
     console.log(`Processing journal reward for authenticated user: ${userId}`);
 
     // Get content and journalType from body (NOT userId)
-    const { content, journalType } = await req.json();
+    const { content, journalType, device_hash } = await req.json();
 
     if (!content || !journalType) {
       return new Response(
@@ -94,6 +94,11 @@ serve(async (req) => {
 
     // ============= ANTI-SYBIL: Account Age Gate + Suspension Check =============
     const antiSybil = await checkAntiSybil(supabase, userId, 'journal');
+
+    // Register device fingerprint + IP hash (fire and forget)
+    const ipHash = await extractIpHash(req);
+    registerDeviceAndIp(supabase, userId, device_hash || null, ipHash);
+
     if (!antiSybil.allowed) {
       console.log(`[AntiSybil] Blocked user ${userId}: ${antiSybil.reason}`);
       return new Response(

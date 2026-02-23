@@ -117,3 +117,87 @@ export async function checkAntiSybil(
 export function applyAgeGateReward(baseReward: number, multiplier: number): number {
   return Math.round(baseReward * multiplier);
 }
+
+/**
+ * Extract and hash client IP from request headers (for edge functions).
+ * Uses x-forwarded-for, cf-connecting-ip, or x-real-ip.
+ */
+export async function extractIpHash(req: Request): Promise<string | null> {
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-real-ip");
+
+  if (!ip) return null;
+
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(ip);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Register device fingerprint + IP hash for a user action.
+ * Call this from reward edge functions to feed Sybil detection.
+ */
+export async function registerDeviceAndIp(
+  supabase: SupabaseClient,
+  userId: string,
+  deviceHash: string | null,
+  ipHash: string | null
+): Promise<void> {
+  try {
+    // Register device fingerprint if provided
+    if (deviceHash) {
+      await supabase.rpc("register_device_fingerprint", {
+        _user_id: userId,
+        _device_hash: deviceHash,
+      });
+    }
+
+    // Store IP hash in pplp_fraud_signals if it matches other users
+    if (ipHash) {
+      // Check if same IP used by different users recently
+      const { data: ipUsers } = await supabase
+        .from("pplp_device_registry")
+        .select("user_id")
+        .eq("device_hash", `ip_${ipHash}`)
+        .neq("user_id", userId);
+
+      // Upsert IP record
+      await supabase
+        .from("pplp_device_registry")
+        .upsert(
+          {
+            device_hash: `ip_${ipHash}`,
+            user_id: userId,
+            usage_count: 1,
+            last_seen: new Date().toISOString(),
+          },
+          { onConflict: "device_hash,user_id" }
+        );
+
+      // If same IP used by 2+ other users, create fraud signal
+      if (ipUsers && ipUsers.length >= 2) {
+        await supabase.from("pplp_fraud_signals").insert({
+          actor_id: userId,
+          signal_type: "SYBIL",
+          severity: ipUsers.length >= 4 ? 4 : 3,
+          details: {
+            ip_hash: ipHash,
+            other_users_count: ipUsers.length,
+            reason: `Same IP hash shared with ${ipUsers.length} other accounts`,
+          },
+          source: "SYSTEM",
+        });
+      }
+    }
+  } catch (err) {
+    console.error("[AntiSybil] registerDeviceAndIp error:", err);
+  }
+}
