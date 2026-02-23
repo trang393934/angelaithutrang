@@ -160,7 +160,7 @@ export const Header = () => {
           <div className="hidden lg:flex flex-1 justify-center items-center gap-2">
             {isCoordinator && (
               <Link
-                to="/coordinator"
+                to="/coordinator-gate"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 shrink-0"
               >
                 <Shield className="w-3.5 h-3.5" />
@@ -324,7 +324,7 @@ export const Header = () => {
               <div className="grid grid-cols-2 gap-3 px-4">
                 {isCoordinator && (
                   <Link
-                    to="/coordinator"
+                    to="/coordinator-gate"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="col-span-2 flex items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 border border-purple-400/50 shadow-lg text-white font-bold transition-all active:scale-95"
                   >
