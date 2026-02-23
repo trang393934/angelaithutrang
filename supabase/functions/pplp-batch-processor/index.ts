@@ -81,6 +81,33 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    // ========== CROSS-ACCOUNT SCAN MODE ==========
+    if (action === 'cross_account_scan') {
+      console.log('[PPLP Batch] Running cross-account scan...');
+      
+      const { data: scanResult, error: scanError } = await supabase
+        .rpc('run_cross_account_scan');
+      
+      if (scanError) {
+        console.error('[PPLP Batch] Cross-account scan error:', scanError);
+        return new Response(
+          JSON.stringify({ error: 'Cross-account scan failed', details: scanError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log(`[PPLP Batch] Cross-account scan complete:`, scanResult);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          action: 'cross_account_scan',
+          ...scanResult,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // ========== END CROSS-ACCOUNT SCAN ==========
     // ========== RELEASE PENDING REWARDS MODE ==========
     if (action === 'release_pending_rewards') {
       console.log('[PPLP Batch] Releasing pending rewards...');

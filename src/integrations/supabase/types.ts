@@ -3785,6 +3785,38 @@ export type Database = {
       }
       cleanup_expired_stories: { Args: never; Returns: undefined }
       compute_policy_hash: { Args: { _policy_json: Json }; Returns: string }
+      detect_coordinated_timing: {
+        Args: never
+        Returns: {
+          action_count: number
+          pattern_days: number
+          time_window: string
+          user_count: number
+          user_ids: string[]
+        }[]
+      }
+      detect_cross_account_content_similarity: {
+        Args: never
+        Returns: {
+          content_hash: string
+          detected_at: string
+          sample_content: string
+          user_count: number
+          user_ids: string[]
+        }[]
+      }
+      detect_wallet_clusters: {
+        Args: never
+        Returns: {
+          collector_wallet: string
+          first_seen: string
+          last_seen: string
+          sender_count: number
+          sender_user_ids: string[]
+          token_types: string[]
+          total_amount: number
+        }[]
+      }
       expire_old_mint_requests: { Args: never; Returns: number }
       freeze_user_pending_rewards: {
         Args: { _reason?: string; _user_id: string }
@@ -4044,6 +4076,7 @@ export type Database = {
           withdrawal_id: string
         }[]
       }
+      run_cross_account_scan: { Args: never; Returns: Json }
       schedule_random_audit: { Args: never; Returns: number }
       update_popl_score: {
         Args: { _action_type: string; _is_positive: boolean; _user_id: string }

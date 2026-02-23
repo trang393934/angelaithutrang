@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
-import { checkAntiSybil, applyAgeGateReward } from "../_shared/anti-sybil.ts";
+import { checkAntiSybil, applyAgeGateReward, extractIpHash, registerDeviceAndIp } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -60,12 +60,17 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Get action and other params from body (NOT userId)
-    const { action, postId, content, imageUrl, imageUrls } = await req.json();
+    const { action, postId, content, imageUrl, imageUrls, device_hash } = await req.json();
 
     // ============= ANTI-SYBIL: Account Age Gate (chỉ cho reward actions) =============
     let antiSybil: Awaited<ReturnType<typeof checkAntiSybil>> | null = null;
     if (['create_post', 'add_comment', 'share_post'].includes(action)) {
       antiSybil = await checkAntiSybil(supabase, userId, action);
+
+      // Register device fingerprint + IP hash (fire and forget)
+      const ipHash = await extractIpHash(req);
+      registerDeviceAndIp(supabase, userId, device_hash || null, ipHash);
+
       if (!antiSybil.allowed) {
         // Vẫn cho đăng bài nhưng không thưởng nếu bị frozen
         // Chỉ chặn hoàn toàn nếu bị suspended

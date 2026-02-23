@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
-import { checkAntiSybil, applyAgeGateReward } from "../_shared/anti-sybil.ts";
+import { checkAntiSybil, applyAgeGateReward, extractIpHash, registerDeviceAndIp } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
     console.log(`Processing share reward for user: ${userId}`);
 
     // Parse request body
-    const body: ShareRequest = await req.json();
-    const { contentType, contentId, contentHash, platform, rewardAmount = 500 } = body;
+    const body: ShareRequest & { device_hash?: string } = await req.json();
+    const { contentType, contentId, contentHash, platform, rewardAmount = 500, device_hash } = body;
 
     // Validate required fields
     if (!contentType || !contentHash || !platform) {
@@ -78,6 +78,11 @@ Deno.serve(async (req) => {
 
     // ============= ANTI-SYBIL: Account Age Gate + Suspension Check =============
     const antiSybil = await checkAntiSybil(supabaseAdmin, userId, 'share');
+
+    // Register device fingerprint + IP hash (fire and forget)
+    const ipHash = await extractIpHash(req);
+    registerDeviceAndIp(supabaseAdmin, userId, device_hash || null, ipHash);
+
     if (!antiSybil.allowed) {
       return new Response(
         JSON.stringify({ 

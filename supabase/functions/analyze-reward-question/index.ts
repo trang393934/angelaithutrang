@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
-import { checkAntiSybil, applyAgeGateReward } from "../_shared/anti-sybil.ts";
+import { checkAntiSybil, applyAgeGateReward, extractIpHash, registerDeviceAndIp } from "../_shared/anti-sybil.ts";
 
 const VERSION = "v2.0.1";
 console.log(`[analyze-reward-question ${VERSION}] Function initialized at ${new Date().toISOString()}`);
@@ -203,7 +203,7 @@ serve(async (req) => {
     console.log(`Processing reward question for authenticated user: ${userId}`);
 
     // Get questionText and aiResponse from body (NOT userId)
-    const { questionText, aiResponse } = await req.json();
+    const { questionText, aiResponse, device_hash } = await req.json();
 
     if (!questionText) {
       return new Response(
@@ -217,6 +217,11 @@ serve(async (req) => {
 
     // ============= ANTI-SYBIL: Account Age Gate + Suspension Check =============
     const antiSybil = await checkAntiSybil(supabase, userId, 'question');
+
+    // Register device fingerprint + IP hash (fire and forget)
+    const ipHash = await extractIpHash(req);
+    registerDeviceAndIp(supabase, userId, device_hash || null, ipHash);
+
     if (!antiSybil.allowed) {
       console.log(`[AntiSybil] Blocked user ${userId}: ${antiSybil.reason}`);
       return new Response(
