@@ -66,25 +66,40 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find user by email using admin auth API
-    const { data: usersData, error: listError } = await adminClient.auth.admin.listUsers();
-    if (listError) {
-      return new Response(
-        JSON.stringify({ error: "Lỗi tìm kiếm user" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // Find user by email - paginate through all users
+    let targetUserId: string | null = null;
+    let page = 1;
+    const perPage = 100;
+    
+    while (true) {
+      const { data: pageData, error: pageError } = await adminClient.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+      
+      if (pageError || !pageData?.users?.length) break;
+      
+      const match = pageData.users.find(
+        (u: any) => u.email?.toLowerCase() === email.toLowerCase()
       );
+      
+      if (match) {
+        targetUserId = match.id;
+        break;
+      }
+      
+      if (pageData.users.length < perPage) break;
+      page++;
     }
 
-    const targetUser = usersData.users.find(
-      (u: any) => u.email?.toLowerCase() === email.toLowerCase()
-    );
-
-    if (!targetUser) {
+    if (!targetUserId) {
       return new Response(
         JSON.stringify({ error: `Không tìm thấy user với email: ${email}` }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const targetUser = { id: targetUserId };
 
     // Check if already a coordinator
     const { data: existing } = await adminClient
