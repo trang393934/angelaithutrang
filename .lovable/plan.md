@@ -1,30 +1,57 @@
 
-## Thay hình kim cương mới cho huy hiệu avatar
+## Them button "Coordinator Gate" vao Header va form them Coordinator moi
 
-### Thay doi
-Thay the hình kim cương cu (gold-diamond-badge.jpeg) bang hình kim cương vàng mới ma con vua upload. Hình mới da co nen trong suot san, rat dep va sang trong.
+### 1. Them button "Coordinator Gate" vao Header (trang chu)
 
-### Cac buoc thuc hien
+**Vi tri**: Ben trai o tim kiem (GlobalSearch), chi hien thi cho user da dang nhap va co quyen coordinator hoac admin.
 
-**1. Thay the file anh**
-- Copy file `user-uploads://ChatGPT_Image_07_33_50_23_thg_2_2026.png` vao `src/assets/gold-diamond-badge.png`
-- Cap nhat import trong ca 3 file tu `.jpeg` sang `.png`
+**File**: `src/components/Header.tsx`
+- Import `useCoordinatorRole` hook
+- Them button voi style noi bat: gradient tim/xanh, icon `Shield`, text "Coordinator Gate"
+- Dat truoc `<GlobalSearch>` trong phan desktop (dong 158-164)
+- Them vao mobile menu grid
 
-**2. Dieu chinh hien thi trong `src/pages/UserProfile.tsx`**
-- Component `DiamondBadge`: bo vien tron (rounded-full, border) vi hinh moi da dep san, khong can khung tron nua
-- Tang kich thuoc len khoang 44-48px de kim cuong hien thi ro rang
-- Dieu chinh `top` de day nhon kim cuong cham vien avatar (khoang `-24` den `-26`)
-- Bo `overflow-hidden` va `bg-gradient` vi hinh da co nen trong suot
+**Style button**:
+- Gradient noi bat (purple-indigo) de phan biet voi cac nut khac
+- Icon Shield + text "Coordinator"
+- Rounded-full, shadow, hover animation
+- Chi hien khi `hasAccess === true`
 
-**3. Ap dung tuong tu cho `src/pages/Profile.tsx`**
-- Cap nhat import tu `.jpeg` sang `.png`
-- Dieu chinh vi tri va kich thuoc giong nhu UserProfile
+### 2. Them form "Add Coordinator" trong trang Coordinator Gate
 
-**4. Ap dung cho `src/components/public-profile/PublicProfileHeader.tsx`**
-- Cap nhat import tu `.jpeg` sang `.png`
-- Phan huy hieu kim cuong trong component nay da co san, chi can cap nhat tuong tu
+**File**: `src/pages/CoordinatorGate.tsx`
+- Them mot section "Add Coordinator" trong header hoac main area
+- Form gom: input email + button "Add"
+- Chi cho phep admin hoac coordinator hien tai them nguoi moi
+
+**Logic**:
+- Nhap email -> tim user trong bang `profiles` theo email (hoac `auth.users` qua edge function)
+- Neu tim thay user -> insert vao bang `user_roles` voi role = 'coordinator'
+- Hien thong bao thanh cong/that bai bang sonner toast
+
+**File moi**: `supabase/functions/add-coordinator/index.ts`
+- Edge function de xu ly viec them coordinator an toan
+- Kiem tra nguoi goi co quyen admin/coordinator
+- Tim user theo email trong auth.users
+- Insert vao user_roles
 
 ### Chi tiet ky thuat
-- 3 file can sua: `UserProfile.tsx`, `Profile.tsx`, `PublicProfileHeader.tsx`
-- 1 file anh moi: `src/assets/gold-diamond-badge.png`
-- Style moi cho DiamondBadge: bo khung tron, dung hinh nguyen ban voi drop-shadow vang, dinh vi top-center tren avatar
+
+**Header.tsx** thay doi:
+- Import them: `useCoordinatorRole`, `Shield` (da co)
+- Them button truoc div chua GlobalSearch (desktop)
+- Them vao mobile menu
+
+**CoordinatorGate.tsx** thay doi:
+- Them state cho email input
+- Them UI card "Add Coordinator" voi input + button
+- Goi edge function `add-coordinator`
+
+**Edge function `add-coordinator`**:
+- Nhan `{ email: string }` trong body
+- Verify caller co role admin/coordinator
+- Tim user_id tu email qua supabase admin client
+- Insert vao `user_roles(user_id, role: 'coordinator')`
+- Tra ve ket qua
+
+**Bang `user_roles`**: da co san voi cac column `id, user_id, role, created_at` - khong can tao them bang moi.
