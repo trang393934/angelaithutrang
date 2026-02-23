@@ -1,74 +1,84 @@
 
-## Fix loi hien thi ky tu Tieng Viet bi mat trong chat Angel AI
 
-### Van de
-- Cac ky tu Tieng Viet co dau nhu "a", "ay" bi mat khi hien thi (vi du: "day" thanh "dy", "khac" thanh "khc")
-- Ky hieu thay the Unicode (U+FFFD) xuat hien trong cau tra loi (hien thi la "khc" hoac khi copy ra ngoai)
+## Cai thien giao dien mobile tab Cong dong
 
-### Nguyen nhan goc
-
-**1. `src/lib/stripMarkdown.ts`** - Ham nay dang xoa tat ca ky tu `\uFFFD` (dong `result = result.replace(/\uFFFD/g, '');`). Khi streaming AI tra ve ky tu bi hong (vi du "kh\uFFFD\uFFFDc"), ham nay xoa chung di va chi con lai "khc" thay vi "khac".
-
-**2. `supabase/functions/angel-chat/index.ts`** - TransformStream dung TextDecoder de thu thap noi dung cache. Khi chunk tu AI gateway cat giua mot ky tu multi-byte (tieng Viet nhu "a" = 2 bytes), TextDecoder co the tao ra ky tu \uFFFD trong fullResponse duoc cache.
+### Van de hien tai
+1. **Thieu thanh tim kiem tren mobile**: GlobalSearch bi an boi class `hidden sm:block` (chi hien thi tu 640px tro len)
+2. **Menu ho so thieu muc**: Dropdown profile trong CommunityHeader chi co 4 muc (Trang ca nhan, Tin nhan, Kiem xu, Dang xuat), trong khi Header trang chu co nhieu muc hon (Kien thuc, Ket noi Angel, Cong dong, Viet noi dung, Swap, v.v.)
+3. **Link profile chua dung handle**: Van dung UUID thay vi handle moi cap nhat
 
 ### Giai phap
 
-**Buoc 1: Fix `src/lib/stripMarkdown.ts`**
-- Xoa dong `result = result.replace(/\uFFFD/g, '');` - khong nen xoa ky tu thay the vi no lam mat chu
-- Hoac thay bang logic thong minh hon: chi xoa khi ky tu nam giua 2 ky tu ASCII (truong hop khong phai tieng Viet)
+**1. File `src/components/community/CommunityHeader.tsx`**
 
-**Buoc 2: Fix `supabase/functions/angel-chat/index.ts`**
-- Cai thien TransformStream: Tach viec thu thap fullResponse khoi viec forward stream
-- Su dung mot buffer rieng cho viec parsing JSON tu stream chunks, dam bao khong mat ky tu khi JSON line bi cat giua multi-byte character
-- Them logic xu ly: khi mot `data:` line bi cat giua 2 chunk, buffer lai va xu ly o chunk tiep theo
+**Hien thi thanh tim kiem tren mobile:**
+- Thay `hidden sm:block` thanh hien thi tren tat ca kich thuoc
+- Thu nho kich thuoc tren mobile: `w-full sm:max-w-xs`
+- Dat thanh tim kiem ngay canh logo, giam gap de vua man hinh nho
+
+**Bo sung cac muc menu trong dropdown profile (giong trang chu):**
+Them cac muc sau vao dropdown menu khi bam avatar:
+- Trang chu (/)
+- Gioi thieu (/about)
+- Kien thuc (/knowledge)
+- Ket noi Angel AI (/chat)
+- Viet noi dung (/content-writer)
+- Swap (/swap)
+- Cai dat ho so (/profile)
+- Admin Dashboard (neu la admin)
+
+**Cap nhat link profile dung handle:**
+- Thay `<Link to={/user/${user.id}}>` bang su dung `getProfilePath()` tu `src/lib/profileUrl.ts`
+- Can fetch them truong `handle` tu profiles
 
 ### Chi tiet ky thuat
 
-**stripMarkdown.ts** - Thay doi:
+**CommunityHeader.tsx - Tim kiem mobile (dong 142-150):**
 ```
-// XOA dong nay:
-result = result.replace(/\uFFFD/g, '');
+// TRUOC:
+<div className="hidden sm:block max-w-xs">
 
-// KHONG thay bang gi ca - de nguyen ky tu, 
-// vi fix streaming se ngan chan \uFFFD tu dau
+// SAU:
+<div className="flex-1 min-w-0 max-w-[200px] sm:max-w-xs">
 ```
 
-**angel-chat/index.ts** - TransformStream cai tien:
+**CommunityHeader.tsx - Dropdown menu (dong 211-261):**
+Them cac DropdownMenuItem moi:
 ```
-let fullResponse = "";
-let parseBuffer = ""; // Buffer cho viec parsing SSE lines
+// Them sau "Trang ca nhan":
+<DropdownMenuSeparator />
+<DropdownMenuItem> Trang chu (/) </DropdownMenuItem>
+<DropdownMenuItem> Kien thuc (/knowledge) </DropdownMenuItem>
+<DropdownMenuItem> Ket noi Angel (/chat) </DropdownMenuItem>
+<DropdownMenuItem> Cong dong (/community) </DropdownMenuItem>
+<DropdownMenuItem> Viet noi dung (/content-writer) </DropdownMenuItem>
+<DropdownMenuItem> Swap (/swap) </DropdownMenuItem>
+<DropdownMenuSeparator />
+<DropdownMenuItem> Cai dat (/profile) </DropdownMenuItem>
+// Admin link (neu isAdmin)
+<DropdownMenuSeparator />
+<DropdownMenuItem> Dang xuat </DropdownMenuItem>
+```
 
-const { readable, writable } = new TransformStream({
-  transform(chunk, controller) {
-    controller.enqueue(chunk); // Forward nguyen chunk cho client
-    
-    // Thu thap noi dung cho cache voi buffer rieng
-    try {
-      const text = streamDecoder.decode(chunk, { stream: true });
-      parseBuffer += text;
-      
-      // Chi xu ly cac dong hoan chinh (ket thuc bang \n)
-      let newlineIdx;
-      while ((newlineIdx = parseBuffer.indexOf('\n')) !== -1) {
-        const line = parseBuffer.slice(0, newlineIdx);
-        parseBuffer = parseBuffer.slice(newlineIdx + 1);
-        
-        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-          try {
-            const parsed = JSON.parse(line.slice(6));
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) fullResponse += content;
-          } catch {}
-        }
-      }
-    } catch {}
-  },
-  // flush giu nguyen
-});
+**CommunityHeader.tsx - Profile link (dong 221):**
+```
+// TRUOC:
+<Link to={`/user/${user.id}`}>
+
+// SAU:
+import { getProfilePath } from "@/lib/profileUrl";
+// Fetch handle cung voi profile
+// Su dung: <Link to={getProfilePath(user.id, userProfile?.handle)}>
+```
+
+**Them fetch handle trong useEffect (dong 77-96):**
+```
+// Them "handle" vao select:
+.select("display_name, avatar_url, handle")
 ```
 
 ### Ket qua
-- Ky tu tieng Viet hien thi dung va day du (khong mat dau)
-- Khong con ky hieu (U+FFFD) trong cau tra loi
-- Copy text ra ngoai cung chinh xac
-- Cache response cung duoc luu dung
+- Thanh tim kiem hien thi tren mobile
+- Menu profile co day du cac muc dieu huong giong trang chu
+- Bam "Trang ca nhan" se chuyen den URL dung handle (`/user/username`)
+- Giao dien mobile dong bo voi desktop
