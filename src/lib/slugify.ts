@@ -50,11 +50,22 @@ export function generateSlug(title: string): string {
  * Generate a unique slug by appending _2, _3 etc if needed.
  * Caller provides existing slugs for the same user.
  */
-export function makeUniqueSlug(baseSlug: string, existingSlugs: string[]): string {
+export function makeUniqueSlug(baseSlug: string, existingSlugs: string[], maxAttempts = 50): string {
   if (!existingSlugs.includes(baseSlug)) return baseSlug;
-  let counter = 2;
-  while (existingSlugs.includes(`${baseSlug}_${counter}`)) {
-    counter++;
+
+  // Try _2, _3 ... up to maxAttempts
+  for (let i = 2; i <= maxAttempts + 1; i++) {
+    const candidate = `${baseSlug}_${i}`;
+    if (!existingSlugs.includes(candidate)) return candidate;
   }
-  return `${baseSlug}_${counter}`;
+
+  // Fallback: random 4-char suffix (up to 5 attempts)
+  for (let i = 0; i < 5; i++) {
+    const suffix = Math.random().toString(36).substring(2, 6);
+    const candidate = `${baseSlug}_${suffix}`;
+    if (!existingSlugs.includes(candidate)) return candidate;
+  }
+
+  // Ultimate fallback with timestamp
+  return `${baseSlug}_${Date.now().toString(36).slice(-6)}`;
 }

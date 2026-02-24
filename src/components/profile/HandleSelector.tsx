@@ -56,7 +56,28 @@ export function HandleSelector({ onClaimed, showLabel = true, compact = false, s
   const isChanged = handle !== (currentHandle || "");
   const canSave = checkResult?.available && isChanged && !isChecking && !isClaiming;
 
-  // No cooldown restriction - always show editable form
+  // Cooldown restriction - show message if can't change
+  if (currentHandle && !canChangeHandle) {
+    return (
+      <div className="space-y-3">
+        {showLabel && (
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <LinkIcon className="w-4 h-4 text-divine-gold" />
+            Angel AI Profile Link
+          </Label>
+        )}
+        <div className="text-sm">
+          <Link to={`/${currentHandle}`} className="text-divine-gold hover:underline font-medium inline-flex items-center gap-1">
+            <ExternalLink className="w-3 h-3" />
+            angel.fun.rich/{currentHandle}
+          </Link>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Bạn có thể đổi link sau {daysUntilChange} ngày nữa (cooldown 30 ngày)
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

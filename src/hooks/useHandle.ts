@@ -20,7 +20,7 @@ const RESERVED_ROUTES = new Set([
   'content-writer', 'activity-history', 'community-questions', 'user',
   'post', 'video', 'live', 'index', 'api', 'settings', 'search',
 ]);
-// No cooldown - users can change handle anytime
+const COOLDOWN_DAYS = 30;
 
 function normalizeHandle(input: string): string {
   return input
@@ -98,14 +98,22 @@ export function useHandle() {
     loadHandle();
   }, [user]);
 
-  // Always allow handle changes - no cooldown
   const canChangeHandle = useCallback(() => {
-    return true;
-  }, []);
+    // First time setting handle: no cooldown
+    if (!currentHandle) return true;
+    if (!handleUpdatedAt) return true;
+    const updatedAt = new Date(handleUpdatedAt);
+    const cooldownEnd = new Date(updatedAt.getTime() + COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
+    return new Date() >= cooldownEnd;
+  }, [currentHandle, handleUpdatedAt]);
 
   const daysUntilChange = useCallback(() => {
-    return 0;
-  }, []);
+    if (!currentHandle || !handleUpdatedAt) return 0;
+    const updatedAt = new Date(handleUpdatedAt);
+    const cooldownEnd = new Date(updatedAt.getTime() + COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
+    const diff = cooldownEnd.getTime() - Date.now();
+    return diff <= 0 ? 0 : Math.ceil(diff / (24 * 60 * 60 * 1000));
+  }, [currentHandle, handleUpdatedAt]);
 
   // Check handle availability
   const checkAvailability = useCallback(async (handleToCheck: string) => {
