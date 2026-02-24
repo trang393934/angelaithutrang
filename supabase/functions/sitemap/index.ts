@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SITE_URL = "https://angelaithutrang.lovable.app";
+const SITE_URL = "https://angel.fun.rich";
 const MAX_URLS = 50000;
 
 Deno.serve(async (req) => {
