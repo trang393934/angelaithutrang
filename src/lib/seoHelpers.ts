@@ -97,5 +97,5 @@ export function cleanupSeo() {
  * Get the canonical base origin for SEO URLs.
  */
 export function getSeoOrigin(): string {
-  return window.location.origin;
+  return 'https://angel.fun.rich';
 }
