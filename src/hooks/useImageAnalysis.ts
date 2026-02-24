@@ -2,6 +2,13 @@ import { useState, useCallback } from "react";
 
 const ANALYZE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-image`;
 
+// Detect corruption in Vietnamese text
+function hasTextCorruption(text: string): boolean {
+  if (text.includes('\uFFFD')) return true;
+  if (/[a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]\?\?[a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/i.test(text)) return true;
+  return false;
+}
+
 export function useImageAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string>("");
@@ -65,8 +72,35 @@ export function useImageAnalysis() {
               onStream?.(fullText);
             }
           } catch {
-            // Continue on parse error
+            // Re-buffer incomplete JSON
+            textBuffer = line + "\n" + textBuffer;
+            break;
           }
+        }
+      }
+
+      // Corruption detection: fallback to non-stream if needed
+      if (hasTextCorruption(fullText)) {
+        console.warn("⚠️ Corruption detected in image analysis — falling back to non-stream");
+        try {
+          const fallbackResp = await fetch(ANALYZE_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ imageUrl, question, stream: false }),
+          });
+          if (fallbackResp.ok) {
+            const fallbackData = await fallbackResp.json();
+            if (fallbackData.content) {
+              fullText = fallbackData.content;
+              setAnalysisResult(fullText);
+              onStream?.(fullText);
+            }
+          }
+        } catch (fallbackErr) {
+          console.error("Non-stream fallback failed:", fallbackErr);
         }
       }
 

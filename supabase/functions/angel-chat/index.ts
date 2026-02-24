@@ -1188,7 +1188,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, responseStyle, isDemo } = await req.json();
+    const { messages, responseStyle, isDemo, stream: streamParam } = await req.json();
     
     console.log("Received messages:", JSON.stringify(messages));
     console.log("Response style:", responseStyle || "detailed (default)");
@@ -1237,22 +1237,16 @@ serve(async (req) => {
 
 You support clarity, self-awareness, and aligned living with compassion.`;
 
-      // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
-      const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+      // --- AI Gateway Config (Lovable primary for Vietnamese stability) ---
       const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-      const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
-      const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
-      const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
-      const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
-      if (CF_API_TOKEN) {
-        aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
-      } else {
-        aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
-      }
+      const aiHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+      };
       // --- End AI Gateway Config ---
 
       const demoBody = JSON.stringify({
-        model: cfModel("google/gemini-2.5-flash"),
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: demoSystemPrompt },
           ...messages,
@@ -1261,19 +1255,20 @@ You support clarity, self-awareness, and aligned living with compassion.`;
         max_tokens: demoStyleConfig.maxTokens,
       });
 
-      let response = await fetch(AI_GATEWAY_URL, {
+      let response = await fetch(LOVABLE_GATEWAY_URL, {
         method: "POST",
         headers: aiHeaders,
         body: demoBody,
       });
 
-      // Fallback to Lovable Gateway if Cloudflare fails
+      // Fallback to Cloudflare if Lovable fails
+      const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
       if (!response.ok && CF_API_TOKEN) {
-        console.error("Cloudflare demo failed:", response.status, "- falling back to Lovable Gateway");
-        response = await fetch(LOVABLE_GATEWAY_URL, {
+        console.error("Lovable demo failed:", response.status, "- falling back to Cloudflare");
+        response = await fetch("https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions", {
           method: "POST",
-          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ ...JSON.parse(demoBody), model: "google/gemini-2.5-flash" }),
+          headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ ...JSON.parse(demoBody), model: "google-ai-studio/gemini-2.5-flash" }),
         });
       }
 
@@ -1633,29 +1628,29 @@ HƯỚNG DẪN XỬ LÝ:
     if (searchIntent) {
       console.log("Search intent mode: Special prompt added for keyword:", searchKeyword);
     }
-    // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
+    // --- AI Gateway Config (ưu tiên Lovable → Cloudflare fallback) ---
     const CF_GATEWAY_URL_MAIN = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
     const LOVABLE_GATEWAY_URL_MAIN = "https://ai.gateway.lovable.dev/v1/chat/completions";
     const CF_API_TOKEN_MAIN = Deno.env.get("CF_API_TOKEN");
-    const AI_GATEWAY_URL_MAIN = CF_API_TOKEN_MAIN ? CF_GATEWAY_URL_MAIN : LOVABLE_GATEWAY_URL_MAIN;
-    const cfModelMain = (m: string) => CF_API_TOKEN_MAIN ? m.replace("google/", "google-ai-studio/") : m;
-    const aiHeadersMain: Record<string, string> = { "Content-Type": "application/json" };
-    if (CF_API_TOKEN_MAIN) {
-      aiHeadersMain["Authorization"] = `Bearer ${CF_API_TOKEN_MAIN}`;
-    } else {
-      aiHeadersMain["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
-    }
+    // Lovable primary for Vietnamese text stability
+    const AI_GATEWAY_URL_MAIN = LOVABLE_GATEWAY_URL_MAIN;
+    const aiHeadersMain: Record<string, string> = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+    };
     // --- End AI Gateway Config ---
 
-    console.log(`Calling AI Gateway: ${CF_API_TOKEN_MAIN ? 'Cloudflare' : 'Lovable (fallback)'}...`);
+    const shouldStream = streamParam !== false;
+
+    console.log(`Calling AI Gateway: Lovable (primary), stream=${shouldStream}...`);
 
     const mainBody = JSON.stringify({
-      model: cfModelMain("google/gemini-2.5-flash"),
+      model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: systemPrompt },
         ...messages,
       ],
-      stream: true,
+      stream: shouldStream,
       max_tokens: styleConfig.maxTokens,
     });
 
@@ -1665,14 +1660,15 @@ HƯỚNG DẪN XỬ LÝ:
       body: mainBody,
     });
 
-    // Fallback to Lovable Gateway if Cloudflare fails (not 429/402)
+    // Fallback to Cloudflare if Lovable fails (not 429/402)
     if (!response.ok && CF_API_TOKEN_MAIN && response.status !== 429 && response.status !== 402) {
       const errorText = await response.text();
-      console.error("Cloudflare failed:", response.status, errorText, "- falling back to Lovable Gateway");
-      response = await fetch(LOVABLE_GATEWAY_URL_MAIN, {
+      console.error("Lovable failed:", response.status, errorText, "- falling back to Cloudflare Gateway");
+      const cfModel = shouldStream ? "google-ai-studio/gemini-2.5-flash" : "google-ai-studio/gemini-2.5-flash";
+      response = await fetch(CF_GATEWAY_URL_MAIN, {
         method: "POST",
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...JSON.parse(mainBody), model: "google/gemini-2.5-flash" }),
+        headers: { Authorization: `Bearer ${CF_API_TOKEN_MAIN}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...JSON.parse(mainBody), model: cfModel }),
       });
     }
 
@@ -1699,10 +1695,25 @@ HƯỚNG DẪN XỬ LÝ:
       );
     }
 
+    // --- NON-STREAM MODE ---
+    if (!shouldStream) {
+      console.log("Non-stream mode: returning full JSON response");
+      const jsonData = await response.json();
+      const content = jsonData.choices?.[0]?.message?.content || "";
+      
+      // Cache non-stream response (guaranteed clean)
+      if (supabase && content.length > 100 && actualQuestion.length > 10) {
+        saveToCache(supabase, actualQuestion, content).catch(console.error);
+      }
+      
+      return new Response(JSON.stringify({ content }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- STREAM MODE ---
     console.log("Streaming response from AI gateway...");
 
-    // We need to collect the full response to cache it
-    // Transform the stream to also collect the content
     const originalBody = response.body;
     if (!originalBody) {
       throw new Error("No response body");
@@ -1710,17 +1721,15 @@ HƯỚNG DẪN XỬ LÝ:
 
     let fullResponse = "";
     const streamDecoder = new TextDecoder();
-    let parseBuffer = ""; // Buffer for incomplete SSE lines across chunks
+    let parseBuffer = "";
     const { readable, writable } = new TransformStream({
       transform(chunk, controller) {
-        controller.enqueue(chunk); // Forward raw chunk to client immediately
+        controller.enqueue(chunk);
         
-        // Collect content for cache using a line buffer to handle split lines
         try {
           const text = streamDecoder.decode(chunk, { stream: true });
           parseBuffer += text;
           
-          // Only process complete lines (ending with \n)
           let newlineIdx: number;
           while ((newlineIdx = parseBuffer.indexOf('\n')) !== -1) {
             const line = parseBuffer.slice(0, newlineIdx);
@@ -1731,20 +1740,25 @@ HƯỚNG DẪN XỬ LÝ:
                 const parsed = JSON.parse(line.slice(6));
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
-                  // Strip Unicode replacement characters from corrupted multi-byte splits
-                  fullResponse += content.replace(/\uFFFD/g, '');
+                  // Do NOT strip U+FFFD here — let frontend detect and fallback
+                  fullResponse += content;
                 }
               } catch {
-                // Incomplete JSON — will be completed in next chunk
+                // Re-buffer incomplete JSON line
+                parseBuffer = line + '\n' + parseBuffer;
+                break;
               }
             }
           }
         } catch {}
       },
       async flush() {
-        // Save to cache after stream completes - use actualQuestion for cache key
-        if (supabase && fullResponse.length > 100 && actualQuestion.length > 10) {
-          // Don't await to not block the response
+        // Only cache if content is clean (no U+FFFD corruption)
+        const hasCorruption = fullResponse.includes('\uFFFD') || /[a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]\?\?[a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/i.test(fullResponse);
+        
+        if (hasCorruption) {
+          console.warn("⚠️ Corruption detected in stream — NOT caching this response");
+        } else if (supabase && fullResponse.length > 100 && actualQuestion.length > 10) {
           saveToCache(supabase, actualQuestion, fullResponse).catch(console.error);
         }
       }

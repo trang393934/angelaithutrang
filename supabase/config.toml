@@ -193,3 +193,9 @@ verify_jwt = false
 
 [functions.sitemap]
 verify_jwt = false
+
+[functions.repair-corrupted-ai-text]
+verify_jwt = false
+
+[functions.og-image-render]
+verify_jwt = false
