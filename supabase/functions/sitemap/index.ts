@@ -20,28 +20,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch profiles with handles
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("handle, updated_at")
-      .not("handle", "is", null)
-      .order("updated_at", { ascending: false })
-      .limit(MAX_URLS);
-
-    // Fetch published posts with author handles
-    const { data: posts } = await supabase
-      .from("community_posts")
-      .select("slug, updated_at, user_id")
-      .order("updated_at", { ascending: false })
-      .limit(MAX_URLS);
-
-    // Build a user_id -> handle map from profiles
-    const handleMap = new Map<string, string>();
-    for (const p of profiles || []) {
-      // We need user_id for mapping - fetch it
-    }
-
-    // Re-fetch profiles with user_id for mapping
+    // Fetch profiles with handles and user_id
     const { data: profilesFull } = await supabase
       .from("profiles")
       .select("user_id, handle, updated_at")
@@ -49,6 +28,15 @@ Deno.serve(async (req) => {
       .order("updated_at", { ascending: false })
       .limit(MAX_URLS);
 
+    // Fetch published posts
+    const { data: posts } = await supabase
+      .from("community_posts")
+      .select("slug, updated_at, user_id")
+      .order("updated_at", { ascending: false })
+      .limit(MAX_URLS);
+
+    // Build user_id -> handle map
+    const handleMap = new Map<string, string>();
     for (const p of profilesFull || []) {
       if (p.handle) handleMap.set(p.user_id, p.handle);
     }
