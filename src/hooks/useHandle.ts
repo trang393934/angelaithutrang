@@ -11,7 +11,16 @@ interface HandleCheckResult {
 const HANDLE_REGEX = /^[a-z0-9][a-z0-9_]*[a-z0-9]$/;
 const HANDLE_SHORT_REGEX = /^[a-z0-9]{3}$/; // For 3-char handles
 const MIN_LENGTH = 3;
-const MAX_LENGTH = 30;
+const MAX_LENGTH = 20;
+
+// Reserved system routes — cannot be used as handles
+const RESERVED_ROUTES = new Set([
+  'chat', 'about', 'auth', 'admin', 'community', 'earn', 'profile',
+  'onboarding', 'swap', 'knowledge', 'mint', 'messages', 'notifications',
+  'docs', 'bounty', 'ideas', 'vision', 'receipt', 'coordinator-gate',
+  'content-writer', 'activity-history', 'community-questions', 'user',
+  'post', 'video', 'live', 'index', 'api', 'settings', 'search',
+]);
 // No cooldown - users can change handle anytime
 
 function normalizeHandle(input: string): string {
@@ -28,6 +37,7 @@ function validateHandle(handle: string): { valid: boolean; error?: string } {
   if (handle.length > MAX_LENGTH) return { valid: false, error: `Tối đa ${MAX_LENGTH} ký tự` };
   if (handle.startsWith("_") || handle.endsWith("_")) return { valid: false, error: "Không được bắt đầu/kết thúc bằng _" };
   if (handle.includes("__")) return { valid: false, error: "Không được có 2 dấu _ liên tiếp" };
+  if (RESERVED_ROUTES.has(handle.toLowerCase())) return { valid: false, error: "Tên này đã được hệ thống sử dụng" };
   
   if (handle.length === MIN_LENGTH) {
     if (!HANDLE_SHORT_REGEX.test(handle)) return { valid: false, error: "Handle 3 ký tự chỉ được dùng chữ và số" };

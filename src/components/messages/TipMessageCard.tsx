@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Gift, ExternalLink, ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -161,7 +162,7 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
 
         {/* Sender -> Receiver */}
         <div className="flex items-center justify-between gap-2 relative z-10">
-          <Link to={`/user/${giftDetails.sender_id}`} className="flex items-center gap-1.5 flex-1 min-w-0 hover:opacity-80">
+          <Link to={getProfilePath(giftDetails.sender_id)} className="flex items-center gap-1.5 flex-1 min-w-0 hover:opacity-80">
             <Avatar className="h-8 w-8 ring-2 ring-amber-300">
               <AvatarImage src={giftDetails.sender_avatar || angelAvatar} />
               <AvatarFallback className="bg-amber-100 text-amber-700 text-xs">
@@ -176,7 +177,7 @@ export function TipMessageCard({ content, tipGiftId, receiptPublicId }: TipMessa
 
           <ArrowRight className="w-4 h-4 text-amber-400 shrink-0" />
 
-          <Link to={`/user/${giftDetails.receiver_id}`} className="flex items-center gap-1.5 flex-1 min-w-0 hover:opacity-80 justify-end">
+          <Link to={getProfilePath(giftDetails.receiver_id)} className="flex items-center gap-1.5 flex-1 min-w-0 hover:opacity-80 justify-end">
             <div className="min-w-0 text-right">
               <p className="text-[10px] text-rose-500">Người nhận</p>
               <p className="font-semibold text-xs truncate text-foreground">{giftDetails.receiver_name}</p>

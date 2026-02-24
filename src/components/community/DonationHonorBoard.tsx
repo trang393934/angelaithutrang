@@ -9,6 +9,7 @@ import { useCoinGifts } from "@/hooks/useCoinGifts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { motion } from "framer-motion";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
@@ -136,7 +137,7 @@ export function DonationHonorBoard() {
               {topDonors.slice(0, 5).map((donor, index) => (
                 <Link
                   key={donor.user_id}
-                  to={`/user/${donor.user_id}`}
+                 to={getProfilePath(donor.user_id)}
                   className="flex items-center gap-3 hover:bg-rose-100/70 rounded-xl p-2.5 transition-all duration-200 hover:shadow-md group"
                 >
                   <DonorRankBadge rank={index + 1} />

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useFriendship } from "@/hooks/useFriendship";
 import { useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import angelAvatar from "@/assets/angel-avatar.png";
 import { toast } from "sonner";
 
@@ -124,7 +125,7 @@ export function SuggestedFriendsCard() {
             >
               <Avatar
                 className="w-10 h-10 cursor-pointer border-2 border-transparent hover:border-primary/30 transition-colors"
-                onClick={() => navigate(`/user/${suggestion.handle || suggestion.user_id}`)}
+                onClick={() => navigate(getProfilePath(suggestion.user_id, suggestion.handle))}
               >
                 <AvatarImage
                   src={suggestion.avatar_url || angelAvatar}
@@ -138,7 +139,7 @@ export function SuggestedFriendsCard() {
               <div className="flex-1 min-w-0">
                 <p
                   className="font-medium text-sm truncate cursor-pointer hover:text-primary transition-colors"
-                  onClick={() => navigate(`/user/${suggestion.handle || suggestion.user_id}`)}
+                  onClick={() => navigate(getProfilePath(suggestion.user_id, suggestion.handle))}
                 >
                   {suggestion.display_name || "Người dùng"}
                 </p>
