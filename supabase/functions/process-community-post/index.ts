@@ -674,7 +674,7 @@ serve(async (req) => {
       // Check if user owns the post
       const { data: post } = await supabase
         .from("community_posts")
-        .select("user_id")
+        .select("user_id, slug")
         .eq("id", postId)
         .single();
 
@@ -698,15 +698,68 @@ serve(async (req) => {
 
       console.log(`Editing post ${postId} with ${finalImageUrls.length} images`);
 
-      // Update the post with multiple images support
+      // ===== SLUG GOVERNANCE: generate new slug from edited content =====
+      const generateSlugForEdit = (text: string): string => {
+        let slug = text.trim().substring(0, 80)
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d")
+          .replace(/Đ/g, "D");
+        slug = slug.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '').replace(/_{2,}/g, '_').replace(/^_|_$/g, '');
+        if (!slug) return 'post';
+        if (slug.length > 60) {
+          const trimmed = slug.substring(0, 60);
+          const lastUnderscore = trimmed.lastIndexOf('_');
+          slug = lastUnderscore > 10 ? trimmed.substring(0, lastUnderscore) : trimmed;
+        }
+        return slug;
+      };
+
+      let newSlug = generateSlugForEdit(content.substring(0, 80));
+      if (!newSlug) newSlug = `post_${Date.now()}`;
+      const oldSlug = post.slug;
+
+      const updateData: Record<string, unknown> = {
+        content,
+        image_url: primaryImageUrl,
+        image_urls: finalImageUrls,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Only update slug if it changed
+      if (newSlug !== oldSlug) {
+        // Check for duplicate slugs for this user (exclude current post)
+        const { data: existingSlugs } = await supabase
+          .from("community_posts")
+          .select("slug")
+          .eq("user_id", userId)
+          .neq("id", postId);
+
+        const slugSet = new Set((existingSlugs || []).map((s: { slug: string }) => s.slug));
+        if (slugSet.has(newSlug)) {
+          let counter = 2;
+          while (slugSet.has(`${newSlug}_${counter}`)) counter++;
+          newSlug = `${newSlug}_${counter}`;
+        }
+
+        // Save old slug to history for 301 redirect
+        await supabase.from("slug_history").upsert({
+          user_id: userId,
+          content_type: 'post',
+          old_slug: oldSlug,
+          new_slug: newSlug,
+          content_id: postId,
+        }, { onConflict: 'content_id,old_slug' });
+
+        updateData.slug = newSlug;
+        console.log(`Slug governance: "${oldSlug}" → "${newSlug}" for post ${postId}`);
+      }
+      // ===== END SLUG GOVERNANCE =====
+
+      // Update the post
       const { data: updatedPost, error: updateError } = await supabase
         .from("community_posts")
-        .update({
-          content,
-          image_url: primaryImageUrl, // Keep for backward compatibility
-          image_urls: finalImageUrls, // New array field
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", postId)
         .select()
         .single();
