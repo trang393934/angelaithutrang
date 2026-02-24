@@ -1,73 +1,83 @@
 
 
-## Trien khai BÀI 4 — Slug History + 301 Redirect
+## BÀI 5 — DB Schema + Index chuan (Slug Governance)
 
-### Hien trang
+### Phan tich hien trang vs spec
 
-He thong hien tai **da dung** theo spec BÀI 4:
-- Lookup rule: Step 1 tim `user_id` theo `handle`, Step 2 tim post theo `(user_id, slug)` -- dung chuan
-- `community_posts.id` (UUID) la primary key, `slug` chi la friendly locator -- dung chuan
-- Routes: `/:username` va `/:username/post/:slug` -- dung chuan
+Spec BÀI 5 mo ta mot he thong **ly tuong** voi bang `contents` thong nhat cho post/video/live. Tuy nhien, he thong hien tai da co kien truc rieng hoat dong tot:
 
-### Thieu gi?
+| Spec BÀI 5 | He thong hien tai | Trang thai |
+|---|---|---|
+| `users` table voi `username` | `profiles` table voi `handle` + `user_id` (UUID tu auth) | Da co, khac ten nhung cung chuc nang |
+| `contents` table thong nhat (post/video/live) | `community_posts` table rieng cho posts | Da co cho posts |
+| Unique index `(user_id, type, slug)` | Unique index `(user_id, slug)` WHERE slug IS NOT NULL | Da co, tuong duong (chi co 1 type) |
+| `content_slug_history` | `slug_history` (vua tao o BÀI 4) | Da co |
+| Index lookup `(user_id, type, created_at DESC)` | Chua co | Can them |
+| Governance: doi title → doi slug → luu history | Chua implement (edit khong doi slug) | Can them |
 
-**Chua co `slug_history`** -- khi user edit bai viet, slug KHONG doi (edit chi cap nhat content/images). Nhung spec yeu cau: neu slug thay doi trong tuong lai, can luu slug cu va redirect 301 sang slug moi.
+### Ket luan
 
-### Ke hoach
+He thong **da co 80% co so ha tang** theo spec. Thay vi tao lai bang moi (pha vo data hien tai), chi can **bo sung phan con thieu**:
 
-#### 1. Tao bang `slug_history`
+### Thay doi can thiet
+
+#### 1. Them index lookup nhanh tren `community_posts`
+
+Spec yeu cau index `(user_id, type, created_at DESC)`. Vi he thong chi co 1 type (post), index tuong duong:
 
 ```sql
-CREATE TABLE public.slug_history (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  content_type text NOT NULL DEFAULT 'post',
-  old_slug text NOT NULL,
-  new_slug text NOT NULL,
-  content_id uuid NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX idx_slug_history_lookup 
-  ON public.slug_history (user_id, content_type, old_slug);
+CREATE INDEX ix_community_posts_user_created 
+  ON community_posts(user_id, created_at DESC);
 ```
 
-RLS: cho phep SELECT public (ai cung doc duoc de redirect), INSERT chi cho authenticated user (hoac chi system).
+Giup query danh sach bai viet cua 1 user nhanh hon.
 
-#### 2. Cap nhat edge function `process-community-post` (edit_post action)
+#### 2. Them unique constraint tren `slug_history`
 
-Khi edit bai viet, neu content thay doi thi **khong doi slug** (giu on dinh link). Tuy nhien, them logic: neu trong tuong lai co tinh nang "doi slug", se:
-- Luu slug cu vao `slug_history`
-- Cap nhat slug moi vao `community_posts`
+Spec yeu cau `UNIQUE(content_id, old_slug)` de tranh trung lap. Hien tai `slug_history` chi co index lookup, chua co unique constraint:
 
-Hien tai chi can chuan bi san co so ha tang (bang + index), chua can thay doi flow edit.
-
-#### 3. Cap nhat `PostDetail.tsx` — Fallback lookup slug cu
-
-Khi tim post theo `(user_id, slug)` khong thay, them buoc fallback:
-- Query `slug_history` voi `(user_id, 'post', old_slug)` 
-- Neu tim thay → lay `new_slug` → `navigate("/{username}/post/{new_slug}", { replace: true })` (tuong duong 301 redirect trong SPA)
-
-Logic moi trong `PostDetail.tsx`:
-
-```text
-1. Tim post theo (user_id, slug) 
-2. Neu khong thay → tim slug_history theo (user_id, 'post', old_slug)
-3. Neu tim thay history → redirect sang new_slug (replace: true)
-4. Neu khong tim thay gi → hien 404
+```sql
+CREATE UNIQUE INDEX uq_slug_history_content_oldslug 
+  ON slug_history(content_id, old_slug);
 ```
+
+#### 3. Implement slug governance trong edge function
+
+Cap nhat `process-community-post/index.ts` (action `edit_post`):
+- Khi user edit bai viet, generate slug moi tu title moi
+- Neu slug moi khac slug cu:
+  - INSERT slug cu vao `slug_history`
+  - UPDATE `community_posts.slug` = slug moi
+- Neu slug moi giong slug cu: khong lam gi them
+
+#### 4. Lam cho `community_posts.slug` NOT NULL
+
+Hien tai `slug` la nullable. Spec yeu cau slug bat buoc. Can migration:
+
+```sql
+-- Dat slug cho cac bai viet chua co slug
+UPDATE community_posts SET slug = 'post_' || LEFT(id::text, 8) WHERE slug IS NULL;
+-- Doi thanh NOT NULL
+ALTER TABLE community_posts ALTER COLUMN slug SET NOT NULL;
+```
+
+Sau do bo `WHERE slug IS NOT NULL` khoi unique index va tao lai.
 
 ### Chi tiet ky thuat
 
 **Files thay doi:**
-- Migration SQL: tao bang `slug_history` + index + RLS
-- `src/pages/PostDetail.tsx`: them fallback lookup slug_history truoc khi hien 404
+- Migration SQL: them index, unique constraint, NOT NULL cho slug
+- `supabase/functions/process-community-post/index.ts`: them slug governance logic trong edit_post action
 
 **Khong thay doi:**
-- `DynamicRoute.tsx`: khong can thay doi (profile khong co slug)
-- `process-community-post/index.ts`: chua can thay doi vi hien tai edit khong doi slug. Se bo sung khi co tinh nang "rename slug"
+- Khong tao bang `contents` moi (giu `community_posts` hien tai)
+- Khong thay doi `profiles` (da tuong duong `users` trong spec)
+- Khong thay doi `slug_history` schema (da dung tu BÀI 4)
+- Khong thay doi `PostDetail.tsx` (fallback redirect da implement o BÀI 4)
 
 ### Loi ich
-- San sang cho tinh nang doi slug trong tuong lai
-- Bao toan SEO: link cu van hoat dong, redirect sang link moi
-- Khong break bat ky link nao da chia se
+- Query nhanh hon voi index `(user_id, created_at DESC)`
+- Slug governance tu dong: edit title → slug cap nhat → link cu van redirect dung
+- Data integrity: slug NOT NULL + unique constraint bao dam khong trung
+- Khop voi tinh than spec BÀI 5 ma khong pha vo kien truc hien tai
+
