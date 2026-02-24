@@ -17,6 +17,8 @@ export interface CommunityPost {
   created_at: string;
   user_display_name?: string;
   user_avatar_url?: string;
+  user_handle?: string | null;
+  slug?: string;
   is_liked_by_me?: boolean;
   is_shared_by_me?: boolean;
 }
@@ -113,7 +115,7 @@ export function useCommunityPosts() {
       // Fetch profiles
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url")
+        .select("user_id, display_name, avatar_url, handle")
         .in("user_id", userIds);
 
       // Check if current user liked/shared posts
@@ -149,6 +151,7 @@ export function useCommunityPosts() {
            image_urls: post.image_urls ?? [],
           user_display_name: profile?.display_name || "Người dùng ẩn danh",
           user_avatar_url: profile?.avatar_url || null,
+          user_handle: profile?.handle || null,
           is_liked_by_me: userLikes.includes(post.id),
           is_shared_by_me: userShares.includes(post.id),
         };
