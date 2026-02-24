@@ -13,7 +13,7 @@ import { setCanonical, setMetaTags, injectJsonLd, cleanupSeo, getSeoOrigin } fro
 import angelAvatar from "@/assets/angel-avatar.png";
 
 const PostDetail = () => {
-  const { username, slug } = useParams<{ username: string; slug: string }>();
+  const { username, slug, postId } = useParams<{ username?: string; slug?: string; postId?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toggleLike, sharePost, addComment, fetchComments, editPost, deletePost } = useCommunityPosts();
@@ -24,62 +24,89 @@ const PostDetail = () => {
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
 
   useEffect(() => {
-    if (!username || !slug) return;
-
     const fetchPost = async () => {
       setIsLoading(true);
-      // Join community_posts with profiles by handle + slug
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .ilike("handle", username)
-        .maybeSingle();
 
-      if (!profileData) {
-        setNotFound(true);
-        setIsLoading(false);
-        return;
-      }
+      let postData: any = null;
+      let profileData: any = null;
 
-      const { data: postData } = await supabase
-        .from("community_posts")
-        .select("*")
-        .eq("user_id", profileData.user_id)
-        .eq("slug", slug)
-        .maybeSingle();
-
-      if (!postData) {
-        // Fallback: check slug_history for old slugs → redirect
-        const { data: historyData } = await supabase
-          .from("slug_history")
-          .select("new_slug")
-          .eq("user_id", profileData.user_id)
-          .eq("content_type", "post")
-          .eq("old_slug", slug)
-          .order("created_at", { ascending: false })
-          .limit(1)
+      if (username && slug) {
+        // Case 1: /:username/post/:slug — fetch by handle + slug
+        const { data: pData } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url, handle")
+          .ilike("handle", username)
           .maybeSingle();
 
-        if (historyData?.new_slug) {
-          navigate(`/${username}/post/${historyData.new_slug}`, { replace: true });
+        if (!pData) { setNotFound(true); setIsLoading(false); return; }
+        profileData = pData;
+
+        const { data: pd } = await supabase
+          .from("community_posts")
+          .select("*")
+          .eq("user_id", pData.user_id)
+          .eq("slug", slug)
+          .maybeSingle();
+
+        if (!pd) {
+          // Check slug_history for old slugs → redirect
+          const { data: historyData } = await supabase
+            .from("slug_history")
+            .select("new_slug")
+            .eq("user_id", pData.user_id)
+            .eq("content_type", "post")
+            .eq("old_slug", slug)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (historyData?.new_slug) {
+            navigate(`/${username}/post/${historyData.new_slug}`, { replace: true });
+            return;
+          }
+          setNotFound(true); setIsLoading(false); return;
+        }
+        postData = pd;
+      } else if (postId) {
+        // Case 2: /post/:postId — fetch by ID, redirect to clean URL if possible
+        const { data: pd } = await supabase
+          .from("community_posts")
+          .select("*")
+          .eq("id", postId)
+          .maybeSingle();
+
+        if (!pd) { setNotFound(true); setIsLoading(false); return; }
+        postData = pd;
+
+        const { data: pData } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url, handle")
+          .eq("user_id", pd.user_id)
+          .maybeSingle();
+        profileData = pData;
+
+        // Redirect to clean URL if handle + slug exist
+        if (pData?.handle && pd.slug) {
+          navigate(`/${pData.handle}/post/${pd.slug}`, { replace: true });
           return;
         }
-
-        setNotFound(true);
-        setIsLoading(false);
-        return;
+      } else {
+        setNotFound(true); setIsLoading(false); return;
       }
 
-      // Fetch user profile for display
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("display_name, avatar_url, handle")
-        .eq("user_id", postData.user_id)
-        .maybeSingle();
+      // Fetch profile if not already loaded
+      if (!profileData && postData) {
+        const { data: pData } = await supabase
+          .from("profiles")
+          .select("display_name, avatar_url, handle")
+          .eq("user_id", postData.user_id)
+          .maybeSingle();
+        profileData = pData;
+      }
 
       // Check if liked by current user
       let isLikedByMe = false;
-      if (user) {
+      if (user && postData) {
         const { data: like } = await supabase
           .from("community_post_likes")
           .select("id")
@@ -89,22 +116,25 @@ const PostDetail = () => {
         isLikedByMe = !!like;
       }
 
+      const displayHandle = profileData?.handle || username;
       const fullPost = {
         ...postData,
-        user_display_name: profile?.display_name || "Người dùng",
-        user_avatar_url: profile?.avatar_url,
-        user_handle: profile?.handle,
+        user_display_name: profileData?.display_name || "Người dùng",
+        user_avatar_url: profileData?.avatar_url,
+        user_handle: profileData?.handle,
         is_liked_by_me: isLikedByMe,
       };
       setPost(fullPost);
       setIsLoading(false);
 
-      // SEO: canonical, meta tags, JSON-LD
+      // SEO
       const origin = getSeoOrigin();
-      const canonicalUrl = `${origin}/${username}/post/${slug}`;
-      const displayName = profile?.display_name || username || "FUN Member";
-      const contentPreview = postData.content?.substring(0, 155) || "Bài viết trên FUN Ecosystem";
-      const firstImage = postData.image_urls?.[0] || postData.image_url || undefined;
+      const canonicalUrl = displayHandle && postData?.slug
+        ? `${origin}/${displayHandle}/post/${postData.slug}`
+        : `${origin}/post/${postData?.id}`;
+      const displayName = profileData?.display_name || displayHandle || "FUN Member";
+      const contentPreview = postData?.content?.substring(0, 155) || "Bài viết trên FUN Ecosystem";
+      const firstImage = postData?.image_urls?.[0] || postData?.image_url || undefined;
 
       setCanonical(canonicalUrl);
       setMetaTags({
@@ -122,7 +152,7 @@ const PostDetail = () => {
         "@type": "Article",
         headline: contentPreview.substring(0, 110),
         author: { "@type": "Person", name: displayName },
-        datePublished: postData.created_at,
+        datePublished: postData?.created_at,
         url: canonicalUrl,
         ...(firstImage && { image: firstImage }),
       });
@@ -130,7 +160,7 @@ const PostDetail = () => {
 
     fetchPost();
     return () => cleanupSeo();
-  }, [username, slug, user]);
+  }, [username, slug, postId, user]);
 
   const handleLike = async (postId: string) => {
     if (!user) { setShowSignupPrompt(true); return { success: false }; }
@@ -145,9 +175,9 @@ const PostDetail = () => {
     return result;
   };
 
-  const handleShare = async (postId: string) => {
+  const handleShare = async (id: string) => {
     if (!user) { setShowSignupPrompt(true); return { success: false }; }
-    const result = await sharePost(postId);
+    const result = await sharePost(id);
     if (result.success) {
       setPost((prev: any) => prev ? { ...prev, shares_count: (prev.shares_count || 0) + 1 } : prev);
       toast.success(result.message);
@@ -155,9 +185,9 @@ const PostDetail = () => {
     return result;
   };
 
-  const handleComment = async (postId: string, content: string) => {
+  const handleComment = async (id: string, content: string) => {
     if (!user) { setShowSignupPrompt(true); return { success: false }; }
-    const result = await addComment(postId, content);
+    const result = await addComment(id, content);
     if (result.success) {
       setPost((prev: any) => prev ? { ...prev, comments_count: (prev.comments_count || 0) + 1 } : prev);
       toast.success(result.message);
@@ -187,13 +217,16 @@ const PostDetail = () => {
     );
   }
 
+  const backLink = username ? `/${username}` : "/community";
+  const backLabel = username ? `Về trang ${post.user_display_name}` : "Về cộng đồng";
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="max-w-2xl mx-auto px-4 py-6">
-        <Link to={`/${username}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
+        <Link to={backLink} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
           <ArrowLeft className="w-4 h-4" />
-          Về trang {post.user_display_name}
+          {backLabel}
         </Link>
 
         <PostCard
