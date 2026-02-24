@@ -12,7 +12,7 @@ Disallow: /onboarding
 Disallow: /mint
 Disallow: /coordinator-gate
 
-Sitemap: https://angelaithutrang.lovable.app/sitemap.xml
+Sitemap: https://angel.fun.rich/sitemap.xml
 
 User-agent: Googlebot
 Allow: /

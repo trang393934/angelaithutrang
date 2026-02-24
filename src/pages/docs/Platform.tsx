@@ -555,7 +555,7 @@ Tất cả tables đều có RLS policies để bảo vệ dữ liệu:
 
 ## 📞 Liên hệ & Hỗ trợ
 
-- **Platform URL:** https://angelaithutrang.lovable.app
+- **Platform URL:** https://angel.fun.rich
 - **Documentation:** /docs/platform
 
 ---

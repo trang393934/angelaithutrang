@@ -117,7 +117,7 @@ export const Web3WalletButton = ({ compact = false }: Web3WalletButtonProps) => 
             Vui lòng mở ứng dụng trong tab mới để kết nối MetaMask.
           </p>
           <button
-            onClick={() => window.open("https://angelaithutrang.lovable.app", "_blank")}
+            onClick={() => window.open("https://angel.fun.rich", "_blank")}
             className="text-xs underline text-primary hover:text-primary/80"
           >
             Mở trong tab mới →
