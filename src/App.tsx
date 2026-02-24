@@ -139,7 +139,8 @@ const App = () => (
               <Route path="/docs/fun-governance" element={<FunGovernance />} />
               <Route path="/coordinator-gate" element={<CoordinatorGate />} />
               <Route path="/coordinator-gate/:projectId" element={<CoordinatorProject />} />
-              {/* Clean URL routes: /:username and /:username/post/:slug */}
+              {/* Clean URL routes */}
+              <Route path="/post/:postId" element={<PostDetail />} />
               <Route path="/:username/post/:slug" element={<PostDetail />} />
               <Route path="/:username" element={<DynamicRoute />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
