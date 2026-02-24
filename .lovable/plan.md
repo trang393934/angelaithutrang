@@ -1,83 +1,69 @@
 
 
-## BÀI 5 — DB Schema + Index chuan (Slug Governance)
+## BÀI 6 — Full URL Governance System
 
-### Phan tich hien trang vs spec
+### Phan tich hien trang
 
-Spec BÀI 5 mo ta mot he thong **ly tuong** voi bang `contents` thong nhat cho post/video/live. Tuy nhien, he thong hien tai da co kien truc rieng hoat dong tot:
+He thong da implement phan lon spec qua BÀI 3-5. Kiem tra tung nguyen tac:
 
-| Spec BÀI 5 | He thong hien tai | Trang thai |
+| Nguyen tac BÀI 6 | Trang thai hien tai | Can lam |
 |---|---|---|
-| `users` table voi `username` | `profiles` table voi `handle` + `user_id` (UUID tu auth) | Da co, khac ten nhung cung chuc nang |
-| `contents` table thong nhat (post/video/live) | `community_posts` table rieng cho posts | Da co cho posts |
-| Unique index `(user_id, type, slug)` | Unique index `(user_id, slug)` WHERE slug IS NOT NULL | Da co, tuong duong (chi co 1 type) |
-| `content_slug_history` | `slug_history` (vua tao o BÀI 4) | Da co |
-| Index lookup `(user_id, type, created_at DESC)` | Chua co | Can them |
-| Governance: doi title → doi slug → luu history | Chua implement (edit khong doi slug) | Can them |
-
-### Ket luan
-
-He thong **da co 80% co so ha tang** theo spec. Thay vi tao lai bang moi (pha vo data hien tai), chi can **bo sung phan con thieu**:
+| Username bat bien (khuyen nghi) | Handle doi tu do, khong cooldown | Them cooldown 30 ngay |
+| Slug doi theo title, giu link cu | Da co (BÀI 4-5: slug_history + redirect) | Da xong |
+| Unique slug theo user + type | Da co unique index `(user_id, slug)` | Da xong |
+| Chong spam slug (rate limit doi title) | Chua co | Them rate limit |
+| Audit log | slug_history ghi lai thay doi slug, handle_audit_log ghi doi handle | Da co |
+| Hau to trung: _2, _3... gioi han 50, roi random suffix | Hien tai loop vo han (khong gioi han) | Them gioi han + random fallback |
 
 ### Thay doi can thiet
 
-#### 1. Them index lookup nhanh tren `community_posts`
+#### 1. Gioi han collision counter (slug + random fallback)
 
-Spec yeu cau index `(user_id, type, created_at DESC)`. Vi he thong chi co 1 type (post), index tuong duong:
+Cap nhat `makeUniqueSlug` trong `src/lib/slugify.ts` va logic tuong ung trong edge function:
+- Thu _2, _3... den _50
+- Neu van trung: them random suffix 4 ky tu (vd: `_x7k2`)
+- Gioi han tong so lan thu la 55 (50 so + 5 random)
 
-```sql
-CREATE INDEX ix_community_posts_user_created 
-  ON community_posts(user_id, created_at DESC);
-```
+#### 2. Handle cooldown 30 ngay
 
-Giup query danh sach bai viet cua 1 user nhanh hon.
+Cap nhat `src/hooks/useHandle.ts`:
+- Khoi phuc logic cooldown 30 ngay (hien tai `canChangeHandle` luon tra ve `true`)
+- Tinh `daysUntilChange` tu `handle_updated_at`
+- Cho phep doi lan dau (khi chua co handle) ma khong bi cooldown
 
-#### 2. Them unique constraint tren `slug_history`
+#### 3. Rate limit doi title/slug trong edge function
 
-Spec yeu cau `UNIQUE(content_id, old_slug)` de tranh trung lap. Hien tai `slug_history` chi co index lookup, chua co unique constraint:
-
-```sql
-CREATE UNIQUE INDEX uq_slug_history_content_oldslug 
-  ON slug_history(content_id, old_slug);
-```
-
-#### 3. Implement slug governance trong edge function
-
-Cap nhat `process-community-post/index.ts` (action `edit_post`):
-- Khi user edit bai viet, generate slug moi tu title moi
-- Neu slug moi khac slug cu:
-  - INSERT slug cu vao `slug_history`
-  - UPDATE `community_posts.slug` = slug moi
-- Neu slug moi giong slug cu: khong lam gi them
-
-#### 4. Lam cho `community_posts.slug` NOT NULL
-
-Hien tai `slug` la nullable. Spec yeu cau slug bat buoc. Can migration:
-
-```sql
--- Dat slug cho cac bai viet chua co slug
-UPDATE community_posts SET slug = 'post_' || LEFT(id::text, 8) WHERE slug IS NULL;
--- Doi thanh NOT NULL
-ALTER TABLE community_posts ALTER COLUMN slug SET NOT NULL;
-```
-
-Sau do bo `WHERE slug IS NOT NULL` khoi unique index va tao lai.
+Cap nhat `process-community-post/index.ts` (edit_post action):
+- Gioi han: toi da 3 lan edit/ngay cho moi bai viet
+- Query `slug_history` dem so lan doi slug cua post trong ngay
+- Neu vuot gioi han: van cho edit content nhung khong doi slug
 
 ### Chi tiet ky thuat
 
 **Files thay doi:**
-- Migration SQL: them index, unique constraint, NOT NULL cho slug
-- `supabase/functions/process-community-post/index.ts`: them slug governance logic trong edit_post action
+
+1. **`src/lib/slugify.ts`** — Cap nhat `makeUniqueSlug`:
+   - Them tham so `maxAttempts = 50`
+   - Sau 50 lan: generate random 4-char suffix
+   - Tong cong thu toi da 55 lan
+
+2. **`src/hooks/useHandle.ts`** — Khoi phuc cooldown:
+   - `canChangeHandle()`: kiem tra `handle_updated_at` + 30 ngay < now
+   - `daysUntilChange()`: tra ve so ngay con lai
+   - Lan dau set handle (currentHandle = null): khong ap dung cooldown
+
+3. **`supabase/functions/process-community-post/index.ts`** — Them 2 thay doi:
+   - Slug collision: gioi han 50 lan thu + random fallback (dong bo voi client)
+   - Edit rate limit: dem so lan doi slug trong ngay, gioi han 3 lan
 
 **Khong thay doi:**
-- Khong tao bang `contents` moi (giu `community_posts` hien tai)
-- Khong thay doi `profiles` (da tuong duong `users` trong spec)
-- Khong thay doi `slug_history` schema (da dung tu BÀI 4)
-- Khong thay doi `PostDetail.tsx` (fallback redirect da implement o BÀI 4)
+- Khong can migration SQL (da du bang va index tu BÀI 4-5)
+- Khong thay doi `PostDetail.tsx` (redirect da hoat dong)
+- Khong thay doi `DynamicRoute.tsx`
 
 ### Loi ich
-- Query nhanh hon voi index `(user_id, created_at DESC)`
-- Slug governance tu dong: edit title → slug cap nhat → link cu van redirect dung
-- Data integrity: slug NOT NULL + unique constraint bao dam khong trung
-- Khop voi tinh than spec BÀI 5 ma khong pha vo kien truc hien tai
+- Chong spam: rate limit edit + handle cooldown bao ve SEO
+- Chong collision loop vo han: gioi han 50 + random fallback
+- Identity stable: handle khong doi lien tuc, giu on dinh profile URL
+- Phu hop tinh than Web3 Social "identity stable" theo spec
 
