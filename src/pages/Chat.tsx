@@ -447,16 +447,13 @@ const Chat = () => {
           const parsed = JSON.parse(jsonStr);
           const content = parsed.choices?.[0]?.delta?.content;
           if (content) {
-            // Remove Unicode replacement characters that appear from split multi-byte UTF-8
-            const cleanContent = content.replace(/\uFFFD/g, '');
-            if (cleanContent) {
-              assistantContent += cleanContent;
-              setMessages(prev => {
-                const updated = [...prev];
-                updated[updated.length - 1] = { role: "assistant", content: assistantContent, type: "text" };
-                return updated;
-              });
-            }
+            // Do NOT strip U+FFFD — keep raw for corruption detection
+            assistantContent += content;
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[updated.length - 1] = { role: "assistant", content: assistantContent, type: "text" };
+              return updated;
+            });
           }
         } catch {
           textBuffer = line + "\n" + textBuffer;
@@ -465,8 +462,41 @@ const Chat = () => {
       }
     }
     
-    // Final cleanup of any remaining replacement characters
-    return assistantContent.replace(/\uFFFD/g, '');
+    // Corruption detection: fallback to non-stream if needed
+    const hasCorruption = assistantContent.includes('\uFFFD') || /[a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]\?\?[a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/i.test(assistantContent);
+    
+    if (hasCorruption) {
+      console.warn("⚠️ Corruption detected in chat stream — falling back to non-stream");
+      try {
+        const fallbackResp = await fetch(CHAT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ 
+            messages: userMessages.map(m => ({ role: m.role, content: m.content })),
+            responseStyle: userResponseStyle || 'detailed',
+            stream: false,
+          }),
+        });
+        if (fallbackResp.ok) {
+          const fallbackData = await fallbackResp.json();
+          if (fallbackData.content) {
+            assistantContent = fallbackData.content;
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[updated.length - 1] = { role: "assistant", content: assistantContent, type: "text" };
+              return updated;
+            });
+          }
+        }
+      } catch (fallbackErr) {
+        console.error("Non-stream fallback failed:", fallbackErr);
+      }
+    }
+
+    return assistantContent;
   };
 
   const analyzeAndReward = useCallback(async (questionText: string, aiResponse: string) => {

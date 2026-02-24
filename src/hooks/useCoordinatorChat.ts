@@ -21,6 +21,14 @@ interface ProjectContext {
   status: string;
 }
 
+// Detect corruption in Vietnamese text
+function hasTextCorruption(text: string): boolean {
+  if (text.includes('\uFFFD')) return true;
+  // Pattern: letter + ?? + letter (catches "gi??á", "thc??ực")
+  if (/[a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]\?\?[a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/i.test(text)) return true;
+  return false;
+}
+
 export function useCoordinatorChat(projectId: string | undefined) {
   const { session } = useAuth();
   const queryClient = useQueryClient();
@@ -75,23 +83,22 @@ export function useCoordinatorChat(projectId: string | undefined) {
         { role: "user" as const, content },
       ];
 
+      const endpointUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/coordinator-chat`;
+
       try {
-        const resp = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/coordinator-chat`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              messages: chatMessages,
-              mode,
-              ai_role: aiRole,
-              project_context: projectContext,
-            }),
-          }
-        );
+        const resp = await fetch(endpointUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            messages: chatMessages,
+            mode,
+            ai_role: aiRole,
+            project_context: projectContext,
+          }),
+        });
 
         if (!resp.ok) {
           const errorData = await resp.json().catch(() => ({}));
@@ -140,14 +147,46 @@ export function useCoordinatorChat(projectId: string | undefined) {
                 setStreamingContent(fullContent);
               }
             } catch {
+              // Re-buffer incomplete JSON
               buffer = line + "\n" + buffer;
               break;
             }
           }
         }
 
-        // Save assistant message to DB (strip any U+FFFD replacement chars)
-        const cleanContent = fullContent.replace(/\uFFFD/g, '');
+        let cleanContent = fullContent;
+
+        // Corruption detection: if stream has corruption, fallback to non-stream
+        if (hasTextCorruption(fullContent)) {
+          console.warn("⚠️ Corruption detected in coordinator stream — falling back to non-stream");
+          try {
+            const fallbackResp = await fetch(endpointUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                messages: chatMessages,
+                mode,
+                ai_role: aiRole,
+                project_context: projectContext,
+                stream: false,
+              }),
+            });
+            if (fallbackResp.ok) {
+              const fallbackData = await fallbackResp.json();
+              if (fallbackData.content) {
+                cleanContent = fallbackData.content;
+                setStreamingContent(cleanContent);
+              }
+            }
+          } catch (fallbackErr) {
+            console.error("Non-stream fallback failed:", fallbackErr);
+          }
+        }
+
+        // Save assistant message to DB
         if (cleanContent) {
           await supabase.from("coordinator_chat_messages").insert({
             project_id: projectId,

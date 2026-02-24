@@ -12,7 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, question } = await req.json();
+    const { imageUrl, question, stream: streamParam } = await req.json();
+    const shouldStream = streamParam !== false;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -20,7 +21,7 @@ serve(async (req) => {
       throw new Error("AI service is not configured");
     }
 
-    // Track usage (no limit for analyze, just tracking)
+    // Track usage
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const authHeader = req.headers.get("Authorization");
@@ -35,7 +36,6 @@ serve(async (req) => {
       const userId = claimsData?.claims?.sub as string || null;
       
       if (userId) {
-        // Track usage without limit (null = no limit)
         await supabase.rpc('check_and_increment_ai_usage', {
           _user_id: userId,
           _usage_type: 'analyze_image',
@@ -45,7 +45,7 @@ serve(async (req) => {
       }
     }
 
-    console.log("Analyzing image with question:", question);
+    console.log("Analyzing image with question:", question, "stream:", shouldStream);
 
     const userContent = [
       {
@@ -60,24 +60,15 @@ serve(async (req) => {
       }
     ];
 
-    // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
-    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+    // --- AI Gateway Config (Lovable primary for Vietnamese stability) ---
     const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
     const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
-    const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
-    const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
-    const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
-    if (CF_API_TOKEN) {
-      aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
-    } else {
-      aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
-    }
-    // --- End AI Gateway Config ---
 
-    console.log(`Analyzing image via ${CF_API_TOKEN ? 'Cloudflare' : 'Lovable'} Gateway`);
+    console.log(`Analyzing image via Lovable Gateway (primary), stream=${shouldStream}`);
 
     const requestBody = {
-      model: cfModel("google/gemini-2.5-flash"),
+      model: "google/gemini-2.5-flash",
       messages: [
           {
             role: "system",
@@ -108,22 +99,25 @@ FORMAT: KHÔNG dùng Markdown (**, *, ##, \`\`). Viết văn xuôi tự nhiên.`
             content: userContent
           }
         ],
-        stream: true,
+        stream: shouldStream,
     };
 
-    let response = await fetch(AI_GATEWAY_URL, {
+    let response = await fetch(LOVABLE_GATEWAY_URL, {
       method: "POST",
-      headers: aiHeaders,
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(requestBody),
     });
 
-    // Fallback to Lovable Gateway if Cloudflare fails
+    // Fallback to Cloudflare if Lovable fails
     if (!response.ok && CF_API_TOKEN && response.status !== 429 && response.status !== 402) {
-      console.error("Cloudflare failed:", response.status, "- falling back to Lovable Gateway");
-      response = await fetch(LOVABLE_GATEWAY_URL, {
+      console.error("Lovable failed:", response.status, "- falling back to Cloudflare");
+      response = await fetch(CF_GATEWAY_URL, {
         method: "POST",
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...requestBody, model: "google/gemini-2.5-flash" }),
+        headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...requestBody, model: "google-ai-studio/gemini-2.5-flash" }),
       });
     }
 
@@ -145,6 +139,15 @@ FORMAT: KHÔNG dùng Markdown (**, *, ##, \`\`). Viết văn xuôi tự nhiên.`
       }
       
       throw new Error("Failed to analyze image");
+    }
+
+    // Non-stream mode
+    if (!shouldStream) {
+      const jsonData = await response.json();
+      const content = jsonData.choices?.[0]?.message?.content || "";
+      return new Response(JSON.stringify({ content }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(response.body, {

@@ -7,7 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// ====== ECOSYSTEM CONTEXT (injected into every request) ======
 const ECOSYSTEM_CONTEXT = `
 # FUN Ecosystem Architecture
 
@@ -43,7 +42,6 @@ const ECOSYSTEM_CONTEXT = `
 - Reference "5 chiều" (5 Dimensions) when discussing value
 `;
 
-// ====== MODE PROMPTS ======
 const MODE_PROMPTS: Record<string, string> = {
   product_spec: `You are in Product Spec Mode. Generate structured product documentation including:
 - Vision & Mission
@@ -107,18 +105,12 @@ Focus on actionable, measurable strategies.`,
 Flag any violations or risks clearly with severity levels.`,
 };
 
-// ====== ROLE PROMPTS ======
 const ROLE_PROMPTS: Record<string, string> = {
   product_architect: `You are acting as a **Product Architect**. You think in systems, user flows, and feature prioritization. You validate ideas against user needs and ecosystem fit. You output structured PRDs and roadmaps.`,
-
   smart_contract_architect: `You are acting as a **Smart Contract Architect**. You think in Solidity patterns, security vectors, and gas efficiency. You validate token logic against PPLP rules. You output secure, auditable code.`,
-
   tokenomics_guardian: `You are acting as a **Tokenomics Guardian**. You think in supply dynamics, inflation models, and incentive alignment. You validate sustainability against ecosystem caps. You flag unsustainable models immediately.`,
-
   growth_strategist: `You are acting as a **Growth Strategist**. You think in viral coefficients, retention curves, and network effects. You design growth loops that align with Light Economy principles. You measure everything.`,
-
   legal_architect: `You are acting as a **Legal & Compliance Architect**. You think in regulatory frameworks, token classification, and user protection. You validate against Vietnamese and international crypto regulations. You flag legal risks.`,
-
   pplp_guardian: `You are acting as a **PPLP Guardian**. You are the authority on the Proof of Positive Life Protocol. You validate everything against the 5D framework (S, T, H, C, U). You ensure Light Score integrity and anti-fraud compliance.`,
 };
 
@@ -140,7 +132,6 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify user
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -154,7 +145,6 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub;
 
-    // Check coordinator/admin role
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: roleData } = await adminClient
       .from("user_roles")
@@ -169,9 +159,9 @@ serve(async (req) => {
       });
     }
 
-    const { messages, mode, ai_role, project_context } = await req.json();
+    const { messages, mode, ai_role, project_context, stream: streamParam } = await req.json();
+    const shouldStream = streamParam !== false;
 
-    // Build system prompt
     const modePrompt = MODE_PROMPTS[mode] || MODE_PROMPTS.product_spec;
     const rolePrompt = ROLE_PROMPTS[ai_role] || ROLE_PROMPTS.product_architect;
 
@@ -204,9 +194,9 @@ ${projectContextStr}
 - Flag any conflicts with PPLP or ecosystem architecture
 `;
 
-    // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
-    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+    // --- AI Gateway Config (Lovable primary for Vietnamese stability) ---
     const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
     const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -217,45 +207,38 @@ ${projectContextStr}
       });
     }
 
-    const useCF = !!CF_API_TOKEN;
-    const primaryUrl = useCF ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
-    const primaryModel = useCF ? "google-ai-studio/gemini-3-flash-preview" : "google/gemini-3-flash-preview";
-    const primaryAuth = useCF ? `Bearer ${CF_API_TOKEN}` : `Bearer ${LOVABLE_API_KEY}`;
-
-    console.log(`[coordinator-chat] Using gateway: ${useCF ? "Cloudflare" : "Lovable"}`);
+    console.log(`[coordinator-chat] Using gateway: Lovable (primary), stream=${shouldStream}`);
 
     const aiBody = JSON.stringify({
-      model: primaryModel,
+      model: "google/gemini-3-flash-preview",
       messages: [
         { role: "system", content: systemPrompt },
         ...messages,
       ],
-      stream: true,
+      stream: shouldStream,
     });
 
-    let response = await fetch(primaryUrl, {
+    let response = await fetch(LOVABLE_GATEWAY_URL, {
       method: "POST",
-      headers: { Authorization: primaryAuth, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: aiBody,
     });
 
-    // Fallback: Cloudflare lỗi (trừ 429/402) → retry qua Lovable
-    if (!response.ok && useCF && response.status !== 429 && response.status !== 402) {
-      console.log(`[coordinator-chat] Cloudflare error ${response.status}, falling back to Lovable Gateway`);
-      if (LOVABLE_API_KEY) {
-        response = await fetch(LOVABLE_GATEWAY_URL, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
-            messages: [
-              { role: "system", content: systemPrompt },
-              ...messages,
-            ],
-            stream: true,
-          }),
-        });
-      }
+    // Fallback: Lovable fails (not 429/402) → retry via Cloudflare
+    if (!response.ok && CF_API_TOKEN && response.status !== 429 && response.status !== 402) {
+      console.log(`[coordinator-chat] Lovable error ${response.status}, falling back to Cloudflare`);
+      response = await fetch(CF_GATEWAY_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google-ai-studio/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages,
+          ],
+          stream: shouldStream,
+        }),
+      });
     }
 
     if (!response.ok) {
@@ -279,25 +262,17 @@ ${projectContextStr}
       });
     }
 
-    // TransformStream to handle multi-byte UTF-8 chars split across chunks
-    const streamDecoder = new TextDecoder();
-    let parseBuffer = "";
-    const { readable, writable } = new TransformStream({
-      transform(chunk, controller) {
-        controller.enqueue(chunk); // Forward original chunk unchanged
-        try {
-          const text = streamDecoder.decode(chunk, { stream: true });
-          parseBuffer += text;
-          let idx;
-          while ((idx = parseBuffer.indexOf('\n')) !== -1) {
-            parseBuffer = parseBuffer.slice(idx + 1);
-          }
-        } catch { /* ignore parse errors */ }
-      },
-    });
+    // --- NON-STREAM MODE ---
+    if (!shouldStream) {
+      const jsonData = await response.json();
+      const content = jsonData.choices?.[0]?.message?.content || "";
+      return new Response(JSON.stringify({ content }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    response.body!.pipeTo(writable);
-    return new Response(readable, {
+    // --- STREAM MODE ---
+    return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
