@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { getProfilePath } from "@/lib/profileUrl";
 import { Header } from "@/components/Header";
 import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
-import { MusicThemeSelector } from "@/components/MusicThemeSelector";
+
 import { 
   ArrowLeft, UserPlus, UserCheck, MessageCircle, Loader2, Clock, 
   FileText, ShieldAlert, Ban, AlertTriangle, Camera, 
@@ -613,8 +613,6 @@ const UserProfile = () => {
       {/* ── Video Background ─────────────────────────────────────────────── */}
       <ValentineVideoBackground />
 
-      {/* ── Music selector floating button ───────────────────────────────── */}
-      <MusicThemeSelector variant="floating" />
 
       {/* ── Overlay for readability — REMOVED (no overlay on video bg) ── */}
 
