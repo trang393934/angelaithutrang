@@ -134,7 +134,7 @@ const PostDetail = () => {
         : `${origin}/post/${postData?.id}`;
       const displayName = profileData?.display_name || displayHandle || "FUN Member";
       const contentPreview = postData?.content?.substring(0, 155) || "Bài viết trên FUN Ecosystem";
-      const firstImage = postData?.image_urls?.[0] || postData?.image_url || undefined;
+      const firstImage = postData?.image_urls?.[0] || postData?.image_url || profileData?.avatar_url || 'https://angel.fun.rich/og-image.png';
 
       setCanonical(canonicalUrl);
       setMetaTags({
@@ -145,7 +145,7 @@ const PostDetail = () => {
         ogImage: firstImage,
         ogUrl: canonicalUrl,
         ogType: "article",
-        twitterCard: firstImage ? "summary_large_image" : "summary",
+        twitterCard: "summary_large_image",
       });
       injectJsonLd({
         "@context": "https://schema.org",

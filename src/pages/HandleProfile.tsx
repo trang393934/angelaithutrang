@@ -35,10 +35,10 @@ const applyProfileSeo = (profile: { display_name: string | null; bio: string | n
     description: desc,
     ogTitle: `${name} | FUN Profile`,
     ogDescription: desc,
-    ogImage: profile.avatar_url || undefined,
+    ogImage: profile.avatar_url || 'https://angel.fun.rich/og-image.png',
     ogUrl: canonicalUrl,
     ogType: "profile",
-    twitterCard: profile.avatar_url ? "summary_large_image" : "summary",
+    twitterCard: "summary_large_image",
   });
   injectJsonLd({
     "@context": "https://schema.org",

@@ -52,15 +52,24 @@ export function setMetaTags(config: MetaTagsConfig) {
     el.setAttribute('content', content);
   }
 
-  // Twitter card (name attribute)
-  const twitterCard = config.twitterCard || 'summary';
-  let tw = document.querySelector('meta[name="twitter:card"]') as HTMLMetaElement | null;
-  if (!tw) {
-    tw = document.createElement('meta');
-    tw.setAttribute('name', 'twitter:card');
-    document.head.appendChild(tw);
+  // Twitter meta tags (name attribute)
+  const twitterTags: Record<string, string | undefined> = {
+    'twitter:card': config.twitterCard || 'summary',
+    'twitter:title': config.ogTitle || config.title,
+    'twitter:description': config.ogDescription || config.description,
+    'twitter:image': config.ogImage,
+  };
+
+  for (const [name, content] of Object.entries(twitterTags)) {
+    if (!content) continue;
+    let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
+    if (!el) {
+      el = document.createElement('meta');
+      el.setAttribute('name', name);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('content', content);
   }
-  tw.setAttribute('content', twitterCard);
 
   // Description meta
   if (config.description) {
