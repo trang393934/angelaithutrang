@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { Home, Users, MessageCircle, Gift, Plus, LogOut, ChevronDown, Shield } from "lucide-react";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
@@ -27,8 +26,6 @@ import angelAiLogo from "@/assets/angel-ai-logo.png";
 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getProfilePath } from "@/lib/profileUrl";
-import { MusicThemeSelector } from "@/components/MusicThemeSelector";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 // Gift Button component for community header
 const GiftButtonCommunity = () => {
@@ -50,7 +47,6 @@ const GiftButtonCommunity = () => {
 
 export function CommunityHeader() {
   const { user, signOut, isAdmin } = useAuth();
-  const isMobile = useIsMobile();
   const { t } = useLanguage();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -402,11 +398,6 @@ export function CommunityHeader() {
         onClose={() => setShowFriendSearch(false)}
       />
 
-      {/* Mobile floating music button */}
-      {isMobile && createPortal(
-        <MusicThemeSelector variant="floating" />,
-        document.body
-      )}
     </>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -32,7 +31,6 @@ import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { VideoThemeSelector } from "@/components/VideoThemeSelector";
-import { MusicThemeSelector } from "@/components/MusicThemeSelector";
 import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 import angelAvatar from "@/assets/angel-avatar.png";
 
@@ -184,7 +182,6 @@ export const Header = () => {
           {/* Auth Buttons - More compact design */}
           <div className="hidden lg:flex items-center gap-0.5 lg:gap-1 xl:gap-1.5 shrink-0">
             {/* Music & Video Theme Selectors */}
-            {!isMobile && <MusicThemeSelector variant="header" />}
             <VideoThemeSelector variant="header" />
 
             {/* Language Selector - Compact on lg */}
@@ -514,11 +511,6 @@ export const Header = () => {
         )}
       </div>
     </header>
-    {/* Mobile floating music button - portaled to body to avoid header's backdrop-filter containing block */}
-    {isMobile && createPortal(
-      <MusicThemeSelector variant="floating" />,
-      document.body
-    )}
     </>
   );
 };
