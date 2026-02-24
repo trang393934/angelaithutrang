@@ -9,6 +9,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { SignupPromptDialog } from "@/components/SignupPromptDialog";
+import { setCanonical, setMetaTags, injectJsonLd, cleanupSeo, getSeoOrigin } from "@/lib/seoHelpers";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 const PostDetail = () => {
@@ -88,20 +89,47 @@ const PostDetail = () => {
         isLikedByMe = !!like;
       }
 
-      setPost({
+      const fullPost = {
         ...postData,
         user_display_name: profile?.display_name || "Người dùng",
         user_avatar_url: profile?.avatar_url,
         user_handle: profile?.handle,
         is_liked_by_me: isLikedByMe,
-      });
+      };
+      setPost(fullPost);
       setIsLoading(false);
 
-      // Update meta tags for SEO
-      document.title = `${profile?.display_name || username} - Bài viết | FUN Ecosystem`;
+      // SEO: canonical, meta tags, JSON-LD
+      const origin = getSeoOrigin();
+      const canonicalUrl = `${origin}/${username}/post/${slug}`;
+      const displayName = profile?.display_name || username || "FUN Member";
+      const contentPreview = postData.content?.substring(0, 155) || "Bài viết trên FUN Ecosystem";
+      const firstImage = postData.image_urls?.[0] || postData.image_url || undefined;
+
+      setCanonical(canonicalUrl);
+      setMetaTags({
+        title: `${displayName} - Bài viết | FUN Ecosystem`,
+        description: contentPreview,
+        ogTitle: `${displayName} - Bài viết`,
+        ogDescription: contentPreview,
+        ogImage: firstImage,
+        ogUrl: canonicalUrl,
+        ogType: "article",
+        twitterCard: firstImage ? "summary_large_image" : "summary",
+      });
+      injectJsonLd({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: contentPreview.substring(0, 110),
+        author: { "@type": "Person", name: displayName },
+        datePublished: postData.created_at,
+        url: canonicalUrl,
+        ...(firstImage && { image: firstImage }),
+      });
     };
 
     fetchPost();
+    return () => cleanupSeo();
   }, [username, slug, user]);
 
   const handleLike = async (postId: string) => {

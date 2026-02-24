@@ -1,4 +1,5 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
+import { setCanonical, cleanupSeo, getSeoOrigin } from "@/lib/seoHelpers";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { MasterCharterShowcase } from "@/components/MasterCharterShowcase";
@@ -24,6 +25,12 @@ const Index = () => {
   const { user } = useAuth();
   const mainRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+
+  // Set homepage canonical
+  useEffect(() => {
+    setCanonical(`${getSeoOrigin()}/`);
+    return () => cleanupSeo();
+  }, []);
 
   // Measure header height dynamically for video positioning
   useEffect(() => {

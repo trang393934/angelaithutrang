@@ -14,6 +14,7 @@ import { PublicProfileJoinCTA } from "@/components/public-profile/PublicProfileJ
 import { PublicProfileFeatured } from "@/components/public-profile/PublicProfileFeatured";
 import { AskAngelButton } from "@/components/public-profile/AskAngelButton";
 import { trackProfileEvent } from "@/lib/profileEvents";
+import { setCanonical, setMetaTags, injectJsonLd, cleanupSeo, getSeoOrigin } from "@/lib/seoHelpers";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Gift } from "lucide-react";
@@ -22,26 +23,31 @@ import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { ProfileMoreMenu } from "@/components/public-profile/ProfileMoreMenu";
 import { useState } from "react";
 
-const updateMetaTags = (profile: { display_name: string | null; bio: string | null; avatar_url: string | null; handle: string | null }) => {
-  document.title = `${profile.display_name || "FUN Member"} | FUN Profile`;
+const applyProfileSeo = (profile: { display_name: string | null; bio: string | null; avatar_url: string | null; handle: string | null }) => {
+  const origin = getSeoOrigin();
+  const name = profile.display_name || "FUN Member";
+  const desc = profile.bio || `${name} trên FUN Ecosystem`;
+  const canonicalUrl = `${origin}/${profile.handle}`;
 
-  const setMeta = (property: string, content: string) => {
-    let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement | null;
-    if (!el) {
-      el = document.createElement("meta");
-      el.setAttribute("property", property);
-      document.head.appendChild(el);
-    }
-    el.setAttribute("content", content);
-  };
-
-  const desc = profile.bio || `${profile.display_name || "FUN Member"} trên FUN Ecosystem`;
-  const url = `${window.location.origin}/${profile.handle}`;
-  setMeta("og:title", `${profile.display_name || "FUN Member"} | FUN Profile`);
-  setMeta("og:description", desc);
-  setMeta("og:url", url);
-  if (profile.avatar_url) setMeta("og:image", profile.avatar_url);
-  setMeta("og:type", "profile");
+  setCanonical(canonicalUrl);
+  setMetaTags({
+    title: `${name} | FUN Profile`,
+    description: desc,
+    ogTitle: `${name} | FUN Profile`,
+    ogDescription: desc,
+    ogImage: profile.avatar_url || undefined,
+    ogUrl: canonicalUrl,
+    ogType: "profile",
+    twitterCard: profile.avatar_url ? "summary_large_image" : "summary",
+  });
+  injectJsonLd({
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name,
+    url: canonicalUrl,
+    ...(profile.avatar_url && { image: profile.avatar_url }),
+    description: desc,
+  });
 };
 
 const HandleProfile = () => {
@@ -65,13 +71,14 @@ const HandleProfile = () => {
     }
   }, [searchParams]);
 
-  // Track profile view + set meta tags
+  // Track profile view + set meta tags + SEO
   useEffect(() => {
     if (profile?.user_id) {
       const ref = searchParams.get("ref") || localStorage.getItem("fun_referrer") || undefined;
       trackProfileEvent(profile.user_id, "view", undefined, ref);
-      updateMetaTags(profile);
+      applyProfileSeo(profile);
     }
+    return () => cleanupSeo();
   }, [profile?.user_id]);
 
   if (isLoading) {
