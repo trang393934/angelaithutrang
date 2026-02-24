@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download, Gift } from "lucide-react";
+import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download, Gift, Copy, Link as LinkIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getProfilePath, getPostPath } from "@/lib/profileUrl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { PostImageGrid } from "./PostImageGrid";
 import { LikeButtonWithReactions, ReactionType } from "./PostReactionPicker";
 import ShareDialog from "@/components/ShareDialog";
 import { LinkifiedContent } from "./LinkifiedContent";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -136,8 +138,23 @@ export function PostCard({
     void onLike(post.id).finally(() => setIsLiking(false));
   };
 
+  const [sharePopoverOpen, setSharePopoverOpen] = useState(false);
+
   const handleShareClick = () => {
+    setSharePopoverOpen(false);
     setShowShareDialog(true);
+  };
+
+  const handleCopyPostLink = async () => {
+    const path = getPostPath(post.id, post.slug, post.user_handle);
+    const fullUrl = `https://angel.fun.rich${path}`;
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      toast.success("Đã sao chép liên kết! 🔗");
+    } catch {
+      toast.error("Không thể sao chép.");
+    }
+    setSharePopoverOpen(false);
   };
 
   const handleShareSuccess = async () => {
@@ -577,21 +594,40 @@ export function PostCard({
               <span className="hidden sm:inline">Bình luận</span>
             </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleShareClick}
-              disabled={isSharing || !currentUserId}
-              className={`flex-1 hover:bg-primary/5 ${post.is_shared_by_me ? 'text-green-600' : 'text-foreground-muted'}`}
-              title={!currentUserId ? 'Vui lòng đăng nhập để chia sẻ' : ''}
-            >
-              {isSharing ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <Share2 className={`w-5 h-5 mr-2 ${post.is_shared_by_me ? 'fill-green-200' : ''}`} />
-              )}
-              <span className="hidden sm:inline">{post.is_shared_by_me ? 'Đã chia sẻ' : 'Chia sẻ'}</span>
-            </Button>
+            <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={isSharing || !currentUserId}
+                  className={`flex-1 hover:bg-primary/5 ${post.is_shared_by_me ? 'text-green-600' : 'text-foreground-muted'}`}
+                  title={!currentUserId ? 'Vui lòng đăng nhập để chia sẻ' : ''}
+                >
+                  {isSharing ? (
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  ) : (
+                    <Share2 className={`w-5 h-5 mr-2 ${post.is_shared_by_me ? 'fill-green-200' : ''}`} />
+                  )}
+                  <span className="hidden sm:inline">{post.is_shared_by_me ? 'Đã chia sẻ' : 'Chia sẻ'}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-52 p-1" side="top" align="center">
+                <button
+                  onClick={handleShareClick}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-muted transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Chia sẻ lên trang cá nhân
+                </button>
+                <button
+                  onClick={handleCopyPostLink}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-muted transition-colors"
+                >
+                  <Copy className="w-4 h-4" />
+                  Sao chép liên kết
+                </button>
+              </PopoverContent>
+            </Popover>
 
             {/* Tip/Reward Button */}
             {currentUserId && currentUserId !== post.user_id && (
