@@ -239,20 +239,21 @@ function DiamondBadge() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const UserProfile = () => {
-  const { userId: identifier } = useParams<{ userId: string }>();
+  const { userId: identifier, username } = useParams<{ userId: string; username: string }>();
+  const effectiveIdentifier = identifier || username;
   const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
   // Detect if identifier is UUID or handle
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(identifier || "");
-  const [resolvedUserId, setResolvedUserId] = useState<string | undefined>(isUUID ? identifier : undefined);
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(effectiveIdentifier || "");
+  const [resolvedUserId, setResolvedUserId] = useState<string | undefined>(isUUID ? effectiveIdentifier : undefined);
 
   // Resolve handle to userId if needed
   useEffect(() => {
-    if (!identifier) return;
+    if (!effectiveIdentifier) return;
     if (isUUID) {
-      setResolvedUserId(identifier);
+      setResolvedUserId(effectiveIdentifier);
       return;
     }
     // identifier is a handle — resolve it
@@ -260,7 +261,7 @@ const UserProfile = () => {
       const { data } = await supabase
         .from("profiles")
         .select("user_id")
-        .ilike("handle", identifier)
+        .ilike("handle", effectiveIdentifier)
         .maybeSingle();
       if (data) {
         setResolvedUserId(data.user_id);
@@ -269,7 +270,7 @@ const UserProfile = () => {
       }
     };
     resolveHandle();
-  }, [identifier, isUUID]);
+  }, [effectiveIdentifier, isUUID]);
 
   const userId = resolvedUserId;
 
@@ -319,14 +320,14 @@ const UserProfile = () => {
 
   // Auto-redirect UUID URL to handle URL
   useEffect(() => {
-    if (isUUID && profile?.handle && identifier) {
-      navigate(`/user/${profile.handle}`, { replace: true });
+    if (isUUID && profile?.handle && effectiveIdentifier) {
+      navigate(`/${profile.handle}`, { replace: true });
     }
-  }, [isUUID, profile?.handle, identifier, navigate]);
+  }, [isUUID, profile?.handle, effectiveIdentifier, navigate]);
 
   // Copy handle link
   const profileUrl = profile?.handle
-    ? `${window.location.origin}/user/${profile.handle}`
+    ? `${window.location.origin}/${profile.handle}`
     : `${window.location.origin}/user/${userId}`;
 
   const handleCopyLink = async () => {

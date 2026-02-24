@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
@@ -66,7 +67,7 @@ function TransactionRow({ tx, compact = false }: { tx: GiftTransaction; compact?
         <div className="flex items-center gap-1 flex-wrap text-sm">
           {/* Sender */}
           <Link 
-            to={`/user/${tx.sender_id}`} 
+            to={getProfilePath(tx.sender_id)} 
             className={`font-semibold truncate max-w-[100px] hover:underline ${
               isGift ? 'text-amber-700' : 'text-rose-600'
             }`}
@@ -78,7 +79,7 @@ function TransactionRow({ tx, compact = false }: { tx: GiftTransaction; compact?
             <>
               <ArrowUpRight className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
               <Link 
-                to={`/user/${tx.receiver_id}`} 
+                to={getProfilePath(tx.receiver_id)} 
                 className="font-semibold text-amber-700 truncate max-w-[100px] hover:underline"
               >
                 {tx.receiver_name || "Ẩn danh"}

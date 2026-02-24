@@ -65,6 +65,8 @@ import AdminFraudAlerts from "./pages/AdminFraudAlerts";
 import AdminTreasury from "./pages/AdminTreasury";
 import CoordinatorGate from "./pages/CoordinatorGate";
 import CoordinatorProject from "./pages/CoordinatorProject";
+import DynamicRoute from "./pages/DynamicRoute";
+import PostDetail from "./pages/PostDetail";
 // Note: Global error handling is in main.tsx (registered before React renders)
 
 const queryClient = new QueryClient();
@@ -137,6 +139,9 @@ const App = () => (
               <Route path="/docs/fun-governance" element={<FunGovernance />} />
               <Route path="/coordinator-gate" element={<CoordinatorGate />} />
               <Route path="/coordinator-gate/:projectId" element={<CoordinatorProject />} />
+              {/* Clean URL routes: /:username and /:username/post/:slug */}
+              <Route path="/:username/post/:slug" element={<PostDetail />} />
+              <Route path="/:username" element={<DynamicRoute />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

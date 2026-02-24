@@ -93,7 +93,7 @@ function UsernameDisplay() {
 
   const handleCopy = async () => {
     try {
-      const fullUrl = `${window.location.origin}/user/${currentHandle || user?.id}`;
+      const fullUrl = `${window.location.origin}/${currentHandle || user?.id}`;
       await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -103,7 +103,7 @@ function UsernameDisplay() {
   return (
     <div className="flex items-center gap-1.5 text-sm text-primary">
       <Link
-        to={`/user/${currentHandle || user?.id}`}
+        to={`/${currentHandle || user?.id}`}
         className="font-medium hover:underline"
       >
         angel.fun.rich/{currentHandle}

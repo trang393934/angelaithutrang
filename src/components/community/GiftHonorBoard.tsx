@@ -10,6 +10,7 @@ import { useCoinGifts } from "@/hooks/useCoinGifts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { motion } from "framer-motion";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
@@ -170,7 +171,7 @@ export function GiftHonorBoard() {
                     {topGivers.slice(0, 3).map((giver, index) => (
                       <Link
                         key={giver.user_id}
-                        to={`/user/${giver.user_id}`}
+                        to={getProfilePath(giver.user_id)}
                         className="flex items-center gap-3 hover:bg-amber-100/70 rounded-xl p-2 transition-all duration-200 hover:shadow-md group"
                       >
                         <RankBadge rank={index + 1} type="giver" />
@@ -209,7 +210,7 @@ export function GiftHonorBoard() {
                     {topReceivers.slice(0, 3).map((receiver, index) => (
                       <Link
                         key={receiver.user_id}
-                        to={`/user/${receiver.user_id}`}
+                        to={getProfilePath(receiver.user_id)}
                         className="flex items-center gap-3 hover:bg-rose-100/70 rounded-xl p-2 transition-all duration-200 hover:shadow-md group"
                       >
                         <RankBadge rank={index + 1} type="receiver" />
@@ -315,7 +316,7 @@ export function GiftHonorBoard() {
                       return (
                         <Link
                           key={giver.user_id}
-                          to={`/user/${giver.user_id}`}
+                          to={getProfilePath(giver.user_id)}
                           onClick={() => setShowAllDialog(false)}
                           className={`flex items-center gap-2.5 rounded-lg p-2 transition-all hover:shadow-sm
                             ${isCurrentUser ? 'bg-amber-100 ring-2 ring-amber-400' : 'hover:bg-amber-50'}`}

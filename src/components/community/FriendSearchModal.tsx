@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { Search, X, Loader2, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -72,7 +73,7 @@ export function FriendSearchModal({ open, onClose }: FriendSearchModalProps) {
 
   const handleUserClick = (user: UserResult) => {
     onClose();
-    navigate(`/user/${user.handle || user.user_id}`);
+    navigate(getProfilePath(user.user_id, user.handle));
   };
 
   if (!open) return null;

@@ -843,6 +843,7 @@ export type Database = {
           likes_count: number | null
           reward_amount: number | null
           shares_count: number | null
+          slug: string | null
           updated_at: string
           user_id: string
         }
@@ -857,6 +858,7 @@ export type Database = {
           likes_count?: number | null
           reward_amount?: number | null
           shares_count?: number | null
+          slug?: string | null
           updated_at?: string
           user_id: string
         }
@@ -871,6 +873,7 @@ export type Database = {
           likes_count?: number | null
           reward_amount?: number | null
           shares_count?: number | null
+          slug?: string | null
           updated_at?: string
           user_id?: string
         }

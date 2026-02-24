@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -47,7 +48,7 @@ export function PublicProfileFriends({
             transition={{ delay: 0.5 + index * 0.05 }}
           >
             <Link
-              to={friend.handle ? `/@${friend.handle}` : `/user/${friend.user_id}`}
+              to={getProfilePath(friend.user_id, friend.handle)}
               className="group flex flex-col items-center gap-1.5 p-2"
             >
               <Avatar className="w-14 h-14 border-2 border-border-light group-hover:border-primary/30 shadow-sm group-hover:shadow-glow transition-all duration-300">

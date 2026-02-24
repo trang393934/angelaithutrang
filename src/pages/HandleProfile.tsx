@@ -36,7 +36,7 @@ const updateMetaTags = (profile: { display_name: string | null; bio: string | nu
   };
 
   const desc = profile.bio || `${profile.display_name || "FUN Member"} trên FUN Ecosystem`;
-  const url = `${window.location.origin}/@${profile.handle}`;
+  const url = `${window.location.origin}/${profile.handle}`;
   setMeta("og:title", `${profile.display_name || "FUN Member"} | FUN Profile`);
   setMeta("og:description", desc);
   setMeta("og:url", url);

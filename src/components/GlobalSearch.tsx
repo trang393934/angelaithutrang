@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { Search, X, Loader2, BookOpen, Users, MessageCircle, Sparkles, ArrowRight, User, Wallet } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -363,7 +364,7 @@ export function GlobalSearch({
                       onClick={() => {
                         setIsOpen(false);
                         setQuery("");
-                        navigate(`/user/${(user as any).handle || user.user_id}`);
+                        navigate(getProfilePath(user.user_id, (user as any).handle));
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-b border-border/30 last:border-b-0"
                     >
