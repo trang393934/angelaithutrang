@@ -3125,6 +3125,36 @@ export type Database = {
         }
         Relationships: []
       }
+      slug_history: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          id: string
+          new_slug: string
+          old_slug: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          new_slug: string
+          old_slug: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          new_slug?: string
+          old_slug?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sybil_pattern_registry: {
         Row: {
           created_at: string | null
