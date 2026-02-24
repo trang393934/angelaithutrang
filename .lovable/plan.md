@@ -1,82 +1,54 @@
 
 
-## BÀI 8 — Microservice Routing Architecture (Phan tich & Mapping)
+## BÀI 9 — Checklist Kiem Tra & Chot Spec
 
-### Ket luan chinh
+Ket qua kiem tra toan bo he thong URL Governance (BÀI 1-8):
 
-BÀI 8 mo ta kien truc **microservice ly tuong** cho giai doan scale. He thong hien tai la **monolithic SPA + Supabase Edge Functions**, da implement day du cac chuc nang tuong duong nhung chua tach thanh service rieng. Day la tai lieu kien truc tham chieu (reference architecture), **khong can thay doi code** tai thoi diem nay.
+### Ket qua Checklist
 
-### Mapping hien trang vs Spec
-
-| Service (BÀI 8) | Hien tai | Component/File | Trang thai |
+| # | Hang muc | Trang thai | Chi tiet |
 |---|---|---|---|
-| **Edge Router / API Gateway** | React Router (client-side) + Supabase Edge Functions | `App.tsx` (routing), `DynamicRoute.tsx` (username vs system route) | Tuong duong, client-side |
-| **Identity Service** (username to user_id) | Query truc tiep `profiles` table | `DynamicRoute.tsx`, `PostDetail.tsx`, `HandleProfile.tsx` | Da co, chua cache |
-| **Content Service** (slug lookup) | Query truc tiep `community_posts` table | `PostDetail.tsx`, `process-community-post` edge function | Da co |
-| **Redirect Service** (slug_history) | Client-side redirect trong `PostDetail.tsx` | `PostDetail.tsx` (line ~60: check slug_history, navigate replace) | Da co (client 302, khong phai server 301) |
-| **SEO/Render Service** (SSR, OG, canonical) | Client-side injection (seoHelpers.ts) | `seoHelpers.ts`, `HandleProfile.tsx`, `PostDetail.tsx` | Da co (client-side, khong SSR) |
-| **Search/Index Service** (sitemap) | Edge function generate XML | `supabase/functions/sitemap/index.ts` | Da co |
+| 1 | **Regex username + reserved list** | DA XONG | `useHandle.ts`: regex `^(?=.{3,20}$)[a-z0-9]+(?:_[a-z0-9]+)*$`, reserved list 30+ tu khoa, kiem tra them bang `reserved_handles` trong DB |
+| 2 | **Slugify chuan** (remove accents, lowercase, whitelist) | DA XONG | `slugify.ts`: NFD normalization, lowercase, chi cho a-z0-9_, gioi han 60 ky tu, fallback "post" |
+| 3 | **Unique index (user_id, type, slug)** | DA XONG | Unique index tren `community_posts(user_id, slug)` + collision handling `makeUniqueSlug` (50 lan + random fallback) |
+| 4 | **Slug history + redirect 301** | DA XONG (client-side) | `slug_history` table luu thay doi, `PostDetail.tsx` query slug cu va `navigate(replace)`. Luu y: la client redirect, khong phai server 301 (gioi han SPA) |
+| 5 | **Canonical + OG tags + JSON-LD** | DA XONG | `seoHelpers.ts` utility, `HandleProfile.tsx` (Person JSON-LD), `PostDetail.tsx` (Article JSON-LD), `Index.tsx` (homepage canonical) |
+| 6 | **Sitemap** | DA XONG (can fix nho) | Edge function `sitemap/index.ts` generate XML, gioi han 50,000 URL, cache 1h. **Van de:** query `profiles` 2 lan (lan 1 khong co user_id, lan 2 co) — can go bo query thua |
+| 7 | **Robots.txt** | DA XONG | Chan `/admin/`, `/auth`, `/profile`, `/api/`, `/messages`, `/notifications`, etc. Sitemap URL tro den domain chinh |
+| 8 | **HTTPS redirect + domain canonical** | NGOAI PHAM VI | Do Lovable platform xu ly (auto HTTPS, domain config). Khong the cau hinh www/non-www redirect tu code |
+| 9 | **CDN caching + SSR pipeline** | CHUA CO (theo ke hoach) | Ghi nhan trong `docs/MICROSERVICE_ROUTING_ARCHITECTURE.md` la giai doan scale tuong lai. Hien tai dung client-side rendering |
 
-### Flow request hien tai vs spec
+### 2 van de can fix
+
+#### Fix 1: Sitemap query thua
+
+File `supabase/functions/sitemap/index.ts` query `profiles` **2 lan** — lan dau khong lay `user_id` (vo ich), lan hai moi lay day du. Can xoa query dau tien (dong 24-29) va vong lap trong (dong 39-42) de chi giu 1 query duy nhat.
+
+#### Fix 2: Sitemap chua tach theo type (sitemap index)
+
+Spec yeu cau sitemap_index.xml voi cac sitemap con (posts, users). Hien tai chi co 1 sitemap duy nhat. Tuy nhien voi quy mo hien tai (chua vuot 50,000 URL), 1 sitemap la du. Ghi nhan de scale sau — **khong can fix ngay**.
+
+### Ke hoach thay doi
+
+Chi can 1 file thay doi nho:
+
+**`supabase/functions/sitemap/index.ts`**:
+- Xoa query `profiles` lan dau (dong 24-29, chi lay `handle, updated_at` ma khong co `user_id`)
+- Xoa vong lap trong rong (dong 39-42)
+- Giu nguyen query `profilesFull` (dong 45-50) lam query chinh duy nhat
+
+Khong thay doi gi khac. Toan bo spec BÀI 1-8 da implement day du.
+
+### Tom tat tong the BÀI 1-9
 
 ```text
-Spec (Microservice):                    Hien tai (Monolith SPA):
-                                        
-GET /leminhtri/post/chuc_mung_nam_moi   GET /leminhtri/post/chuc_mung_nam_moi
-                                        
-1. Gateway (parse path)                 1. React Router match /:username/post/:slug
-                                           -> PostDetail component
-                                        
-2. Identity Service                     2. PostDetail.tsx: query profiles
-   username -> user_id (cached)            WHERE handle ILIKE username
-                                           (khong cache, query moi lan)
-                                        
-3. Content Service                      3. PostDetail.tsx: query community_posts
-   query by (user_id, type, slug)          WHERE user_id = X AND slug = Y
-                                        
-4. Redirect Service                     4. PostDetail.tsx: neu khong tim thay
-   slug_history -> 301                     -> query slug_history
-                                           -> navigate(newSlug, replace)
-                                           (client redirect, khong 301 server)
-                                        
-5. SEO/Render Service                   5. seoHelpers.ts: inject canonical,
-   SSR HTML + OG + JSON-LD                 OG tags, JSON-LD (client-side JS)
-                                        
-6. Response HTML                        6. React render PostCard component
+BÀI 1: URL Structure          -> DA XONG (DynamicRoute, /:username/post/:slug)
+BÀI 2: Username Validation    -> DA XONG (regex, reserved list, DB check)
+BÀI 3: Slug Generation        -> DA XONG (NFD, lowercase, underscore, 60 char)
+BÀI 4: Slug History           -> DA XONG (slug_history table, auto-log)
+BÀI 5: Slug Redirect          -> DA XONG (PostDetail query slug_history, client redirect)
+BÀI 6: URL Governance         -> DA XONG (cooldown 30d, rate limit 3/day, collision cap 50)
+BÀI 7: SEO (Canonical/OG/LD) -> DA XONG (seoHelpers, sitemap, robots.txt)
+BÀI 8: Microservice Arch      -> DA XONG (documentation, migration roadmap)
+BÀI 9: Checklist              -> FIX NHO (xoa query thua trong sitemap)
 ```
-
-### Cache strategy (hien tai vs spec)
-
-| Cache layer (BÀI 8) | Hien tai | Ghi chu |
-|---|---|---|
-| username to user_id (Redis, TTL dai) | Khong cache, query moi request | Co the them React Query cache client-side |
-| Public content HTML (CDN edge, stale-while-revalidate) | Khong cache HTML (SPA render client) | Can SSR/SSG de lam duoc |
-| Sitemap cache | Edge function tra Cache-Control: max-age=3600 | Da co |
-
-### Hanh dong khuyen nghi
-
-BÀI 8 la **tai lieu tham chieu kien truc** cho giai doan migration sang microservice. Tai thoi diem hien tai:
-
-**Khong can thay doi code** — he thong da co day du chuc nang tuong duong:
-- Routing: DynamicRoute + PostDetail xu ly dung
-- Identity lookup: profiles query hoat dong
-- Slug redirect: slug_history + client redirect hoat dong
-- SEO: canonical + OG + JSON-LD + sitemap da implement (BÀI 7)
-- Slug governance: rate limit + collision handling da implement (BÀI 5-6)
-
-**Khi can scale (tuong lai):**
-1. Tach Identity Service: tao edge function `resolve-identity` rieng, tra ve user_id tu handle, co cache header
-2. Tach Redirect Service: xu ly 301 tai CDN/edge level thay vi client-side
-3. Them SSR layer: dung framework nhu Next.js hoac Cloudflare Workers de render HTML server-side cho social crawlers
-4. Them Redis cache: cho identity lookup va content rendering
-
-### Tai lieu luu tru
-
-Noi dung BÀI 8 nen duoc luu vao `docs/MICROSERVICE_ROUTING_ARCHITECTURE.md` de team tham chieu khi bat dau giai doan scale. File nay se chua:
-- So do kien truc microservice muc tieu
-- Mapping hien tai vs muc tieu
-- Cache strategy chi tiet
-- Ke hoach migration tung buoc
-
-**Tong ket:** Tao 1 file documentation duy nhat. Khong thay doi code hay database.
-
