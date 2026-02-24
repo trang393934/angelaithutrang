@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -751,7 +752,7 @@ const AdminWalletManagement = () => {
                           <span className="text-muted-foreground shrink-0">●</span>
                           <span
                             className="font-medium text-foreground cursor-pointer hover:text-primary hover:underline transition-colors"
-                            onClick={() => navigate(`/user/${u.user_id}`)}
+                            onClick={() => navigate(getProfilePath(u.user_id, u.handle))}
                           >
                             {u.display_name ?? "Ẩn danh"}
                           </span>
@@ -1087,7 +1088,7 @@ const AdminWalletManagement = () => {
                             <div>
                               <p
                                 className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
-                                onClick={() => navigate(`/user/${w.user_id}`)}
+                                onClick={() => navigate(getProfilePath(w.user_id, w.handle))}
                               >
                                 {w.display_name ?? "Chưa đặt tên"}
                               </p>

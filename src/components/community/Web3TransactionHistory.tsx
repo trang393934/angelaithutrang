@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
@@ -95,7 +96,7 @@ function Web3TxRow({ tx }: { tx: Web3Transaction }) {
         </div>
 
         <Link
-          to={`/user/${tx.sender_id}`}
+          to={getProfilePath(tx.sender_id)}
           className="font-semibold text-blue-700 truncate max-w-[120px] hover:underline"
         >
           {tx.sender_name || "Ẩn danh"}
@@ -105,7 +106,7 @@ function Web3TxRow({ tx }: { tx: Web3Transaction }) {
 
         {tx.receiver_id ? (
           <Link
-            to={`/user/${tx.receiver_id}`}
+            to={getProfilePath(tx.receiver_id)}
             className="font-semibold text-blue-700 truncate max-w-[120px] hover:underline"
           >
             {tx.receiver_name || "Ẩn danh"}

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { X, ExternalLink, Copy, Sparkles, ArrowRight, Download, Share2, FileText, Image, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { toast } from "sonner";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import funMoneyLogo from "@/assets/fun-money-logo.png";
@@ -292,7 +293,7 @@ export function GiftCelebrationModal({ open, onOpenChange, data, onPostToProfile
             >
               {/* Sender */}
               <div className="flex items-center gap-2">
-                <Link to={`/user/${data.sender_id}`} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80">
+                <Link to={getProfilePath(data.sender_id)} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80">
                   <Avatar className="h-9 w-9 ring-2 ring-amber-300">
                     <AvatarImage src={data.sender_avatar || ""} />
                     <AvatarFallback className="bg-amber-100 text-amber-700">{data.sender_name?.[0] || "?"}</AvatarFallback>
@@ -324,7 +325,7 @@ export function GiftCelebrationModal({ open, onOpenChange, data, onPostToProfile
 
               {/* Receiver */}
               <div className="flex items-center gap-2">
-                <Link to={`/user/${data.receiver_id}`} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80">
+                <Link to={getProfilePath(data.receiver_id)} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80">
                   <Avatar className="h-9 w-9 ring-2 ring-rose-300">
                     <AvatarImage src={data.receiver_avatar || ""} />
                     <AvatarFallback className="bg-rose-100 text-rose-700">{data.receiver_name?.[0] || "?"}</AvatarFallback>

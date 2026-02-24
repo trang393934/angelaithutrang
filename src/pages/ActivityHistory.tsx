@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import {
   Globe, RefreshCw, Download, Search, Gift, Heart, Wallet,
   ArrowUpRight, ArrowDownLeft, Copy, ExternalLink, Check,
@@ -16,7 +17,6 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Link } from "react-router-dom";
 import { formatDistanceToNow, format, isToday, subDays, subMonths } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { toast } from "sonner";
@@ -138,7 +138,7 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
               </div>
             </div>
           ) : (
-            <Link to={`/user/${tx.sender_id}`} className="flex items-center gap-2 hover:opacity-80 min-w-0">
+            <Link to={getProfilePath(tx.sender_id)} className="flex items-center gap-2 hover:opacity-80 min-w-0">
               <Avatar className="w-10 h-10 border-2 border-[#ffd700]/30 flex-shrink-0">
                 <AvatarImage src={tx.sender_avatar || ""} />
                 <AvatarFallback className="text-xs bg-[#ffd700]/20 text-[#b8860b]">
@@ -202,7 +202,7 @@ function TransactionItem({ tx, onViewCard }: { tx: Transaction; onViewCard?: (tx
             ) : (
               /* Normal user as receiver */
               <>
-                <Link to={`/user/${tx.receiver_id}`} className="flex items-center gap-2 hover:opacity-80">
+                <Link to={getProfilePath(tx.receiver_id)} className="flex items-center gap-2 hover:opacity-80">
                   <div className="flex flex-col items-end min-w-0">
                     <span className="font-bold text-sm text-[#3D2800] truncate">{tx.receiver_name || "Ẩn danh"}</span>
                     {tx.receiver_wallet && (

@@ -5,6 +5,7 @@ import goldDiamondBadge from "@/assets/gold-diamond-badge.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PoPLBadge } from "@/components/profile/PoPLBadge";
 import { WalletAddressDisplay } from "@/components/profile/WalletAddressDisplay";
@@ -311,7 +312,7 @@ export function PublicProfileHeader({ profile, stats, tagline, badgeType, social
   // Avatar wrapper size must accommodate orbit
   const wrapperSize = (orbitRadius + 36) * 2; // 36 = icon diameter
 
-  const profileUrl = `${window.location.origin}/user/${profile.user_id}`;
+  const profileUrl = `${window.location.origin}${getProfilePath(profile.user_id, profile.handle)}`;
 
   const handleCopyLink = async () => {
     try {

@@ -352,7 +352,7 @@ export function GiftHonorBoard() {
                       return (
                         <Link
                           key={receiver.user_id}
-                          to={`/user/${receiver.user_id}`}
+                          to={getProfilePath(receiver.user_id)}
                           onClick={() => setShowAllDialog(false)}
                           className={`flex items-center gap-2.5 rounded-lg p-2 transition-all hover:shadow-sm
                             ${isCurrentUser ? 'bg-rose-100 ring-2 ring-rose-400' : 'hover:bg-rose-50'}`}

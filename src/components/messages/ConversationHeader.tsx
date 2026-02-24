@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { ArrowLeft, Phone, Video, Info, Home } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ export function ConversationHeader({
             </Tooltip>
 
             <Link
-              to={`/user/${partnerId}`}
+              to={getProfilePath(partnerId)}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
               <div className="relative">
@@ -126,7 +127,7 @@ export function ConversationHeader({
             >
               <Video className="w-5 h-5" />
             </Button>
-            <Link to={`/user/${partnerId}`}>
+            <Link to={getProfilePath(partnerId)}>
               <Button
                 variant="ghost"
                 size="icon"

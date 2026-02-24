@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import {
   MoreHorizontal, Users, Flag, Heart, Ban, Search,
   UserPlus, Share2, Copy, Check, Link as LinkIcon, X,
@@ -25,9 +26,7 @@ export function ProfileMoreMenu({ userId, displayName, handle, isOwnProfile }: P
   const [showLink, setShowLink] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const profileUrl = handle
-    ? `${window.location.origin}/@${handle}`
-    : `${window.location.origin}/user/${userId}`;
+  const profileUrl = `${window.location.origin}${getProfilePath(userId, handle)}`;
 
   const name = displayName || "Người dùng";
 
@@ -61,7 +60,7 @@ export function ProfileMoreMenu({ userId, displayName, handle, isOwnProfile }: P
     {
       icon: Users,
       label: "Xem quan hệ bạn bè",
-      onClick: () => { setOpen(false); navigate(`/user/${userId}?tab=friends`); },
+      onClick: () => { setOpen(false); navigate(`${getProfilePath(userId, handle)}?tab=friends`); },
     },
     ...(!isOwnProfile ? [
       {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LeaderboardUser } from "@/hooks/useLeaderboard";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -212,7 +213,7 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
       </div>
 
       {/* User Name */}
-      <Link to={`/user/${user.user_id}`} className="group mt-0.5">
+      <Link to={getProfilePath(user.user_id)} className="group mt-0.5">
         <p className={`${config.name} font-bold text-amber-900 group-hover:text-amber-600 transition-colors text-center max-w-[80px] md:max-w-[100px] leading-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] truncate`}>
           {user.display_name || t("common.anonymous")}
         </p>
