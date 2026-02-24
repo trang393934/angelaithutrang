@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getProfilePath } from "@/lib/profileUrl";
@@ -70,6 +72,7 @@ export const Header = () => {
   const { unreadCount } = useDirectMessages();
   const { t } = useLanguage();
   const { hasAccess: isCoordinator } = useCoordinatorRole();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -131,6 +134,7 @@ export const Header = () => {
   ];
 
   return (
+    <>
     <header 
       className={`sticky top-0 z-40 transition-all duration-500 ${
         isScrolled 
@@ -180,7 +184,7 @@ export const Header = () => {
           {/* Auth Buttons - More compact design */}
           <div className="hidden lg:flex items-center gap-0.5 lg:gap-1 xl:gap-1.5 shrink-0">
             {/* Music & Video Theme Selectors */}
-            <MusicThemeSelector variant="header" />
+            {!isMobile && <MusicThemeSelector variant="header" />}
             <VideoThemeSelector variant="header" />
 
             {/* Language Selector - Compact on lg */}
@@ -298,8 +302,7 @@ export const Header = () => {
 
           {/* Mobile Actions - Always visible on mobile */}
           <div className="flex lg:hidden items-center gap-2 shrink-0">
-            {/* Mobile Music & Video Theme Selectors */}
-            <MusicThemeSelector variant="header" />
+            {/* Mobile Video Theme Selector */}
             <VideoThemeSelector variant="header" />
             
             {/* Mobile Language Selector */}
@@ -511,5 +514,11 @@ export const Header = () => {
         )}
       </div>
     </header>
+    {/* Mobile floating music button - portaled to body to avoid header's backdrop-filter containing block */}
+    {isMobile && createPortal(
+      <MusicThemeSelector variant="floating" />,
+      document.body
+    )}
+    </>
   );
 };
