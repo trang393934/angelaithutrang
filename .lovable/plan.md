@@ -1,39 +1,46 @@
 
 
-## Cap nhat Username Validation theo BÀI 2 — Regex Strict
+## Cap nhat ham slugify theo BÀI 3 — Unicode NFD normalization
 
-### Hien trang
+### Van de hien tai
 
-He thong hien tai da **gan day du** theo spec:
-- Regex hien tai `^[a-z0-9][a-z0-9_]*[a-z0-9]$` ket hop voi kiem tra `includes("__")` va `startsWith("_")/endsWith("_")` da cover dung logic. Tuy nhien, co the thay the bang regex strict duy nhat theo spec de don gian hoa code.
-- Bang `reserved_handles` trong DB da co 80+ tu cam, nhung con thieu mot so tu trong spec.
+Code hien tai dung **bang map thu cong** (VIETNAMESE_MAP) voi 50+ entries de bo dau tieng Viet. Cach nay:
+- De thieu sot ky tu (vd: cac ky tu Unicode dang composed khac)
+- Code dai, kho bao tri
+- Khong theo chuan Unicode
 
-### Thay doi can thiet
+### Thay doi theo spec
 
-#### 1. Thay the regex bang regex strict cua spec
+Spec khuyen nghi dung **Unicode NFD normalize** + regex xoa diacritics. Day la cach chuan, ngan gon, va bao phu 100% ky tu co dau.
 
-Thay doi trong `src/hooks/useHandle.ts`:
-- Xoa `HANDLE_REGEX`, `HANDLE_SHORT_REGEX` va cac kiem tra rieng le (`startsWith("_")`, `endsWith("_")`, `includes("__")`)
-- Thay bang regex duy nhat: `^(?=.{3,20}$)[a-z0-9]+(?:_[a-z0-9]+)*$`
-- Don gian hoa ham `validateHandle` chi con 3 buoc: kiem tra do dai, kiem tra regex, kiem tra reserved
+### Chi tiet thay doi
 
-#### 2. Bo sung reserved usernames con thieu
+#### 1. Cap nhat `src/lib/slugify.ts`
 
-Them vao bang `reserved_handles` cac tu con thieu tu spec:
-- `static`, `assets`, `me`, `camlyd`, `camlyduong`, `post`, `video`, `live`
+Thay the toan bo `VIETNAMESE_MAP` + ham `removeVietnameseAccents` bang:
 
-(Cac tu `admin`, `root`, `support`, `api`, `auth`, `settings`, `home`, `camly`, `father`, `fun` da co san trong DB.)
+```typescript
+export function removeVietnameseAccents(input: string): string {
+  return input
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
+```
 
-### Chi tiet ky thuat
+Cap nhat `generateSlug` theo dung spec:
+- Fallback tra ve `"post"` thay vi chuoi rong khi title khong hop le
+- Giu nguyen logic cat do dai tai word boundary
 
-**File chinh sua:**
-- `src/hooks/useHandle.ts` — Don gian hoa validation dung 1 regex duy nhat
+#### 2. Cap nhat slug generation trong edge function
 
-**SQL insert:**
-- Them 8 tu moi vao `reserved_handles`
+Cap nhat `supabase/functions/process-community-post/index.ts`:
+- Thay the `VIET_MAP` + ham map thu cong bang cung cach NFD normalize
+- Dong bo logic voi file `slugify.ts` phia client
 
 ### Loi ich
-- Code ngan gon hon (xoa 10+ dong kiem tra rieng le, thay bang 1 regex)
-- Khop chinh xac voi spec cua team
-- Bao phu them cac reserved words quan trong (`me`, `static`, `assets`, `post`, `video`, `live`)
-
+- Code ngan gon hon (xoa 20+ dong map thu cong, thay bang 3 dong)
+- Bao phu 100% ky tu Unicode co dau (khong chi tieng Viet)
+- Khop chinh xac voi spec BÀI 3
+- Dong nhat logic giua client va edge function
