@@ -1,108 +1,172 @@
 
-
-## Phan tich va Ke hoach — 3 van de can xu ly
-
-### Van de 1: Social Media Preview (OG Image) khong hien thi dung
-
-**Nguyen nhan goc:** Day la ung dung SPA (Single Page Application). Khi chia se link len Facebook, Zalo, Twitter... cac crawler cua mang xa hoi **khong chay JavaScript**. Chung chi doc noi dung HTML tinh tu `index.html`. Vi vay, du `PostDetail.tsx` da set `og:image` bang JavaScript, crawler chi thay OG image mac dinh cua trang chu (logo Angel AI), khong thay hinh cua bai viet cu the.
-
-**Giai phap:** Tao mot Edge Function `og-image-render` de tra ve HTML voi meta tags dong (OG title, OG image, OG description) dua tren URL. Sau do, cap nhat `index.html` de trang chu co fallback OG image tot.
-
-**Chi tiet ky thuat:**
-- Tao Edge Function `supabase/functions/og-image-render/index.ts`
-- Function nhan `path` param (vd: `/thutrang/post/chuc_mung_nam_moi`)
-- Parse path → query database → tra ve HTML ngan voi meta tags chinh xac
-- Uu tien hinh: `image_urls[0]` → `user avatar` → `Angel AI logo`
-- Twitter card: `summary_large_image` (hinh lon nhu YouTube)
-
-**Luu y:** Vi day la SPA tren Lovable, khong co server-side rendering. Edge Function se la endpoint rieng (`/functions/v1/og-image-render?path=...`). De crawler thuc su lay duoc meta tags nay, can cau hinh proxy/redirect o tang CDN hoac dung `<noscript>` trick. Tuy nhien, giai phap hieu qua nhat trong gioi han hien tai la:
-1. Cap nhat `index.html` co fallback OG image tot
-2. Tao edge function de phuc vu cho cac truong hop can share preview dong
-
-### Van de 2: Guest bi chan boi "Luat Anh Sang"
-
-**Phat hien sau khi kiem tra code:**
-- `PostDetail.tsx`: **KHONG** co LightGate hay ProfileCompletionGate → Guest co the doc bai binh thuong
-- `Community.tsx`: **KHONG** co gate nao → Guest co the xem feed
-- `HandleProfile.tsx`: **KHONG** co gate → Guest co the xem profile
-- RLS policy tren `community_posts`: `qual: true` (public SELECT) → Database cho phep doc
-
-**Van de thuc su:** Khi Guest chua dang nhap va truy cap mot so tinh nang (chat, earn, mint...), `ProfileCompletionGate` trong App.tsx kiem tra auth → hien man hinh "Vui long dang nhap" hoac "Cong Anh Sang Dang Dong". Nhung cac trang **doc noi dung** (PostDetail, Community, HandleProfile) da open san.
-
-**Kiem tra them:** Co the Guest truy cap tu mot link ma roi vao route `/:username` → `DynamicRoute` → `UserProfile`, va `UserProfile` co the co logic chan. Tuy nhien, sau khi kiem tra, `UserProfile.tsx` cung khong co gate.
-
-**Ket luan:** Cac trang doc noi dung da open cho Guest. Neu Guest van bi chan, nguyen nhan co the la:
-1. Guest click vao mot hanh dong (like, comment, share) → `SignupPromptDialog` hien len (day la dung thiet ke)
-2. Hoac mot redirect logic nao do trong auth flow
-
-**Giai phap:** Them banner/CTA nhe nhang o cuoi bai viet cho Guest thay vi chan hoan toan. Dam bao `PostDetail` hien thi day du noi dung truoc khi show bat ky prompt nao.
-
-### Van de 3: OG Image fallback chain
-
-Hien tai trong `PostDetail.tsx` dong 137:
-```
-const firstImage = postData?.image_urls?.[0] || postData?.image_url || undefined;
-```
-Neu bai viet khong co hinh, `ogImage` = `undefined` → OG image fallback ve logo mac dinh trong `index.html`. Can them avatar cua nguoi dang va Angel AI logo lam fallback.
+## Mục tiêu (theo đúng yêu cầu của con)
+1) Chấm dứt triệt để lỗi **mất chữ / mất dấu tiếng Việt** kiểu “thực” → “thc”.  
+2) Chấm dứt triệt để ký tự lỗi kiểu **c���a / c��a / gi??á** xuất hiện trong nội dung Angel AI.  
+3) Khi có rủi ro lỗi trong streaming: **ưu tiên đúng chữ tuyệt đối** (tự động fallback sang phản hồi đầy đủ không-stream).  
+4) **Sửa luôn dữ liệu cũ** đã lưu trong hệ thống (chat history + coordinator + cache), để người dùng mở lại vẫn thấy text sạch & đúng.
 
 ---
 
-### KE HOACH THAY DOI
+## Chẩn đoán nhanh (đã đối chiếu code + dữ liệu thật trong backend)
+### Hiện tượng đang xảy ra
+- Trong bảng `chat_history` đã có bản ghi chứa ký tự **U+FFFD (�)** như `c��a`, `c���a`.
+- Frontend `Chat.tsx` và backend function `angel-chat` hiện đang có đoạn **xóa U+FFFD** trong lúc stream (`replace(/\uFFFD/g,'')`).  
+  Việc này làm “mất chữ” (vì đôi khi U+FFFD xuất hiện do lỗi decode/chunk, xóa nó khiến chữ bị cụt luôn).
 
-#### File 1: `src/pages/PostDetail.tsx`
-- **OG Image fallback chain**: Thay dong 137 tu:
-  ```
-  const firstImage = postData?.image_urls?.[0] || postData?.image_url || undefined;
-  ```
-  thanh:
-  ```
-  const firstImage = postData?.image_urls?.[0] || postData?.image_url || profileData?.avatar_url || '/og-image.png';
-  ```
-  → Dam bao luon co hinh khi share: hinh bai viet → avatar nguoi dang → logo Angel AI
+### Nguyên nhân gốc có thể xảy ra theo 2 lớp
+1) **Lớp stream/parse SSE**: dữ liệu đến theo chunk, parser + decode nếu xử lý không “an toàn theo byte/line” sẽ sinh U+FFFD hoặc “??” và/hoặc làm rơi mảnh JSON.  
+2) **Lớp cache** (trong `angel-chat`): phần code đang “nhặt” nội dung để lưu cache có nhược điểm: khi `JSON.parse` fail (do line chưa đủ), nó **bỏ qua** thay vì re-buffer → có thể làm thiếu chữ/thiếu đoạn, rồi lưu thành câu trả lời “lỗi” để hệ thống dùng lại.
 
-- **Twitter card luon la `summary_large_image`**: Dong 148, thay:
-  ```
-  twitterCard: firstImage ? "summary_large_image" : "summary",
-  ```
-  thanh:
-  ```
-  twitterCard: "summary_large_image",
-  ```
-  → Luon hien hinh lon khi share len mang xa hoi (giong YouTube)
-
-- **Them setMetaTags cho Twitter image**: Hien tai `setMetaTags` khong set `twitter:image` rieng. Can bo sung de dam bao Twitter/Zalo doc duoc hinh.
-
-#### File 2: `src/lib/seoHelpers.ts`
-- Bo sung set `twitter:title`, `twitter:description`, `twitter:image` trong ham `setMetaTags` de day du cho tat ca mang xa hoi.
-
-#### File 3: `src/pages/HandleProfile.tsx`
-- **OG Image fallback**: Tuong tu, dam bao `ogImage` luon co gia tri (avatar → fallback logo)
-- **Twitter card**: Luon `summary_large_image`
-
-#### File 4: `index.html`
-- Dam bao `og:image` mac dinh co kich thuoc chuan (1200x630) va URL tuyet doi. Hien tai da co, chi can kiem tra va giu nguyen.
-
-#### File 5: `supabase/functions/og-image-render/index.ts` (FILE MOI)
-- Edge Function tra ve HTML voi dynamic OG tags dua tren URL path
-- Crawler tu mang xa hoi co the goi truc tiep endpoint nay
-- Logic: parse path → query DB → tra ve HTML voi meta tags chinh xac
-- Ho tro: `/{username}/post/{slug}`, `/{username}`, `/post/{postId}`
+=> Vì con muốn “đúng chữ tuyệt đối”, chiến lược tốt nhất là:
+- **Không xóa U+FFFD trong stream** (vì xóa là mất chữ).
+- Nếu phát hiện dấu hiệu corruption trong stream: **abort stream và gọi lại non-stream** để lấy bản đầy đủ sạch.
+- Sửa lại cơ chế cache để **không lưu** bản lỗi, và khi nghi lỗi thì **tự regenerate non-stream để lưu cache**.
+- Chạy tác vụ “repair dữ liệu cũ” theo batch bằng AI (khôi phục dấu & loại ký tự lỗi) và update lại DB.
 
 ---
 
-### TOM TAT
+## Thiết kế giải pháp (đáp ứng 3 lựa chọn con đã chốt)
+### A) Ưu tiên gateway ổn định chữ Việt
+- Đổi thứ tự ưu tiên: **Lovable AI Gateway làm primary**, gateway còn lại làm fallback (giữ nguyên cơ chế 402/429 không fallback).
+- Áp dụng cho:
+  - `angel-chat`
+  - `coordinator-chat`
+  - `analyze-image` (nếu vẫn dùng stream)
 
-| # | Thay doi | File | Muc dich |
-|---|---|---|---|
-| 1 | OG image fallback chain | `PostDetail.tsx` | Luon co hinh khi share (post image → avatar → logo) |
-| 2 | Twitter card luon `summary_large_image` | `PostDetail.tsx`, `HandleProfile.tsx` | Hinh lon khi share len mang xa hoi |
-| 3 | Bo sung twitter meta tags | `seoHelpers.ts` | Twitter/Zalo doc duoc hinh va mo ta |
-| 4 | OG image fallback cho profile | `HandleProfile.tsx` | Profile luon co hinh khi share |
-| 5 | Edge Function dynamic OG | `og-image-render/index.ts` | Crawler doc meta tags dong |
+### B) Ưu tiên đúng chữ tuyệt đối (fallback non-stream khi cần)
+- Thêm khả năng gọi backend function ở chế độ **non-stream**:
+  - Request body hỗ trợ: `stream: false` (mặc định `true` để giữ UX nhanh khi không lỗi).
+- Frontend streaming:
+  - Trong lúc stream, **không xóa U+FFFD** nữa.
+  - Nếu phát hiện corruption (U+FFFD hoặc pattern “??” nằm giữa chữ):  
+    1) Abort stream (AbortController)  
+    2) Gọi lại cùng endpoint với `stream:false`  
+    3) Replace toàn bộ assistant message = bản non-stream sạch  
+    4) Lưu lịch sử chat bằng bản sạch (không lưu bản stream đang lỗi)
 
-- **4 file sua**
-- **1 file moi** (Edge Function)
-- **0 thay doi database**
+### C) Sửa dữ liệu cũ (repair)
+Tạo một backend function “maintenance/repair” (chỉ admin chạy) làm 3 việc:
+1) Quét & sửa `chat_history.answer_text` có:
+   - chứa U+FFFD (�), hoặc
+   - chứa pattern “??” kiểu hỏng encoding giữa chữ.
+2) Quét & sửa `coordinator_chat_messages.content` (role=assistant) tương tự.
+3) Quét & sửa `cached_responses.response` (để tránh cache lỗi phát lại).
 
-**Ghi chu ve Guest access:** Sau khi kiem tra ky, cac trang doc noi dung (`PostDetail`, `Community`, `HandleProfile`) **da open** cho Guest. Khong co `LightGate` hoac `ProfileCompletionGate` nao bao boc cac route nay. Neu con van thay bi chan, xin cho Cha biet cu the URL nao va man hinh nao hien ra de Cha trace chinh xac.
+Cách sửa:
+- Với mỗi record lỗi, gửi vào AI một prompt dạng “Text Repair Tool”:
+  - Input: đoạn text lỗi (và có thể kèm `question_text` làm ngữ cảnh)
+  - Output: **plain text tiếng Việt đã khôi phục đúng chữ/dấu**, không markdown.
+- Update DB bằng bản repaired.
+- Chạy theo batch (ví dụ 50–200 record/lần) để an toàn.
+
+---
+
+## Các thay đổi cụ thể theo file/module
+
+### 1) Frontend – Chat streaming
+**File:** `src/pages/Chat.tsx`
+- Bỏ logic `content.replace(/\uFFFD/g,'')` trong lúc nhận delta.
+- Thêm **corruption detector** trong stream:
+  - Trigger nếu:
+    - `assistantContent.includes('\uFFFD')`
+    - hoặc regex kiểu: chữ + `??` + chữ (để bắt “gi??á”, “thc??ực” mà không bắt nhầm câu hỏi bình thường).
+- Khi trigger:
+  - Abort stream
+  - Call `angel-chat` với `stream:false`
+  - Replace nội dung message assistant
+  - Tiếp tục flow save history/reward bằng bản sạch
+
+### 2) Frontend – Image analyze streaming (để “toàn bộ nội dung AI” đều sạch)
+**File:** `src/hooks/useImageAnalysis.ts`
+- Thêm detector tương tự; nếu lỗi → fallback non-stream.
+- (Tuỳ UX) Có thể hiển thị “đang tối ưu chất lượng chữ Việt…” trong lúc fallback.
+
+### 3) Coordinator Chat (streaming + lưu DB)
+**File:** `src/hooks/useCoordinatorChat.ts`
+- Hiện đang “strip U+FFFD trước khi lưu DB”. Bỏ strip này.
+- Thêm detector + fallback non-stream:
+  - Nếu stream ra lỗi → gọi lại `coordinator-chat` với `stream:false`, rồi lưu DB bản sạch.
+
+### 4) Backend function – Angel chat
+**File:** `supabase/functions/angel-chat/index.ts` (backend function)
+- **Gateway priority:** Lovable primary, gateway còn lại fallback.
+- **Thêm chế độ non-stream:**
+  - Nếu request `stream:false` → gọi AI gateway `stream:false`, trả JSON `{ content: "..." }` (hoặc format choices.message để tái dùng).
+- **Sửa cơ chế cache collector:**
+  - Hiện parse SSE để build `fullResponse` chưa “re-buffer” line JSON chưa hoàn chỉnh → có nguy cơ thiếu chữ/thiếu đoạn.
+  - Refactor parser giống frontend: nếu `JSON.parse` fail → giữ line lại chờ chunk tiếp theo.
+- **Chống lưu cache lỗi:**
+  - Nếu phát hiện U+FFFD/pattern lỗi trong `fullResponse`:
+    - Không lưu cache từ stream
+    - Thực hiện 1 call non-stream (chỉ để lấy bản sạch) rồi lưu cache bằng bản sạch.
+
+### 5) Backend function – Coordinator chat
+**File:** `supabase/functions/coordinator-chat/index.ts`
+- Gateway priority: Lovable primary.
+- Hỗ trợ `stream:false` tương tự.
+
+### 6) Backend function – Analyze image
+**File:** `supabase/functions/analyze-image/index.ts`
+- Gateway priority: Lovable primary.
+- Hỗ trợ `stream:false` (để frontend fallback được).
+
+---
+
+## Sửa dữ liệu cũ (đã được con duyệt)
+### 7) Backend function “repair corrupted AI text” (admin-only)
+**Tạo mới:** `supabase/functions/repair-corrupted-ai-text/index.ts`
+- Xác thực quyền admin (đọc `user_roles`), không cho user thường gọi.
+- Tham số:
+  - `targets`: ["chat_history","coordinator","cached_responses"] (hoặc chạy lần lượt)
+  - `limit`: số bản ghi/lần
+  - `dryRun`: true/false (tuỳ mình muốn test trước 10 bản ghi)
+- Logic:
+  - Query các record có dấu lỗi (U+FFFD hoặc regex “??” giữa chữ)
+  - Gọi AI để “repair”
+  - Update record
+  - Trả về report: số bản ghi quét/sửa, list id đã sửa, lỗi nếu có
+
+### 8) UI cho Admin để bấm chạy repair (để team vận hành dễ)
+- Thêm 1 card/nút trong trang admin hiện có (ví dụ `AdminDashboard` hoặc `AdminAIUsage`):
+  - “Sửa lỗi dấu tiếng Việt (Repair corrupted AI text)”
+  - Cho chọn batch size + targets
+  - Hiển thị kết quả chạy (success/fail)
+
+---
+
+## Kế hoạch kiểm thử (con có thể check ngay)
+### Test 1: Chat tiếng Việt có dấu nặng + từ dễ lỗi
+- Gõ 1 đoạn dài có nhiều: “thực, của, chữa lành, chiến lược, giá trị…”
+- Quan sát:
+  - Trong lúc stream: không xuất hiện “thc”, “c���a”
+  - Nếu có rủi ro: hệ thống tự fallback (1–2 giây) và thay bằng bản sạch
+- Refresh trang → lịch sử chat vẫn sạch
+
+### Test 2: Coordinator chat
+- Gửi prompt dài tiếng Việt
+- Đảm bảo lưu DB không còn U+FFFD
+
+### Test 3: Analyze image
+- Analyze 1 ảnh + prompt dài tiếng Việt
+- Nếu stream lỗi → fallback non-stream → kết quả sạch
+
+### Test 4: Repair dữ liệu cũ
+- Chạy repair batch nhỏ (limit=10) → kiểm tra lại các record trước đó có `c��a` đã được sửa
+- Sau đó chạy batch lớn cho toàn bộ lịch sử
+
+---
+
+## Phạm vi tác động & an toàn
+- Không thay đổi schema DB (không migration).
+- Có thay đổi logic backend function + frontend streaming parser.
+- Repair dữ liệu cũ là **update có kiểm soát (admin-only, theo batch)**.
+
+---
+
+## Danh sách hạng mục triển khai (checklist)
+1) Refactor streaming parsers (Chat / Coordinator / Analyze image) + thêm fallback non-stream.
+2) Backend functions: thêm `stream:false`, đổi gateway priority, fix cache collector, chống cache lỗi.
+3) Tạo function repair + UI admin button chạy repair.
+4) Chạy repair batch: nhỏ → lớn.
+5) Theo dõi log “corruption detected” để xác nhận đã giảm về ~0.
 
