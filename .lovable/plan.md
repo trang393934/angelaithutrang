@@ -1,34 +1,54 @@
 
 
-## Cap nhat domain `angelaithutrang.lovable.app` → `angel.fun.rich`
+## Fix Clean URL cho Bai viet: `/{handle}/post/{slug}`
 
-### Van de
+### Van de hien tai
 
-Co 7 file con chua hardcode domain cu `angelaithutrang.lovable.app`. Can thay the tat ca bang `angel.fun.rich` (domain chinh thuc duy nhat).
+Sau khi kiem tra code, phat hien **2 loi chinh** khien URL bai viet chua hoat dong:
 
-### Danh sach thay doi
+#### Loi 1: Hook `useCommunityPosts` khong fetch `slug` va `handle`
 
-| # | File | Dong | Noi dung cu | Noi dung moi |
-|---|---|---|---|---|
-| 1 | `public/robots.txt` | 15 | `Sitemap: https://angelaithutrang.lovable.app/sitemap.xml` | `Sitemap: https://angel.fun.rich/sitemap.xml` |
-| 2 | `supabase/functions/sitemap/index.ts` | 9 | `const SITE_URL = "https://angelaithutrang.lovable.app"` | `const SITE_URL = "https://angel.fun.rich"` |
-| 3 | `src/components/ShareDialog.tsx` | 106 | `const baseUrl = "https://angelaithutrang.lovable.app"` | `const baseUrl = "https://angel.fun.rich"` |
-| 4 | `src/components/Web3WalletButton.tsx` | 120 | `window.open("https://angelaithutrang.lovable.app", ...)` | `window.open("https://angel.fun.rich", ...)` |
-| 5 | `src/components/gifts/CryptoTransferTab.tsx` | 357 | `window.open("https://angelaithutrang.lovable.app", ...)` | `window.open("https://angel.fun.rich", ...)` |
-| 6 | `src/pages/Auth.tsx` | 294 | `const LOVABLE_ORIGIN = "https://angelaithutrang.lovable.app"` | `const LOVABLE_ORIGIN = "https://angelaithutrang.lovable.app"` (**GIU NGUYEN** — day la origin dung cho cross-domain OAuth flow, phai giu domain lovable.app de Google OAuth redirect hoat dong) |
-| 7 | `src/pages/docs/Platform.tsx` | 558 | `https://angelaithutrang.lovable.app` | `https://angel.fun.rich` |
+File `src/hooks/useCommunityPosts.ts`:
+- **Dong 116**: Query profiles chi lay `user_id, display_name, avatar_url` — **thieu `handle`**
+- **Dong 141-154**: Khi merge data, khong gan `user_handle` vao post object
+- Interface `CommunityPost` (dong 6-22) khong co truong `slug` va `user_handle`
 
-### Luu y quan trong ve Auth.tsx
+Hau qua: Moi post trong feed khong co `slug` va `handle`, nen khong the tao Clean URL.
 
-File `Auth.tsx` dong 294 (`LOVABLE_ORIGIN`) **KHONG DUOC THAY DOI**. Day la bien dung cho cross-domain OAuth flow:
-- Google OAuth redirect_uri phai tro ve `angelaithutrang.lovable.app` (domain dang ky voi Google)
-- Sau khi OAuth thanh cong, code se tu dong redirect nguoi dung ve `angel.fun.rich` thong qua `oauth_return_origin` trong localStorage
-- Neu doi bien nay, OAuth se ngung hoat dong
+#### Loi 2: `PostCard` khong co link den trang chi tiet bai viet
+
+File `src/components/community/PostCard.tsx`:
+- Noi dung bai viet (dong 538) chi hien text, **khong duoc boc trong `<Link>`** den `/{handle}/post/{slug}`
+- Ngay gio (dong 372) cung khong link den post detail
+- Tuy `getProfilePath` duoc import (dong 4), nhung `getPostPath` thi **khong duoc import** va **khong duoc su dung** o dau ca
+
+### Ke hoach sua
+
+#### File 1: `src/hooks/useCommunityPosts.ts`
+
+1. **Cap nhat interface `CommunityPost`** (dong 6-22): Them 2 truong `slug` va `user_handle`
+2. **Cap nhat query profiles** (dong 116): Them `handle` vao select: `"user_id, display_name, avatar_url, handle"`
+3. **Cap nhat merge data** (dong 141-154): Gan them `user_handle: profile?.handle || null` vao enrichedPosts
+
+#### File 2: `src/components/community/PostCard.tsx`
+
+1. **Import `getPostPath`** tu `@/lib/profileUrl` (dong 4)
+2. **Boc ngay gio** (dong 372-374) trong `<Link to={getPostPath(post.id, post.slug, post.user_handle)}>` — click vao thoi gian se di den trang chi tiet (giong Facebook/X)
+3. Noi dung bai viet giu nguyen khong boc link (de tranh xung dot voi `LinkifiedContent` ben trong)
+
+### Chi tiet ky thuat
+
+- `getPostPath(postId, slug, handle)` da co san trong `src/lib/profileUrl.ts`: tra ve `/{handle}/post/{slug}` neu co du handle + slug, fallback ve `/post/{postId}`
+- Posts trong DB da co truong `slug` (do edge function `process-community-post` tao tu dong khi dang bai)
+- Route `/:username/post/:slug` da co san trong `App.tsx` (dong 137), tro den `PostDetail`
 
 ### Tom tat
 
-- **6 file thay doi**: robots.txt, sitemap edge function, ShareDialog, Web3WalletButton, CryptoTransferTab, Platform.tsx
-- **1 file giu nguyen**: Auth.tsx (LOVABLE_ORIGIN phai la domain lovable.app cho OAuth)
-- **0 file moi**
-- **0 thay doi database**
+| Thay doi | File | Muc dich |
+|---|---|---|
+| Them `slug`, `user_handle` vao interface | `useCommunityPosts.ts` | De TypeScript nhan biet 2 truong moi |
+| Fetch `handle` tu profiles | `useCommunityPosts.ts` | De co du lieu tao Clean URL |
+| Gan `user_handle` vao post | `useCommunityPosts.ts` | Truyen xuong PostCard |
+| Import `getPostPath` | `PostCard.tsx` | Su dung ham tao URL |
+| Boc timestamp trong `<Link>` | `PostCard.tsx` | Click vao thoi gian → di den `/{handle}/post/{slug}` |
 
