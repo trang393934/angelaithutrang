@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -1015,7 +1016,7 @@ const AdminTetReward = () => {
                                 </div>
                                 {row.userId ? (
                                   <Link
-                                    to={`/user/${row.userId}`}
+                                    to={getProfilePath(row.userId)}
                                     className="font-medium truncate max-w-[120px] text-primary hover:underline"
                                     title={row.name}
                                   >
@@ -1469,7 +1470,7 @@ const AdminTetReward = () => {
                                     <div className="min-w-0">
                                       {row.user_id ? (
                                         <Link
-                                          to={`/user/${row.user_id}`}
+                                          to={getProfilePath(row.user_id, row.handle)}
                                           className="font-medium truncate block max-w-[120px] text-primary hover:underline"
                                           title={row.display_name || "Ẩn danh"}
                                         >

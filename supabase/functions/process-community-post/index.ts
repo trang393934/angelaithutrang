@@ -165,14 +165,56 @@ serve(async (req) => {
       }
       // ===== END TEMPLATE DETECTION =====
       
+      // ===== SLUG GENERATION =====
+      const generateSlug = (text: string): string => {
+        const VIET_MAP: Record<string, string> = {
+          'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ă':'a','ằ':'a','ắ':'a','ẳ':'a','ẵ':'a','ặ':'a',
+          'â':'a','ầ':'a','ấ':'a','ẩ':'a','ẫ':'a','ậ':'a','đ':'d',
+          'è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ê':'e','ề':'e','ế':'e','ể':'e','ễ':'e','ệ':'e',
+          'ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i',
+          'ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ô':'o','ồ':'o','ố':'o','ổ':'o','ỗ':'o','ộ':'o',
+          'ơ':'o','ờ':'o','ớ':'o','ở':'o','ỡ':'o','ợ':'o',
+          'ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ư':'u','ừ':'u','ứ':'u','ử':'u','ữ':'u','ự':'u',
+          'ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y',
+        };
+        let slug = text.trim().substring(0, 80).split('').map(c => VIET_MAP[c] || VIET_MAP[c.toLowerCase()]?.toUpperCase() || c).join('');
+        slug = slug.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '').replace(/_{2,}/g, '_').replace(/^_|_$/g, '');
+        if (!slug) return '';
+        if (slug.length > 60) {
+          const trimmed = slug.substring(0, 60);
+          const lastUnderscore = trimmed.lastIndexOf('_');
+          slug = lastUnderscore > 10 ? trimmed.substring(0, lastUnderscore) : trimmed;
+        }
+        return slug;
+      };
+
+      let postSlug = generateSlug(content.substring(0, 80));
+      if (!postSlug) postSlug = `post_${Date.now()}`;
+
+      // Check for duplicate slugs for this user
+      const { data: existingSlugs } = await supabase
+        .from("community_posts")
+        .select("slug")
+        .eq("user_id", userId)
+        .not("slug", "is", null);
+
+      const slugSet = new Set((existingSlugs || []).map((s: { slug: string | null }) => s.slug));
+      if (slugSet.has(postSlug)) {
+        let counter = 2;
+        while (slugSet.has(`${postSlug}_${counter}`)) counter++;
+        postSlug = `${postSlug}_${counter}`;
+      }
+      // ===== END SLUG GENERATION =====
+
       // Create the post
       const { data: newPost, error: postError } = await supabase
         .from("community_posts")
         .insert({
           user_id: userId,
           content,
-          image_url: primaryImageUrl, // Keep for backward compatibility
-          image_urls: finalImageUrls, // New array field
+          image_url: primaryImageUrl,
+          image_urls: finalImageUrls,
+          slug: postSlug,
         })
         .select()
         .single();

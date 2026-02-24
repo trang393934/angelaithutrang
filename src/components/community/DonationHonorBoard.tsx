@@ -231,7 +231,7 @@ export function DonationHonorBoard() {
                   return (
                     <Link
                       key={donor.user_id}
-                      to={`/user/${donor.user_id}`}
+                      to={getProfilePath(donor.user_id)}
                       onClick={() => setShowAllDialog(false)}
                       className={`flex items-center gap-2.5 rounded-lg p-2 transition-all hover:shadow-sm
                         ${isCurrentUser ? 'bg-rose-100 ring-2 ring-rose-400' : 'hover:bg-rose-50'}`}

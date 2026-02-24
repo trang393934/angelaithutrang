@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { useAuth } from "@/hooks/useAuth";
 import { useCoordinatorRole } from "@/hooks/useCoordinatorRole";
 import { Shield } from "lucide-react";
@@ -248,7 +249,7 @@ export const Header = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-56">
                         {/* User Info Header - clickable to go to profile */}
-                        <Link to={`/user/${user.id}`} className="block px-3 py-2 border-b border-border hover:bg-accent rounded-t-md transition-colors">
+                        <Link to={getProfilePath(user.id)} className="block px-3 py-2 border-b border-border hover:bg-accent rounded-t-md transition-colors">
                           <p className="font-semibold text-sm text-foreground truncate">{getDisplayName()}</p>
                           <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                         </Link>
@@ -393,7 +394,7 @@ export const Header = () => {
                         
                         {/* Profile row */}
                         <Link 
-                          to={`/user/${user.id}`} 
+                          to={getProfilePath(user.id)} 
                           onClick={() => setIsMobileMenuOpen(false)}
                           className="flex items-center gap-4 p-4 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-colors"
                         >

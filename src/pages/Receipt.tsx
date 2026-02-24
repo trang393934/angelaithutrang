@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -202,7 +203,7 @@ export default function Receipt() {
           <CardContent className="p-6 space-y-5">
             {/* Sender -> Receiver */}
             <div className="flex items-center justify-between gap-3">
-              <Link to={`/user/${receipt.sender.user_id}`} className="flex flex-col items-center gap-2 flex-1 hover:opacity-80">
+              <Link to={getProfilePath(receipt.sender.user_id)} className="flex flex-col items-center gap-2 flex-1 hover:opacity-80">
                 <Avatar className="h-14 w-14 ring-2 ring-amber-300 shadow-md">
                   <AvatarImage src={receipt.sender.avatar_url || ""} />
                   <AvatarFallback className="bg-amber-100 text-amber-700 text-lg">{receipt.sender.display_name?.[0] || "?"}</AvatarFallback>
@@ -224,7 +225,7 @@ export default function Receipt() {
                 <img src={tokenDisplay.logo} alt="coin" className="w-8 h-8 mt-1 rounded-full" />
               </div>
 
-              <Link to={`/user/${receipt.receiver.user_id}`} className="flex flex-col items-center gap-2 flex-1 hover:opacity-80">
+              <Link to={getProfilePath(receipt.receiver.user_id)} className="flex flex-col items-center gap-2 flex-1 hover:opacity-80">
                 <Avatar className="h-14 w-14 ring-2 ring-rose-300 shadow-md">
                   <AvatarImage src={receipt.receiver.avatar_url || ""} />
                   <AvatarFallback className="bg-rose-100 text-rose-700 text-lg">{receipt.receiver.display_name?.[0] || "?"}</AvatarFallback>

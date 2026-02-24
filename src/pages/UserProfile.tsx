@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { Header } from "@/components/Header";
 import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
 import { MusicThemeSelector } from "@/components/MusicThemeSelector";
@@ -890,7 +891,7 @@ const UserProfile = () => {
                     <div className="flex items-center gap-2 mt-2">
                       <div className="flex -space-x-2">
                         {friends.slice(0, 6).map(friend => (
-                          <Link key={friend.user_id} to={`/user/${friend.user_id}`}>
+                          <Link key={friend.user_id} to={getProfilePath(friend.user_id)}>
                             <Avatar className="w-7 h-7 border-2 border-white hover:z-10 transition-transform hover:scale-110">
                               <AvatarImage src={friend.avatar_url || angelAvatar} className="object-cover" />
                               <AvatarFallback className="text-xs">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>
@@ -1129,7 +1130,7 @@ const UserProfile = () => {
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {friends.slice(0, 9).map(friend => (
-                    <Link key={friend.user_id} to={`/user/${friend.user_id}`} className="group">
+                    <Link key={friend.user_id} to={getProfilePath(friend.user_id)} className="group">
                       <div className="aspect-square rounded-xl overflow-hidden border border-gray-100">
                         <img src={friend.avatar_url || angelAvatar} alt={friend.display_name || "User"} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                       </div>
@@ -1198,7 +1199,7 @@ const UserProfile = () => {
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {friends.map(friend => (
-                      <Link key={friend.user_id} to={`/user/${friend.user_id}`} className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-amber-50 transition-colors border border-gray-100">
+                      <Link key={friend.user_id} to={getProfilePath(friend.user_id)} className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-amber-50 transition-colors border border-gray-100">
                         <Avatar className="w-10 h-10 flex-shrink-0">
                           <AvatarImage src={friend.avatar_url || angelAvatar} className="object-cover" />
                           <AvatarFallback className="text-sm">{friend.display_name?.charAt(0) || "U"}</AvatarFallback>

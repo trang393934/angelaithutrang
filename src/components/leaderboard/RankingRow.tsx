@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { Coins } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LeaderboardUser } from "@/hooks/useLeaderboard";
@@ -12,7 +13,7 @@ interface RankingRowProps {
 export function RankingRow({ user, isCurrentUser }: RankingRowProps) {
   return (
     <Link
-      to={`/user/${user.user_id}`}
+      to={getProfilePath(user.user_id)}
       className="group relative block"
     >
       {/* Outer Glow Border */}

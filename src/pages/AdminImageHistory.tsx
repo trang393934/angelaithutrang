@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { 
   ArrowLeft, 
   Image, 
@@ -667,7 +668,7 @@ const AdminImageHistory = () => {
                     <p className="text-xs text-foreground-muted">{formatFullDate(viewDialog.item.created_at)}</p>
                   </div>
                   <Link 
-                    to={`/user/${viewDialog.item.user_id}`}
+                    to={getProfilePath(viewDialog.item.user_id)}
                     className="text-xs text-primary hover:underline flex items-center gap-1"
                   >
                     <ExternalLink className="w-3 h-3" />

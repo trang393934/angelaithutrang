@@ -1,5 +1,6 @@
 import { FileText, Heart, MessageCircle, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -102,7 +103,7 @@ export function PublicProfilePosts({ posts, profile }: PublicProfilePostsProps) 
       {/* View all posts CTA */}
       {profile.user_id && (
         <div className="text-center mt-4">
-          <Link to={`/user/${profile.user_id}`}>
+          <Link to={getProfilePath(profile.user_id, profile.handle)}>
             <Button variant="outline" size="sm">
               <FileText className="w-4 h-4 mr-2" />
               {t("publicProfile.viewAllPosts") || "Xem tất cả bài viết"}

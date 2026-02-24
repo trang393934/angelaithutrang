@@ -1,6 +1,7 @@
 import type { Notification } from "@/hooks/useNotifications";
 import type { NotificationGroups } from "./types";
 import { REACTION_ICONS } from "./types";
+import { getProfilePath } from "@/lib/profileUrl";
 
 export function getRelativeTime(dateStr: string, t: (key: string) => string): string {
   const diffMs = Date.now() - new Date(dateStr).getTime();
@@ -149,7 +150,7 @@ export const getNotificationLink = (notif: Notification): string | null => {
     if (receiptId) return `/receipt/${receiptId}`;
   }
   if (notif.type === "friend_request" || notif.type === "friend_accepted") {
-    if (notif.actor_id) return `/user/${notif.actor_id}`;
+    if (notif.actor_id) return getProfilePath(notif.actor_id);
   }
   if (notif.reference_type === "post" && notif.reference_id) {
     return "/community";
