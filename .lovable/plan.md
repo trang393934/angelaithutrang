@@ -1,69 +1,126 @@
 
 
-## BÀI 6 — Full URL Governance System
+## BÀI 7 — SEO Canonical, Meta Tags, JSON-LD, Sitemap, Robots
 
-### Phan tich hien trang
+### Hien trang
 
-He thong da implement phan lon spec qua BÀI 3-5. Kiem tra tung nguyen tac:
-
-| Nguyen tac BÀI 6 | Trang thai hien tai | Can lam |
+| Spec BÀI 7 | Trang thai | Can lam |
 |---|---|---|
-| Username bat bien (khuyen nghi) | Handle doi tu do, khong cooldown | Them cooldown 30 ngay |
-| Slug doi theo title, giu link cu | Da co (BÀI 4-5: slug_history + redirect) | Da xong |
-| Unique slug theo user + type | Da co unique index `(user_id, slug)` | Da xong |
-| Chong spam slug (rate limit doi title) | Chua co | Them rate limit |
-| Audit log | slug_history ghi lai thay doi slug, handle_audit_log ghi doi handle | Da co |
-| Hau to trung: _2, _3... gioi han 50, roi random suffix | Hien tai loop vo han (khong gioi han) | Them gioi han + random fallback |
+| Canonical `<link>` | Chua co | Them vao HandleProfile + PostDetail |
+| Meta tags OG + Twitter | Co 1 phan (HandleProfile co OG, PostDetail chi co title) | Bo sung day du cho PostDetail |
+| JSON-LD structured data | Chua co | Them Person cho profile, Article cho post |
+| Sitemap | Chua co | Tao edge function generate sitemap |
+| Robots.txt | Co nhung qua don gian (Allow tat ca) | Cap nhat chan /admin/, /auth/, /api/ |
+| 301 slug redirect | Da co (BÀI 4-5) | Da xong |
 
-### Thay doi can thiet
+### Ke hoach
 
-#### 1. Gioi han collision counter (slug + random fallback)
+#### 1. Tao utility `src/lib/seoHelpers.ts`
 
-Cap nhat `makeUniqueSlug` trong `src/lib/slugify.ts` va logic tuong ung trong edge function:
-- Thu _2, _3... den _50
-- Neu van trung: them random suffix 4 ky tu (vd: `_x7k2`)
-- Gioi han tong so lan thu la 55 (50 so + 5 random)
+Tap trung logic SEO vao 1 file:
+- `setCanonical(url)`: tao/cap nhat `<link rel="canonical">`
+- `setMetaTags(config)`: cap nhat OG + Twitter meta tags
+- `injectJsonLd(data)`: inject `<script type="application/ld+json">` vao head
+- `cleanupSeo()`: xoa canonical + JSON-LD khi roi trang (cho React cleanup)
 
-#### 2. Handle cooldown 30 ngay
+#### 2. Cap nhat `HandleProfile.tsx` — Profile SEO
 
-Cap nhat `src/hooks/useHandle.ts`:
-- Khoi phuc logic cooldown 30 ngay (hien tai `canChangeHandle` luon tra ve `true`)
-- Tinh `daysUntilChange` tu `handle_updated_at`
-- Cho phep doi lan dau (khi chua co handle) ma khong bi cooldown
+- Them canonical: `<link rel="canonical" href="https://{domain}/{handle}" />`
+- Them JSON-LD type `Person`:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Display Name",
+  "url": "https://{domain}/{handle}",
+  "image": "avatar_url",
+  "description": "bio"
+}
+```
+- Bo sung twitter:card neu chua co
 
-#### 3. Rate limit doi title/slug trong edge function
+#### 3. Cap nhat `PostDetail.tsx` — Post SEO
 
-Cap nhat `process-community-post/index.ts` (edit_post action):
-- Gioi han: toi da 3 lan edit/ngay cho moi bai viet
-- Query `slug_history` dem so lan doi slug cua post trong ngay
-- Neu vuot gioi han: van cho edit content nhung khong doi slug
+- Them canonical: `<link rel="canonical" href="https://{domain}/{username}/post/{slug}" />`
+- Them day du meta tags: og:title, og:description, og:image, og:url, og:type=article, twitter:card
+- Them JSON-LD type `Article`:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "post content preview",
+  "author": { "@type": "Person", "name": "display_name" },
+  "datePublished": "created_at",
+  "url": "canonical_url",
+  "image": "first image if any"
+}
+```
+
+#### 4. Cap nhat `robots.txt`
+
+```
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /auth
+Disallow: /profile
+Disallow: /settings/
+Disallow: /api/
+Disallow: /messages
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /mint
+Disallow: /coordinator-gate
+
+Sitemap: https://{domain}/sitemap.xml
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+```
+
+#### 5. Tao edge function `sitemap` 
+
+Tao `supabase/functions/sitemap/index.ts`:
+- Truy van `profiles` (co handle) va `community_posts` (status = published)
+- Generate XML sitemap voi cac URL:
+  - `/{handle}` cho moi profile co handle
+  - `/{handle}/post/{slug}` cho moi bai viet published
+- Tra ve `Content-Type: application/xml`
+- Gioi han 50,000 URL moi sitemap (theo chuan Google)
+
+#### 6. Cap nhat `Index.tsx` — Homepage canonical
+
+Them canonical cho trang chu: `<link rel="canonical" href="https://{domain}/" />`
 
 ### Chi tiet ky thuat
 
+**Files tao moi:**
+- `src/lib/seoHelpers.ts`: utility functions cho canonical, meta, JSON-LD
+- `supabase/functions/sitemap/index.ts`: edge function generate sitemap XML
+
 **Files thay doi:**
-
-1. **`src/lib/slugify.ts`** — Cap nhat `makeUniqueSlug`:
-   - Them tham so `maxAttempts = 50`
-   - Sau 50 lan: generate random 4-char suffix
-   - Tong cong thu toi da 55 lan
-
-2. **`src/hooks/useHandle.ts`** — Khoi phuc cooldown:
-   - `canChangeHandle()`: kiem tra `handle_updated_at` + 30 ngay < now
-   - `daysUntilChange()`: tra ve so ngay con lai
-   - Lan dau set handle (currentHandle = null): khong ap dung cooldown
-
-3. **`supabase/functions/process-community-post/index.ts`** — Them 2 thay doi:
-   - Slug collision: gioi han 50 lan thu + random fallback (dong bo voi client)
-   - Edit rate limit: dem so lan doi slug trong ngay, gioi han 3 lan
+- `src/pages/HandleProfile.tsx`: them canonical + JSON-LD Person + cleanup
+- `src/pages/PostDetail.tsx`: them canonical + full meta tags + JSON-LD Article + cleanup
+- `public/robots.txt`: them Disallow cho route noi bo + Sitemap URL
+- `src/pages/Index.tsx`: them canonical homepage
 
 **Khong thay doi:**
-- Khong can migration SQL (da du bang va index tu BÀI 4-5)
-- Khong thay doi `PostDetail.tsx` (redirect da hoat dong)
-- Khong thay doi `DynamicRoute.tsx`
+- Khong can migration SQL
+- Khong thay doi routing hay DynamicRoute
+- Khong thay doi slug_history hay slug governance (da xong BÀI 4-6)
 
-### Loi ich
-- Chong spam: rate limit edit + handle cooldown bao ve SEO
-- Chong collision loop vo han: gioi han 50 + random fallback
-- Identity stable: handle khong doi lien tuc, giu on dinh profile URL
-- Phu hop tinh than Web3 Social "identity stable" theo spec
+### Ghi chu ve gioi han SPA
+
+Day la Single Page App (SPA), nen:
+- Canonical va meta tags duoc set bang JavaScript (client-side) — hoat dong voi Googlebot (render JS) va social crawlers (Twitterbot/Facebook doc tu index.html hoac headless render)
+- JSON-LD inject client-side — Google ho tro day du
+- Sitemap generate tu edge function — khong phu thuoc client
+- Neu can server-side rendering (SSR) cho social preview tot hon, can chuyen sang framework khac (ngoai pham vi bai nay)
 
