@@ -447,12 +447,16 @@ const Chat = () => {
           const parsed = JSON.parse(jsonStr);
           const content = parsed.choices?.[0]?.delta?.content;
           if (content) {
-            assistantContent += content;
-            setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1] = { role: "assistant", content: assistantContent, type: "text" };
-              return updated;
-            });
+            // Remove Unicode replacement characters that appear from split multi-byte UTF-8
+            const cleanContent = content.replace(/\uFFFD/g, '');
+            if (cleanContent) {
+              assistantContent += cleanContent;
+              setMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "assistant", content: assistantContent, type: "text" };
+                return updated;
+              });
+            }
           }
         } catch {
           textBuffer = line + "\n" + textBuffer;
@@ -461,7 +465,8 @@ const Chat = () => {
       }
     }
     
-    return assistantContent;
+    // Final cleanup of any remaining replacement characters
+    return assistantContent.replace(/\uFFFD/g, '');
   };
 
   const analyzeAndReward = useCallback(async (questionText: string, aiResponse: string) => {

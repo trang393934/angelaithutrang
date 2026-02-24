@@ -1731,7 +1731,8 @@ HƯỚNG DẪN XỬ LÝ:
                 const parsed = JSON.parse(line.slice(6));
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
-                  fullResponse += content;
+                  // Strip Unicode replacement characters from corrupted multi-byte splits
+                  fullResponse += content.replace(/\uFFFD/g, '');
                 }
               } catch {
                 // Incomplete JSON — will be completed in next chunk
