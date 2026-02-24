@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { PostCard } from "@/components/community/PostCard";
@@ -13,6 +13,7 @@ import angelAvatar from "@/assets/angel-avatar.png";
 
 const PostDetail = () => {
   const { username, slug } = useParams<{ username: string; slug: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toggleLike, sharePost, addComment, fetchComments, editPost, deletePost } = useCommunityPosts();
   
@@ -47,6 +48,22 @@ const PostDetail = () => {
         .maybeSingle();
 
       if (!postData) {
+        // Fallback: check slug_history for old slugs → redirect
+        const { data: historyData } = await supabase
+          .from("slug_history")
+          .select("new_slug")
+          .eq("user_id", profileData.user_id)
+          .eq("content_type", "post")
+          .eq("old_slug", slug)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (historyData?.new_slug) {
+          navigate(`/${username}/post/${historyData.new_slug}`, { replace: true });
+          return;
+        }
+
         setNotFound(true);
         setIsLoading(false);
         return;
