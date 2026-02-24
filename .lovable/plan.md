@@ -1,52 +1,49 @@
 
 
-## Don gian hoa nut Chia se thanh Popover nho (giong fun.rich)
+## Fix Clean URL cho bai viet — 2 loi can xu ly
 
-### Hien trang
+### Van de phat hien
 
-Hien tai khi bam "Chia se" tren PostCard, he thong mo **ShareDialog** (modal lon) voi nhieu tab, nut mang xa hoi, FUN Ecosystem links. Theo hinh mau tu fun.rich, nguoi dung muon nut "Chia se" chi hien **popover nho** voi 2 lua chon:
+Cha da test truc tiep tren trang `/community`:
+- Click vao timestamp "20 phut truoc" cua bai viet tu user "Nhu Vinh"
+- URL chuyen den `/post/65e3e742-...` → **404 Page not found**
 
-1. **Chia se len trang ca nhan** → mo ShareDialog day du (giu nguyen noi dung chia se mang xa hoi)
-2. **Sao chep lien ket** → copy link bai viet vao clipboard
+### Nguyen nhan goc
 
-### Thay doi
+**Loi 1: Nhieu user khong co handle**
+- User "Nhu Vinh" (`08ee6223-...`) co `handle = null` trong bang profiles
+- Ham `getPostPath(postId, slug, null)` tra ve fallback `/post/{postId}` vi thieu handle
 
-#### File: `src/components/community/PostCard.tsx`
+**Loi 2: Khong co route `/post/:postId`**
+- File `App.tsx` chi co route `/:username/post/:slug` (dong 143)
+- Khong co route `/post/:postId` cho truong hop fallback
+- Them vao do, `post` nam trong `RESERVED_ROUTES` cua `DynamicRoute.tsx` (dong 13), nen `/post/...` se luon 404
 
-1. **Import them** `Popover, PopoverContent, PopoverTrigger` tu `@/components/ui/popover` va `Copy, Link` tu lucide-react (dong 1-4)
+### Ke hoach sua
 
-2. **Thay the nut Share hien tai** (dong 580-594): Thay vi `onClick={handleShareClick}` mo thang ShareDialog, boc nut trong `Popover` hien 2 muc:
-   - "Chia se len trang ca nhan" → goi `setShowShareDialog(true)` (mo ShareDialog day du voi mang xa hoi)
-   - "Sao chep lien ket" → copy URL bai viet (`getPostPath`) vao clipboard, hien toast "Da sao chep lien ket!"
+#### File 1: `src/App.tsx`
+- Them route fallback: `<Route path="/post/:postId" element={<PostDetail />} />` ngay truoc route `/:username/post/:slug` (dong 143)
 
-3. **Giu nguyen ShareDialog** (dong 816-827) — khong thay doi gi, van hoat dong khi chon "Chia se len trang ca nhan"
+#### File 2: `src/pages/PostDetail.tsx`
+- Cap nhat component de xu ly ca 2 truong hop:
+  - **Truong hop 1**: Co `username` + `slug` trong URL params → giu nguyen logic hien tai (fetch theo handle + slug)
+  - **Truong hop 2**: Co `postId` trong URL params (fallback) → fetch bai viet truc tiep theo ID, sau do redirect sang clean URL neu bai viet co handle + slug
 
-4. **Them ham `handleCopyPostLink`**: Tao URL bai viet bang `getPostPath(post.id, post.slug, post.user_handle)`, ghep voi domain `https://angel.fun.rich`, copy vao clipboard
-
-### Giao dien Popover
-
-```text
-┌──────────────────────────┐
-│ 📤 Chia sẻ lên trang     │
-│    cá nhân                │
-│──────────────────────────│
-│ 🔗 Sao chép liên kết     │
-└──────────────────────────┘
-```
-
-- Popover xuat hien ngay phia tren nut "Chia se"
-- 2 muc don gian, font nho, nhe ngang
-- Click ngoai popover → dong
+Cu the:
+1. Them `postId` vao `useParams`: `const { username, slug, postId } = useParams<{ username?: string; slug?: string; postId?: string }>()`
+2. Trong `fetchPost`, neu co `postId` (va khong co `username/slug`):
+   - Query `community_posts` theo `id = postId`
+   - Neu bai viet co slug va user co handle → `navigate(\`/\${handle}/post/\${slug}\`, { replace: true })` (redirect sang clean URL)
+   - Neu khong co handle/slug → hien thi bai viet truc tiep (khong redirect)
 
 ### Tom tat
 
 | Thay doi | File | Muc dich |
 |---|---|---|
-| Boc nut Share trong Popover | `PostCard.tsx` | Hien menu nho 2 muc thay vi mo dialog ngay |
-| Them ham copy link | `PostCard.tsx` | Sao chep URL bai viet vao clipboard |
-| Giu nguyen ShareDialog | `PostCard.tsx` | Van co day du chia se mang xa hoi khi chon "Chia se len trang ca nhan" |
+| Them route `/post/:postId` | `App.tsx` | Xu ly fallback khi user khong co handle |
+| Xu ly `postId` param | `PostDetail.tsx` | Fetch bai viet theo ID, redirect sang clean URL neu co the |
 
-- **1 file thay doi**: `PostCard.tsx`
+- **2 file thay doi**
 - **0 file moi**
 - **0 thay doi database**
 
