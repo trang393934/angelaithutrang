@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download, Gift } from "lucide-react";
-import { getProfilePath } from "@/lib/profileUrl";
+import { getProfilePath, getPostPath } from "@/lib/profileUrl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -369,9 +369,12 @@ export function PostCard({
                   </span>
                 )}
               </div>
-              <span className="text-xs text-foreground-muted block truncate">
+              <Link
+                to={getPostPath(post.id, post.slug, post.user_handle)}
+                className="text-xs text-foreground-muted block truncate hover:underline"
+              >
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: vi })}
-              </span>
+              </Link>
             </div>
 
             {/* Owner Actions Menu */}
