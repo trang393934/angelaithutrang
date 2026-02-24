@@ -167,19 +167,14 @@ serve(async (req) => {
       
       // ===== SLUG GENERATION =====
       const generateSlug = (text: string): string => {
-        const VIET_MAP: Record<string, string> = {
-          'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ă':'a','ằ':'a','ắ':'a','ẳ':'a','ẵ':'a','ặ':'a',
-          'â':'a','ầ':'a','ấ':'a','ẩ':'a','ẫ':'a','ậ':'a','đ':'d',
-          'è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ê':'e','ề':'e','ế':'e','ể':'e','ễ':'e','ệ':'e',
-          'ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i',
-          'ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ô':'o','ồ':'o','ố':'o','ổ':'o','ỗ':'o','ộ':'o',
-          'ơ':'o','ờ':'o','ớ':'o','ở':'o','ỡ':'o','ợ':'o',
-          'ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ư':'u','ừ':'u','ứ':'u','ử':'u','ữ':'u','ự':'u',
-          'ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y',
-        };
-        let slug = text.trim().substring(0, 80).split('').map(c => VIET_MAP[c] || VIET_MAP[c.toLowerCase()]?.toUpperCase() || c).join('');
+        // NFD normalization: remove all diacritics + handle đ/Đ
+        let slug = text.trim().substring(0, 80)
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d")
+          .replace(/Đ/g, "D");
         slug = slug.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '').replace(/_{2,}/g, '_').replace(/^_|_$/g, '');
-        if (!slug) return '';
+        if (!slug) return 'post';
         if (slug.length > 60) {
           const trimmed = slug.substring(0, 60);
           const lastUnderscore = trimmed.lastIndexOf('_');
