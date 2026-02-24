@@ -195,9 +195,20 @@ serve(async (req) => {
 
       const slugSet = new Set((existingSlugs || []).map((s: { slug: string | null }) => s.slug));
       if (slugSet.has(postSlug)) {
-        let counter = 2;
-        while (slugSet.has(`${postSlug}_${counter}`)) counter++;
-        postSlug = `${postSlug}_${counter}`;
+        const baseSlug = postSlug;
+        let found = false;
+        // Try _2 to _51
+        for (let i = 2; i <= 51; i++) {
+          if (!slugSet.has(`${baseSlug}_${i}`)) { postSlug = `${baseSlug}_${i}`; found = true; break; }
+        }
+        // Random fallback
+        if (!found) {
+          for (let i = 0; i < 5; i++) {
+            const suffix = Math.random().toString(36).substring(2, 6);
+            if (!slugSet.has(`${baseSlug}_${suffix}`)) { postSlug = `${baseSlug}_${suffix}`; found = true; break; }
+          }
+        }
+        if (!found) postSlug = `${baseSlug}_${Date.now().toString(36).slice(-6)}`;
       }
       // ===== END SLUG GENERATION =====
 
@@ -728,31 +739,54 @@ serve(async (req) => {
 
       // Only update slug if it changed
       if (newSlug !== oldSlug) {
-        // Check for duplicate slugs for this user (exclude current post)
-        const { data: existingSlugs } = await supabase
-          .from("community_posts")
-          .select("slug")
-          .eq("user_id", userId)
-          .neq("id", postId);
+        // ===== RATE LIMIT: max 3 slug changes per post per day =====
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const { count: slugChangesToday } = await supabase
+          .from("slug_history")
+          .select("id", { count: 'exact', head: true })
+          .eq("content_id", postId)
+          .gte("created_at", todayStart.toISOString());
 
-        const slugSet = new Set((existingSlugs || []).map((s: { slug: string }) => s.slug));
-        if (slugSet.has(newSlug)) {
-          let counter = 2;
-          while (slugSet.has(`${newSlug}_${counter}`)) counter++;
-          newSlug = `${newSlug}_${counter}`;
+        if ((slugChangesToday || 0) >= 3) {
+          // Allow content edit but skip slug change
+          console.log(`Slug rate limit reached for post ${postId}: ${slugChangesToday} changes today`);
+        } else {
+          // Check for duplicate slugs for this user (exclude current post)
+          const { data: existingSlugs } = await supabase
+            .from("community_posts")
+            .select("slug")
+            .eq("user_id", userId)
+            .neq("id", postId);
+
+          const slugSet = new Set((existingSlugs || []).map((s: { slug: string }) => s.slug));
+          if (slugSet.has(newSlug)) {
+            const baseSlug = newSlug;
+            let found = false;
+            for (let i = 2; i <= 51; i++) {
+              if (!slugSet.has(`${baseSlug}_${i}`)) { newSlug = `${baseSlug}_${i}`; found = true; break; }
+            }
+            if (!found) {
+              for (let i = 0; i < 5; i++) {
+                const suffix = Math.random().toString(36).substring(2, 6);
+                if (!slugSet.has(`${baseSlug}_${suffix}`)) { newSlug = `${baseSlug}_${suffix}`; found = true; break; }
+              }
+            }
+            if (!found) newSlug = `${baseSlug}_${Date.now().toString(36).slice(-6)}`;
+          }
+
+          // Save old slug to history for 301 redirect
+          await supabase.from("slug_history").upsert({
+            user_id: userId,
+            content_type: 'post',
+            old_slug: oldSlug,
+            new_slug: newSlug,
+            content_id: postId,
+          }, { onConflict: 'content_id,old_slug' });
+
+          updateData.slug = newSlug;
+          console.log(`Slug governance: "${oldSlug}" → "${newSlug}" for post ${postId}`);
         }
-
-        // Save old slug to history for 301 redirect
-        await supabase.from("slug_history").upsert({
-          user_id: userId,
-          content_type: 'post',
-          old_slug: oldSlug,
-          new_slug: newSlug,
-          content_id: postId,
-        }, { onConflict: 'content_id,old_slug' });
-
-        updateData.slug = newSlug;
-        console.log(`Slug governance: "${oldSlug}" → "${newSlug}" for post ${postId}`);
       }
       // ===== END SLUG GOVERNANCE =====
 
