@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import { TipMessageCard } from "./TipMessageCard";
+import { TipReceiptMessageCard } from "./TipReceiptMessageCard";
 import { LiXiMessageCard } from "./LiXiMessageCard";
 import { LiXiReceiptCard } from "./LiXiReceiptCard";
 
@@ -213,6 +214,8 @@ export function MessageBubble({
                   txHash={message.metadata?.tx_hash || ""}
                   bscscanUrl={message.metadata?.bscscan_url || ""}
                 />
+              ) : message.message_type === "tip_receipt" ? (
+                <TipReceiptMessageCard metadata={message.metadata || {}} />
               ) : message.message_type === "tip" ? (
                 <TipMessageCard
                   content={message.content}
