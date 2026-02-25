@@ -1,132 +1,87 @@
 
 
-## Kế hoạch: Tự động đăng thiệp chúc mừng lên Newsfeed khi tặng thưởng Web3
+## Kế hoạch: Nâng cấp Celebration Post trên Newsfeed + Biên nhận trong DM
 
-### Mục tiêu
-Khi hoàn thành tặng thưởng Web3 (CAMLY, FUN, BNB, USDT, BTC), hệ thống sẽ **tự động**:
-1. Đăng thiệp chúc mừng lên **Newsfeed cộng đồng** (tự xóa sau 24h)
-2. Hiển thị trên **trang cá nhân người tặng** như bài đăng bình thường
-3. Gửi **tin nhắn tự động** cho người nhận (đã có sẵn — `autoSendDM`)
-4. Gửi **thông báo tự động** cho người nhận
+### Yêu cầu
+1. **Bài đăng Newsfeed (24h)**: Hiển thị card giống TipCelebrationReceipt (có pháo bông, confetti, nhạc, hiệu ứng) thay vì text đơn giản hiện tại
+2. **Tin nhắn tự động (DM)**: Gửi biên nhận dạng card (message_type: "tip_receipt") với nút "Xem biên nhận" thay vì text thuần
 
 ### Phân tích hiện trạng
-- **Tin nhắn tự động**: ĐÃ CÓ — `autoSendDM` trong `GiftCoinDialog.tsx` gửi DM cho receiver
-- **Thông báo**: CHƯA CÓ cho Web3 gifts (chỉ có cho internal gifts qua `process-coin-gift`)
-- **Đăng Newsfeed**: CHƯA CÓ
-- **Tự xóa sau 24h**: CHƯA CÓ
+- **PostCard.tsx**: Celebration post hiện chỉ hiển thị badge vàng + text amount đơn giản (dòng 459-477)
+- **autoSendDM**: Gửi tin nhắn dạng `message_type: "tip"` với nội dung text thuần, không có `tip_gift_id` → TipMessageCard hiển thị fallback text (không có card đẹp)
+- **autoPostCelebration**: Lưu đủ metadata (sender/receiver info, tx_hash, receipt_id, amount, token) nhưng PostCard không render đầy đủ
 
-### Thay đổi Database
+### Thay đổi chi tiết
 
-**1. Thêm cột `post_type` và `metadata` vào bảng `community_posts`** (migration)
-```sql
-ALTER TABLE community_posts 
-  ADD COLUMN IF NOT EXISTS post_type TEXT DEFAULT 'user' NOT NULL,
-  ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';
+| # | File | Thay đổi |
+|---|---|---|
+| 1 | `src/components/community/PostCard.tsx` | Thay thế celebration card đơn giản bằng card sang trọng: avatar sender→receiver, amount nổi bật, pháo bông (framer-motion), confetti, falling coins, nhạc tự động, nút xem biên nhận |
+| 2 | `src/components/gifts/GiftCoinDialog.tsx` | Cập nhật `autoPostCelebration` lưu thêm `sender_avatar`, `receiver_avatar`, `sender_wallet`, `receiver_wallet`, `explorer_url`, `created_at` vào metadata. Cập nhật `autoSendDM` gửi `message_type: "tip_receipt"` với metadata chứa thông tin biên nhận |
+| 3 | `src/components/messages/MessageBubble.tsx` | Thêm handler cho `message_type === "tip_receipt"` render card biên nhận mới |
+| 4 | `src/components/messages/TipReceiptMessageCard.tsx` | **File mới** — Card biên nhận trong DM: hiển thị sender→receiver, amount, token logo, lời nhắn, thời gian, nút "Xem biên nhận" link đến `/receipt/{id}` |
 
--- Index để query celebration posts cần xóa
-CREATE INDEX IF NOT EXISTS idx_community_posts_post_type 
-  ON community_posts(post_type) WHERE post_type = 'celebration';
+### Chi tiết kỹ thuật
 
--- Thêm cột expires_at cho auto-delete
-ALTER TABLE community_posts 
-  ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT NULL;
+**1. PostCard Celebration Card (PostCard.tsx)**
+- Thay block `{isCelebration && celebrationMeta && (...)}` (dòng 460-478) bằng card đầy đủ:
+  - Avatar sender → ArrowRight → Avatar receiver (giống TipCelebrationReceipt)
+  - Amount box với token logo, số lượng, tên token
+  - Lời nhắn (nếu có)
+  - Mini firework bursts + sparkles (framer-motion, lightweight - 3 fireworks, 5 sparkles)
+  - Nút "Xem biên nhận" link đến `/receipt/{receipt_public_id}`
+  - Nút phát nhạc chúc mừng (sử dụng audio từ `/audio/rich-1.mp3`)
+- Giữ nguyên badge "Thiệp Tặng Thưởng" + countdown ở trên
 
-CREATE INDEX IF NOT EXISTS idx_community_posts_expires 
-  ON community_posts(expires_at) WHERE expires_at IS NOT NULL;
-```
+**2. autoPostCelebration metadata mở rộng (GiftCoinDialog.tsx)**
+- Thêm vào metadata object:
+  - `sender_avatar`: senderAvatar
+  - `receiver_avatar`: recipientUser?.avatar_url
+  - `sender_wallet`: senderWallet (từ web3 context)
+  - `receiver_wallet`: targetAddress
+  - `explorer_url`: resolvedExplorer
+  - `created_at`: new Date().toISOString()
+  - `message`: celData.message
 
-- `post_type`: `'user'` (bài đăng thường) | `'celebration'` (thiệp tặng thưởng)
-- `metadata`: JSONB chứa thông tin gift (token, amount, tx_hash, receiver info...)
-- `expires_at`: Thời điểm tự xóa (24h sau khi tạo)
+**3. autoSendDM gửi biên nhận (GiftCoinDialog.tsx)**
+- Thay `message_type: "tip"` bằng `message_type: "tip_receipt"`
+- Thêm `metadata`:
+  ```json
+  {
+    "amount": 10000,
+    "token_type": "camly_web3",
+    "token_symbol": "CAMLY",
+    "sender_name": "...",
+    "receiver_name": "...",
+    "sender_avatar": "...",
+    "receiver_avatar": "...",
+    "tx_hash": "0x...",
+    "receipt_public_id": "...",
+    "explorer_url": "https://bscscan.com",
+    "message": "Tặng bạn...",
+    "created_at": "2026-02-25T..."
+  }
+  ```
 
-**2. Tạo DB function dọn bài hết hạn**
-```sql
-CREATE OR REPLACE FUNCTION cleanup_expired_posts() RETURNS void AS $$
-BEGIN
-  DELETE FROM community_posts WHERE expires_at IS NOT NULL AND expires_at < now();
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-```
+**4. TipReceiptMessageCard (file mới)**
+- Card gradient vàng-hổ phách
+- Header: token logo + "Biên nhận tặng thưởng"
+- Sender → Receiver (avatar + tên)
+- Amount box (token logo + số + label)
+- Lời nhắn italic
+- Thời gian
+- Nút "📄 Xem biên nhận" link đến `/receipt/{receipt_public_id}`
+- Nút "🔗 Xem trên BscScan" (nếu có tx_hash)
 
-**3. Cron job dọn bài hết hạn mỗi giờ** (SQL insert — không dùng migration)
-
-### Thay đổi Frontend
-
-**File: `src/components/gifts/GiftCoinDialog.tsx`**
-- Trong `handleCryptoSuccess`: sau khi set celebration data và gửi DM, thêm logic:
-  1. **Auto-post lên community_posts** với `post_type: 'celebration'`, `expires_at: now + 24h`, `metadata` chứa gift info
-  2. **Auto-send notification** cho receiver qua bảng `notifications`
-
-Thêm function `autoPostCelebration`:
-```typescript
-const autoPostCelebration = async (celData: CelebrationData) => {
-  // Tạo nội dung bài đăng celebration
-  const tokenLabel = ...;
-  const content = `🎁 ${celData.sender_name} đã tặng ${celData.amount.toLocaleString()} ${tokenLabel} cho ${celData.receiver_name}! ✨\n${celData.message ? `💬 "${celData.message}"` : ""}\n🌟 Cùng chung tay xây dựng cộng đồng yêu thương!`;
-  
-  // Insert vào community_posts
-  await supabase.from("community_posts").insert({
-    user_id: user.id,
-    content,
-    post_type: 'celebration',
-    expires_at: new Date(Date.now() + 24*60*60*1000).toISOString(),
-    metadata: {
-      gift_type: 'web3',
-      token_type: celData.tokenType,
-      token_symbol: tokenLabel,
-      amount: celData.amount,
-      receiver_id: celData.receiver_id,
-      receiver_name: celData.receiver_name,
-      tx_hash: celData.tx_hash,
-      receipt_public_id: celData.receipt_public_id,
-    },
-    slug: `celebration-${Date.now()}`,
-  });
-};
-```
-
-Thêm function `autoSendNotification`:
-```typescript
-const autoSendNotification = async (celData: CelebrationData) => {
-  // Gửi notification cho receiver
-  await supabase.from("notifications").insert({
-    user_id: celData.receiver_id,
-    type: 'gift_received',
-    title: '🎁 Bạn nhận được quà!',
-    content: `đã tặng bạn ${celData.amount.toLocaleString()} ${tokenLabel} on-chain`,
-    actor_id: user.id,
-    reference_type: 'gift',
-    metadata: {
-      amount: celData.amount,
-      token_type: celData.tokenType,
-      tx_hash: celData.tx_hash,
-    },
-  });
-};
-```
-
-**File: `src/components/community/PostCard.tsx`**
-- Thêm UI đặc biệt cho bài đăng `post_type === 'celebration'`:
-  - Badge "🎁 Thiệp Tặng Thưởng" với style golden
-  - Hiển thị countdown "Tự động xóa sau X giờ"
-  - Hiển thị thông tin token + amount nổi bật
-
-**File: `src/hooks/useCommunityPosts.ts`**
-- Cập nhật query để bao gồm cả `post_type` và `metadata` trong kết quả
+**5. MessageBubble.tsx**
+- Thêm case `message_type === "tip_receipt"` trước case `"tip"`:
+  ```tsx
+  : message.message_type === "tip_receipt" ? (
+    <TipReceiptMessageCard metadata={message.metadata} />
+  )
+  ```
 
 ### Tóm tắt
-
-| # | File/Resource | Thay đổi |
-|---|---|---|
-| 1 | Database migration | Thêm 3 cột: `post_type`, `metadata`, `expires_at` vào `community_posts` |
-| 2 | Database function | Tạo `cleanup_expired_posts()` |
-| 3 | Cron job (SQL insert) | Chạy cleanup mỗi giờ |
-| 4 | `GiftCoinDialog.tsx` | Thêm `autoPostCelebration` + `autoSendNotification` trong `handleCryptoSuccess` |
-| 5 | `PostCard.tsx` | Thêm UI celebration card với badge golden + countdown |
-| 6 | `useCommunityPosts.ts` | Thêm `post_type`, `metadata`, `expires_at` vào select query |
-
-- **1 migration**
-- **1 cron job**
-- **3 file sửa**
-- **0 file mới**
+- **1 file mới**: `TipReceiptMessageCard.tsx`
+- **3 file sửa**: `PostCard.tsx`, `GiftCoinDialog.tsx`, `MessageBubble.tsx`
+- **0 thay đổi database** (metadata JSONB đã có sẵn, message_type không cần migration)
 
