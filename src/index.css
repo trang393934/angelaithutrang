@@ -916,3 +916,13 @@
 .mobile-nav-item:nth-child(6) { animation-delay: 0.3s; }
 .mobile-nav-item:nth-child(7) { animation-delay: 0.35s; }
 .mobile-nav-item:nth-child(8) { animation-delay: 0.4s; }
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

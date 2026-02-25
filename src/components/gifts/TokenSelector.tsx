@@ -49,7 +49,7 @@ export function TokenSelector({ selected, onSelect, balanceLabel }: TokenSelecto
         )}
       </div>
 
-      <div className="relative">
+      <div className={`relative ${isOpen ? "overflow-visible" : ""}`}>
         {/* Selected Token Button */}
         <button
           type="button"
@@ -81,7 +81,7 @@ export function TokenSelector({ selected, onSelect, balanceLabel }: TokenSelecto
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
               transition={{ duration: 0.15 }}
-              className="absolute z-50 w-full mt-1 bg-gradient-to-b from-amber-50/30 to-card border-2 border-amber-300 rounded-xl shadow-lg overflow-hidden"
+              className="absolute z-[100] w-full mt-1 bg-card border-2 border-amber-300 rounded-xl shadow-2xl backdrop-blur-sm divide-y divide-amber-100"
             >
               {TOKEN_OPTIONS.map((token) => (
                 <button
@@ -91,8 +91,8 @@ export function TokenSelector({ selected, onSelect, balanceLabel }: TokenSelecto
                     onSelect(token.id);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-amber-50/60 transition-colors ${
-                    selected === token.id ? "bg-amber-50 border-l-2 border-amber-400" : ""
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-amber-50/80 transition-colors first:rounded-t-xl last:rounded-b-xl ${
+                    selected === token.id ? "bg-amber-50 border-l-[3px] border-l-amber-400" : ""
                   }`}
                 >
                   {selected === token.id ? (
