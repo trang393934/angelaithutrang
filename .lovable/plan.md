@@ -1,87 +1,66 @@
 
 
-## Kế hoạch: Nâng cấp Celebration Post trên Newsfeed + Biên nhận trong DM
+## Kết quả kiểm tra: Cấu hình hiện tại của Angel AI
 
-### Yêu cầu
-1. **Bài đăng Newsfeed (24h)**: Hiển thị card giống TipCelebrationReceipt (có pháo bông, confetti, nhạc, hiệu ứng) thay vì text đơn giản hiện tại
-2. **Tin nhắn tự động (DM)**: Gửi biên nhận dạng card (message_type: "tip_receipt") với nút "Xem biên nhận" thay vì text thuần
+### Bảng so sánh: Thiết lập ban đầu vs Hiện tại
 
-### Phân tích hiện trạng
-- **PostCard.tsx**: Celebration post hiện chỉ hiển thị badge vàng + text amount đơn giản (dòng 459-477)
-- **autoSendDM**: Gửi tin nhắn dạng `message_type: "tip"` với nội dung text thuần, không có `tip_gift_id` → TipMessageCard hiển thị fallback text (không có card đẹp)
-- **autoPostCelebration**: Lưu đủ metadata (sender/receiver info, tx_hash, receipt_id, amount, token) nhưng PostCard không render đầy đủ
+| Chức năng | Thiết lập ban đầu (đúng) | Hiện tại | Trạng thái |
+|---|---|---|---|
+| **Chat (angel-chat)** | Gemini qua CF AI Gateway | **Lovable AI Gateway** (chính), CF fallback | ❌ Đã bị thay đổi |
+| **Chat Demo mode** | Gemini qua CF AI Gateway | **Lovable AI Gateway** (chính), CF fallback | ❌ Đã bị thay đổi |
+| **Tạo ảnh Fast** | Flux qua fal.ai | Flux qua fal.ai (+ Gemini enhance prompt) | ✅ Đúng |
+| **Tạo ảnh Spiritual** | Gemini qua CF AI Gateway | Google AI Studio trực tiếp (`GOOGLE_AI_API_KEY`) | ⚠️ Thay đổi nhưng vẫn hoạt động |
+| **Chỉnh sửa ảnh** | Google AI Studio | Google AI Studio trực tiếp (`GOOGLE_AI_API_KEY`) | ✅ Đúng |
 
-### Thay đổi chi tiết
+### Chi tiết thay đổi
 
-| # | File | Thay đổi |
+**1. Chat (angel-chat) — BỊ THAY ĐỔI**
+
+Dòng 1636 hiện tại:
+```
+const AI_GATEWAY_URL_MAIN = LOVABLE_GATEWAY_URL_MAIN;
+// → "https://ai.gateway.lovable.dev/v1/chat/completions"
+// Auth: Bearer ${LOVABLE_API_KEY}
+```
+
+Lẽ ra phải là:
+```
+const AI_GATEWAY_URL_MAIN = CF_GATEWAY_URL_MAIN;
+// → "https://gateway.ai.cloudflare.com/.../angel-ai/compat/chat/completions"
+// Auth: Bearer ${CF_API_TOKEN}
+```
+
+Comment dòng 1631 ghi: *"ưu tiên Lovable → Cloudflare fallback"* — đây chính là lúc bị đổi. Cloudflare Gateway chỉ được dùng làm fallback khi Lovable lỗi (trừ 402/429), nghĩa là khi hết credit Lovable thì **không fallback** mà trả lỗi 402 cho user.
+
+**2. Demo mode — CŨNG BỊ THAY ĐỔI**
+
+Dòng 1240-1258: Demo mode cũng dùng Lovable Gateway làm chính, CF làm fallback.
+
+**3. Tạo ảnh Spiritual — THAY ĐỔI NHỎ**
+
+Dòng 212 trong `generate-image`: Gọi trực tiếp Google AI Studio API (`generativelanguage.googleapis.com`) thay vì qua CF Gateway. Vẫn hoạt động vì dùng `GOOGLE_AI_API_KEY` riêng, không tốn Lovable credit.
+
+### Nguyên nhân thay đổi
+
+Dựa trên comment trong code và lịch sử conversation, sự thay đổi xảy ra khi có một lần cập nhật angel-chat với lý do *"Vietnamese text stability"* (dòng 1636 comment: `// Lovable primary for Vietnamese text stability`). Ai đó (hoặc AI) đã đổi primary gateway từ Cloudflare sang Lovable với lý do tiếng Việt ổn định hơn — nhưng điều này khiến chat phụ thuộc hoàn toàn vào Lovable credit.
+
+### Đây là lý do Angel AI bị lỗi 402
+
+- Chat dùng Lovable credit → hết credit → lỗi 402
+- Fallback logic bỏ qua 402/429 (dòng 1664: `response.status !== 429 && response.status !== 402`) → **không fallback sang CF**
+- Kết quả: user không chat được
+
+### Kế hoạch sửa: Chuyển chat về CF AI Gateway làm chính
+
+| # | Thay đổi | Chi tiết |
 |---|---|---|
-| 1 | `src/components/community/PostCard.tsx` | Thay thế celebration card đơn giản bằng card sang trọng: avatar sender→receiver, amount nổi bật, pháo bông (framer-motion), confetti, falling coins, nhạc tự động, nút xem biên nhận |
-| 2 | `src/components/gifts/GiftCoinDialog.tsx` | Cập nhật `autoPostCelebration` lưu thêm `sender_avatar`, `receiver_avatar`, `sender_wallet`, `receiver_wallet`, `explorer_url`, `created_at` vào metadata. Cập nhật `autoSendDM` gửi `message_type: "tip_receipt"` với metadata chứa thông tin biên nhận |
-| 3 | `src/components/messages/MessageBubble.tsx` | Thêm handler cho `message_type === "tip_receipt"` render card biên nhận mới |
-| 4 | `src/components/messages/TipReceiptMessageCard.tsx` | **File mới** — Card biên nhận trong DM: hiển thị sender→receiver, amount, token logo, lời nhắn, thời gian, nút "Xem biên nhận" link đến `/receipt/{id}` |
+| 1 | Dòng 1636 | Đổi `AI_GATEWAY_URL_MAIN = CF_GATEWAY_URL_MAIN` |
+| 2 | Dòng 1637-1640 | Đổi headers sang `CF_API_TOKEN` |
+| 3 | Dòng 1648 | Đổi model sang `google-ai-studio/gemini-2.5-flash` |
+| 4 | Dòng 1663-1672 | Đổi fallback sang Lovable Gateway (trừ 402/429) |
+| 5 | Demo mode (1240-1272) | Tương tự — CF chính, Lovable fallback |
 
-### Chi tiết kỹ thuật
-
-**1. PostCard Celebration Card (PostCard.tsx)**
-- Thay block `{isCelebration && celebrationMeta && (...)}` (dòng 460-478) bằng card đầy đủ:
-  - Avatar sender → ArrowRight → Avatar receiver (giống TipCelebrationReceipt)
-  - Amount box với token logo, số lượng, tên token
-  - Lời nhắn (nếu có)
-  - Mini firework bursts + sparkles (framer-motion, lightweight - 3 fireworks, 5 sparkles)
-  - Nút "Xem biên nhận" link đến `/receipt/{receipt_public_id}`
-  - Nút phát nhạc chúc mừng (sử dụng audio từ `/audio/rich-1.mp3`)
-- Giữ nguyên badge "Thiệp Tặng Thưởng" + countdown ở trên
-
-**2. autoPostCelebration metadata mở rộng (GiftCoinDialog.tsx)**
-- Thêm vào metadata object:
-  - `sender_avatar`: senderAvatar
-  - `receiver_avatar`: recipientUser?.avatar_url
-  - `sender_wallet`: senderWallet (từ web3 context)
-  - `receiver_wallet`: targetAddress
-  - `explorer_url`: resolvedExplorer
-  - `created_at`: new Date().toISOString()
-  - `message`: celData.message
-
-**3. autoSendDM gửi biên nhận (GiftCoinDialog.tsx)**
-- Thay `message_type: "tip"` bằng `message_type: "tip_receipt"`
-- Thêm `metadata`:
-  ```json
-  {
-    "amount": 10000,
-    "token_type": "camly_web3",
-    "token_symbol": "CAMLY",
-    "sender_name": "...",
-    "receiver_name": "...",
-    "sender_avatar": "...",
-    "receiver_avatar": "...",
-    "tx_hash": "0x...",
-    "receipt_public_id": "...",
-    "explorer_url": "https://bscscan.com",
-    "message": "Tặng bạn...",
-    "created_at": "2026-02-25T..."
-  }
-  ```
-
-**4. TipReceiptMessageCard (file mới)**
-- Card gradient vàng-hổ phách
-- Header: token logo + "Biên nhận tặng thưởng"
-- Sender → Receiver (avatar + tên)
-- Amount box (token logo + số + label)
-- Lời nhắn italic
-- Thời gian
-- Nút "📄 Xem biên nhận" link đến `/receipt/{receipt_public_id}`
-- Nút "🔗 Xem trên BscScan" (nếu có tx_hash)
-
-**5. MessageBubble.tsx**
-- Thêm case `message_type === "tip_receipt"` trước case `"tip"`:
-  ```tsx
-  : message.message_type === "tip_receipt" ? (
-    <TipReceiptMessageCard metadata={message.metadata} />
-  )
-  ```
-
-### Tóm tắt
-- **1 file mới**: `TipReceiptMessageCard.tsx`
-- **3 file sửa**: `PostCard.tsx`, `GiftCoinDialog.tsx`, `MessageBubble.tsx`
-- **0 thay đổi database** (metadata JSONB đã có sẵn, message_type không cần migration)
+- **1 file sửa**: `supabase/functions/angel-chat/index.ts`
+- **0 file mới, 0 thay đổi database**
+- Không cần thay đổi frontend (giữ nguyên OpenAI-compatible format)
 
