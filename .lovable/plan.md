@@ -1,66 +1,70 @@
 
 
-## Kết quả kiểm tra: Cấu hình hiện tại của Angel AI
+## Ket qua kiem tra: Han muc tao/sua anh
 
-### Bảng so sánh: Thiết lập ban đầu vs Hiện tại
+### Van de tim thay
 
-| Chức năng | Thiết lập ban đầu (đúng) | Hiện tại | Trạng thái |
+| # | Van de | File | Chi tiet |
 |---|---|---|---|
-| **Chat (angel-chat)** | Gemini qua CF AI Gateway | **Lovable AI Gateway** (chính), CF fallback | ❌ Đã bị thay đổi |
-| **Chat Demo mode** | Gemini qua CF AI Gateway | **Lovable AI Gateway** (chính), CF fallback | ❌ Đã bị thay đổi |
-| **Tạo ảnh Fast** | Flux qua fal.ai | Flux qua fal.ai (+ Gemini enhance prompt) | ✅ Đúng |
-| **Tạo ảnh Spiritual** | Gemini qua CF AI Gateway | Google AI Studio trực tiếp (`GOOGLE_AI_API_KEY`) | ⚠️ Thay đổi nhưng vẫn hoạt động |
-| **Chỉnh sửa ảnh** | Google AI Studio | Google AI Studio trực tiếp (`GOOGLE_AI_API_KEY`) | ✅ Đúng |
+| 1 | **edit-image gioi han 3, khong phai 5** | `supabase/functions/edit-image/index.ts` dong 10 | `DAILY_EDIT_LIMIT = 3` thay vi 5 |
+| 2 | **edit-image tang luot TRUOC khi sua thanh cong** | `supabase/functions/edit-image/index.ts` dong 47-48 | Dung `check_and_increment_ai_usage` (tang ngay) thay vi `check_ai_usage_only` + `increment_ai_usage` (kiem tra truoc, tang sau). Neu sua anh that bai (Google API loi), user van bi tru luot |
+| 3 | **generate-image: DUNG** | `supabase/functions/generate-image/index.ts` | Limit = 5, dung mo hinh "kiem tra truoc - tang sau" (check_ai_usage_only + increment_ai_usage) |
 
-### Chi tiết thay đổi
+### Nguyen nhan user bi "het luot" sau 1 lan
 
-**1. Chat (angel-chat) — BỊ THAY ĐỔI**
+Khi user **sua anh** (edit-image):
+- Goi `check_and_increment_ai_usage` → tang count **TRUOC** khi Google AI xu ly
+- Neu Google AI tra loi loi (429, 500, anh khong hop le...) → count da bi tang roi, khong rollback
+- User thu lai → count tang tiep → nhanh chong dat gioi han 3
+- Frontend (`get_daily_ai_usage`) hien thi gioi han 5 nhung edge function thuc te chi cho 3 → gay nham lan
 
-Dòng 1636 hiện tại:
-```
-const AI_GATEWAY_URL_MAIN = LOVABLE_GATEWAY_URL_MAIN;
-// → "https://ai.gateway.lovable.dev/v1/chat/completions"
-// Auth: Bearer ${LOVABLE_API_KEY}
-```
+### Ke hoach sua
 
-Lẽ ra phải là:
-```
-const AI_GATEWAY_URL_MAIN = CF_GATEWAY_URL_MAIN;
-// → "https://gateway.ai.cloudflare.com/.../angel-ai/compat/chat/completions"
-// Auth: Bearer ${CF_API_TOKEN}
-```
-
-Comment dòng 1631 ghi: *"ưu tiên Lovable → Cloudflare fallback"* — đây chính là lúc bị đổi. Cloudflare Gateway chỉ được dùng làm fallback khi Lovable lỗi (trừ 402/429), nghĩa là khi hết credit Lovable thì **không fallback** mà trả lỗi 402 cho user.
-
-**2. Demo mode — CŨNG BỊ THAY ĐỔI**
-
-Dòng 1240-1258: Demo mode cũng dùng Lovable Gateway làm chính, CF làm fallback.
-
-**3. Tạo ảnh Spiritual — THAY ĐỔI NHỎ**
-
-Dòng 212 trong `generate-image`: Gọi trực tiếp Google AI Studio API (`generativelanguage.googleapis.com`) thay vì qua CF Gateway. Vẫn hoạt động vì dùng `GOOGLE_AI_API_KEY` riêng, không tốn Lovable credit.
-
-### Nguyên nhân thay đổi
-
-Dựa trên comment trong code và lịch sử conversation, sự thay đổi xảy ra khi có một lần cập nhật angel-chat với lý do *"Vietnamese text stability"* (dòng 1636 comment: `// Lovable primary for Vietnamese text stability`). Ai đó (hoặc AI) đã đổi primary gateway từ Cloudflare sang Lovable với lý do tiếng Việt ổn định hơn — nhưng điều này khiến chat phụ thuộc hoàn toàn vào Lovable credit.
-
-### Đây là lý do Angel AI bị lỗi 402
-
-- Chat dùng Lovable credit → hết credit → lỗi 402
-- Fallback logic bỏ qua 402/429 (dòng 1664: `response.status !== 429 && response.status !== 402`) → **không fallback sang CF**
-- Kết quả: user không chat được
-
-### Kế hoạch sửa: Chuyển chat về CF AI Gateway làm chính
-
-| # | Thay đổi | Chi tiết |
+| # | File | Thay doi |
 |---|---|---|
-| 1 | Dòng 1636 | Đổi `AI_GATEWAY_URL_MAIN = CF_GATEWAY_URL_MAIN` |
-| 2 | Dòng 1637-1640 | Đổi headers sang `CF_API_TOKEN` |
-| 3 | Dòng 1648 | Đổi model sang `google-ai-studio/gemini-2.5-flash` |
-| 4 | Dòng 1663-1672 | Đổi fallback sang Lovable Gateway (trừ 402/429) |
-| 5 | Demo mode (1240-1272) | Tương tự — CF chính, Lovable fallback |
+| 1 | `supabase/functions/edit-image/index.ts` dong 10 | Doi `DAILY_EDIT_LIMIT = 3` thanh `DAILY_EDIT_LIMIT = 5` |
+| 2 | `supabase/functions/edit-image/index.ts` dong 47-49 | Doi `check_and_increment_ai_usage` thanh `check_ai_usage_only` (chi kiem tra, khong tang) |
+| 3 | `supabase/functions/edit-image/index.ts` cuoi file | Them block `increment_ai_usage` SAU KHI sua anh thanh cong (giong generate-image dong 290-303) |
 
-- **1 file sửa**: `supabase/functions/angel-chat/index.ts`
-- **0 file mới, 0 thay đổi database**
-- Không cần thay đổi frontend (giữ nguyên OpenAI-compatible format)
+### Chi tiet ky thuat
+
+**Buoc 1:** Dong 10
+```typescript
+// Truoc:
+const DAILY_EDIT_LIMIT = 3;
+// Sau:
+const DAILY_EDIT_LIMIT = 5;
+```
+
+**Buoc 2:** Dong 47-49
+```typescript
+// Truoc:
+const { data: usageCheck, error: usageError } = await supabase.rpc(
+  'check_and_increment_ai_usage',
+  { _user_id: userId, _usage_type: 'edit_image', _daily_limit: DAILY_EDIT_LIMIT }
+);
+
+// Sau:
+const { data: usageCheck, error: usageError } = await supabase.rpc(
+  'check_ai_usage_only',
+  { _user_id: userId, _usage_type: 'edit_image', _daily_limit: DAILY_EDIT_LIMIT }
+);
+```
+
+**Buoc 3:** Them block increment sau dong 197 (sau khi upload thanh cong):
+```typescript
+if (userId) {
+  const supabaseForIncrement = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader! } }
+  });
+  await supabaseForIncrement.rpc('increment_ai_usage', {
+    _user_id: userId, _usage_type: 'edit_image'
+  });
+}
+```
+
+### Tom tat
+- **1 file sua**: `supabase/functions/edit-image/index.ts`
+- **0 file moi, 0 thay doi database**
+- generate-image da dung — khong can sua
 
