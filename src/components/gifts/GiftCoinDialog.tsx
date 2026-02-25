@@ -603,6 +603,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
                         placeholder="Hoặc nhập số tùy chỉnh"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
+                        onWheel={(e) => (e.target as HTMLInputElement).blur()}
                         min={10}
                         max={balance}
                       />

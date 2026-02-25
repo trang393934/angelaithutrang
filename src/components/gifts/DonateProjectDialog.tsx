@@ -263,6 +263,7 @@ export function DonateProjectDialog({ open, onOpenChange }: DonateProjectDialogP
                 placeholder="100"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 min={100}
                 max={balance}
               />
@@ -373,6 +374,7 @@ export function DonateProjectDialog({ open, onOpenChange }: DonateProjectDialogP
                     placeholder="100"
                     value={cryptoAmount}
                     onChange={(e) => setCryptoAmount(e.target.value)}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     min={1}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -470,6 +472,7 @@ export function DonateProjectDialog({ open, onOpenChange }: DonateProjectDialogP
                           placeholder="100"
                           value={manualAmount}
                           onChange={(e) => setManualAmount(e.target.value)}
+                          onWheel={(e) => (e.target as HTMLInputElement).blur()}
                           min={1}
                         />
                       </div>

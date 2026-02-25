@@ -629,6 +629,7 @@ export function CryptoTransferTab({
           placeholder="100"
           value={cryptoAmount}
           onChange={(e) => setCryptoAmount(e.target.value)}
+          onWheel={(e) => (e.target as HTMLInputElement).blur()}
           min={1}
         />
         <p className="text-xs text-muted-foreground">
