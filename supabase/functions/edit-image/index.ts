@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const DAILY_EDIT_LIMIT = 3;
+const DAILY_EDIT_LIMIT = 5;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -45,7 +45,7 @@ serve(async (req) => {
 
       if (userId) {
         const { data: usageCheck, error: usageError } = await supabase.rpc(
-          'check_and_increment_ai_usage',
+          'check_ai_usage_only',
           { _user_id: userId, _usage_type: 'edit_image', _daily_limit: DAILY_EDIT_LIMIT }
         );
 
@@ -194,6 +194,21 @@ Rules:
       }
     } catch (storageError) {
       console.error("Storage operation error:", storageError);
+    }
+
+    // Increment usage AFTER successful edit and upload
+    if (userId) {
+      try {
+        const supabaseForIncrement = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: authHeader! } }
+        });
+        await supabaseForIncrement.rpc('increment_ai_usage', {
+          _user_id: userId, _usage_type: 'edit_image'
+        });
+        console.log(`User ${userId} edit_image usage incremented after success`);
+      } catch (incErr) {
+        console.error("Failed to increment usage:", incErr);
+      }
     }
 
     return new Response(
