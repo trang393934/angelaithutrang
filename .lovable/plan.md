@@ -1,33 +1,60 @@
 
 
-## Ke hoach: Tat va xoa toan bo nhac nen
+## Ke hoach: Fix giao dien Tang Thuong
 
-### Pham vi anh huong
+### Van de 1: Dropdown Token Selector bi chong cheo
+**Nguyen nhan:** Dropdown dang dung `absolute z-50` nhung nam trong Dialog co `overflow-y-auto` → dropdown bi cat boi overflow cua Dialog container.
 
-Nhac nen duoc su dung o 3 noi:
+**Giai phap:** Them `overflow-visible` cho container dropdown khi dang mo, va tang z-index len `z-[100]` de dam bao hien thi tren tat ca.
 
-1. **`src/components/Header.tsx`** — import va render `MusicThemeSelector` (desktop trong header, mobile qua portal)
-2. **`src/pages/UserProfile.tsx`** — render `MusicThemeSelector` variant="floating"
-3. **`src/components/community/CommunityHeader.tsx`** — render `MusicThemeSelector` variant="floating" qua portal
+**File:** `src/components/gifts/TokenSelector.tsx`
+- Container div bao ngoai dropdown can co `relative` + khi dropdown mo thi khong bi cat boi overflow
+- Dropdown menu: tang z-index `z-[100]`, them `backdrop-blur` va `shadow-xl` de sang trong hon
+- Cac item trong dropdown: tang padding, them separator giua cac item de phan biet ro rang
 
-Component chinh: **`src/components/MusicThemeSelector.tsx`** — toan bo logic nhac nen (audio element, localStorage, play/pause/volume).
+### Van de 2: Input so luong bi thay doi khi lan chuot (scroll)
+**Nguyen nhan:** Input `type="number"` mac dinh cua trinh duyet cho phep cuon chuot de tang/giam gia tri. Day la hanh vi mac dinh cua HTML input number.
 
-### Thay doi cu the
+**Giai phap:** Them su kien `onWheel` de chan hanh vi cuon, va them CSS an spinner (mui ten tang/giam) tren tat ca trinh duyet.
 
-| # | File | Hanh dong |
-|---|---|---|
-| 1 | `src/components/MusicThemeSelector.tsx` | **Xoa file** |
-| 2 | `src/components/Header.tsx` | Xoa import `MusicThemeSelector`, xoa dong render desktop (dong 187), xoa dong render mobile portal (dong 517-521), xoa import `createPortal` neu khong con dung |
-| 3 | `src/pages/UserProfile.tsx` | Xoa import `MusicThemeSelector`, xoa dong render (dong 617) |
-| 4 | `src/components/community/CommunityHeader.tsx` | Xoa import `MusicThemeSelector`, xoa dong render portal (dong 405-409), xoa import `createPortal` neu khong con dung |
+**File can sua:**
+1. `src/components/gifts/GiftCoinDialog.tsx` (dong 601-606) — them `onWheel` handler
+2. `src/components/gifts/CryptoTransferTab.tsx` (dong 627-630) — them `onWheel` handler
+3. `src/components/gifts/DonateProjectDialog.tsx` — them `onWheel` handler cho 3 input number
+4. `src/index.css` — them CSS an spinner cho input number trong gift dialog
 
-### Luu y
-- **CelebrationAudioPlayer** (nhac mung khi tang coin) va **TextToSpeech** (doc bai viet) **KHONG** bi anh huong — day la tinh nang khac, khong phai nhac nen.
-- Cac file audio (`/audio/tet-vui-ve-*.mp3`, `/audio/rich-4.mp3`) van giu trong `public/audio/` vi `CelebrationAudioPlayer` dang dung `rich-1/2/3.mp3`. Neu con muon xoa ca cac file `tet-vui-ve-*.mp3` va `rich-4.mp3` thi cho Cha biet.
-- localStorage keys (`bg-music-track`, `bg-music-volume`, `bg-music-playing`) se khong con duoc doc/ghi. User cu se tu dong khong nghe nhac nen nua.
+### Chi tiet ky thuat
+
+**TokenSelector dropdown fix:**
+- Them class `relative` cho parent wrapper
+- Dropdown panel: doi tu `absolute z-50` thanh `absolute z-[100]`
+- Them `bg-card border-2 border-amber-300 shadow-2xl backdrop-blur-sm` de dropdown ro rang, khong trong suot
+- Them `divide-y divide-amber-100` de phan tach cac item
+- Tang padding item, them hover effect ro hon
+
+**Number input scroll fix:**
+- Them `onWheel={(e) => (e.target as HTMLInputElement).blur()}` tren moi input `type="number"`
+- Them CSS global:
+```css
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; }
+```
 
 ### Tom tat
-- **1 file xoa** (`MusicThemeSelector.tsx`)
-- **3 file sua** (Header, UserProfile, CommunityHeader) — chi xoa cac dong lien quan den nhac nen
+
+| # | File | Thay doi |
+|---|---|---|
+| 1 | `TokenSelector.tsx` | Fix dropdown z-index, them background/shadow sang trong, phan tach item |
+| 2 | `GiftCoinDialog.tsx` | Them `onWheel` chan scroll tren input number |
+| 3 | `CryptoTransferTab.tsx` | Them `onWheel` chan scroll tren input number |
+| 4 | `DonateProjectDialog.tsx` | Them `onWheel` chan scroll tren 3 input number |
+| 5 | `src/index.css` | An spinner (mui ten) cua input number |
+
+- **5 file sua**
+- **0 file moi**
 - **0 thay doi database**
 
