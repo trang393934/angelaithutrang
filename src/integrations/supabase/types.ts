@@ -836,11 +836,14 @@ export type Database = {
           comments_count: number | null
           content: string
           created_at: string
+          expires_at: string | null
           id: string
           image_url: string | null
           image_urls: string[] | null
           is_rewarded: boolean | null
           likes_count: number | null
+          metadata: Json | null
+          post_type: string
           reward_amount: number | null
           shares_count: number | null
           slug: string
@@ -851,11 +854,14 @@ export type Database = {
           comments_count?: number | null
           content: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
           is_rewarded?: boolean | null
           likes_count?: number | null
+          metadata?: Json | null
+          post_type?: string
           reward_amount?: number | null
           shares_count?: number | null
           slug: string
@@ -866,11 +872,14 @@ export type Database = {
           comments_count?: number | null
           content?: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
           is_rewarded?: boolean | null
           likes_count?: number | null
+          metadata?: Json | null
+          post_type?: string
           reward_amount?: number | null
           shares_count?: number | null
           slug?: string
@@ -3816,6 +3825,7 @@ export type Database = {
           message: string
         }[]
       }
+      cleanup_expired_posts: { Args: never; Returns: undefined }
       cleanup_expired_stories: { Args: never; Returns: undefined }
       compute_policy_hash: { Args: { _policy_json: Json }; Returns: string }
       detect_coordinated_timing: {
