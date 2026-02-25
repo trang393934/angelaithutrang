@@ -1237,16 +1237,17 @@ serve(async (req) => {
 
 You support clarity, self-awareness, and aligned living with compassion.`;
 
-      // --- AI Gateway Config (Lovable primary for Vietnamese stability) ---
-      const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+      // --- AI Gateway Config (Cloudflare BYOK primary → Lovable fallback) ---
+      const CF_GATEWAY_URL_DEMO = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+      const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
       const aiHeaders: Record<string, string> = {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Bearer ${CF_API_TOKEN || ""}`,
       };
       // --- End AI Gateway Config ---
 
       const demoBody = JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google-ai-studio/gemini-2.5-flash",
         messages: [
           { role: "system", content: demoSystemPrompt },
           ...messages,
@@ -1255,20 +1256,19 @@ You support clarity, self-awareness, and aligned living with compassion.`;
         max_tokens: demoStyleConfig.maxTokens,
       });
 
-      let response = await fetch(LOVABLE_GATEWAY_URL, {
+      let response = await fetch(CF_GATEWAY_URL_DEMO, {
         method: "POST",
         headers: aiHeaders,
         body: demoBody,
       });
 
-      // Fallback to Cloudflare if Lovable fails
-      const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
-      if (!response.ok && CF_API_TOKEN) {
-        console.error("Lovable demo failed:", response.status, "- falling back to Cloudflare");
-        response = await fetch("https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions", {
+      // Fallback to Lovable Gateway if Cloudflare fails
+      if (!response.ok && LOVABLE_API_KEY && response.status !== 429 && response.status !== 402) {
+        console.error("Cloudflare demo failed:", response.status, "- falling back to Lovable Gateway");
+        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
-          headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ ...JSON.parse(demoBody), model: "google-ai-studio/gemini-2.5-flash" }),
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ ...JSON.parse(demoBody), model: "google/gemini-2.5-flash" }),
         });
       }
 
@@ -1628,24 +1628,24 @@ HƯỚNG DẪN XỬ LÝ:
     if (searchIntent) {
       console.log("Search intent mode: Special prompt added for keyword:", searchKeyword);
     }
-    // --- AI Gateway Config (ưu tiên Lovable → Cloudflare fallback) ---
+    // --- AI Gateway Config (ưu tiên Cloudflare BYOK → Lovable fallback) ---
     const CF_GATEWAY_URL_MAIN = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
     const LOVABLE_GATEWAY_URL_MAIN = "https://ai.gateway.lovable.dev/v1/chat/completions";
     const CF_API_TOKEN_MAIN = Deno.env.get("CF_API_TOKEN");
-    // Lovable primary for Vietnamese text stability
-    const AI_GATEWAY_URL_MAIN = LOVABLE_GATEWAY_URL_MAIN;
+    // Cloudflare BYOK primary — uses GOOGLE_AI_API_KEY, no Lovable credit consumed
+    const AI_GATEWAY_URL_MAIN = CF_GATEWAY_URL_MAIN;
     const aiHeadersMain: Record<string, string> = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+      "Authorization": `Bearer ${CF_API_TOKEN_MAIN || ""}`,
     };
     // --- End AI Gateway Config ---
 
     const shouldStream = streamParam !== false;
 
-    console.log(`Calling AI Gateway: Lovable (primary), stream=${shouldStream}...`);
+    console.log(`Calling AI Gateway: Cloudflare BYOK (primary), stream=${shouldStream}...`);
 
     const mainBody = JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: "google-ai-studio/gemini-2.5-flash",
       messages: [
         { role: "system", content: systemPrompt },
         ...messages,
@@ -1660,15 +1660,14 @@ HƯỚNG DẪN XỬ LÝ:
       body: mainBody,
     });
 
-    // Fallback to Cloudflare if Lovable fails (not 429/402)
-    if (!response.ok && CF_API_TOKEN_MAIN && response.status !== 429 && response.status !== 402) {
+    // Fallback to Lovable Gateway if Cloudflare fails (not 429/402)
+    if (!response.ok && LOVABLE_API_KEY && response.status !== 429 && response.status !== 402) {
       const errorText = await response.text();
-      console.error("Lovable failed:", response.status, errorText, "- falling back to Cloudflare Gateway");
-      const cfModel = shouldStream ? "google-ai-studio/gemini-2.5-flash" : "google-ai-studio/gemini-2.5-flash";
-      response = await fetch(CF_GATEWAY_URL_MAIN, {
+      console.error("Cloudflare failed:", response.status, errorText, "- falling back to Lovable Gateway");
+      response = await fetch(LOVABLE_GATEWAY_URL_MAIN, {
         method: "POST",
-        headers: { Authorization: `Bearer ${CF_API_TOKEN_MAIN}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...JSON.parse(mainBody), model: cfModel }),
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...JSON.parse(mainBody), model: "google/gemini-2.5-flash" }),
       });
     }
 
