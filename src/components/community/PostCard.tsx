@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download, Gift, Copy, Link as LinkIcon } from "lucide-react";
+import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download, Gift, Copy, Link as LinkIcon, Sparkles } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getProfilePath, getPostPath } from "@/lib/profileUrl";
 import { Card, CardContent } from "@/components/ui/card";
@@ -355,13 +355,50 @@ export function PostCard({
   const sharesCount = post.shares_count || 0;
   const isNearThreshold = likesCount >= 3 && likesCount < 5;
 
+  // Celebration post helpers
+  const isCelebration = (post as any).post_type === "celebration";
+  const celebrationMeta = isCelebration ? (post as any).metadata : null;
+  const expiresAt = isCelebration ? (post as any).expires_at : null;
+  const [countdownText, setCountdownText] = useState("");
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const update = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) { setCountdownText("Đã hết hạn"); return; }
+      const hours = Math.floor(diff / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      setCountdownText(`${hours}h ${mins}m`);
+    };
+    update();
+    const id = setInterval(update, 60000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
   return (
     <>
       <Card className={`
         overflow-hidden transition-all duration-300 w-full max-w-full
-        ${post.is_rewarded ? 'border-amber-300 bg-gradient-to-r from-amber-50/50 to-orange-50/30' : 'border-primary/10'}
+        ${isCelebration ? 'border-amber-400 bg-gradient-to-br from-amber-50/60 via-yellow-50/40 to-orange-50/30 shadow-[0_0_20px_-5px_rgba(218,165,32,0.2)]' : ''}
+        ${!isCelebration && post.is_rewarded ? 'border-amber-300 bg-gradient-to-r from-amber-50/50 to-orange-50/30' : ''}
+        ${!isCelebration && !post.is_rewarded ? 'border-primary/10' : ''}
       `}>
         <CardContent className="p-4 sm:p-5 overflow-hidden">
+          {/* Celebration Badge */}
+          {isCelebration && (
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-amber-200/60">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-bold shadow-sm">
+                <Gift className="w-3.5 h-3.5" />
+                Thiệp Tặng Thưởng
+              </span>
+              {expiresAt && countdownText && (
+                <span className="text-xs text-amber-600/80 font-medium">
+                  ⏳ {countdownText}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex items-start gap-3 mb-4 min-w-0">
             <Link to={getProfilePath(post.user_id, (post as any).user_handle)}>
@@ -395,7 +432,7 @@ export function PostCard({
             </div>
 
             {/* Owner Actions Menu */}
-            {isOwner && (
+            {isOwner && !isCelebration && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -418,6 +455,27 @@ export function PostCard({
               </DropdownMenu>
             )}
           </div>
+
+          {/* Celebration Token Info */}
+          {isCelebration && celebrationMeta && (
+            <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-amber-100/60 to-yellow-100/40 border border-amber-200/50">
+              <div className="flex items-center gap-2 text-sm font-semibold text-amber-800">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>{celebrationMeta.amount?.toLocaleString()} {celebrationMeta.token_symbol}</span>
+                <span className="text-amber-600/70 font-normal">• Web3 On-chain</span>
+              </div>
+              {celebrationMeta.tx_hash && (
+                <a
+                  href={`https://bscscan.com/tx/${celebrationMeta.tx_hash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-amber-600 hover:underline mt-1 inline-block"
+                >
+                  🔗 Xem giao dịch
+                </a>
+              )}
+            </div>
+          )}
 
           {/* Content - Normal or Edit Mode */}
           {isEditing ? (

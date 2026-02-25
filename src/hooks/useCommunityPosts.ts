@@ -21,6 +21,9 @@ export interface CommunityPost {
   slug?: string;
   is_liked_by_me?: boolean;
   is_shared_by_me?: boolean;
+  post_type?: string;
+  metadata?: any;
+  expires_at?: string | null;
 }
 
 export interface CommunityComment {

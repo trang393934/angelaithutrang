@@ -234,6 +234,82 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
     }
   };
 
+  // Auto-post celebration to community newsfeed
+  const autoPostCelebration = async (celData: CelebrationData, tokenSymbol: string) => {
+    try {
+      if (!user?.id) return;
+      const tokenLabel = tokenSymbol === "FUN" ? "FUN Money"
+        : tokenSymbol === "CAMLY" ? "CAMLY"
+        : tokenSymbol === "USDT" ? "USDT"
+        : tokenSymbol === "BNB" ? "BNB"
+        : tokenSymbol === "BTC" ? "BTC"
+        : "Token";
+      const content = `🎁 ${celData.sender_name} đã tặng ${celData.amount.toLocaleString()} ${tokenLabel} cho ${celData.receiver_name}! ✨${celData.message ? `\n💬 "${celData.message}"` : ""}\n🌟 Cùng chung tay xây dựng cộng đồng yêu thương!`;
+
+      const { error } = await supabase.from("community_posts").insert({
+        user_id: user.id,
+        content,
+        post_type: "celebration",
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        metadata: {
+          gift_type: "web3",
+          token_type: celData.tokenType,
+          token_symbol: tokenLabel,
+          amount: celData.amount,
+          receiver_id: celData.receiver_id,
+          receiver_name: celData.receiver_name,
+          tx_hash: celData.tx_hash,
+          receipt_public_id: celData.receipt_public_id,
+        },
+        slug: `celebration-${Date.now()}`,
+      } as any);
+      if (error) {
+        console.error("[AutoPost] Insert failed:", error);
+      } else {
+        console.log("[AutoPost] Celebration post created successfully");
+      }
+    } catch (err) {
+      console.warn("[AutoPost] Error:", err);
+    }
+  };
+
+  // Auto-send notification to receiver
+  const autoSendNotification = async (celData: CelebrationData, tokenSymbol: string) => {
+    try {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!celData.receiver_id || !uuidRegex.test(celData.receiver_id)) return;
+      if (!user?.id || celData.receiver_id === user.id) return;
+
+      const tokenLabel = tokenSymbol === "FUN" ? "FUN Money"
+        : tokenSymbol === "CAMLY" ? "CAMLY"
+        : tokenSymbol === "USDT" ? "USDT"
+        : tokenSymbol === "BNB" ? "BNB"
+        : tokenSymbol === "BTC" ? "BTC"
+        : "Token";
+
+      const { error } = await supabase.from("notifications").insert({
+        user_id: celData.receiver_id,
+        type: "gift_received",
+        title: "🎁 Bạn nhận được quà!",
+        content: `${celData.sender_name} đã tặng bạn ${celData.amount.toLocaleString()} ${tokenLabel} on-chain`,
+        actor_id: user.id,
+        reference_type: "gift",
+        metadata: {
+          amount: celData.amount,
+          token_type: celData.tokenType,
+          tx_hash: celData.tx_hash,
+        },
+      });
+      if (error) {
+        console.error("[AutoNotify] Insert failed:", error);
+      } else {
+        console.log("[AutoNotify] Notification sent to:", celData.receiver_id);
+      }
+    } catch (err) {
+      console.warn("[AutoNotify] Error:", err);
+    }
+  };
+
   const handleSendGift = async () => {
     if (!selectedUser || !amount) return;
 
@@ -387,8 +463,7 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
     onOpenChange(false);
     setShowCelebration(true);
 
-    // Auto-send DM
-    autoSendDM({
+    const celDataFull: CelebrationData = {
       receipt_public_id: "",
       sender_id: user!.id,
       sender_name: senderName,
@@ -401,7 +476,16 @@ export function GiftCoinDialog({ open, onOpenChange, preselectedUser, contextTyp
       tx_hash: result.txHash || null,
       tokenType: resolvedTokenType as any,
       explorerUrl: resolvedExplorer,
-    });
+    };
+
+    // Auto-send DM
+    autoSendDM(celDataFull);
+
+    // Auto-post celebration to community newsfeed (expires after 24h)
+    autoPostCelebration(celDataFull, tokenSymbol);
+
+    // Auto-send notification to receiver
+    autoSendNotification(celDataFull, tokenSymbol);
   };
 
   const numAmount = Number(amount);
