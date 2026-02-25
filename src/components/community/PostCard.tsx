@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download, Gift, Copy, Link as LinkIcon, Sparkles } from "lucide-react";
+import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download, Gift, Copy, Link as LinkIcon, Sparkles, ArrowRight, ExternalLink } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getProfilePath, getPostPath } from "@/lib/profileUrl";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { LikeButtonWithReactions, ReactionType } from "./PostReactionPicker";
 import ShareDialog from "@/components/ShareDialog";
 import { LinkifiedContent } from "./LinkifiedContent";
 import { toast } from "sonner";
+import { CelebrationPostCard } from "./CelebrationPostCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -456,25 +457,9 @@ export function PostCard({
             )}
           </div>
 
-          {/* Celebration Token Info */}
+          {/* Celebration Rich Card */}
           {isCelebration && celebrationMeta && (
-            <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-amber-100/60 to-yellow-100/40 border border-amber-200/50">
-              <div className="flex items-center gap-2 text-sm font-semibold text-amber-800">
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>{celebrationMeta.amount?.toLocaleString()} {celebrationMeta.token_symbol}</span>
-                <span className="text-amber-600/70 font-normal">• Web3 On-chain</span>
-              </div>
-              {celebrationMeta.tx_hash && (
-                <a
-                  href={`https://bscscan.com/tx/${celebrationMeta.tx_hash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-amber-600 hover:underline mt-1 inline-block"
-                >
-                  🔗 Xem giao dịch
-                </a>
-              )}
-            </div>
+            <CelebrationPostCard meta={celebrationMeta} />
           )}
 
           {/* Content - Normal or Edit Mode */}
