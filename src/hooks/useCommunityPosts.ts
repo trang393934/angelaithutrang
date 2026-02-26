@@ -17,8 +17,13 @@ export interface CommunityPost {
   created_at: string;
   user_display_name?: string;
   user_avatar_url?: string;
+  user_handle?: string | null;
+  slug?: string;
   is_liked_by_me?: boolean;
   is_shared_by_me?: boolean;
+  post_type?: string;
+  metadata?: any;
+  expires_at?: string | null;
 }
 
 export interface CommunityComment {
@@ -52,6 +57,8 @@ export function useCommunityPosts() {
   
   // Track pending actions to skip realtime updates for posts being interacted with
   const pendingActionsRef = useRef<Set<string>>(new Set());
+  // Track whether initial fetch has completed to avoid showing loading spinner on realtime refetches
+  const initialFetchDoneRef = useRef(false);
 
   const fetchDailyLimits = useCallback(async () => {
     if (!user) return;
@@ -86,8 +93,9 @@ export function useCommunityPosts() {
     }
   }, [user]);
 
-  const fetchPosts = useCallback(async () => {
-    setIsLoading(true);
+  const fetchPosts = useCallback(async (showLoading = true) => {
+    // Only show loading spinner on initial fetch, not on realtime-triggered refetches
+    if (showLoading && !initialFetchDoneRef.current) setIsLoading(true);
     try {
       let query = supabase
         .from("community_posts")
@@ -110,7 +118,7 @@ export function useCommunityPosts() {
       // Fetch profiles
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url")
+        .select("user_id, display_name, avatar_url, handle")
         .in("user_id", userIds);
 
       // Check if current user liked/shared posts
@@ -146,6 +154,7 @@ export function useCommunityPosts() {
            image_urls: post.image_urls ?? [],
           user_display_name: profile?.display_name || "Người dùng ẩn danh",
           user_avatar_url: profile?.avatar_url || null,
+          user_handle: profile?.handle || null,
           is_liked_by_me: userLikes.includes(post.id),
           is_shared_by_me: userShares.includes(post.id),
         };
@@ -156,12 +165,13 @@ export function useCommunityPosts() {
       console.error("Error fetching posts:", error);
     } finally {
       setIsLoading(false);
+      initialFetchDoneRef.current = true;
     }
   }, [user, sortBy]);
 
   const createPost = async (content: string, imageUrls?: string[]) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
@@ -191,7 +201,7 @@ export function useCommunityPosts() {
 
   const toggleLike = async (postId: string) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     // Find current post state for optimistic update
@@ -271,7 +281,7 @@ export function useCommunityPosts() {
 
   const sharePost = async (postId: string) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
@@ -308,7 +318,7 @@ export function useCommunityPosts() {
 
   const addComment = async (postId: string, content: string) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
@@ -367,7 +377,7 @@ export function useCommunityPosts() {
 
   const editPost = async (postId: string, content: string, imageUrls?: string[]) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
@@ -399,7 +409,7 @@ export function useCommunityPosts() {
 
   const deletePost = async (postId: string) => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
@@ -455,7 +465,7 @@ export function useCommunityPosts() {
 
           // Handle INSERT - refetch to get complete data with profiles
           if (payload.eventType === "INSERT") {
-            fetchPosts();
+            fetchPosts(false);
             return;
           }
 

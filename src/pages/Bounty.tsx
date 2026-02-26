@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { LightGate } from "@/components/LightGate";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,9 +72,7 @@ export default function Bounty() {
   const [submissionUrl, setSubmissionUrl] = useState("");
 
   useEffect(() => {
-    if (user) {
-      fetchData();
-    }
+    fetchData();
   }, [user]);
 
   const fetchData = async () => {
@@ -183,34 +181,8 @@ export default function Bounty() {
     return submissions.some(s => s.task_id === taskId && s.status !== "rejected");
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8 pt-28">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
-              <Trophy className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold">Bounty Tasks</h1>
-            <p className="text-muted-foreground">
-              Đăng nhập để xem và hoàn thành các nhiệm vụ kiếm Camly Coin
-            </p>
-            <Button asChild size="lg" className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
-              <Link to="/auth">
-                Đăng nhập ngay
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
-    <LightGate>
+    <>
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8 pt-28">
@@ -276,7 +248,7 @@ export default function Bounty() {
                           </p>
                           
                           <div className="flex items-center gap-2 text-lg font-bold text-orange-600">
-                            <img src={camlyCoinLogo} alt="Camly" className="w-6 h-6" />
+                            <img src={camlyCoinLogo} alt="Camly" className="w-6 h-6 rounded-full" />
                             {task.reward_amount.toLocaleString()} Coin
                           </div>
 
@@ -458,6 +430,6 @@ export default function Bounty() {
           </DialogContent>
         </Dialog>
       </div>
-    </LightGate>
+    </>
   );
 }

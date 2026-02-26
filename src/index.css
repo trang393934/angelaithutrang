@@ -2,124 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600&family=Great+Vibes&family=Cinzel:wght@400;500;600;700;800;900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.cdnfonts.com/css/sweet-dreams');
 
 @layer base {
   :root {
-    /* Angel AI - Enlightened Tech Luxury Design System */
+    /* Angel AI - Golden Luxe Design System */
     
-    /* Pure Light Backgrounds */
-    --background: 0 0% 98%;
-    --background-pure: 0 0% 100%;
-    --background-ivory: 40 20% 99%;
+    /* Pure Light Backgrounds - Warm Ivory Tint */
+    --background: 45 15% 98%;
+    --background-pure: 45 10% 99.5%;
+    --background-ivory: 43 20% 98%;
+
+    /* Premium Dark Surface - Near-black with warm gold tint */
+    --surface-dark: 30 8% 11%;
     
-    --foreground: 220 20% 6%;
-    --foreground-muted: 220 15% 20%;
+    --foreground: 30 20% 8%;
+    --foreground-muted: 35 15% 25%;
 
-    /* Card & Surface */
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 6%;
+    /* Card & Surface - Warm White */
+    --card: 45 12% 99%;
+    --card-foreground: 30 20% 8%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 6%;
+    --popover: 45 12% 99%;
+    --popover-foreground: 30 20% 8%;
 
-    /* Sapphire Blue Primary - Cosmic Intelligence */
-    --primary: 214 82% 34%;
-    --primary-deep: 214 90% 28%;
-    --primary-medium: 210 79% 46%;
-    --primary-soft: 207 73% 57%;
-    --primary-light: 207 89% 86%;
-    --primary-pale: 207 100% 94%;
+    /* Metallic Gold Primary - Luxurious Warmth */
+    --primary: 38 70% 38%;
+    --primary-deep: 35 75% 28%;
+    --primary-medium: 40 65% 50%;
+    --primary-soft: 42 60% 60%;
+    --primary-light: 45 70% 88%;
+    --primary-pale: 47 80% 95%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Soft Sapphire */
-    --secondary: 207 100% 96%;
-    --secondary-foreground: 214 82% 34%;
+    /* Secondary - Soft Gold */
+    --secondary: 45 60% 96%;
+    --secondary-foreground: 35 75% 28%;
 
-    /* Muted */
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 16% 47%;
+    /* Muted - Warm Neutral */
+    --muted: 40 18% 96%;
+    --muted-foreground: 35 14% 46%;
 
-    /* Accent - Champagne Gold Hint */
-    --accent: 50 100% 97%;
-    --accent-gold: 43 55% 88%;
-    --accent-foreground: 214 82% 34%;
+    /* Accent - Rich Champagne */
+    --accent: 47 65% 96%;
+    --accent-gold: 43 65% 82%;
+    --accent-foreground: 35 75% 28%;
 
     /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders & Inputs */
-    --border: 210 30% 92%;
-    --border-light: 210 40% 96%;
-    --input: 210 30% 92%;
-    --ring: 214 82% 34%;
+    /* Borders & Inputs - Warm */
+    --border: 40 25% 90%;
+    --border-light: 43 30% 94%;
+    --input: 40 25% 90%;
+    --ring: 38 70% 38%;
 
     --radius: 1rem;
 
-    /* Sacred Gradients */
-    --gradient-cosmic: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(207 100% 96%) 50%, hsl(207 89% 90%) 100%);
-    --gradient-sapphire: linear-gradient(135deg, hsl(214 82% 34%) 0%, hsl(210 79% 46%) 100%);
-    --gradient-light: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(207 100% 98%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(207 100% 97%) 30%, hsl(207 89% 92%) 100%);
+    /* Sacred Gradients - Golden */
+    --gradient-cosmic: linear-gradient(180deg, hsl(45 10% 99.5%) 0%, hsl(45 60% 96%) 50%, hsl(45 70% 90%) 100%);
+    --gradient-sapphire: linear-gradient(135deg, hsl(38 80% 36%) 0%, hsl(43 90% 55%) 35%, hsl(48 95% 75%) 50%, hsl(43 90% 55%) 65%, hsl(38 80% 36%) 100%);
+    --gradient-light: linear-gradient(180deg, hsl(45 10% 99.5%) 0%, hsl(47 50% 97%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(45 10% 99.5%) 0%, hsl(45 55% 97%) 30%, hsl(45 65% 93%) 100%);
     
-    /* Sacred Shadows */
-    --shadow-soft: 0 4px 24px -4px hsla(214, 82%, 34%, 0.08);
-    --shadow-glow: 0 0 40px -10px hsla(214, 82%, 34%, 0.15);
-    --shadow-divine: 0 8px 40px -8px hsla(214, 82%, 34%, 0.12);
-    --shadow-button: 0 4px 16px -4px hsla(214, 82%, 34%, 0.25);
+    /* Sacred Shadows - Golden Glow */
+    --shadow-soft: 0 4px 24px -4px hsla(38, 70%, 38%, 0.1);
+    --shadow-glow: 0 0 40px -10px hsla(38, 70%, 38%, 0.18);
+    --shadow-divine: 0 8px 40px -8px hsla(38, 70%, 38%, 0.14);
+    --shadow-button: 0 4px 16px -4px hsla(35, 75%, 28%, 0.3);
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5% 26%;
-    --sidebar-primary: 214 82% 34%;
+    /* Sidebar - Warm Gold */
+    --sidebar-background: 45 18% 97%;
+    --sidebar-foreground: 35 12% 28%;
+    --sidebar-primary: 40 85% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 207 100% 96%;
-    --sidebar-accent-foreground: 214 82% 34%;
-    --sidebar-border: 210 30% 92%;
-    --sidebar-ring: 214 82% 34%;
+    --sidebar-accent: 45 55% 95%;
+    --sidebar-accent-foreground: 35 75% 28%;
+    --sidebar-border: 40 25% 90%;
+    --sidebar-ring: 40 85% 42%;
   }
 
   .dark {
-    --background: 220 25% 6%;
-    --background-pure: 220 30% 4%;
-    --foreground: 0 0% 98%;
-    --foreground-muted: 210 20% 70%;
+    --background: 30 15% 7%;
+    --background-pure: 30 18% 5%;
+    --surface-dark: 30 8% 8%;
+    --foreground: 40 15% 95%;
+    --foreground-muted: 38 18% 70%;
 
-    --card: 220 25% 8%;
-    --card-foreground: 0 0% 98%;
+    --card: 32 15% 10%;
+    --card-foreground: 40 15% 95%;
 
-    --popover: 220 25% 8%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 32 15% 10%;
+    --popover-foreground: 40 15% 95%;
 
-    --primary: 207 73% 57%;
-    --primary-deep: 210 79% 46%;
-    --primary-foreground: 220 25% 6%;
+    --primary: 42 65% 55%;
+    --primary-deep: 40 70% 45%;
+    --primary-foreground: 30 15% 7%;
 
-    --secondary: 217 33% 12%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 35 25% 14%;
+    --secondary-foreground: 40 15% 95%;
 
-    --muted: 217 33% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 35 20% 16%;
+    --muted-foreground: 38 18% 65%;
 
-    --accent: 217 33% 15%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 35 25% 16%;
+    --accent-foreground: 40 15% 95%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 207 73% 57%;
+    --border: 35 22% 20%;
+    --input: 35 22% 20%;
+    --ring: 42 65% 55%;
     
-    --sidebar-background: 220 25% 6%;
-    --sidebar-foreground: 210 20% 85%;
-    --sidebar-primary: 207 73% 57%;
+    --sidebar-background: 30 15% 7%;
+    --sidebar-foreground: 38 18% 85%;
+    --sidebar-primary: 40 85% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 12%;
-    --sidebar-accent-foreground: 210 20% 85%;
-    --sidebar-border: 217 33% 18%;
-    --sidebar-ring: 207 73% 57%;
+    --sidebar-accent: 35 25% 14%;
+    --sidebar-accent-foreground: 38 18% 85%;
+    --sidebar-border: 35 22% 20%;
+    --sidebar-ring: 40 85% 42%;
   }
 }
 
@@ -153,7 +158,25 @@
     font-family: 'Be Vietnam Pro', 'Noto Sans', system-ui, sans-serif;
     font-weight: 600;
     letter-spacing: -0.01em;
-    line-height: 1.35;
+    line-height: 1.5;
+    padding-top: 0.15em;
+  }
+
+  /* Vietnamese diacritics fix for large uppercase titles */
+  .vn-title-lg,
+  .text-3xl,
+  .text-4xl,
+  .text-5xl,
+  .text-6xl {
+    line-height: 1.4 !important;
+    padding-top: 0.2em;
+    overflow: visible;
+  }
+  
+  /* Specific fix for uppercase Vietnamese titles */
+  .uppercase {
+    padding-top: 0.15em;
+    line-height: 1.5;
   }
 
   /* Ensure Vietnamese diacritics render correctly */
@@ -241,25 +264,336 @@
     transform: translateY(-2px);
   }
 
-  /* Button Sacred Variants */
+  /* ===== Golden 3D Button System - Metallic Brushed Gold ===== */
+
+  /* Default: Metallic Gold 3D - Brushed Metal */
+  .btn-golden-3d {
+    background:
+      linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.45) 35%, rgba(255,255,255,0.1) 45%, transparent 55%, rgba(255,255,255,0.2) 70%, transparent 80%),
+      linear-gradient(180deg, #C49B30 0%, #E8C252 15%, #F5D976 35%, #FFF4C8 50%, #F5D976 65%, #E8C252 85%, #C49B30 100%);
+    border: 1.5px solid #B8860B;
+    box-shadow:
+      0 1px 0 0 rgba(255, 248, 200, 0.7) inset,
+      0 -1px 0 0 rgba(139, 105, 20, 0.4) inset,
+      0 4px 8px -2px rgba(139, 105, 20, 0.45),
+      0 8px 20px -4px rgba(139, 105, 20, 0.25),
+      0 1px 3px rgba(0, 0, 0, 0.15);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+    color: #3D2800;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-golden-3d::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 70%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 252, 235, 0.6), transparent);
+    transition: left 0.6s ease;
+    pointer-events: none;
+  }
+
+  .btn-golden-3d:hover::before {
+    left: 160%;
+  }
+
+  .btn-golden-3d:hover {
+    transform: translateY(-2px) scale(1.02);
+    border-color: #DAA520;
+    box-shadow:
+      0 1px 0 0 rgba(255, 248, 200, 0.8) inset,
+      0 -1px 0 0 rgba(139, 105, 20, 0.4) inset,
+      0 6px 14px -2px rgba(139, 105, 20, 0.5),
+      0 12px 28px -4px rgba(218, 165, 32, 0.3),
+      0 0 24px -4px rgba(245, 217, 118, 0.4);
+  }
+
+  .btn-golden-3d:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow:
+      0 1px 2px rgba(139, 105, 20, 0.3),
+      inset 0 2px 4px rgba(100, 75, 10, 0.25),
+      inset 0 -1px 1px rgba(255, 248, 200, 0.3);
+  }
+
+  /* Destructive: Red with 3D metallic effect */
+  .btn-golden-destructive {
+    background:
+      linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.35) 35%, transparent 50%, rgba(255,255,255,0.15) 70%, transparent 80%),
+      linear-gradient(180deg, #B91C1C 0%, #DC2626 20%, #EF4444 45%, #FCA5A5 55%, #EF4444 70%, #DC2626 85%, #B91C1C 100%);
+    border: 1.5px solid #991B1B;
+    box-shadow:
+      0 1px 0 0 rgba(255, 180, 180, 0.5) inset,
+      0 -1px 0 0 rgba(100, 10, 10, 0.35) inset,
+      0 4px 8px -2px rgba(153, 27, 27, 0.45),
+      0 8px 20px -4px rgba(153, 27, 27, 0.25);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-golden-destructive::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 70%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 210, 210, 0.5), transparent);
+    transition: left 0.6s ease;
+    pointer-events: none;
+  }
+
+  .btn-golden-destructive:hover::before {
+    left: 160%;
+  }
+
+  .btn-golden-destructive:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow:
+      0 1px 0 0 rgba(255, 180, 180, 0.6) inset,
+      0 -1px 0 0 rgba(100, 10, 10, 0.4) inset,
+      0 6px 14px -2px rgba(153, 27, 27, 0.5),
+      0 12px 28px -4px rgba(220, 38, 38, 0.3),
+      0 0 24px -4px rgba(239, 68, 68, 0.4);
+  }
+
+  .btn-golden-destructive:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow:
+      0 1px 2px rgba(153, 27, 27, 0.3),
+      inset 0 2px 4px rgba(80, 10, 10, 0.3);
+  }
+
+  /* Outline: Gold border, transparent bg */
+  .btn-golden-outline {
+    background: transparent;
+    border: 2px solid #DAA520;
+    color: #8B6914;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 4px -1px rgba(139, 105, 20, 0.15);
+  }
+
+  .btn-golden-outline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 70%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(245, 217, 118, 0.25), transparent);
+    transition: left 0.6s ease;
+    pointer-events: none;
+  }
+
+  .btn-golden-outline:hover::before {
+    left: 160%;
+  }
+
+  .btn-golden-outline:hover {
+    background:
+      linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.4) 35%, transparent 50%, rgba(255,255,255,0.15) 70%, transparent 80%),
+      linear-gradient(180deg, #C49B30 0%, #E8C252 20%, #F5D976 45%, #FFF4C8 55%, #F5D976 70%, #E8C252 85%, #C49B30 100%);
+    color: #3D2800;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    border-color: #B8860B;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow:
+      0 4px 10px -2px rgba(139, 105, 20, 0.45),
+      0 0 20px -4px rgba(232, 194, 82, 0.3),
+      inset 0 1px 0 rgba(255, 248, 200, 0.6);
+  }
+
+  .btn-golden-outline:active {
+    transform: translateY(1px) scale(0.98);
+  }
+
+  /* Secondary: Soft golden champagne */
+  .btn-golden-secondary {
+    background:
+      linear-gradient(105deg, transparent 25%, rgba(255,255,255,0.3) 40%, transparent 55%),
+      linear-gradient(180deg, hsl(45, 55%, 90%) 0%, hsl(43, 60%, 86%) 40%, hsl(45, 65%, 92%) 60%, hsl(43, 55%, 88%) 100%);
+    color: #6B4F0A;
+    font-weight: 600;
+    border: 1.5px solid hsl(43, 45%, 78%);
+    box-shadow:
+      0 1px 0 0 rgba(255, 250, 230, 0.6) inset,
+      0 -1px 0 0 rgba(139, 105, 20, 0.15) inset,
+      0 2px 6px -2px rgba(139, 105, 20, 0.18);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-golden-secondary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 70%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 250, 220, 0.5), transparent);
+    transition: left 0.6s ease;
+    pointer-events: none;
+  }
+
+  .btn-golden-secondary:hover::before {
+    left: 160%;
+  }
+
+  .btn-golden-secondary:hover {
+    transform: translateY(-1px);
+    border-color: hsl(43, 50%, 70%);
+    box-shadow:
+      0 1px 0 0 rgba(255, 250, 230, 0.7) inset,
+      0 4px 10px -2px rgba(139, 105, 20, 0.25),
+      0 0 16px -4px rgba(232, 194, 82, 0.2);
+  }
+
+  .btn-golden-secondary:active {
+    transform: translateY(1px) scale(0.98);
+  }
+
+  /* ===== Section Title Bar - Metallic Gold Badge ===== */
+  .section-title-gold {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #3D2800;
+    border: 1.5px solid #B8860B;
+    background:
+      linear-gradient(105deg, transparent 15%, rgba(255,255,255,0.5) 30%, rgba(255,255,255,0.1) 45%, transparent 55%, rgba(255,255,255,0.25) 72%, transparent 85%),
+      linear-gradient(180deg, #C49B30 0%, #E8C252 12%, #F5D976 30%, #FFF4C8 48%, #F5D976 65%, #E8C252 82%, #C49B30 100%);
+    box-shadow:
+      0 1px 0 0 rgba(255, 248, 200, 0.7) inset,
+      0 -1px 0 0 rgba(139, 105, 20, 0.35) inset,
+      0 3px 8px -2px rgba(139, 105, 20, 0.35),
+      0 6px 16px -4px rgba(139, 105, 20, 0.2);
+    text-shadow: 0 1px 1px rgba(255, 248, 200, 0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section-title-gold::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 70%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 252, 235, 0.55), transparent);
+    animation: shimmer-title 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes shimmer-title {
+    0% { left: -120%; }
+    50% { left: 160%; }
+    100% { left: 160%; }
+  }
+
+  /* White text variant for dark backgrounds */
+  .section-title-gold-light {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #FFFFFF;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    border: 1.5px solid #8B6914;
+    background:
+      linear-gradient(105deg, transparent 15%, rgba(255,255,255,0.3) 30%, transparent 50%, rgba(255,255,255,0.15) 72%, transparent 85%),
+      linear-gradient(180deg, #7A5C10 0%, #8B6914 15%, #B8860B 35%, #C49B30 50%, #B8860B 65%, #8B6914 85%, #7A5C10 100%);
+    box-shadow:
+      0 1px 0 0 rgba(196, 155, 48, 0.5) inset,
+      0 -1px 0 0 rgba(80, 55, 5, 0.4) inset,
+      0 3px 8px -2px rgba(100, 75, 10, 0.4),
+      0 6px 16px -4px rgba(100, 75, 10, 0.25);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section-title-gold-light::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 70%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 245, 200, 0.35), transparent);
+    animation: shimmer-title 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* Button Sacred Variants - Metallic Gold Shine (legacy) */
   .btn-sacred {
     @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-medium text-primary-foreground transition-all duration-500;
-    background: var(--gradient-sapphire);
-    box-shadow: var(--shadow-button);
+    background: linear-gradient(135deg, hsl(35, 75%, 28%) 0%, hsl(40, 70%, 42%) 25%, hsl(43, 80%, 55%) 50%, hsl(40, 70%, 42%) 75%, hsl(35, 75%, 28%) 100%);
+    background-size: 200% 100%;
+    box-shadow: var(--shadow-button), inset 0 1px 1px rgba(255, 235, 170, 0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-sacred::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 245, 200, 0.45), transparent);
+    transition: left 0.6s ease;
+  }
+
+  .btn-sacred:hover::before {
+    left: 150%;
   }
 
   .btn-sacred:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 24px -4px hsla(214, 82%, 34%, 0.35);
+    background-position: 100% 0;
+    box-shadow: 0 8px 24px -4px hsla(35, 75%, 28%, 0.4), 0 0 20px -4px hsla(43, 80%, 55%, 0.3), inset 0 1px 1px rgba(255, 235, 170, 0.5);
   }
 
   .btn-sacred-outline {
     @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-medium border-2 border-primary text-primary bg-transparent transition-all duration-500;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-sacred-outline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsla(43, 80%, 55%, 0.15), transparent);
+    transition: left 0.6s ease;
+  }
+
+  .btn-sacred-outline:hover::before {
+    left: 150%;
   }
 
   .btn-sacred-outline:hover {
-    @apply bg-primary text-primary-foreground;
+    @apply text-primary-foreground;
+    background: linear-gradient(135deg, hsl(35, 75%, 28%) 0%, hsl(40, 70%, 42%) 25%, hsl(43, 80%, 55%) 50%, hsl(40, 70%, 42%) 75%, hsl(35, 75%, 28%) 100%);
     transform: translateY(-1px);
+    box-shadow: 0 4px 16px -4px hsla(35, 75%, 28%, 0.4), inset 0 1px 1px rgba(255, 235, 170, 0.4);
   }
 
   /* Input Sacred */
@@ -269,7 +603,7 @@
 
   .input-sacred:focus {
     @apply outline-none border-primary;
-    box-shadow: 0 0 0 4px hsla(214, 82%, 34%, 0.1), var(--shadow-glow);
+    box-shadow: 0 0 0 4px hsla(38, 70%, 38%, 0.12), var(--shadow-glow);
   }
 
   /* Angelic Decorative Elements */
@@ -284,7 +618,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(ellipse at 50% 0%, hsla(207, 89%, 86%, 0.3) 0%, transparent 60%);
+    background: radial-gradient(ellipse at 50% 0%, hsla(45, 70%, 88%, 0.35) 0%, transparent 60%);
     pointer-events: none;
   }
 
@@ -301,7 +635,7 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, hsla(207, 89%, 86%, 0.1) 60deg, transparent 120deg);
+    background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, hsla(45, 70%, 88%, 0.12) 60deg, transparent 120deg);
     animation: rotate-light 20s linear infinite;
     pointer-events: none;
   }
@@ -310,6 +644,64 @@
   .divider-sacred {
     @apply w-24 h-px mx-auto;
     background: linear-gradient(90deg, transparent, hsl(var(--primary-light)), transparent);
+  }
+
+  /* Brand Golden Text - Ornate Script with Metallic Gold Effect */
+  .text-brand-golden {
+    font-family: 'Sweet Dreams', 'Great Vibes', cursive;
+    letter-spacing: 0.03em;
+    font-weight: 400;
+    background: linear-gradient(
+      135deg,
+      #8B6914 0%,
+      #C49B30 20%,
+      #E8C252 40%,
+      #F5D976 50%,
+      #E8C252 60%,
+      #C49B30 80%,
+      #8B6914 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(139, 105, 20, 0.3))
+           drop-shadow(0 4px 8px rgba(139, 105, 20, 0.15));
+    transition: background-position 0.6s ease;
+    line-height: 1.2;
+  }
+
+  .text-brand-golden:hover {
+    background-position: 100% 0;
+  }
+
+  /* Brand golden for dark backgrounds (footer, etc.) */
+  .text-brand-golden-light {
+    font-family: 'Sweet Dreams', 'Great Vibes', cursive;
+    letter-spacing: 0.03em;
+    font-weight: 400;
+    background: linear-gradient(
+      135deg,
+      #C49B30 0%,
+      #E8C252 20%,
+      #F5D976 40%,
+      #FFF4C8 50%,
+      #F5D976 60%,
+      #E8C252 80%,
+      #C49B30 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 6px rgba(218, 165, 32, 0.5))
+           drop-shadow(0 4px 10px rgba(218, 165, 32, 0.25));
+    transition: background-position 0.6s ease;
+    line-height: 1.2;
+  }
+
+  .text-brand-golden-light:hover {
+    background-position: 100% 0;
   }
 }
 
@@ -343,7 +735,7 @@
 
   /* Sacred Backgrounds */
   .bg-primary-deep {
-    background-color: hsl(var(--primary-deep));
+    background-color: hsl(var(--surface-dark));
   }
 
   .bg-primary-light {
@@ -376,15 +768,42 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Sacred visible scrollbar (for fixed sidebars, etc.) */
+  .scrollbar-sacred {
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    scrollbar-color: hsl(var(--primary) / 0.5) transparent;
+  }
+
+  .scrollbar-sacred::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .scrollbar-sacred::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-sacred::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.35);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .scrollbar-sacred::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.55);
+    background-clip: content-box;
+  }
 }
 
 /* Keyframe Animations */
 @keyframes sacred-pulse {
   0%, 100% {
-    box-shadow: 0 0 20px -5px hsla(214, 82%, 34%, 0.15);
+    box-shadow: 0 0 20px -5px hsla(38, 70%, 38%, 0.18);
   }
   50% {
-    box-shadow: 0 0 40px -5px hsla(214, 82%, 34%, 0.25);
+    box-shadow: 0 0 40px -5px hsla(38, 70%, 38%, 0.3);
   }
 }
 
@@ -497,3 +916,13 @@
 .mobile-nav-item:nth-child(6) { animation-delay: 0.3s; }
 .mobile-nav-item:nth-child(7) { animation-delay: 0.35s; }
 .mobile-nav-item:nth-child(8) { animation-delay: 0.4s; }
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

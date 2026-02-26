@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
+import { checkAntiSybil, applyAgeGateReward, extractIpHash, registerDeviceAndIp } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -78,7 +80,7 @@ serve(async (req) => {
     console.log(`Processing journal reward for authenticated user: ${userId}`);
 
     // Get content and journalType from body (NOT userId)
-    const { content, journalType } = await req.json();
+    const { content, journalType, device_hash } = await req.json();
 
     if (!content || !journalType) {
       return new Response(
@@ -89,6 +91,27 @@ serve(async (req) => {
 
     // Use service role for database operations
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ============= ANTI-SYBIL: Account Age Gate + Suspension Check =============
+    const antiSybil = await checkAntiSybil(supabase, userId, 'journal');
+
+    // Register device fingerprint + IP hash (fire and forget)
+    const ipHash = await extractIpHash(req);
+    registerDeviceAndIp(supabase, userId, device_hash || null, ipHash);
+
+    if (!antiSybil.allowed) {
+      console.log(`[AntiSybil] Blocked user ${userId}: ${antiSybil.reason}`);
+      return new Response(
+        JSON.stringify({ 
+          rewarded: false, 
+          reason: antiSybil.is_suspended ? "suspended" : "frozen",
+          message: antiSybil.reason || "Tài khoản đang bị giới hạn",
+          coins: 0,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // ============= End Anti-Sybil Check =============
 
     // Check if it's after 8pm Vietnam time
     const vietnamTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
@@ -268,15 +291,20 @@ serve(async (req) => {
 
     if (LOVABLE_API_KEY) {
       try {
-        const analysisResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
-            messages: [
+        // --- AI Gateway Config ---
+        const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+        const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+        const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
+        const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
+        const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
+        const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
+        if (CF_API_TOKEN) {
+          aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
+        } else {
+          aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
+        }
+
+        const journalBody = { model: cfModel("google/gemini-2.5-flash-lite"), messages: [
               {
                 role: "system",
                 content: `Bạn là hệ thống đánh giá nhật ký của Angel AI.
@@ -295,14 +323,20 @@ Tiêu chí đánh giá:
 
 Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
               },
-              {
-                role: "user",
-                content: content
-              }
-            ],
-            temperature: 0.3,
-          }),
+              { role: "user", content: content }
+            ], temperature: 0.3 };
+        let analysisResponse = await fetch(AI_GATEWAY_URL, {
+          method: "POST", headers: aiHeaders, body: JSON.stringify(journalBody),
         });
+        if (!analysisResponse.ok && CF_API_TOKEN) {
+          analysisResponse = await fetch(LOVABLE_GATEWAY_URL, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ ...journalBody, model: "google/gemini-2.5-flash-lite" }),
+          });
+        }
+
+
 
         if (analysisResponse.ok) {
           const analysisData = await analysisResponse.json();
@@ -320,24 +354,32 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
     }
 
     // Calculate reward based on content length and purity score
-    // Base reward: 5000 (short) to 9000 (long)
+    // Updated: 2,000 - 3,000 coin
     let lengthMultiplier = 1;
     if (contentLength >= 500) {
-      lengthMultiplier = 1.8; // Long entry
+      lengthMultiplier = 1.5; // Long entry
     } else if (contentLength >= 300) {
-      lengthMultiplier = 1.4; // Medium entry
+      lengthMultiplier = 1.3; // Medium entry
     } else if (contentLength >= 150) {
-      lengthMultiplier = 1.0; // Short entry
+      lengthMultiplier = 1.1; // Short entry
     } else {
-      lengthMultiplier = 0.7; // Very short
+      lengthMultiplier = 1.0; // Minimum (>=50 chars)
     }
 
-    // Combine length and purity
-    const baseReward = 5000;
-    rewardAmount = Math.round(baseReward * lengthMultiplier * (0.5 + purityScore * 0.5));
+    // Combine length and purity: base 2000, max 3000
+    const baseReward = 2000;
+    rewardAmount = Math.round(baseReward * lengthMultiplier * (0.7 + purityScore * 0.3));
     
-    // Cap at 9000
-    rewardAmount = Math.min(9000, Math.max(5000, rewardAmount));
+    // Cap at 2000-3000 range
+    rewardAmount = Math.min(3000, Math.max(2000, rewardAmount));
+
+    // ============= ANTI-SYBIL: Áp dụng hệ số Account Age Gate =============
+    const originalReward = rewardAmount;
+    rewardAmount = applyAgeGateReward(rewardAmount, antiSybil.reward_multiplier);
+    if (rewardAmount !== originalReward) {
+      console.log(`[AntiSybil] Journal reward adjusted: ${originalReward} → ${rewardAmount} (x${antiSybil.reward_multiplier}, age=${antiSybil.account_age_days}d)`);
+    }
+    // ============= End Age Gate Reward =============
 
     // Save journal entry - use todayDate for consistency
     const { data: journalRecord, error: insertError } = await supabase
@@ -372,8 +414,8 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
         onConflict: 'user_id,reward_date'
       });
 
-    // Add Camly coins
-    const { data: newBalance } = await supabase.rpc("add_camly_coins", {
+    // Add Camly coins (sử dụng pending hoặc instant tùy tier/tuổi)
+    const { data: rewardResult } = await supabase.rpc("add_pending_or_instant_reward", {
       _user_id: userId,
       _amount: rewardAmount,
       _transaction_type: "journal_reward",
@@ -381,6 +423,46 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
       _purity_score: purityScore,
       _metadata: { journal_id: journalRecord?.id, content_length: contentLength }
     });
+    const rewardMode = rewardResult?.mode || 'instant';
+    const newBalance = rewardResult?.new_balance;
+
+    // ============= PPLP Integration =============
+    const actionType = journalType === 'gratitude' 
+      ? PPLP_ACTION_TYPES.GRATITUDE_PRACTICE 
+      : PPLP_ACTION_TYPES.JOURNAL_WRITE;
+      
+    const pplpResult = await submitAndScorePPLPAction(supabase, {
+      action_type: actionType,
+      actor_id: userId,
+      target_id: journalRecord?.id,
+      metadata: {
+        journal_id: journalRecord?.id,
+        journal_type: journalType,
+        content_length: contentLength,
+      },
+      impact: {
+        scope: 'individual',
+        quality_indicators: purityScore >= 0.8 ? ['deep_reflection', 'authentic'] : purityScore >= 0.6 ? ['sincere'] : [],
+      },
+      integrity: {
+        content_hash: contentHash,
+        source_verified: true,
+        duplicate_check: true,
+      },
+      evidences: [{
+        evidence_type: 'journal_content',
+        content_hash: contentHash,
+        metadata: { journal_type: journalType, purity_score: purityScore }
+      }],
+      reward_amount: rewardAmount,
+      purity_score: purityScore,
+      content_length: contentLength,
+    });
+    
+    if (pplpResult.success) {
+      console.log(`[PPLP] Journal action submitted: ${pplpResult.action_id}`);
+    }
+    // ============= End PPLP Integration =============
 
     // Calculate remaining after this journal
     const remainingAfterThis = MAX_JOURNALS_PER_DAY - newJournalCount;
@@ -394,8 +476,12 @@ Trả về CHÍNH XÁC JSON: {"purity_score": 0.X, "reasoning": "..."}`
         journalsRemaining: remainingAfterThis,
         journalsToday: newJournalCount,
         limit: MAX_JOURNALS_PER_DAY,
-        message: `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% 📝✨`,
-        journalId: journalRecord?.id
+        message: rewardMode === 'pending'
+          ? `+${rewardAmount.toLocaleString()} Camly Coin đang chờ xác nhận ⏳📝`
+          : `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% 📝✨`,
+        journalId: journalRecord?.id,
+        rewardMode,
+        pplpActionId: pplpResult.success ? pplpResult.action_id : undefined
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

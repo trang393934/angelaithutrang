@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          usage_count: number
+          usage_date: string
+          usage_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          usage_count?: number
+          usage_date?: string
+          usage_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          usage_count?: number
+          usage_date?: string
+          usage_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      api_key_usage: {
+        Row: {
+          api_key_id: string
+          id: string
+          request_count: number
+          tokens_used: number
+          usage_date: string
+        }
+        Insert: {
+          api_key_id: string
+          id?: string
+          request_count?: number
+          tokens_used?: number
+          usage_date?: string
+        }
+        Update: {
+          api_key_id?: string
+          id?: string
+          request_count?: number
+          tokens_used?: number
+          usage_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_key_usage_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "user_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bounty_submissions: {
         Row: {
           admin_feedback: string | null
@@ -476,6 +538,83 @@ export type Database = {
         }
         Relationships: []
       }
+      circle_members: {
+        Row: {
+          circle_id: string
+          id: string
+          invited_by: string | null
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          circle_id: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          circle_id?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_members_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "community_circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coin_gifts: {
+        Row: {
+          amount: number
+          context_id: string | null
+          context_type: string
+          created_at: string
+          gift_type: string
+          id: string
+          message: string | null
+          receipt_public_id: string | null
+          receiver_id: string
+          sender_id: string
+          tx_hash: string | null
+        }
+        Insert: {
+          amount: number
+          context_id?: string | null
+          context_type?: string
+          created_at?: string
+          gift_type?: string
+          id?: string
+          message?: string | null
+          receipt_public_id?: string | null
+          receiver_id: string
+          sender_id: string
+          tx_hash?: string | null
+        }
+        Update: {
+          amount?: number
+          context_id?: string | null
+          context_type?: string
+          created_at?: string
+          gift_type?: string
+          id?: string
+          message?: string | null
+          receipt_public_id?: string | null
+          receiver_id?: string
+          sender_id?: string
+          tx_hash?: string | null
+        }
+        Relationships: []
+      }
       coin_withdrawals: {
         Row: {
           admin_notes: string | null
@@ -524,6 +663,48 @@ export type Database = {
           updated_at?: string
           user_id?: string
           wallet_address?: string
+        }
+        Relationships: []
+      }
+      community_circles: {
+        Row: {
+          circle_type: string
+          color: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_official: boolean | null
+          max_members: number | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          circle_type?: string
+          color?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_official?: boolean | null
+          max_members?: number | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          circle_type?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_official?: boolean | null
+          max_members?: number | null
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -655,13 +836,17 @@ export type Database = {
           comments_count: number | null
           content: string
           created_at: string
+          expires_at: string | null
           id: string
           image_url: string | null
           image_urls: string[] | null
           is_rewarded: boolean | null
           likes_count: number | null
+          metadata: Json | null
+          post_type: string
           reward_amount: number | null
           shares_count: number | null
+          slug: string
           updated_at: string
           user_id: string
         }
@@ -669,13 +854,17 @@ export type Database = {
           comments_count?: number | null
           content: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
           is_rewarded?: boolean | null
           likes_count?: number | null
+          metadata?: Json | null
+          post_type?: string
           reward_amount?: number | null
           shares_count?: number | null
+          slug: string
           updated_at?: string
           user_id: string
         }
@@ -683,13 +872,17 @@ export type Database = {
           comments_count?: number | null
           content?: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
           is_rewarded?: boolean | null
           likes_count?: number | null
+          metadata?: Json | null
+          post_type?: string
           reward_amount?: number | null
           shares_count?: number | null
+          slug?: string
           updated_at?: string
           user_id?: string
         }
@@ -831,6 +1024,124 @@ export type Database = {
         }
         Relationships: []
       }
+      coordinator_chat_messages: {
+        Row: {
+          ai_role: string | null
+          content: string
+          created_at: string
+          id: string
+          mode: string | null
+          project_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          ai_role?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          mode?: string | null
+          project_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          ai_role?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          mode?: string | null
+          project_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coordinator_chat_messages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "coordinator_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coordinator_project_versions: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          id: string
+          project_id: string
+          snapshot_data: Json | null
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          snapshot_data?: Json | null
+          version_number?: number
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          snapshot_data?: Json | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coordinator_project_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "coordinator_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coordinator_projects: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          name: string
+          platform_type: string
+          status: string
+          token_flow_model: string | null
+          updated_at: string
+          user_id: string
+          value_model: string | null
+          vision_statement: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          name: string
+          platform_type?: string
+          status?: string
+          token_flow_model?: string | null
+          updated_at?: string
+          user_id: string
+          value_model?: string | null
+          vision_statement?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          name?: string
+          platform_type?: string
+          status?: string
+          token_flow_model?: string | null
+          updated_at?: string
+          user_id?: string
+          value_model?: string | null
+          vision_statement?: string | null
+        }
+        Relationships: []
+      }
       daily_gratitude: {
         Row: {
           created_at: string
@@ -955,11 +1266,13 @@ export type Database = {
           is_deleted: boolean | null
           is_read: boolean
           message_type: string | null
+          metadata: Json | null
           reactions: Json | null
           read_at: string | null
           receiver_id: string
           reply_to_id: string | null
           sender_id: string
+          tip_gift_id: string | null
         }
         Insert: {
           content: string
@@ -970,11 +1283,13 @@ export type Database = {
           is_deleted?: boolean | null
           is_read?: boolean
           message_type?: string | null
+          metadata?: Json | null
           reactions?: Json | null
           read_at?: string | null
           receiver_id: string
           reply_to_id?: string | null
           sender_id: string
+          tip_gift_id?: string | null
         }
         Update: {
           content?: string
@@ -985,11 +1300,13 @@ export type Database = {
           is_deleted?: boolean | null
           is_read?: boolean
           message_type?: string | null
+          metadata?: Json | null
           reactions?: Json | null
           read_at?: string | null
           receiver_id?: string
           reply_to_id?: string | null
           sender_id?: string
+          tip_gift_id?: string | null
         }
         Relationships: [
           {
@@ -997,6 +1314,13 @@ export type Database = {
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_tip_gift_id_fkey"
+            columns: ["tip_gift_id"]
+            isOneToOne: false
+            referencedRelation: "coin_gifts"
             referencedColumns: ["id"]
           },
         ]
@@ -1037,6 +1361,48 @@ export type Database = {
         }
         Relationships: []
       }
+      fraud_alerts: {
+        Row: {
+          action_taken: string | null
+          alert_type: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          is_reviewed: boolean | null
+          matched_pattern: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          action_taken?: string | null
+          alert_type: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          is_reviewed?: boolean | null
+          matched_pattern?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+          user_id: string
+        }
+        Update: {
+          action_taken?: string | null
+          alert_type?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          is_reviewed?: boolean | null
+          matched_pattern?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -1061,6 +1427,113 @@ export type Database = {
           requester_id?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      fun_distribution_logs: {
+        Row: {
+          action_id: string
+          actor_id: string
+          created_at: string
+          fund_processed_at: string | null
+          fund_processing_status: string
+          fund_tx_hashes: Json | null
+          genesis_amount: number
+          genesis_percentage: number
+          id: string
+          mint_request_id: string | null
+          partners_amount: number
+          partners_percentage: number
+          platform_amount: number
+          platform_percentage: number
+          total_reward: number
+          user_amount: number
+          user_percentage: number
+        }
+        Insert: {
+          action_id: string
+          actor_id: string
+          created_at?: string
+          fund_processed_at?: string | null
+          fund_processing_status?: string
+          fund_tx_hashes?: Json | null
+          genesis_amount?: number
+          genesis_percentage?: number
+          id?: string
+          mint_request_id?: string | null
+          partners_amount?: number
+          partners_percentage?: number
+          platform_amount?: number
+          platform_percentage?: number
+          total_reward: number
+          user_amount: number
+          user_percentage: number
+        }
+        Update: {
+          action_id?: string
+          actor_id?: string
+          created_at?: string
+          fund_processed_at?: string | null
+          fund_processing_status?: string
+          fund_tx_hashes?: Json | null
+          genesis_amount?: number
+          genesis_percentage?: number
+          id?: string
+          mint_request_id?: string | null
+          partners_amount?: number
+          partners_percentage?: number
+          platform_amount?: number
+          platform_percentage?: number
+          total_reward?: number
+          user_amount?: number
+          user_percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fun_distribution_logs_mint_request_id_fkey"
+            columns: ["mint_request_id"]
+            isOneToOne: false
+            referencedRelation: "pplp_mint_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fun_pool_config: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          pool_label: string
+          pool_name: string
+          retention_rate: number
+          tier_order: number
+          updated_at: string
+          wallet_address: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          pool_label: string
+          pool_name: string
+          retention_rate?: number
+          tier_order?: number
+          updated_at?: string
+          wallet_address?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          pool_label?: string
+          pool_name?: string
+          retention_rate?: number
+          tier_order?: number
+          updated_at?: string
+          wallet_address?: string | null
         }
         Relationships: []
       }
@@ -1099,6 +1572,33 @@ export type Database = {
           journal_type?: string
           purity_score?: number | null
           reward_amount?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      handle_audit_log: {
+        Row: {
+          created_at: string
+          id: string
+          new_handle: string
+          old_handle: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          new_handle: string
+          old_handle?: string | null
+          source?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          new_handle?: string
+          old_handle?: string | null
+          source?: string
           user_id?: string
         }
         Relationships: []
@@ -1349,6 +1849,104 @@ export type Database = {
         }
         Relationships: []
       }
+      lixi_claims: {
+        Row: {
+          camly_amount: number
+          claimed_at: string
+          error_message: string | null
+          fun_amount: number
+          id: string
+          notification_id: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          tx_hash: string | null
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          camly_amount: number
+          claimed_at?: string
+          error_message?: string | null
+          fun_amount: number
+          id?: string
+          notification_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          tx_hash?: string | null
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          camly_amount?: number
+          claimed_at?: string
+          error_message?: string | null
+          fun_amount?: number
+          id?: string
+          notification_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          tx_hash?: string | null
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lixi_claims_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          metadata: Json | null
+          read_at: string | null
+          reference_id: string | null
+          reference_type: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          metadata?: Json | null
+          read_at?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          metadata?: Json | null
+          read_at?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       onboarding_responses: {
         Row: {
           analyzed_at: string | null
@@ -1385,6 +1983,996 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_rewards: {
+        Row: {
+          amount: number
+          cancelled_at: string | null
+          created_at: string
+          description: string | null
+          frozen_reason: string | null
+          id: string
+          metadata: Json | null
+          purity_score: number | null
+          reason: string
+          release_at: string
+          released_at: string | null
+          status: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          cancelled_at?: string | null
+          created_at?: string
+          description?: string | null
+          frozen_reason?: string | null
+          id?: string
+          metadata?: Json | null
+          purity_score?: number | null
+          reason?: string
+          release_at: string
+          released_at?: string | null
+          status?: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          cancelled_at?: string | null
+          created_at?: string
+          description?: string | null
+          frozen_reason?: string | null
+          id?: string
+          metadata?: Json | null
+          purity_score?: number | null
+          reason?: string
+          release_at?: string
+          released_at?: string | null
+          status?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pplp_action_caps: {
+        Row: {
+          action_type: string
+          base_reward: number
+          cooldown_seconds: number | null
+          created_at: string
+          diminishing_factor: number | null
+          diminishing_threshold: number | null
+          id: string
+          is_active: boolean
+          max_global_daily: number | null
+          max_per_user_daily: number | null
+          max_per_user_weekly: number | null
+          min_quality_score: number | null
+          multiplier_ranges: Json
+          platform_id: string
+          thresholds: Json
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          base_reward?: number
+          cooldown_seconds?: number | null
+          created_at?: string
+          diminishing_factor?: number | null
+          diminishing_threshold?: number | null
+          id?: string
+          is_active?: boolean
+          max_global_daily?: number | null
+          max_per_user_daily?: number | null
+          max_per_user_weekly?: number | null
+          min_quality_score?: number | null
+          multiplier_ranges?: Json
+          platform_id?: string
+          thresholds?: Json
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          base_reward?: number
+          cooldown_seconds?: number | null
+          created_at?: string
+          diminishing_factor?: number | null
+          diminishing_threshold?: number | null
+          id?: string
+          is_active?: boolean
+          max_global_daily?: number | null
+          max_per_user_daily?: number | null
+          max_per_user_weekly?: number | null
+          min_quality_score?: number | null
+          multiplier_ranges?: Json
+          platform_id?: string
+          thresholds?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pplp_actions: {
+        Row: {
+          action_type: string
+          action_type_enum:
+            | Database["public"]["Enums"]["pplp_action_type"]
+            | null
+          actor_id: string
+          canonical_hash: string | null
+          created_at: string
+          evidence_hash: string | null
+          id: string
+          impact: Json
+          integrity: Json
+          metadata: Json
+          mint_request_hash: string | null
+          minted_at: string | null
+          platform_id: string
+          policy_snapshot: Json | null
+          policy_version: string
+          scored_at: string | null
+          status: Database["public"]["Enums"]["pplp_action_status"]
+          target_id: string | null
+        }
+        Insert: {
+          action_type: string
+          action_type_enum?:
+            | Database["public"]["Enums"]["pplp_action_type"]
+            | null
+          actor_id: string
+          canonical_hash?: string | null
+          created_at?: string
+          evidence_hash?: string | null
+          id?: string
+          impact?: Json
+          integrity?: Json
+          metadata?: Json
+          mint_request_hash?: string | null
+          minted_at?: string | null
+          platform_id?: string
+          policy_snapshot?: Json | null
+          policy_version?: string
+          scored_at?: string | null
+          status?: Database["public"]["Enums"]["pplp_action_status"]
+          target_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          action_type_enum?:
+            | Database["public"]["Enums"]["pplp_action_type"]
+            | null
+          actor_id?: string
+          canonical_hash?: string | null
+          created_at?: string
+          evidence_hash?: string | null
+          id?: string
+          impact?: Json
+          integrity?: Json
+          metadata?: Json
+          mint_request_hash?: string | null
+          minted_at?: string | null
+          platform_id?: string
+          policy_snapshot?: Json | null
+          policy_version?: string
+          scored_at?: string | null
+          status?: Database["public"]["Enums"]["pplp_action_status"]
+          target_id?: string | null
+        }
+        Relationships: []
+      }
+      pplp_audits: {
+        Row: {
+          action_id: string | null
+          action_taken: string | null
+          actor_id: string
+          audit_status: string
+          audit_type: string
+          audited_score: Json | null
+          auditor_id: string | null
+          completed_at: string | null
+          created_at: string
+          finding: string | null
+          id: string
+          original_score: Json | null
+          penalty_amount: number | null
+        }
+        Insert: {
+          action_id?: string | null
+          action_taken?: string | null
+          actor_id: string
+          audit_status?: string
+          audit_type: string
+          audited_score?: Json | null
+          auditor_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          finding?: string | null
+          id?: string
+          original_score?: Json | null
+          penalty_amount?: number | null
+        }
+        Update: {
+          action_id?: string | null
+          action_taken?: string | null
+          actor_id?: string
+          audit_status?: string
+          audit_type?: string
+          audited_score?: Json | null
+          auditor_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          finding?: string | null
+          id?: string
+          original_score?: Json | null
+          penalty_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_audits_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pplp_device_registry: {
+        Row: {
+          device_hash: string
+          first_seen: string
+          flag_reason: string | null
+          id: string
+          is_flagged: boolean
+          last_seen: string
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          device_hash: string
+          first_seen?: string
+          flag_reason?: string | null
+          id?: string
+          is_flagged?: boolean
+          last_seen?: string
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          device_hash?: string
+          first_seen?: string
+          flag_reason?: string | null
+          id?: string
+          is_flagged?: boolean
+          last_seen?: string
+          usage_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pplp_disputes: {
+        Row: {
+          action_id: string
+          assigned_to: string | null
+          created_at: string
+          evidence: Json
+          id: string
+          reason: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["pplp_dispute_status"]
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          action_id: string
+          assigned_to?: string | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          reason: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["pplp_dispute_status"]
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          action_id?: string
+          assigned_to?: string | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          reason?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["pplp_dispute_status"]
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_disputes_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pplp_epoch_caps: {
+        Row: {
+          action_counts: Json
+          created_at: string
+          epoch_date: string
+          epoch_type: string
+          id: string
+          total_minted: number
+          unique_users: number
+          updated_at: string
+        }
+        Insert: {
+          action_counts?: Json
+          created_at?: string
+          epoch_date?: string
+          epoch_type?: string
+          id?: string
+          total_minted?: number
+          unique_users?: number
+          updated_at?: string
+        }
+        Update: {
+          action_counts?: Json
+          created_at?: string
+          epoch_date?: string
+          epoch_type?: string
+          id?: string
+          total_minted?: number
+          unique_users?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pplp_evidences: {
+        Row: {
+          action_id: string
+          anchor_chain: string | null
+          anchor_tx_hash: string | null
+          anchored_at: string | null
+          content_hash: string
+          created_at: string
+          evidence_type: string
+          evidence_type_enum:
+            | Database["public"]["Enums"]["pplp_evidence_type"]
+            | null
+          id: string
+          metadata: Json
+          uri: string | null
+        }
+        Insert: {
+          action_id: string
+          anchor_chain?: string | null
+          anchor_tx_hash?: string | null
+          anchored_at?: string | null
+          content_hash: string
+          created_at?: string
+          evidence_type: string
+          evidence_type_enum?:
+            | Database["public"]["Enums"]["pplp_evidence_type"]
+            | null
+          id?: string
+          metadata?: Json
+          uri?: string | null
+        }
+        Update: {
+          action_id?: string
+          anchor_chain?: string | null
+          anchor_tx_hash?: string | null
+          anchored_at?: string | null
+          content_hash?: string
+          created_at?: string
+          evidence_type?: string
+          evidence_type_enum?:
+            | Database["public"]["Enums"]["pplp_evidence_type"]
+            | null
+          id?: string
+          metadata?: Json
+          uri?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_evidences_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pplp_fraud_signals: {
+        Row: {
+          action_id: string | null
+          actor_id: string
+          created_at: string
+          details: Json
+          id: string
+          is_resolved: boolean
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: number
+          signal_type: string
+          source: string
+        }
+        Insert: {
+          action_id?: string | null
+          actor_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          is_resolved?: boolean
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: number
+          signal_type: string
+          source?: string
+        }
+        Update: {
+          action_id?: string | null
+          actor_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          is_resolved?: boolean
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: number
+          signal_type?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_fraud_signals_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pplp_mint_requests: {
+        Row: {
+          action_hash: string
+          action_id: string
+          actor_id: string
+          amount: number
+          created_at: string
+          evidence_hash: string
+          id: string
+          minted_at: string | null
+          nonce: number
+          on_chain_error: string | null
+          policy_version: number
+          recipient_address: string
+          signature: string | null
+          signer_address: string | null
+          status: string
+          tx_hash: string | null
+          updated_at: string
+          valid_after: string
+          valid_before: string
+        }
+        Insert: {
+          action_hash: string
+          action_id: string
+          actor_id: string
+          amount: number
+          created_at?: string
+          evidence_hash: string
+          id?: string
+          minted_at?: string | null
+          nonce: number
+          on_chain_error?: string | null
+          policy_version?: number
+          recipient_address: string
+          signature?: string | null
+          signer_address?: string | null
+          status?: string
+          tx_hash?: string | null
+          updated_at?: string
+          valid_after?: string
+          valid_before?: string
+        }
+        Update: {
+          action_hash?: string
+          action_id?: string
+          actor_id?: string
+          amount?: number
+          created_at?: string
+          evidence_hash?: string
+          id?: string
+          minted_at?: string | null
+          nonce?: number
+          on_chain_error?: string | null
+          policy_version?: number
+          recipient_address?: string
+          signature?: string | null
+          signer_address?: string | null
+          status?: string
+          tx_hash?: string | null
+          updated_at?: string
+          valid_after?: string
+          valid_before?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_mint_requests_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: true
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pplp_policies: {
+        Row: {
+          action_configs: Json | null
+          activated_at: string | null
+          approved_by: string[] | null
+          arweave_tx: string | null
+          caps: Json | null
+          changelog: string | null
+          created_at: string
+          created_by: string | null
+          deprecated_at: string | null
+          deprecation_reason: string | null
+          description: string | null
+          formulas: Json | null
+          ipfs_cid: string | null
+          is_active: boolean
+          policy_hash: string | null
+          policy_json: Json
+          required_approvals: number | null
+          thresholds: Json | null
+          updated_at: string | null
+          version: string
+          version_int: number | null
+        }
+        Insert: {
+          action_configs?: Json | null
+          activated_at?: string | null
+          approved_by?: string[] | null
+          arweave_tx?: string | null
+          caps?: Json | null
+          changelog?: string | null
+          created_at?: string
+          created_by?: string | null
+          deprecated_at?: string | null
+          deprecation_reason?: string | null
+          description?: string | null
+          formulas?: Json | null
+          ipfs_cid?: string | null
+          is_active?: boolean
+          policy_hash?: string | null
+          policy_json: Json
+          required_approvals?: number | null
+          thresholds?: Json | null
+          updated_at?: string | null
+          version: string
+          version_int?: number | null
+        }
+        Update: {
+          action_configs?: Json | null
+          activated_at?: string | null
+          approved_by?: string[] | null
+          arweave_tx?: string | null
+          caps?: Json | null
+          changelog?: string | null
+          created_at?: string
+          created_by?: string | null
+          deprecated_at?: string | null
+          deprecation_reason?: string | null
+          description?: string | null
+          formulas?: Json | null
+          ipfs_cid?: string | null
+          is_active?: boolean
+          policy_hash?: string | null
+          policy_json?: Json
+          required_approvals?: number | null
+          thresholds?: Json | null
+          updated_at?: string | null
+          version?: string
+          version_int?: number | null
+        }
+        Relationships: []
+      }
+      pplp_policy_changes: {
+        Row: {
+          block_number: number | null
+          change_type: string
+          changed_at: string
+          changed_by: string | null
+          field_changed: string | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          policy_version: string
+          reason: string | null
+          tx_hash: string | null
+        }
+        Insert: {
+          block_number?: number | null
+          change_type: string
+          changed_at?: string
+          changed_by?: string | null
+          field_changed?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          policy_version: string
+          reason?: string | null
+          tx_hash?: string | null
+        }
+        Update: {
+          block_number?: number | null
+          change_type?: string
+          changed_at?: string
+          changed_by?: string | null
+          field_changed?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          policy_version?: string
+          reason?: string | null
+          tx_hash?: string | null
+        }
+        Relationships: []
+      }
+      pplp_policy_onchain: {
+        Row: {
+          block_number: number
+          chain_id: number
+          contract_address: string
+          id: string
+          policy_hash: string
+          policy_version: string
+          registered_at: string
+          signer_address: string
+          tx_hash: string
+        }
+        Insert: {
+          block_number: number
+          chain_id?: number
+          contract_address: string
+          id?: string
+          policy_hash: string
+          policy_version: string
+          registered_at?: string
+          signer_address: string
+          tx_hash: string
+        }
+        Update: {
+          block_number?: number
+          chain_id?: number
+          contract_address?: string
+          id?: string
+          policy_hash?: string
+          policy_version?: string
+          registered_at?: string
+          signer_address?: string
+          tx_hash?: string
+        }
+        Relationships: []
+      }
+      pplp_scores: {
+        Row: {
+          action_id: string
+          base_reward: number
+          created_at: string
+          decision: Database["public"]["Enums"]["pplp_decision"]
+          decision_reason: string | null
+          final_reward: number
+          id: string
+          light_score: number
+          multiplier_i: number
+          multiplier_k: number
+          multiplier_q: number
+          pillar_c: number
+          pillar_h: number
+          pillar_s: number
+          pillar_t: number
+          pillar_u: number
+          policy_version: string
+          scored_by: string
+        }
+        Insert: {
+          action_id: string
+          base_reward?: number
+          created_at?: string
+          decision?: Database["public"]["Enums"]["pplp_decision"]
+          decision_reason?: string | null
+          final_reward?: number
+          id?: string
+          light_score?: number
+          multiplier_i?: number
+          multiplier_k?: number
+          multiplier_q?: number
+          pillar_c?: number
+          pillar_h?: number
+          pillar_s?: number
+          pillar_t?: number
+          pillar_u?: number
+          policy_version?: string
+          scored_by?: string
+        }
+        Update: {
+          action_id?: string
+          base_reward?: number
+          created_at?: string
+          decision?: Database["public"]["Enums"]["pplp_decision"]
+          decision_reason?: string | null
+          final_reward?: number
+          id?: string
+          light_score?: number
+          multiplier_i?: number
+          multiplier_k?: number
+          multiplier_q?: number
+          pillar_c?: number
+          pillar_h?: number
+          pillar_s?: number
+          pillar_t?: number
+          pillar_u?: number
+          policy_version?: string
+          scored_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pplp_scores_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: true
+            referencedRelation: "pplp_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pplp_signers: {
+        Row: {
+          address: string
+          created_at: string
+          deactivated_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          weight: number
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          weight?: number
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      pplp_user_caps: {
+        Row: {
+          action_counts: Json
+          created_at: string
+          epoch_date: string
+          epoch_type: string
+          id: string
+          last_action_at: string | null
+          total_minted: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_counts?: Json
+          created_at?: string
+          epoch_date?: string
+          epoch_type?: string
+          id?: string
+          last_action_at?: string | null
+          total_minted?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_counts?: Json
+          created_at?: string
+          epoch_date?: string
+          epoch_type?: string
+          id?: string
+          last_action_at?: string | null
+          total_minted?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pplp_user_nonces: {
+        Row: {
+          current_nonce: number
+          last_used_at: string
+          user_id: string
+        }
+        Insert: {
+          current_nonce?: number
+          last_used_at?: string
+          user_id: string
+        }
+        Update: {
+          current_nonce?: number
+          last_used_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pplp_user_tiers: {
+        Row: {
+          cap_multiplier: number
+          community_vouches: number
+          created_at: string
+          failed_actions: number
+          fraud_flags: number
+          known_device_hashes: string[] | null
+          last_device_hash: string | null
+          last_tier_change: string | null
+          passed_actions: number
+          stake_locked_until: string | null
+          staked_amount: number
+          tier: number
+          tier_change_reason: string | null
+          total_actions_scored: number
+          trust_score: number
+          updated_at: string
+          user_id: string
+          verified_connections: number
+        }
+        Insert: {
+          cap_multiplier?: number
+          community_vouches?: number
+          created_at?: string
+          failed_actions?: number
+          fraud_flags?: number
+          known_device_hashes?: string[] | null
+          last_device_hash?: string | null
+          last_tier_change?: string | null
+          passed_actions?: number
+          stake_locked_until?: string | null
+          staked_amount?: number
+          tier?: number
+          tier_change_reason?: string | null
+          total_actions_scored?: number
+          trust_score?: number
+          updated_at?: string
+          user_id: string
+          verified_connections?: number
+        }
+        Update: {
+          cap_multiplier?: number
+          community_vouches?: number
+          created_at?: string
+          failed_actions?: number
+          fraud_flags?: number
+          known_device_hashes?: string[] | null
+          last_device_hash?: string | null
+          last_tier_change?: string | null
+          passed_actions?: number
+          stake_locked_until?: string | null
+          staked_amount?: number
+          tier?: number
+          tier_change_reason?: string | null
+          total_actions_scored?: number
+          trust_score?: number
+          updated_at?: string
+          user_id?: string
+          verified_connections?: number
+        }
+        Relationships: []
+      }
+      profile_public_settings: {
+        Row: {
+          allow_public_follow: boolean
+          allow_public_message: boolean
+          allow_public_transfer: boolean
+          badge_type: string | null
+          created_at: string
+          enabled_modules: Json | null
+          featured_items: Json | null
+          public_profile_enabled: boolean
+          show_donation_button: boolean
+          show_friends_count: boolean
+          show_modules: boolean
+          show_stats: boolean
+          tagline: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_public_follow?: boolean
+          allow_public_message?: boolean
+          allow_public_transfer?: boolean
+          badge_type?: string | null
+          created_at?: string
+          enabled_modules?: Json | null
+          featured_items?: Json | null
+          public_profile_enabled?: boolean
+          show_donation_button?: boolean
+          show_friends_count?: boolean
+          show_modules?: boolean
+          show_stats?: boolean
+          tagline?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_public_follow?: boolean
+          allow_public_message?: boolean
+          allow_public_transfer?: boolean
+          badge_type?: string | null
+          created_at?: string
+          enabled_modules?: Json | null
+          featured_items?: Json | null
+          public_profile_enabled?: boolean
+          show_donation_button?: boolean
+          show_friends_count?: boolean
+          show_modules?: boolean
+          show_stats?: boolean
+          tagline?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profile_view_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          profile_user_id: string
+          referrer_handle: string | null
+          viewer_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          profile_user_id: string
+          referrer_handle?: string | null
+          viewer_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          profile_user_id?: string
+          referrer_handle?: string | null
+          viewer_user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1392,8 +2980,15 @@ export type Database = {
           cover_photo_url: string | null
           created_at: string
           display_name: string | null
+          handle: string | null
+          handle_updated_at: string | null
           id: string
+          popl_badge_level: string | null
+          popl_verified: boolean | null
+          popl_verified_at: string | null
           response_style: string | null
+          social_links: Json | null
+          soul_tags: string[] | null
           updated_at: string
           user_id: string
         }
@@ -1403,8 +2998,15 @@ export type Database = {
           cover_photo_url?: string | null
           created_at?: string
           display_name?: string | null
+          handle?: string | null
+          handle_updated_at?: string | null
           id?: string
+          popl_badge_level?: string | null
+          popl_verified?: boolean | null
+          popl_verified_at?: string | null
           response_style?: string | null
+          social_links?: Json | null
+          soul_tags?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -1414,10 +3016,77 @@ export type Database = {
           cover_photo_url?: string | null
           created_at?: string
           display_name?: string | null
+          handle?: string | null
+          handle_updated_at?: string | null
           id?: string
+          popl_badge_level?: string | null
+          popl_verified?: boolean | null
+          popl_verified_at?: string | null
           response_style?: string | null
+          social_links?: Json | null
+          soul_tags?: string[] | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      project_donations: {
+        Row: {
+          amount: number
+          created_at: string
+          donation_type: string
+          donor_id: string
+          id: string
+          message: string | null
+          status: string
+          tx_hash: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          donation_type?: string
+          donor_id: string
+          id?: string
+          message?: string | null
+          status?: string
+          tx_hash?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          donation_type?: string
+          donor_id?: string
+          id?: string
+          message?: string | null
+          status?: string
+          tx_hash?: string | null
+        }
+        Relationships: []
+      }
+      project_fund: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          total_distributed: number
+          total_received: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_distributed?: number
+          total_received?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_distributed?: number
+          total_received?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1449,6 +3118,108 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reserved_handles: {
+        Row: {
+          created_at: string
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          word: string
+        }
+        Update: {
+          created_at?: string
+          word?: string
+        }
+        Relationships: []
+      }
+      slug_history: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          id: string
+          new_slug: string
+          old_slug: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          new_slug: string
+          old_slug: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          new_slug?: string
+          old_slug?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sybil_pattern_registry: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          flagged_by: string | null
+          id: string
+          is_active: boolean | null
+          pattern_type: string
+          pattern_value: string
+          severity: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          flagged_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          pattern_type: string
+          pattern_value: string
+          severity?: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          flagged_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          pattern_type?: string
+          pattern_value?: string
+          severity?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
       }
       typing_indicators: {
         Row: {
@@ -1503,6 +3274,48 @@ export type Database = {
           id?: string
           metadata?: Json | null
           sentiment_score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_api_keys: {
+        Row: {
+          created_at: string
+          daily_limit: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          total_requests: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_limit?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          total_requests?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_limit?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          total_requests?: number
           user_id?: string
         }
         Relationships: []
@@ -1661,7 +3474,11 @@ export type Database = {
         Row: {
           current_level: number | null
           id: string
+          last_score_update: string | null
           lifetime_points: number | null
+          negative_actions: number | null
+          popl_score: number | null
+          positive_actions: number | null
           total_points: number | null
           updated_at: string
           user_id: string
@@ -1669,7 +3486,11 @@ export type Database = {
         Insert: {
           current_level?: number | null
           id?: string
+          last_score_update?: string | null
           lifetime_points?: number | null
+          negative_actions?: number | null
+          popl_score?: number | null
+          positive_actions?: number | null
           total_points?: number | null
           updated_at?: string
           user_id: string
@@ -1677,7 +3498,11 @@ export type Database = {
         Update: {
           current_level?: number | null
           id?: string
+          last_score_update?: string | null
           lifetime_points?: number | null
+          negative_actions?: number | null
+          popl_score?: number | null
+          positive_actions?: number | null
           total_points?: number | null
           updated_at?: string
           user_id?: string
@@ -1946,6 +3771,51 @@ export type Database = {
         }
         Returns: undefined
       }
+      add_pending_or_instant_reward: {
+        Args: {
+          _amount: number
+          _description: string
+          _metadata?: Json
+          _purity_score?: number
+          _transaction_type: Database["public"]["Enums"]["coin_transaction_type"]
+          _user_id: string
+        }
+        Returns: Json
+      }
+      auto_suspend_high_risk: {
+        Args: { _risk_score: number; _signals?: Json; _user_id: string }
+        Returns: Json
+      }
+      calculate_light_score: {
+        Args: { _c: number; _h: number; _s: number; _t: number; _u: number }
+        Returns: number
+      }
+      calculate_pplp_reward: {
+        Args: { _base_reward: number; _i: number; _k: number; _q: number }
+        Returns: number
+      }
+      check_ai_usage_only: {
+        Args: { _daily_limit?: number; _usage_type: string; _user_id: string }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          daily_limit: number
+          message: string
+        }[]
+      }
+      check_and_increment_ai_usage: {
+        Args: { _daily_limit?: number; _usage_type: string; _user_id: string }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          daily_limit: number
+          message: string
+        }[]
+      }
+      check_user_cap_and_update: {
+        Args: { _action_type: string; _reward_amount: number; _user_id: string }
+        Returns: Json
+      }
       check_withdrawal_eligibility: {
         Args: { _user_id: string }
         Returns: {
@@ -1955,7 +3825,150 @@ export type Database = {
           message: string
         }[]
       }
+      cleanup_expired_posts: { Args: never; Returns: undefined }
       cleanup_expired_stories: { Args: never; Returns: undefined }
+      compute_policy_hash: { Args: { _policy_json: Json }; Returns: string }
+      detect_coordinated_timing: {
+        Args: never
+        Returns: {
+          action_count: number
+          pattern_days: number
+          time_window: string
+          user_count: number
+          user_ids: string[]
+        }[]
+      }
+      detect_cross_account_content_similarity: {
+        Args: never
+        Returns: {
+          content_hash: string
+          detected_at: string
+          sample_content: string
+          user_count: number
+          user_ids: string[]
+        }[]
+      }
+      detect_wallet_clusters: {
+        Args: never
+        Returns: {
+          collector_wallet: string
+          first_seen: string
+          last_seen: string
+          sender_count: number
+          sender_user_ids: string[]
+          token_types: string[]
+          total_amount: number
+        }[]
+      }
+      expire_old_mint_requests: { Args: never; Returns: number }
+      freeze_user_pending_rewards: {
+        Args: { _reason?: string; _user_id: string }
+        Returns: number
+      }
+      get_account_age_days: { Args: { _user_id: string }; Returns: number }
+      get_account_age_gate: {
+        Args: { _user_id: string }
+        Returns: {
+          account_age_days: number
+          gate_level: string
+          max_actions_per_day: number
+          reward_multiplier: number
+        }[]
+      }
+      get_active_policy: {
+        Args: never
+        Returns: {
+          action_configs: Json | null
+          activated_at: string | null
+          approved_by: string[] | null
+          arweave_tx: string | null
+          caps: Json | null
+          changelog: string | null
+          created_at: string
+          created_by: string | null
+          deprecated_at: string | null
+          deprecation_reason: string | null
+          description: string | null
+          formulas: Json | null
+          ipfs_cid: string | null
+          is_active: boolean
+          policy_hash: string | null
+          policy_json: Json
+          required_approvals: number | null
+          thresholds: Json | null
+          updated_at: string | null
+          version: string
+          version_int: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pplp_policies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_activity_history_stats: {
+        Args: never
+        Returns: {
+          rewarded_chats: number
+          total_chats: number
+          total_rewards: number
+          unique_users: number
+        }[]
+      }
+      get_admin_statistics: {
+        Args: {
+          _date_filter?: string
+          _today_start?: string
+          _week_start?: string
+        }
+        Returns: {
+          average_per_transaction: number
+          today_coins: number
+          total_coins_distributed: number
+          total_transactions: number
+          total_users: number
+          unique_recipients: number
+          week_coins: number
+        }[]
+      }
+      get_admin_user_management_data: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          camly_balance: number
+          camly_lifetime_earned: number
+          camly_lifetime_spent: number
+          comment_count: number
+          display_name: string
+          fun_money_received: number
+          gift_internal_received: number
+          gift_internal_sent: number
+          gift_web3_received: number
+          gift_web3_sent: number
+          handle: string
+          joined_at: string
+          light_score: number
+          negative_actions: number
+          popl_score: number
+          positive_actions: number
+          post_count: number
+          pplp_action_count: number
+          pplp_minted_count: number
+          total_withdrawn: number
+          user_id: string
+          wallet_address: string
+          withdrawal_count: number
+        }[]
+      }
+      get_daily_ai_usage: {
+        Args: { _user_id: string }
+        Returns: {
+          daily_limit: number
+          usage_count: number
+          usage_type: string
+        }[]
+      }
       get_daily_reward_status: {
         Args: { _user_id: string }
         Returns: {
@@ -1964,6 +3977,14 @@ export type Database = {
           journals_rewarded: number
           questions_remaining: number
           questions_rewarded: number
+        }[]
+      }
+      get_daily_trends: {
+        Args: { _date_filter?: string }
+        Returns: {
+          total_coins: number
+          transaction_count: number
+          trend_date: string
         }[]
       }
       get_early_adopter_rank: { Args: { p_user_id: string }; Returns: number }
@@ -1990,6 +4011,40 @@ export type Database = {
           total_coins_today: number
         }[]
       }
+      get_next_nonce: { Args: { _user_id: string }; Returns: number }
+      get_top_recipients: {
+        Args: { _date_filter?: string; _limit?: number }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          total_earned: number
+          transaction_count: number
+          user_id: string
+        }[]
+      }
+      get_transaction_type_stats: {
+        Args: { _date_filter?: string }
+        Returns: {
+          total_amount: number
+          transaction_count: number
+          transaction_type: string
+        }[]
+      }
+      get_user_pplp_stats: {
+        Args: { _user_id: string }
+        Returns: {
+          avg_light_score: number
+          avg_pillar_c: number
+          avg_pillar_h: number
+          avg_pillar_s: number
+          avg_pillar_t: number
+          avg_pillar_u: number
+          minted_actions: number
+          scored_actions: number
+          total_actions: number
+          total_rewards: number
+        }[]
+      }
       get_user_withdrawal_status: {
         Args: { _user_id: string }
         Returns: {
@@ -2008,11 +4063,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_ai_usage: {
+        Args: { _usage_type: string; _user_id: string }
+        Returns: number
+      }
+      increment_api_key_usage: {
+        Args: { _api_key_id: string; _tokens_used?: number }
+        Returns: undefined
+      }
       increment_early_adopter_questions: {
         Args: { p_user_id: string }
         Returns: number
       }
       is_admin: { Args: never; Returns: boolean }
+      is_coordinator_or_admin: { Args: { _user_id: string }; Returns: boolean }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
       is_user_suspended: { Args: { _user_id: string }; Returns: boolean }
       process_daily_login: {
@@ -2034,7 +4098,19 @@ export type Database = {
           user_rank: number
         }[]
       }
+      register_device_fingerprint: {
+        Args: { _device_hash: string; _user_id: string }
+        Returns: Json
+      }
       register_early_adopter: { Args: { p_user_id: string }; Returns: boolean }
+      release_pending_rewards: {
+        Args: never
+        Returns: {
+          frozen_count: number
+          released_count: number
+          total_amount: number
+        }[]
+      }
       request_coin_withdrawal: {
         Args: { _amount: number; _user_id: string; _wallet_address: string }
         Returns: {
@@ -2043,9 +4119,55 @@ export type Database = {
           withdrawal_id: string
         }[]
       }
+      run_cross_account_scan: { Args: never; Returns: Json }
+      schedule_random_audit: { Args: never; Returns: number }
+      update_popl_score: {
+        Args: { _action_type: string; _is_positive: boolean; _user_id: string }
+        Returns: number
+      }
+      update_user_tier: {
+        Args: { _user_id: string }
+        Returns: {
+          cap_multiplier: number
+          community_vouches: number
+          created_at: string
+          failed_actions: number
+          fraud_flags: number
+          known_device_hashes: string[] | null
+          last_device_hash: string | null
+          last_tier_change: string | null
+          passed_actions: number
+          stake_locked_until: string | null
+          staked_amount: number
+          tier: number
+          tier_change_reason: string | null
+          total_actions_scored: number
+          trust_score: number
+          updated_at: string
+          user_id: string
+          verified_connections: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pplp_user_tiers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      validate_api_key: {
+        Args: { _key_hash: string }
+        Returns: {
+          api_key_id: string
+          current_usage: number
+          daily_limit: number
+          is_rate_limited: boolean
+          user_id: string
+        }[]
+      }
+      validate_policy_version: { Args: { _version: string }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "coordinator"
       approval_status: "pending" | "approved" | "rejected" | "trial"
       coin_transaction_type:
         | "chat_reward"
@@ -2064,7 +4186,85 @@ export type Database = {
         | "feedback_reward"
         | "vision_reward"
         | "community_support"
+        | "gift_sent"
+        | "gift_received"
+        | "project_donation"
+        | "project_reward"
+        | "pplp_reward"
+        | "lixi_claim"
       energy_level: "very_high" | "high" | "neutral" | "low" | "very_low"
+      pplp_action_status:
+        | "pending"
+        | "scoring"
+        | "scored"
+        | "minted"
+        | "rejected"
+        | "disputed"
+      pplp_action_type:
+        | "LEARN_COMPLETE"
+        | "PROJECT_SUBMIT"
+        | "MENTOR_HELP"
+        | "COURSE_CREATE"
+        | "QUIZ_PASS"
+        | "CONTENT_CREATE"
+        | "CONTENT_REVIEW"
+        | "CONTENT_SHARE"
+        | "COMMENT_CREATE"
+        | "POST_ENGAGEMENT"
+        | "DONATE"
+        | "VOLUNTEER"
+        | "CAMPAIGN_CREATE"
+        | "CAMPAIGN_SUPPORT"
+        | "TREE_PLANT"
+        | "CLEANUP_EVENT"
+        | "CARBON_OFFSET"
+        | "ECO_ACTION"
+        | "FARM_DELIVERY"
+        | "MARKET_FAIR_TRADE"
+        | "PRODUCT_REVIEW"
+        | "SELLER_VERIFY"
+        | "BUG_BOUNTY"
+        | "GOV_PROPOSAL"
+        | "GOV_VOTE"
+        | "DISPUTE_RESOLVE"
+        | "POLICY_REVIEW"
+        | "DAILY_RITUAL"
+        | "GRATITUDE_PRACTICE"
+        | "JOURNAL_WRITE"
+        | "QUESTION_ASK"
+        | "DAILY_LOGIN"
+        | "STAKE_LOCK"
+        | "LIQUIDITY_PROVIDE"
+        | "REFERRAL_INVITE"
+        | "PROFILE_COMPLETE"
+        | "KYC_VERIFY"
+        | "REPUTATION_EARN"
+      pplp_decision: "pass" | "fail" | "pending" | "manual_review"
+      pplp_dispute_status: "open" | "investigating" | "resolved" | "rejected"
+      pplp_evidence_type:
+        | "QUIZ_SCORE"
+        | "CERTIFICATE"
+        | "SCREENSHOT"
+        | "TRANSACTION_HASH"
+        | "GPS_LOCATION"
+        | "PHOTO_PROOF"
+        | "VIDEO_PROOF"
+        | "DOCUMENT"
+        | "API_RESPONSE"
+        | "DEVICE_SIGNATURE"
+        | "USER_ATTESTATION"
+        | "THIRD_PARTY_VERIFY"
+        | "IPFS_HASH"
+        | "CONTENT_HASH"
+      pplp_integrity_signal:
+        | "DEVICE_FINGERPRINT"
+        | "SESSION_CONTINUITY"
+        | "IP_CONSISTENCY"
+        | "BEHAVIORAL_PATTERN"
+        | "CAPTCHA_PASS"
+        | "ANTI_SYBIL_CHECK"
+        | "TIME_PATTERN_VALID"
+        | "LOCATION_VALID"
       suspension_type: "temporary" | "permanent"
     }
     CompositeTypes: {
@@ -2193,7 +4393,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "coordinator"],
       approval_status: ["pending", "approved", "rejected", "trial"],
       coin_transaction_type: [
         "chat_reward",
@@ -2212,8 +4412,90 @@ export const Constants = {
         "feedback_reward",
         "vision_reward",
         "community_support",
+        "gift_sent",
+        "gift_received",
+        "project_donation",
+        "project_reward",
+        "pplp_reward",
+        "lixi_claim",
       ],
       energy_level: ["very_high", "high", "neutral", "low", "very_low"],
+      pplp_action_status: [
+        "pending",
+        "scoring",
+        "scored",
+        "minted",
+        "rejected",
+        "disputed",
+      ],
+      pplp_action_type: [
+        "LEARN_COMPLETE",
+        "PROJECT_SUBMIT",
+        "MENTOR_HELP",
+        "COURSE_CREATE",
+        "QUIZ_PASS",
+        "CONTENT_CREATE",
+        "CONTENT_REVIEW",
+        "CONTENT_SHARE",
+        "COMMENT_CREATE",
+        "POST_ENGAGEMENT",
+        "DONATE",
+        "VOLUNTEER",
+        "CAMPAIGN_CREATE",
+        "CAMPAIGN_SUPPORT",
+        "TREE_PLANT",
+        "CLEANUP_EVENT",
+        "CARBON_OFFSET",
+        "ECO_ACTION",
+        "FARM_DELIVERY",
+        "MARKET_FAIR_TRADE",
+        "PRODUCT_REVIEW",
+        "SELLER_VERIFY",
+        "BUG_BOUNTY",
+        "GOV_PROPOSAL",
+        "GOV_VOTE",
+        "DISPUTE_RESOLVE",
+        "POLICY_REVIEW",
+        "DAILY_RITUAL",
+        "GRATITUDE_PRACTICE",
+        "JOURNAL_WRITE",
+        "QUESTION_ASK",
+        "DAILY_LOGIN",
+        "STAKE_LOCK",
+        "LIQUIDITY_PROVIDE",
+        "REFERRAL_INVITE",
+        "PROFILE_COMPLETE",
+        "KYC_VERIFY",
+        "REPUTATION_EARN",
+      ],
+      pplp_decision: ["pass", "fail", "pending", "manual_review"],
+      pplp_dispute_status: ["open", "investigating", "resolved", "rejected"],
+      pplp_evidence_type: [
+        "QUIZ_SCORE",
+        "CERTIFICATE",
+        "SCREENSHOT",
+        "TRANSACTION_HASH",
+        "GPS_LOCATION",
+        "PHOTO_PROOF",
+        "VIDEO_PROOF",
+        "DOCUMENT",
+        "API_RESPONSE",
+        "DEVICE_SIGNATURE",
+        "USER_ATTESTATION",
+        "THIRD_PARTY_VERIFY",
+        "IPFS_HASH",
+        "CONTENT_HASH",
+      ],
+      pplp_integrity_signal: [
+        "DEVICE_FINGERPRINT",
+        "SESSION_CONTINUITY",
+        "IP_CONSISTENCY",
+        "BEHAVIORAL_PATTERN",
+        "CAPTCHA_PASS",
+        "ANTI_SYBIL_CHECK",
+        "TIME_PATTERN_VALID",
+        "LOCATION_VALID",
+      ],
       suspension_type: ["temporary", "permanent"],
     },
   },

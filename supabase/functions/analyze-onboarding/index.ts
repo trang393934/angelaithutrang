@@ -130,21 +130,33 @@ Hãy phân tích tần số năng lượng của họ và đưa ra quyết đị
 
 Trả về JSON với format: {"decision": "approved/trial/rejected", "reason": "lý do ngắn gọn", "message": "thông điệp yêu thương gửi đến họ"}`;
 
-        const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
-            messages: [
+        // --- AI Gateway Config ---
+        const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+        const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+        const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
+        const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
+        const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
+        const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
+        if (CF_API_TOKEN) {
+          aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
+        } else {
+          aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
+        }
+
+        const onboardBody = { model: cfModel("google/gemini-2.5-flash-lite"), messages: [
               { role: "system", content: "Bạn là Angel AI, chuyên đánh giá tần số năng lượng. Trả về JSON thuần túy, không markdown." },
               { role: "user", content: prompt },
-            ],
-            temperature: 0.3,
-          }),
+            ], temperature: 0.3 };
+        let aiResponse = await fetch(AI_GATEWAY_URL, {
+          method: "POST", headers: aiHeaders, body: JSON.stringify(onboardBody),
         });
+        if (!aiResponse.ok && CF_API_TOKEN) {
+          aiResponse = await fetch(LOVABLE_GATEWAY_URL, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ ...onboardBody, model: "google/gemini-2.5-flash-lite" }),
+          });
+        }
 
         if (aiResponse.ok) {
           const aiData = await aiResponse.json();

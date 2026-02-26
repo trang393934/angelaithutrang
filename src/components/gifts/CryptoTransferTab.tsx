@@ -1,0 +1,721 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Search, Loader2, User, Wallet, Sparkles, ExternalLink, MessageCircle, CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { toast } from "sonner";
+import type { TransferResult, TokenType } from "@/hooks/useWeb3Transfer";
+
+interface UserSearchResult {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
+const MESSAGE_TEMPLATES = [
+  "Chúc mừng bạn! 🎉",
+  "Cảm ơn bạn rất nhiều! 💚",
+  "Yêu thương gửi bạn! 💕",
+  "Tặng bạn món quà nhỏ! 🎁",
+  "FUN cùng nhau! 🌟",
+];
+
+interface CryptoTransferTabProps {
+  tokenType: TokenType;
+  tokenSymbol: string;
+  tokenBalance: string;
+  isConnected: boolean;
+  isTransferring: boolean;
+  address: string | undefined;
+  hasWallet: boolean;
+  explorerUrl: string;
+  accentColor: string;
+  preselectedUser?: UserSearchResult | null;
+  onConnect: () => Promise<void>;
+  onTransfer: (toAddress: string, amount: number) => Promise<TransferResult>;
+  onFetchBalance: () => void;
+  onSuccess: (result: TransferResult, recipientUser: UserSearchResult | null, targetAddress: string, amount: number, message?: string) => void;
+}
+
+export function CryptoTransferTab({
+  tokenType,
+  tokenSymbol,
+  tokenBalance,
+  isConnected,
+  isTransferring,
+  address,
+  hasWallet,
+  explorerUrl,
+  accentColor,
+  preselectedUser,
+  onConnect,
+  onTransfer,
+  onFetchBalance,
+  onSuccess,
+}: CryptoTransferTabProps) {
+  const { t } = useLanguage();
+  const { user } = useAuth();
+
+  const [cryptoRecipient, setCryptoRecipient] = useState<"address" | "profile">("address");
+  const [walletAddress, setWalletAddress] = useState("");
+  const [cryptoAmount, setCryptoAmount] = useState("");
+  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+  const [giftMessage, setGiftMessage] = useState("");
+
+  const [cryptoSelectedUser, setCryptoSelectedUser] = useState<UserSearchResult | null>(null);
+  const [cryptoSearchQuery, setCryptoSearchQuery] = useState("");
+  const [cryptoSearchResults, setCryptoSearchResults] = useState<UserSearchResult[]>([]);
+  const [isCryptoSearching, setIsCryptoSearching] = useState(false);
+  const [walletLookupError, setWalletLookupError] = useState<string | null>(null);
+
+  // Wallet address → user lookup
+  const [walletOwner, setWalletOwner] = useState<UserSearchResult | null>(null);
+  const [isLookingUpWallet, setIsLookingUpWallet] = useState(false);
+
+  // Retry pending gift records from localStorage on mount
+  useEffect(() => {
+    if (!user) return;
+    const retryPendingGifts = async () => {
+      const pending = JSON.parse(localStorage.getItem("pending_gift_records") || "[]");
+      if (pending.length === 0) return;
+      
+      console.log(`[Gift Recovery] Retrying ${pending.length} pending gifts`);
+      const { error } = await supabase.functions.invoke("record-gift", {
+        body: { gifts: pending },
+      });
+      
+      if (!error) {
+        localStorage.removeItem("pending_gift_records");
+        console.log("[Gift Recovery] All pending gifts recorded successfully");
+      } else {
+        console.warn("[Gift Recovery] Retry failed, will try again later:", error.message);
+      }
+    };
+    retryPendingGifts();
+  }, [user]);
+
+  // Look up wallet owner when address is pasted/typed (address mode only)
+  useEffect(() => {
+    if (cryptoRecipient !== "address") {
+      setWalletOwner(null);
+      return;
+    }
+    const addr = walletAddress.trim();
+    if (!addr || addr.length !== 42 || !addr.startsWith("0x")) {
+      setWalletOwner(null);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setIsLookingUpWallet(true);
+      setWalletOwner(null);
+      try {
+        const { data } = await supabase
+          .from("user_wallet_addresses")
+          .select("user_id")
+          .eq("wallet_address", addr)
+          .maybeSingle();
+
+        if (data?.user_id) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id, display_name, avatar_url")
+            .eq("user_id", data.user_id)
+            .maybeSingle();
+          if (profile) {
+            setWalletOwner(profile);
+          }
+        } else {
+          // Fallback: check coin_withdrawals
+          const { data: wd } = await supabase
+            .from("coin_withdrawals")
+            .select("user_id")
+            .eq("wallet_address", addr)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (wd?.user_id) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("user_id, display_name, avatar_url")
+              .eq("user_id", wd.user_id)
+              .maybeSingle();
+            if (profile) setWalletOwner(profile);
+          }
+        }
+      } catch (err) {
+        console.error("Wallet owner lookup error:", err);
+      } finally {
+        setIsLookingUpWallet(false);
+      }
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [walletAddress, cryptoRecipient]);
+
+  // Auto-fill preselected user (from profile page)
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
+  useEffect(() => {
+    if (preselectedUser && !hasAutoFilled) {
+      setHasAutoFilled(true);
+      setCryptoRecipient("profile");
+      handleSelectCryptoUser(preselectedUser);
+    }
+  }, [preselectedUser, hasAutoFilled]);
+
+  useEffect(() => {
+    if (isConnected) {
+      onFetchBalance();
+    }
+  }, [isConnected, onFetchBalance]);
+
+  useEffect(() => {
+    if (cryptoSearchQuery.length < 2) {
+      setCryptoSearchResults([]);
+      return;
+    }
+    const debounce = setTimeout(async () => {
+      setIsCryptoSearching(true);
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url")
+          .ilike("display_name", `%${cryptoSearchQuery}%`)
+          .limit(10);
+        if (data) setCryptoSearchResults(data);
+      } catch (err) {
+        console.error("Crypto search error:", err);
+      } finally {
+        setIsCryptoSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(debounce);
+  }, [cryptoSearchQuery]);
+
+  const handleSelectCryptoUser = async (selectedProfile: UserSearchResult) => {
+    setCryptoSelectedUser(selectedProfile);
+    setCryptoSearchQuery("");
+    setCryptoSearchResults([]);
+    setWalletLookupError(null);
+    setWalletAddress("");
+
+    try {
+      // 1. Primary: check user_wallet_addresses
+      const { data, error } = await supabase
+        .from("user_wallet_addresses")
+        .select("wallet_address")
+        .eq("user_id", selectedProfile.user_id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data?.wallet_address) {
+        setWalletAddress(data.wallet_address);
+        return;
+      }
+
+      // 2. Fallback: check coin_withdrawals for a known wallet
+      const { data: withdrawal } = await supabase
+        .from("coin_withdrawals")
+        .select("wallet_address")
+        .eq("user_id", selectedProfile.user_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (withdrawal?.wallet_address) {
+        setWalletAddress(withdrawal.wallet_address);
+        // Auto-save to user_wallet_addresses for future lookups
+        await supabase
+          .from("user_wallet_addresses")
+          .upsert({ user_id: selectedProfile.user_id, wallet_address: withdrawal.wallet_address }, { onConflict: "user_id" })
+          .then(() => console.log("[Wallet] Backfilled from withdrawals"));
+        return;
+      }
+
+      // 3. Fallback: check coin_gifts for a known tx_hash sender address
+      const { data: gift } = await supabase
+        .from("coin_gifts")
+        .select("tx_hash")
+        .eq("sender_id", selectedProfile.user_id)
+        .not("tx_hash", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (gift?.tx_hash) {
+        // User has done Web3 transfers but wallet not saved - show helpful message
+        setWalletLookupError("Người này đã giao dịch Web3 nhưng chưa lưu địa chỉ ví. Hãy nhập địa chỉ ví trực tiếp.");
+        setCryptoRecipient("address");
+        return;
+      }
+
+      setWalletLookupError("Người này chưa đăng ký ví Web3");
+    } catch (err) {
+      console.error("Wallet lookup error:", err);
+      setWalletLookupError("Không thể tìm địa chỉ ví");
+    }
+  };
+
+  const handleTransfer = async () => {
+    const numAmount = Number(cryptoAmount);
+    if (numAmount <= 0) {
+      toast.error(t("crypto.invalidAmount"));
+      return;
+    }
+
+    if (!walletAddress || walletAddress.length !== 42) {
+      toast.error(t("crypto.invalidAddress"));
+      return;
+    }
+
+    try {
+      const result = await onTransfer(walletAddress, numAmount);
+
+      if (result.success) {
+        setLastTxHash(result.txHash || null);
+        toast.success(result.message);
+        onFetchBalance();
+
+        const receiverUser = cryptoSelectedUser || walletOwner;
+        const receiverUserId = receiverUser?.user_id || null;
+        const giftRecord = {
+          sender_id: user!.id,
+          receiver_id: receiverUserId || user!.id,
+          amount: numAmount,
+          message: giftMessage || `[Web3] ${tokenSymbol} transfer to ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+          tx_hash: result.txHash || null,
+          gift_type: `web3_${tokenSymbol}`,
+          context_type: "direct",
+          context_id: null,
+        };
+
+        // Retry with exponential backoff (3 attempts: 0s, 2s, 5s)
+        let recorded = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (attempt > 0) {
+            await new Promise(r => setTimeout(r, attempt * 2500));
+            console.log(`[Web3 Gift ${tokenSymbol}] Retry attempt ${attempt + 1}/3`);
+          }
+          const { error: fnError } = await supabase.functions.invoke("record-gift", {
+            body: { gifts: [giftRecord] },
+          });
+          if (!fnError) {
+            recorded = true;
+            console.log(`[Web3 Gift ${tokenSymbol}] Recorded successfully on attempt ${attempt + 1}`);
+            break;
+          }
+          console.warn(`[Web3 Gift ${tokenSymbol}] Attempt ${attempt + 1} failed:`, fnError.message);
+        }
+
+        if (!recorded) {
+          console.error(`[Web3 Gift ${tokenSymbol}] All retries failed, saving to localStorage for recovery`);
+          const pendingGifts = JSON.parse(localStorage.getItem("pending_gift_records") || "[]");
+          pendingGifts.push({ ...giftRecord, created_at: new Date().toISOString() });
+          localStorage.setItem("pending_gift_records", JSON.stringify(pendingGifts));
+          toast.warning("Giao dịch blockchain thành công nhưng chưa ghi nhận vào hệ thống. Sẽ tự động đồng bộ sau.");
+        }
+
+        onSuccess(result, receiverUser, walletAddress, numAmount, giftMessage || undefined);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error: any) {
+      console.error(`[Web3 Gift ${tokenSymbol}] Transfer error:`, error);
+      toast.error("Lỗi kết nối ví. Vui lòng mở MetaMask và thử lại.");
+    }
+  };
+
+  const gradientFrom = "from-amber-50";
+  const gradientTo = "to-yellow-50/80";
+  const borderColor = "border-amber-200";
+  const textColor = "text-amber-700";
+  const textBold = "text-amber-800";
+  const btnGradient = "btn-golden-3d !text-black font-bold";
+  const ringColor = "ring-amber-400/40";
+  const activeBtn = "bg-gradient-to-r from-[#b8860b] via-[#daa520] to-[#ffd700] text-black border-amber-500";
+
+  if (!isConnected) {
+    return (
+      <div className="text-center py-6 space-y-4">
+        <Wallet className="w-12 h-12 mx-auto text-primary" />
+        <p className="text-muted-foreground">{t("crypto.connectToTransfer")}</p>
+        <Button
+          onClick={async () => {
+            const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+            if (inIframe) {
+              toast.info(
+                <div className="space-y-2">
+                  <p className="font-medium">Không thể kết nối ví trong preview</p>
+                  <p className="text-sm text-muted-foreground">
+                    Vui lòng mở ứng dụng trong tab mới để kết nối MetaMask.
+                  </p>
+                  <button
+                    onClick={() => window.open("https://angel.fun.rich", "_blank")}
+                    className="text-xs underline text-primary hover:text-primary/80"
+                  >
+                    Mở trong tab mới →
+                  </button>
+                </div>,
+                { duration: 8000 }
+              );
+              return;
+            }
+            try {
+              await onConnect();
+            } catch (err: any) {
+              console.warn("[CryptoTransferTab] Connect error:", err?.message);
+              toast.error("Không thể kết nối ví. Vui lòng mở MetaMask và thử lại.");
+            }
+          }}
+          className="btn-golden-3d !text-black font-bold"
+        >
+          <Wallet className="w-4 h-4 mr-2" />
+          {t("crypto.connectWallet")}
+        </Button>
+        {!hasWallet && (
+          <p className="text-xs text-muted-foreground">
+            {t("crypto.installMetaMask")}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Wallet Info */}
+      <div className={`bg-gradient-to-r ${gradientFrom} ${gradientTo} rounded-lg p-3 border ${borderColor}`}>
+        <div className="flex justify-between items-center">
+          <div>
+            <div className={`text-sm ${textColor}`}>Số dư {tokenSymbol}</div>
+            <div className={`text-xl font-bold ${textBold}`}>
+              {Number(tokenBalance).toLocaleString()} {tokenSymbol}
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground bg-white/50 px-2 py-1 rounded">
+            {address?.slice(0, 6)}...{address?.slice(-4)}
+          </div>
+        </div>
+      </div>
+
+      {/* Recipient Type Selection */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-amber-800">{t("crypto.recipientType")}</label>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant={cryptoRecipient === "address" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setCryptoRecipient("address")}
+            className={cryptoRecipient === "address" ? activeBtn : ""}
+          >
+            {t("crypto.walletAddress")}
+          </Button>
+          <Button
+            variant={cryptoRecipient === "profile" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setCryptoRecipient("profile")}
+            className={cryptoRecipient === "profile" ? activeBtn : ""}
+          >
+            {t("crypto.fromProfile")}
+          </Button>
+        </div>
+      </div>
+
+      {/* Wallet Address Input */}
+      {cryptoRecipient === "address" ? (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-amber-800">{t("crypto.recipientAddress")}</label>
+          <Input
+            placeholder="0x..."
+            value={walletAddress}
+            onChange={(e) => setWalletAddress(e.target.value)}
+          />
+          {/* Wallet owner lookup result */}
+          <AnimatePresence mode="wait">
+            {isLookingUpWallet && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2 text-xs text-muted-foreground py-2 px-3 bg-muted/40 rounded-lg border border-border/40"
+              >
+                <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                Đang tìm chủ ví...
+              </motion.div>
+            )}
+
+            {!isLookingUpWallet && walletOwner && walletOwner.user_id === user?.id && (
+              <motion.div
+                key="self"
+                initial={{ opacity: 0, scale: 0.97, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97, y: -4 }}
+                transition={{ duration: 0.25 }}
+                className="rounded-xl border border-yellow-400/60 bg-yellow-50/80 dark:bg-yellow-900/20 p-3 space-y-2"
+              >
+                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 font-semibold text-sm">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  Đây là ví của chính bạn!
+                </div>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 ring-2 ring-yellow-400/50">
+                    <AvatarImage src={walletOwner.avatar_url || ""} className="object-cover" />
+                    <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm text-foreground truncate">{walletOwner.display_name || "Bạn"}</div>
+                    <div className="text-xs text-yellow-600 dark:text-yellow-400">Bạn đang gửi cho chính mình</div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {!isLookingUpWallet && walletOwner && walletOwner.user_id !== user?.id && (
+              <motion.div
+                key="found"
+                initial={{ opacity: 0, scale: 0.97, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97, y: -4 }}
+                transition={{ duration: 0.25 }}
+                className="rounded-xl border border-green-400/60 bg-green-50/80 dark:bg-green-900/20 p-3 space-y-2"
+              >
+                <div className="flex items-center gap-2 text-green-700 dark:text-green-400 font-semibold text-sm">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  Tìm thấy chủ ví trong hệ thống
+                </div>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12 ring-2 ring-green-400/50">
+                    <AvatarImage src={walletOwner.avatar_url || ""} className="object-cover" />
+                    <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-base text-foreground truncate">{walletOwner.display_name || "Người dùng"}</div>
+                    <div className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-xs font-medium">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Đã xác minh
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground font-mono bg-muted/50 rounded px-2 py-1 truncate">
+                  {walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}
+                </div>
+              </motion.div>
+            )}
+
+            {!isLookingUpWallet && !walletOwner && walletAddress.length === 42 && walletAddress.startsWith("0x") && (
+              <motion.div
+                key="external"
+                initial={{ opacity: 0, scale: 0.97, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97, y: -4 }}
+                transition={{ duration: 0.25 }}
+                className="rounded-xl border border-orange-400/60 bg-orange-50/80 dark:bg-orange-900/20 p-3 space-y-1.5"
+              >
+                <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400 font-semibold text-sm">
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  Ví ngoài hệ thống Angel AI
+                </div>
+                <p className="text-xs text-orange-600/80 dark:text-orange-400/80">
+                  Ví này chưa đăng ký trong hệ thống. Giao dịch sẽ được gửi đến:
+                </p>
+                <div className="text-xs text-muted-foreground font-mono bg-muted/50 rounded px-2 py-1 truncate">
+                  {walletAddress}
+                </div>
+                <p className="text-xs text-orange-500/70 italic">Bạn vẫn có thể tiếp tục chuyển.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {!cryptoSelectedUser ? (
+            <>
+              <label className="text-sm font-medium">{t("gift.searchUser")}</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder={t("gift.searchPlaceholder")}
+                  value={cryptoSearchQuery}
+                  onChange={(e) => setCryptoSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+                {isCryptoSearching && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{t("crypto.profileNeedWallet")}</p>
+              {cryptoSearchResults.length > 0 ? (
+                <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
+                  {cryptoSearchResults.map((searchUser) => (
+                    <button
+                      key={searchUser.user_id}
+                      className="w-full p-2 flex items-center gap-3 hover:bg-accent text-left"
+                      onClick={() => handleSelectCryptoUser(searchUser)}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={searchUser.avatar_url || ""} />
+                        <AvatarFallback>
+                          <User className="w-4 h-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{searchUser.display_name || "Người dùng"}</span>
+                      {searchUser.user_id === user?.id && (
+                        <span className="text-xs text-muted-foreground ml-auto">(Bạn)</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                cryptoSearchQuery.length >= 2 && !isCryptoSearching && (
+                  <p className="text-xs text-center text-muted-foreground py-3">
+                    Không tìm thấy người dùng "{cryptoSearchQuery}"
+                  </p>
+                )
+              )}
+            </>
+          ) : (
+            <>
+              <label className="text-sm font-medium">{t("crypto.recipientType")}</label>
+              <div className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg">
+                <Avatar className={`h-10 w-10 ring-2 ${ringColor}`}>
+                  <AvatarImage src={cryptoSelectedUser.avatar_url || ""} />
+                  <AvatarFallback>
+                    <User className="w-5 h-5" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium">{cryptoSelectedUser.display_name || "Người dùng"}</div>
+                  {walletAddress ? (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {walletAddress.slice(0, 10)}...{walletAddress.slice(-6)}
+                    </div>
+                  ) : walletLookupError ? (
+                    <div className="text-xs text-destructive">{walletLookupError}</div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Đang tìm ví...
+                    </div>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setCryptoSelectedUser(null);
+                    setWalletAddress("");
+                    setWalletLookupError(null);
+                  }}
+                >
+                  {t("common.change")}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Amount Input */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-amber-800">Số lượng {tokenSymbol}</label>
+        <Input
+          type="number"
+          placeholder="100"
+          value={cryptoAmount}
+          onChange={(e) => setCryptoAmount(e.target.value)}
+          onWheel={(e) => (e.target as HTMLInputElement).blur()}
+          min={1}
+        />
+        <p className="text-xs text-muted-foreground">
+          {t("crypto.gasNote")}
+        </p>
+      </div>
+
+      {/* Message Input with Templates */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium flex items-center gap-1.5">
+          <MessageCircle className="w-3.5 h-3.5" />
+          Lời nhắn
+        </label>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {MESSAGE_TEMPLATES.map((tmpl) => (
+            <button
+              key={tmpl}
+              type="button"
+              onClick={() => setGiftMessage(tmpl)}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                giftMessage === tmpl
+                  ? "bg-gradient-to-r from-[#b8860b] via-[#daa520] to-[#ffd700] text-black border-amber-500 font-bold"
+                  : "border-amber-200 hover:bg-amber-50 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tmpl}
+            </button>
+          ))}
+        </div>
+        <Textarea
+          placeholder="Hoặc nhập lời nhắn tùy chọn..."
+          value={giftMessage}
+          onChange={(e) => setGiftMessage(e.target.value)}
+          rows={2}
+          className="resize-none"
+        />
+      </div>
+
+      {/* Transfer Button */}
+      <Button
+        onClick={handleTransfer}
+        disabled={isTransferring || !cryptoAmount || !walletAddress}
+        className="w-full btn-golden-3d !text-black font-bold"
+      >
+        {isTransferring ? (
+          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+        ) : (
+          <Wallet className="w-4 h-4 mr-2" />
+        )}
+        Chuyển {tokenSymbol}
+      </Button>
+
+      {/* Transaction Link */}
+      {lastTxHash && (
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-2 text-amber-800 font-medium text-sm">
+            <Sparkles className="w-4 h-4 text-amber-600" />
+            Chúc mừng bạn đã chuyển thành công!
+          </div>
+          <div className="flex items-center gap-2">
+            <code className="text-xs bg-white px-2 py-1 rounded border flex-1 truncate">
+              {lastTxHash}
+            </code>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 shrink-0"
+              onClick={() => {
+                navigator.clipboard.writeText(lastTxHash);
+                toast.success("Đã sao chép mã giao dịch!");
+              }}
+            >
+              📋
+            </Button>
+          </div>
+          <a
+            href={`${explorerUrl}/tx/${lastTxHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 text-sm text-primary hover:underline"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Xem trên BscScan
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}

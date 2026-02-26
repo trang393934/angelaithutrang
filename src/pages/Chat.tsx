@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { stripMarkdown } from "@/lib/stripMarkdown";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, Send, Sparkles, Lock, Coins, Heart, Copy, Share2, 
   ImagePlus, Camera, Wand2, X, Download, Loader2, MessageSquare,
-  History, FolderOpen, Plus, Volume2, Image, Menu
+  History, FolderOpen, Plus, Volume2, Image, Menu, Pencil, ArrowDown
 } from "lucide-react";
 import { MessageFeedback } from "@/components/chat/MessageFeedback";
+import { TimeoutMessage } from "@/components/TimeoutMessage";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -20,8 +22,9 @@ import { ImageHistorySidebar } from "@/components/chat/ImageHistorySidebar";
 import { AudioButton } from "@/components/chat/AudioButton";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useExtendedRewardStatus } from "@/hooks/useExtendedRewardStatus";
-import { useImageGeneration } from "@/hooks/useImageGeneration";
+import { useImageGeneration, IMAGE_SIZE_OPTIONS, type ImageSize } from "@/hooks/useImageGeneration";
 import { useImageAnalysis } from "@/hooks/useImageAnalysis";
+import { useImageEdit } from "@/hooks/useImageEdit";
 import { useEarlyAdopterReward } from "@/hooks/useEarlyAdopterReward";
 import { useChatHistory } from "@/hooks/useChatHistory";
 import { useChatSessions } from "@/hooks/useChatSessions";
@@ -41,7 +44,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
+import { SignupPromptDialog } from "@/components/SignupPromptDialog";
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -62,7 +65,7 @@ interface ShareDialogState {
   answer: string;
 }
 
-type ChatMode = "chat" | "generate-image" | "analyze-image";
+type ChatMode = "chat" | "generate-image" | "analyze-image" | "edit-image";
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/angel-chat`;
 
@@ -138,17 +141,42 @@ const Chat = () => {
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageStyle, setImageStyle] = useState<"spiritual" | "realistic" | "artistic">("spiritual");
+  const [imageMode, setImageMode] = useState<"fast" | "spiritual">("fast");
+  const [imageSize, setImageSize] = useState<ImageSize>("square");
+  const [showImageActionDialog, setShowImageActionDialog] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
   const { isGenerating, generateImage } = useImageGeneration();
   const { isAnalyzing, analyzeImage } = useImageAnalysis();
+  const { isEditing, editImage } = useImageEdit();
   const { isLoading: ttsLoading, isPlaying: ttsPlaying, currentMessageId: ttsMessageId, playText, stopAudio } = useTextToSpeech();
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
+
+  // Track scroll position to show/hide scroll-to-bottom button
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      setShowScrollToBottom(distanceFromBottom > 200);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Helper to find the question for an assistant message
   const getQuestionForAnswer = (answerIndex: number): string => {
@@ -195,19 +223,95 @@ const Chat = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
-      setUploadedImage(dataUrl);
-      setChatMode("analyze-image");
+      // Show action dialog to choose between analyze or edit
+      setPendingImage(dataUrl);
+      setShowImageActionDialog(true);
     };
     reader.readAsDataURL(file);
+    
+    // Reset input value to allow same file selection
+    e.target.value = '';
   };
 
-  const handleDownloadImage = (imageUrl: string) => {
-    const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = `angel-ai-image-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleSelectImageAction = (action: "analyze" | "edit") => {
+    if (!pendingImage) return;
+    
+    setUploadedImage(pendingImage);
+    setChatMode(action === "analyze" ? "analyze-image" : "edit-image");
+    setShowImageActionDialog(false);
+    setPendingImage(null);
+  };
+
+  const handleDownloadImage = async (imageUrl: string) => {
+    try {
+      // Check if it's a data URL (base64) - can download directly
+      if (imageUrl.startsWith('data:')) {
+        const link = document.createElement("a");
+        link.href = imageUrl;
+        link.download = `angel-ai-image-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Đã tải hình ảnh thành công!");
+        return;
+      }
+
+      // For external URLs, use canvas to convert and download
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      
+      const downloadPromise = new Promise<void>((resolve, reject) => {
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              reject(new Error("Cannot create canvas context"));
+              return;
+            }
+            
+            ctx.drawImage(img, 0, 0);
+            
+            canvas.toBlob((blob) => {
+              if (!blob) {
+                reject(new Error("Cannot create blob"));
+                return;
+              }
+              
+              const blobUrl = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = blobUrl;
+              link.download = `angel-ai-image-${Date.now()}.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(blobUrl);
+              resolve();
+            }, "image/png");
+          } catch (err) {
+            reject(err);
+          }
+        };
+        
+        img.onerror = () => reject(new Error("Failed to load image"));
+      });
+      
+      img.src = imageUrl;
+      await downloadPromise;
+      toast.success("Đã tải hình ảnh thành công!");
+    } catch (error) {
+      console.error("Download error:", error);
+      // Fallback: try to open in new tab for manual save
+      try {
+        window.open(imageUrl, '_blank');
+        toast.info("Hình ảnh đã mở trong tab mới. Nhấn giữ để lưu về thiết bị.");
+      } catch {
+        toast.error("Không thể tải hình ảnh. Vui lòng thử lại.");
+      }
+    }
   };
 
   // Check if user has agreed to Light Law and fetch response style
@@ -218,25 +322,39 @@ const Chat = () => {
         return;
       }
       
-      // Check light agreement
-      const { data: agreementData } = await supabase
-        .from("user_light_agreements")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Create timeout promise for fallback
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 10000)
+      );
       
-      setHasAgreed(!!agreementData);
-      
-      // Fetch user's response style preference
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("response_style")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      
-      if (profileData?.response_style) {
-        setUserResponseStyle(profileData.response_style);
-        console.log("User response style:", profileData.response_style);
+      try {
+        // Race agreement check with timeout
+        const agreementResult = await Promise.race([
+          supabase
+            .from("user_light_agreements")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          timeoutPromise
+        ]);
+        
+        setHasAgreed(!!(agreementResult as any)?.data);
+        
+        // Fetch user's response style preference (non-blocking)
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("response_style")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        if (profileData?.response_style) {
+          setUserResponseStyle(profileData.response_style);
+          console.log("User response style:", profileData.response_style);
+        }
+      } catch (error) {
+        console.error("Agreement check failed/timeout:", error);
+        // Fallback: allow access, user will be asked to agree if needed
+        setHasAgreed(false);
       }
     };
 
@@ -329,6 +447,7 @@ const Chat = () => {
           const parsed = JSON.parse(jsonStr);
           const content = parsed.choices?.[0]?.delta?.content;
           if (content) {
+            // Do NOT strip U+FFFD — keep raw for corruption detection
             assistantContent += content;
             setMessages(prev => {
               const updated = [...prev];
@@ -343,57 +462,125 @@ const Chat = () => {
       }
     }
     
+    // Corruption detection: fallback to non-stream if needed
+    const hasCorruption = assistantContent.includes('\uFFFD') || /[a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]\?\?[a-zàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/i.test(assistantContent);
+    
+    if (hasCorruption) {
+      console.warn("⚠️ Corruption detected in chat stream — falling back to non-stream");
+      try {
+        const fallbackResp = await fetch(CHAT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ 
+            messages: userMessages.map(m => ({ role: m.role, content: m.content })),
+            responseStyle: userResponseStyle || 'detailed',
+            stream: false,
+          }),
+        });
+        if (fallbackResp.ok) {
+          const fallbackData = await fallbackResp.json();
+          if (fallbackData.content) {
+            assistantContent = fallbackData.content;
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[updated.length - 1] = { role: "assistant", content: assistantContent, type: "text" };
+              return updated;
+            });
+          }
+        }
+      } catch (fallbackErr) {
+        console.error("Non-stream fallback failed:", fallbackErr);
+      }
+    }
+
     return assistantContent;
   };
 
   const analyzeAndReward = useCallback(async (questionText: string, aiResponse: string) => {
     if (!user) return;
-    try {
-      const { data } = await supabase.functions.invoke("analyze-reward-question", {
-        body: { questionText, aiResponse },
-      });
-      
-      // Handle response recycling detection
-      if (data?.isResponseRecycled) {
-        toast.info(data.message, {
-          duration: 8000,
-          icon: "💫",
-          style: {
-            background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
-            border: "1px solid #f59e0b",
-            color: "#92400e",
-          }
+    
+    const maxRetries = 2;
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[analyzeAndReward] Attempt ${attempt}/${maxRetries} for question:`, questionText.substring(0, 50));
+        
+        const { data, error } = await supabase.functions.invoke("analyze-reward-question", {
+          body: { questionText, aiResponse },
         });
-        // Still update remaining questions count
-        if (data.questionsRemaining !== undefined) {
+        
+        if (error) {
+          console.error(`[analyzeAndReward] Function error on attempt ${attempt}:`, error);
+          throw error;
+        }
+        
+        console.log(`[analyzeAndReward] Response received:`, data);
+        
+        // Handle response recycling detection
+        if (data?.isResponseRecycled) {
+          toast.info(data.message, {
+            duration: 8000,
+            icon: "💫",
+            style: {
+              background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
+              border: "1px solid #f59e0b",
+              color: "#92400e",
+            }
+          });
+          // Still update remaining questions count
+          if (data.questionsRemaining !== undefined) {
+            setCurrentReward({
+              coins: 0,
+              purityScore: 0,
+              message: data.message,
+              questionsRemaining: data.questionsRemaining,
+            });
+          }
+          return;
+        }
+        
+        if (data?.rewarded) {
           setCurrentReward({
-            coins: 0,
-            purityScore: 0,
+            coins: data.coins,
+            purityScore: data.purityScore,
             message: data.message,
             questionsRemaining: data.questionsRemaining,
           });
+          refreshBalance();
+          
+          // Early adopter count is now incremented server-side in analyze-reward-question
+          // Just refresh the status to get updated count
+          if (!data.isGreeting && !data.isSpam && !data.isDuplicate) {
+            // Status will be refreshed through the hook's subscription
+          }
+        } else if (data?.reason) {
+          // Show info for non-rewarded cases (greeting, spam, daily limit, etc.)
+          console.log(`[analyzeAndReward] Not rewarded - reason: ${data.reason}`);
         }
-        return;
-      }
-      
-      if (data?.rewarded) {
-        setCurrentReward({
-          coins: data.coins,
-          purityScore: data.purityScore,
-          message: data.message,
-          questionsRemaining: data.questionsRemaining,
-        });
-        refreshBalance();
         
-        // Early adopter count is now incremented server-side in analyze-reward-question
-        // Just refresh the status to get updated count
-        if (!data.isGreeting && !data.isSpam && !data.isDuplicate) {
-          // Status will be refreshed through the hook's subscription
+        // Success - exit retry loop
+        return;
+        
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`[analyzeAndReward] Attempt ${attempt} failed:`, error);
+        
+        if (attempt < maxRetries) {
+          // Wait 2 seconds before retrying
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
-    } catch (error) {
-      console.error("Reward analysis error:", error);
     }
+    
+    // All retries exhausted
+    console.error("[analyzeAndReward] All retry attempts failed:", lastError);
+    toast.error("Không thể xử lý thưởng. Vui lòng thử lại sau.", {
+      duration: 5000,
+    });
   }, [user, refreshBalance]);
 
   // Image generation - saves to IMAGE history (separate from chat history)
@@ -402,7 +589,7 @@ const Chat = () => {
     setMessages(prev => [...prev, { role: "assistant", content: t("chat.creatingImage"), type: "text" }]);
     
     try {
-      const result = await generateImage(prompt, imageStyle);
+      const result = await generateImage(prompt, imageStyle, imageMode, imageSize);
       
       setMessages(prev => {
         const updated = [...prev];
@@ -482,6 +669,56 @@ const Chat = () => {
     }
   };
 
+  // Image editing - saves to IMAGE history (separate from chat history)
+  const handleEditImage = async (instruction: string) => {
+    if (!uploadedImage) return;
+    
+    const imageToEdit = uploadedImage; // Store before clearing
+
+    setMessages(prev => [...prev, { 
+      role: "user", 
+      content: `✏️ ${t("chat.editImage")}: ${instruction}`, 
+      type: "image-analysis",
+      imageUrl: imageToEdit
+    }]);
+    setMessages(prev => [...prev, { role: "assistant", content: t("chat.editingImage"), type: "text" }]);
+
+    try {
+      const result = await editImage(imageToEdit, instruction, imageStyle);
+      
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: result.description || t("chat.imageEdited"),
+          type: "image",
+          imageUrl: result.imageUrl
+        };
+        return updated;
+      });
+      
+      // Save to IMAGE history (not chat history)
+      if (user && result.imageUrl) {
+        saveToImageHistory('generated', instruction, result.imageUrl, result.description, imageStyle);
+      }
+      
+      setUploadedImage(null);
+      setChatMode("chat");
+      toast.success(t("chat.imageEdited"));
+    } catch (error: any) {
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: `${t("chat.editError")} ${error.message}`,
+          type: "text"
+        };
+        return updated;
+      });
+      toast.error(error.message || t("chat.editError"));
+    }
+  };
+
   const sendMessage = useCallback(async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
@@ -498,6 +735,13 @@ const Chat = () => {
     if (chatMode === "analyze-image" && uploadedImage) {
       setIsLoading(true);
       await handleAnalyzeImage(userMessage);
+      setIsLoading(false);
+      return;
+    }
+
+    if (chatMode === "edit-image" && uploadedImage) {
+      setIsLoading(true);
+      await handleEditImage(userMessage);
       setIsLoading(false);
       return;
     }
@@ -556,15 +800,29 @@ const Chat = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      // Guest chat: allow 5 messages, then show signup prompt
+      const GUEST_KEY = "angel_ai_guest_chat_count";
+      const count = parseInt(localStorage.getItem(GUEST_KEY) || "0", 10);
+      if (count >= 5) {
+        setShowSignupPrompt(true);
+        return;
+      }
+      localStorage.setItem(GUEST_KEY, String(count + 1));
+    }
     if (!input.trim() || isLoading || isGenerating || isAnalyzing) return;
 
     const userMessage = input.trim();
     setInput("");
+    // Reset textarea height after sending
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
     await sendMessage(userMessage);
   };
 
-  // Access restricted
-  if (!authLoading && (!user || hasAgreed === false)) {
+  // Access restricted - only if logged in but hasn't agreed to Light Law
+  if (!authLoading && user && hasAgreed === false) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col items-center justify-center p-4">
         <div className="max-w-md text-center space-y-6">
@@ -602,19 +860,24 @@ const Chat = () => {
     );
   }
 
-  // Loading state
+  // Loading state with timeout message
   if (authLoading || hasAgreed === null) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex flex-col items-center justify-center gap-4">
         <div className="flex items-center gap-3">
           <Sparkles className="w-6 h-6 text-divine-gold animate-pulse" />
           <span className="text-foreground-muted">{t("chat.connecting")}</span>
         </div>
+        <TimeoutMessage 
+          delay={10000}
+          message="Kết nối đang chậm. Vui lòng đợi hoặc refresh trang."
+        />
       </div>
     );
   }
 
   return (
+    <>
     <div className="h-[100dvh] flex bg-gradient-to-b from-primary-pale via-background to-background overflow-hidden">
       <ChatRewardNotification 
         reward={currentReward} 
@@ -762,8 +1025,8 @@ const Chat = () => {
         </header>
 
         {/* Messages - Scrollable area with wider container */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
-          <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-4 lg:px-8 py-4 sm:py-6 relative">
+          <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -772,7 +1035,7 @@ const Chat = () => {
                 {message.role === "assistant" && (
                   <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shadow-soft flex-shrink-0" />
                 )}
-                <div className="flex flex-col gap-2 max-w-[95%] sm:max-w-[90%] lg:max-w-[85%]">
+                <div className="flex flex-col gap-2 max-w-[95%] sm:max-w-[92%] lg:max-w-[88%]">
                   {/* Image in message */}
                   {message.imageUrl && message.type === "image-analysis" && (
                     <div 
@@ -791,7 +1054,7 @@ const Chat = () => {
                     }`}
                   >
                     <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap break-words message-content">
-                      {message.content || (isLoading && index === messages.length - 1 ? "" : message.content)}
+                      {message.role === "assistant" ? stripMarkdown(message.content) : (message.content || (isLoading && index === messages.length - 1 ? "" : message.content))}
                     </p>
                     {(isLoading || isGenerating || isAnalyzing) && message.role === "assistant" && !message.content && (
                       <div className="flex items-center gap-2">
@@ -875,14 +1138,25 @@ const Chat = () => {
             ))}
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Scroll to bottom floating button */}
+          {showScrollToBottom && (
+            <button
+              onClick={scrollToBottom}
+              className="sticky bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all animate-fade-in text-sm"
+            >
+              <ArrowDown className="w-4 h-4" />
+              Cuối trang
+            </button>
+          )}
         </div>
 
         {/* Uploaded Image Preview */}
         {uploadedImage && (
           <div className="flex-shrink-0 px-3 sm:px-4 lg:px-8 py-2 bg-muted/50 border-t border-border">
-            <div className="mx-auto max-w-5xl flex items-center gap-2 sm:gap-3">
+            <div className="mx-auto max-w-6xl flex items-center gap-2 sm:gap-3">
               <div className="relative flex-shrink-0">
-                <img src={uploadedImage} alt="To analyze" className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover" />
+                <img src={uploadedImage} alt="To process" className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover" />
                 <button
                   onClick={() => { setUploadedImage(null); setChatMode("chat"); }}
                   className="absolute -top-1.5 -right-1.5 p-0.5 sm:p-1 bg-destructive text-destructive-foreground rounded-full"
@@ -890,34 +1164,85 @@ const Chat = () => {
                   <X className="w-3 h-3" />
                 </button>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground">{t("chat.askAboutImage")}</p>
+              <div className="flex flex-col gap-1">
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {chatMode === "edit-image" ? t("chat.editInstruction") : t("chat.askAboutImage")}
+                </p>
+                {chatMode === "edit-image" && (
+                  <select
+                    value={imageStyle}
+                    onChange={(e) => setImageStyle(e.target.value as any)}
+                    className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white dark:bg-gray-800 border border-border w-fit"
+                  >
+                    <option value="spiritual">{t("chat.styleSpiritual")}</option>
+                    <option value="realistic">{t("chat.styleRealistic")}</option>
+                    <option value="artistic">{t("chat.styleArtistic")}</option>
+                  </select>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Mode Indicator */}
-        {chatMode !== "chat" && !uploadedImage && (
+        {/* Mode Indicator - for generate-image only */}
+        {chatMode === "generate-image" && !uploadedImage && (
           <div className="flex-shrink-0 px-3 sm:px-4 lg:px-8 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-t border-border">
-            <div className="mx-auto max-w-5xl flex items-center justify-between gap-2">
+            <div className="mx-auto max-w-6xl flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 sm:gap-2">
+                <button
+                  onClick={() => setChatMode("chat")}
+                  className="p-1.5 rounded-full hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors group"
+                  title="Quay lại chat"
+                >
+                  <ArrowLeft className="w-4 h-4 text-purple-600 group-hover:text-purple-800 dark:group-hover:text-purple-300" />
+                </button>
                 <Wand2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
                 <span className="text-xs sm:text-sm font-medium text-purple-700 dark:text-purple-300">
                   {t("chat.mode.image")}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <select
-                  value={imageStyle}
-                  onChange={(e) => setImageStyle(e.target.value as any)}
-                  className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white dark:bg-gray-800 border border-border"
-                >
-                  <option value="spiritual">{t("chat.styleSpiritual")}</option>
-                  <option value="realistic">{t("chat.styleRealistic")}</option>
-                  <option value="artistic">{t("chat.styleArtistic")}</option>
-                </select>
+                <div className="flex items-center gap-1 bg-white dark:bg-gray-800 border border-border rounded px-1 py-0.5">
+                  <button
+                    onClick={() => setImageMode("fast")}
+                    className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded transition-colors ${imageMode === "fast" ? "bg-purple-500 text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    ⚡ Siêu tốc
+                  </button>
+                  <button
+                    onClick={() => setImageMode("spiritual")}
+                    className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded transition-colors ${imageMode === "spiritual" ? "bg-purple-500 text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    🔮 Tâm linh
+                  </button>
+                </div>
+                {/* Image Size Selector */}
+                <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 border border-border rounded px-1 py-0.5">
+                  {(Object.entries(IMAGE_SIZE_OPTIONS) as [ImageSize, typeof IMAGE_SIZE_OPTIONS[ImageSize]][]).map(([key, opt]) => (
+                    <button
+                      key={key}
+                      onClick={() => setImageSize(key)}
+                      className={`text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded transition-colors ${imageSize === key ? "bg-purple-500 text-white" : "text-muted-foreground hover:text-foreground"}`}
+                      title={`${opt.label} (${opt.width}×${opt.height})`}
+                    >
+                      {opt.icon} {opt.label}
+                    </button>
+                  ))}
+                </div>
+                {imageMode === "spiritual" && (
+                  <select
+                    value={imageStyle}
+                    onChange={(e) => setImageStyle(e.target.value as any)}
+                    className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white dark:bg-gray-800 border border-border"
+                  >
+                    <option value="spiritual">{t("chat.styleSpiritual")}</option>
+                    <option value="realistic">{t("chat.styleRealistic")}</option>
+                    <option value="artistic">{t("chat.styleArtistic")}</option>
+                  </select>
+                )}
                 <button
                   onClick={() => setChatMode("chat")}
-                  className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground px-1.5"
+                  className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground px-1.5 sm:px-2 py-1 rounded hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
                 >
                   {t("chat.cancel")}
                 </button>
@@ -928,7 +1253,7 @@ const Chat = () => {
 
         {/* Input - Fixed at bottom with safe area padding */}
         <div className="flex-shrink-0 bg-background-pure/95 backdrop-blur-lg border-t border-primary-pale px-3 sm:px-4 lg:px-8 py-2 sm:py-3 safe-area-bottom">
-          <form onSubmit={handleSubmit} className="mx-auto max-w-5xl">
+          <form onSubmit={handleSubmit} className="mx-auto max-w-6xl">
             <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Mode buttons - Compact on mobile */}
               <div className="flex items-center">
@@ -948,14 +1273,25 @@ const Chat = () => {
                 >
                   <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
+                {/* Nút chọn ảnh từ thư viện */}
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-green-100 transition-colors"
+                  title={t("chat.selectFromGallery") || "Chọn ảnh từ thư viện"}
+                >
+                  <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                </button>
+                {/* Nút mở camera trực tiếp */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="p-1.5 sm:p-2 rounded-full hover:bg-blue-100 transition-colors"
-                  title={t("chat.analyzeImage")}
+                  title={t("chat.capturePhoto") || "Chụp ảnh mới"}
                 >
                   <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                 </button>
+                {/* Camera input - mở camera trực tiếp trên mobile */}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -964,32 +1300,54 @@ const Chat = () => {
                   onChange={handleImageUpload}
                   className="hidden"
                 />
+                {/* Gallery input - chọn từ thư viện ảnh */}
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
               </div>
 
-              <div className="flex-1 relative">
-                <input
-                  type="text"
+              <div className="flex-1 relative flex items-end gap-1.5 sm:gap-2 bg-white rounded-2xl border border-primary-pale focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all duration-300 px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px]">
+                <textarea
+                  ref={textareaRef}
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    // Auto-resize
+                    e.target.style.height = "auto";
+                    e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px";
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (input.trim()) handleSubmit(e as any);
+                    }
+                  }}
                   placeholder={
-                    chatMode === "generate-image" 
+                    chatMode === "generate-image"
                       ? t("chat.placeholderImage")
                       : chatMode === "analyze-image"
                       ? t("chat.placeholderAnalyze")
+                      : chatMode === "edit-image"
+                      ? t("chat.placeholderEdit")
                       : t("chat.placeholder")
                   }
-                  disabled={isLoading || isGenerating || isAnalyzing}
-                  enterKeyHint="send"
+                  disabled={isLoading || isGenerating || isAnalyzing || isEditing}
                   autoComplete="off"
                   autoCorrect="off"
-                  className="w-full px-3 sm:px-5 py-2.5 sm:py-3 pr-10 sm:pr-12 rounded-full border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-300 disabled:opacity-50 text-sm sm:text-base"
+                  rows={1}
+                  className="flex-1 resize-none bg-transparent outline-none text-sm sm:text-base placeholder:text-muted-foreground disabled:opacity-50 leading-relaxed py-0.5 max-h-[200px] overflow-y-auto scrollbar-thin"
+                  style={{ height: "auto" }}
                 />
                 <button
                   type="submit"
-                  disabled={!input.trim() || isLoading || isGenerating || isAnalyzing}
-                  className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full bg-sapphire-gradient text-white hover:shadow-sacred transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!input.trim() || isLoading || isGenerating || isAnalyzing || isEditing}
+                  className="flex-shrink-0 self-end mb-0.5 p-1.5 sm:p-2 rounded-full bg-sapphire-gradient text-white hover:shadow-sacred transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading || isGenerating || isAnalyzing ? (
+                  {isLoading || isGenerating || isAnalyzing || isEditing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Send className="w-4 h-4" />
@@ -1030,7 +1388,55 @@ const Chat = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Image Action Selection Dialog */}
+      <Dialog open={showImageActionDialog} onOpenChange={(open) => {
+        if (!open) {
+          setPendingImage(null);
+        }
+        setShowImageActionDialog(open);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("chat.selectImageAction")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            {pendingImage && (
+              <div className="mx-auto mb-2">
+                <img src={pendingImage} alt="Selected" className="max-h-32 rounded-lg object-cover" />
+              </div>
+            )}
+            <button
+              onClick={() => handleSelectImageAction("analyze")}
+              className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                <Image className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-foreground group-hover:text-blue-700">{t("chat.mode.analyze")}</p>
+                <p className="text-xs text-muted-foreground">{t("chat.analyzeDescription")}</p>
+              </div>
+            </button>
+            <button
+              onClick={() => handleSelectImageAction("edit")}
+              className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                <Pencil className="w-5 h-5 text-orange-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-foreground group-hover:text-orange-700">{t("chat.mode.edit")}</p>
+                <p className="text-xs text-muted-foreground">{t("chat.editDescription")}</p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
+    <SignupPromptDialog open={showSignupPrompt} onOpenChange={setShowSignupPrompt} />
+    </>
   );
 };
 

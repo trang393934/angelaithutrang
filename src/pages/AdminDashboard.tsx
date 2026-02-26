@@ -34,8 +34,11 @@ import {
   Eye,
   Loader2,
   Wallet,
-  History
+  History,
+  BarChart3,
+  Image
 } from "lucide-react";
+import AdminNavToolbar from "@/components/admin/AdminNavToolbar";
 import angelAvatar from "@/assets/angel-avatar.png";
 
 interface UserWithStatus {
@@ -70,6 +73,30 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState<UserWithStatus | null>(null);
   const [healingMessage, setHealingMessage] = useState({ title: "", content: "" });
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+
+  // BSCScan sync
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<any>(null);
+
+  const syncBscScan = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    try {
+      const response = await supabase.functions.invoke("sync-bscscan-gifts");
+      if (response.error) {
+        toast.error("Lỗi đồng bộ: " + response.error.message);
+      } else if (response.data?.error) {
+        toast.error(response.data.error);
+      } else {
+        setSyncResult(response.data);
+        toast.success(`Đồng bộ thành công! ${response.data.synced} giao dịch mới được thêm.`);
+      }
+    } catch (err: any) {
+      toast.error("Lỗi: " + err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // User detail dialog
   const [showUserDetail, setShowUserDetail] = useState(false);
@@ -307,9 +334,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
-      {/* Header */}
+      {/* Header - Row 1: Branding + Logout */}
       <header className="sticky top-0 z-50 bg-background-pure/90 backdrop-blur-lg border-b border-primary-pale shadow-soft">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to="/" className="p-2 rounded-full hover:bg-primary-pale transition-colors">
@@ -323,55 +350,68 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Link
-                to="/admin/statistics"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <TrendingUp className="w-4 h-4" />
-                Thống kê
-              </Link>
-              <Link
-                to="/admin/early-adopters"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <TrendingUp className="w-4 h-4" />
-                Early Adopters
-              </Link>
-              <Link
-                to="/admin/withdrawals"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <Wallet className="w-4 h-4" />
-                Rút coin
-              </Link>
-              <Link
-                to="/admin/knowledge"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Kiến thức
-              </Link>
-              <Link
-                to="/admin/activity-history"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <History className="w-4 h-4" />
-                Lịch sử chat
-              </Link>
-              <button
-                onClick={() => signOut().then(() => navigate("/"))}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Đăng xuất</span>
-              </button>
-            </div>
+            <button
+              onClick={() => signOut().then(() => navigate("/"))}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-foreground-muted hover:text-primary hover:bg-primary-pale transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Đăng xuất</span>
+            </button>
           </div>
         </div>
       </header>
 
+      {/* Header - Row 2: Navigation Toolbar */}
+      <AdminNavToolbar />
+
       <main className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* BSCScan Sync */}
+        <Card className="border-divine-gold/20 mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 text-primary" />
+              Đồng bộ giao dịch BSCScan
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Quét toàn bộ giao dịch CAMLY on-chain và cập nhật vào database
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={syncBscScan}
+                disabled={isSyncing}
+                className="gap-2"
+              >
+                {isSyncing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                {isSyncing ? "Đang quét..." : "Quét BSCScan"}
+              </Button>
+              {syncResult && (
+                <div className="flex flex-wrap gap-3 text-xs">
+                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                    +{syncResult.synced} mới
+                  </Badge>
+                  <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                    {syncResult.skipped} trùng
+                  </Badge>
+                  {syncResult.failed > 0 && (
+                    <Badge variant="secondary" className="bg-red-100 text-red-700">
+                      {syncResult.failed} lỗi
+                    </Badge>
+                  )}
+                  <span className="text-foreground-muted">
+                    {syncResult.walletsScanned} ví · {syncResult.totalTransfersFound} giao dịch
+                  </span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <Card className="border-divine-gold/20">

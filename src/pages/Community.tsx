@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
-import { Users, TrendingUp, Clock, Sparkles, Loader2, Trophy } from "lucide-react";
+
+import { Users, TrendingUp, Clock, Sparkles, Loader2, Trophy, Gift, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -12,16 +12,30 @@ import { RewardRulesCard } from "@/components/community/RewardRulesCard";
 import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { FunEcosystemSidebar } from "@/components/community/FunEcosystemSidebar";
 import { SuggestedFriendsCard } from "@/components/community/SuggestedFriendsCard";
+import { CirclesSidebar } from "@/components/community/CirclesSidebar";
 import { Leaderboard } from "@/components/Leaderboard";
 import { HonorBoard } from "@/components/community/HonorBoard";
+import { CommunityGuidelinesCard } from "@/components/community/CommunityGuidelinesCard";
+import { GiftHonorBoard } from "@/components/community/GiftHonorBoard";
+import { DonationHonorBoard } from "@/components/community/DonationHonorBoard";
+import { GiftTransactionHistory } from "@/components/community/GiftTransactionHistory";
+import { Web3TransactionHistory } from "@/components/community/Web3TransactionHistory";
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
+import { DonateProjectDialog } from "@/components/gifts/DonateProjectDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { LightGate } from "@/components/LightGate";
+import { AuthActionGuard } from "@/components/AuthActionGuard";
+import { SignupPromptDialog } from "@/components/SignupPromptDialog";
+import { BackToTopButton } from "@/components/BackToTopButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
+
 
 const Community = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isMobile = useIsMobile();
   const {
     posts,
@@ -40,7 +54,30 @@ const Community = () => {
 
   const [userProfile, setUserProfile] = useState<{ display_name: string; avatar_url: string | null } | null>(null);
   const [showMobileLeaderboard, setShowMobileLeaderboard] = useState(false);
+  const [showGiftDialog, setShowGiftDialog] = useState(false);
+  const [showDonateDialog, setShowDonateDialog] = useState(false);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
   const rightSidebarRef = useRef<HTMLElement | null>(null);
+  const communityHeaderRef = useRef<HTMLDivElement>(null);
+
+  // Measure community header height dynamically (stories load async)
+  useEffect(() => {
+    const el = communityHeaderRef.current;
+    if (!el) return;
+
+    const updateHeight = () => {
+      const h = el.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--community-header-h', `${h}px`);
+    };
+
+    updateHeight();
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -72,7 +109,7 @@ const Community = () => {
 
   const handleLike = async (postId: string) => {
     if (!user) {
-      toast.error("Vui lòng đăng nhập để thích bài viết");
+      setShowSignupPrompt(true);
       return { success: false };
     }
     const result = await toggleLike(postId);
@@ -84,7 +121,7 @@ const Community = () => {
 
   const handleShare = async (postId: string) => {
     if (!user) {
-      toast.error("Vui lòng đăng nhập để chia sẻ");
+      setShowSignupPrompt(true);
       return { success: false };
     }
     const result = await sharePost(postId);
@@ -98,7 +135,7 @@ const Community = () => {
 
   const handleComment = async (postId: string, content: string) => {
     if (!user) {
-      toast.error("Vui lòng đăng nhập để bình luận");
+      setShowSignupPrompt(true);
       return { success: false };
     }
     const result = await addComment(postId, content);
@@ -111,37 +148,77 @@ const Community = () => {
   };
 
   return (
-    <LightGate>
-      <div className="h-screen flex flex-col bg-gradient-to-b from-primary-pale via-background to-background">
-        {/* Header - fixed height */}
-        <CommunityHeader />
+      <div className="h-screen flex flex-col relative">
+        {/* Header - above video */}
+        <div className="relative z-10 bg-white" ref={communityHeaderRef}>
+          <CommunityHeader />
+        </div>
 
-        {/* Content area - fills remaining height */}
-        <div className="flex-1 flex overflow-hidden">
-          <div className="container mx-auto flex gap-4 sm:gap-6 px-3 sm:px-4 py-4 h-full">
+        {/* Valentine Background Videos - left & right */}
+        <ValentineVideoBackground />
+
+        {/* Content area - fills remaining height, above video */}
+        <div className="flex-1 flex overflow-hidden relative z-10">
+          <div className="container mx-auto flex gap-2 sm:gap-4 lg:gap-6 px-2 sm:px-3 lg:px-4 py-3 sm:py-4 h-full">
             {/* Left Sidebar - scrollable with visible scrollbar */}
-            <aside className="hidden xl:flex flex-col w-[280px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50 pr-1">
+            <aside className="hidden xl:flex flex-col w-[280px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent hover:scrollbar-thumb-white/50 pr-1">
               <FunEcosystemSidebar className="w-full" />
             </aside>
 
             {/* Main Content - SCROLLABLE */}
-            <main className="flex-1 min-w-0 overflow-y-auto space-y-4 sm:space-y-6 pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
+            <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden space-y-3 sm:space-y-4 lg:space-y-6 pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40 relative z-[2]">
               {/* Create Post */}
-              {user ? (
-                <CollapsibleCreatePost
-                  userAvatar={userProfile?.avatar_url}
-                  userName={userProfile?.display_name || "Bạn"}
-                  onSubmit={handleCreatePost}
-                />
-              ) : (
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 text-center border border-primary/10">
-                  <Sparkles className="w-10 h-10 text-primary/40 mx-auto mb-3" />
-                  <p className="text-foreground-muted mb-3">Đăng nhập để tham gia cộng đồng</p>
-                  <Link to="/auth">
-                    <Button className="bg-sapphire-gradient">Đăng nhập</Button>
-                  </Link>
+              <AuthActionGuard message={t("community.loginToJoin")}>
+                {user ? (
+                  <CollapsibleCreatePost
+                    userAvatar={userProfile?.avatar_url}
+                    userName={userProfile?.display_name || "Bạn"}
+                    onSubmit={handleCreatePost}
+                  />
+                ) : (
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 text-center border border-primary/10">
+                    <Sparkles className="w-10 h-10 text-primary/40 mx-auto mb-3" />
+                    <p className="text-foreground-muted mb-3">{t("community.loginToJoin")}</p>
+                    <Button className="bg-sapphire-gradient">{t("auth.login")}</Button>
+                  </div>
+                )}
+              </AuthActionGuard>
+
+              {/* Gift & Donate Action Buttons */}
+              <AuthActionGuard message="Bạn cần đăng nhập để tặng quà">
+                <div className="flex flex-row gap-2 sm:gap-3">
+                  <motion.div 
+                    className="flex-[2] min-w-0"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      onClick={() => user && setShowGiftDialog(true)}
+                      className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 text-white font-semibold px-3 sm:px-4 text-sm h-10 relative overflow-hidden"
+                      style={{
+                        boxShadow: '0 0 12px 2px hsla(43, 96%, 56%, 0.4), 0 4px 15px -3px hsla(43, 96%, 56%, 0.3), inset 0 1px 0 hsla(0, 0%, 100%, 0.3)',
+                      }}
+                    >
+                      <span className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-white/25 pointer-events-none rounded-md" />
+                      <Gift className="w-4 h-4 mr-2 flex-shrink-0 relative z-10" />
+                      <span className="relative z-10">{t("gift.title")}</span>
+                    </Button>
+                  </motion.div>
+                  <motion.div 
+                    className="flex-1 min-w-0"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      onClick={() => user && setShowDonateDialog(true)}
+                      className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 text-white font-semibold shadow-lg px-3 sm:px-4 text-sm h-10"
+                    >
+                      <Heart className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span>{t("donate.title")}</span>
+                    </Button>
+                  </motion.div>
                 </div>
-              )}
+              </AuthActionGuard>
 
               {/* Mobile Leaderboard Button */}
               {isMobile && (
@@ -149,21 +226,25 @@ const Community = () => {
                   <SheetTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 flex items-center gap-2"
+                      className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 flex items-center justify-center gap-2 text-xs sm:text-sm py-2"
                     >
-                      <Trophy className="w-4 h-4" />
-                      Bảng Xếp Hạng
+                      <Trophy className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{t("community.leaderboard")}</span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+                  <SheetContent side="bottom" className="h-[85vh] overflow-y-auto px-3 sm:px-6">
                     <SheetHeader>
-                      <SheetTitle className="text-center text-amber-600 flex items-center justify-center gap-2">
-                        <Trophy className="w-5 h-5" />
-                        Bảng Xếp Hạng & Thống Kê
+                      <SheetTitle className="text-center text-amber-600 flex items-center justify-center gap-2 text-sm sm:text-base">
+                        <Trophy className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                        <span className="truncate">{t("community.leaderboardStats")}</span>
                       </SheetTitle>
                     </SheetHeader>
-                    <div className="space-y-4 mt-4 pb-6">
+                    <div className="space-y-3 sm:space-y-4 mt-3 sm:mt-4 pb-6">
                       <HonorBoard />
+                      <GiftHonorBoard />
+                      <DonationHonorBoard />
+                      <GiftTransactionHistory />
+                      <Web3TransactionHistory />
                       <Leaderboard />
                       <SuggestedFriendsCard />
                       <RewardRulesCard dailyLimits={dailyLimits} />
@@ -174,14 +255,14 @@ const Community = () => {
 
               {/* Sort Tabs */}
               <Tabs value={sortBy} onValueChange={(v) => setSortBy(v as "recent" | "popular")}>
-                <TabsList className="grid w-full max-w-xs grid-cols-2 bg-white/50">
-                  <TabsTrigger value="recent" className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" />
-                    Mới nhất
+                <TabsList className="grid w-full max-w-[280px] sm:max-w-xs grid-cols-2 bg-white/50">
+                  <TabsTrigger value="recent" className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                    <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="truncate">{t("community.sortRecent")}</span>
                   </TabsTrigger>
-                  <TabsTrigger value="popular" className="flex items-center gap-1.5">
-                    <TrendingUp className="w-4 h-4" />
-                    Phổ biến
+                  <TabsTrigger value="popular" className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="truncate">{t("community.sortPopular")}</span>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -194,9 +275,9 @@ const Community = () => {
               ) : posts.length === 0 ? (
                 <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 text-center border border-primary/10">
                   <Users className="w-12 h-12 text-primary/30 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground/70">Chưa có bài viết nào</h3>
+                  <h3 className="text-lg font-medium text-foreground/70">{t("community.noPosts")}</h3>
                   <p className="text-sm text-foreground-muted mt-2">
-                    Hãy là người đầu tiên chia sẻ với cộng đồng!
+                    {t("community.beFirstToShare")}
                   </p>
                 </div>
               ) : (
@@ -227,42 +308,73 @@ const Community = () => {
             {/* Right Sidebar - flexbox layout with pinned HonorBoard */}
             <aside
               ref={rightSidebarRef}
-              className="hidden lg:flex flex-col w-[280px] xl:w-[320px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50"
+              className="hidden lg:flex flex-col w-[280px] xl:w-[320px] flex-shrink-0 h-full min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent hover:scrollbar-thumb-white/50"
             >
-              {/* Bảng Danh Dự */}
-              <div className="flex-shrink-0 mb-4">
-                <HonorBoard />
-              </div>
+            {/* Bảng Danh Dự */}
+            <div className="flex-shrink-0 mb-4">
+              <HonorBoard />
+            </div>
 
-              {/* Gợi ý kết bạn */}
-              <div className="flex-shrink-0 mb-4">
-                <SuggestedFriendsCard />
-              </div>
+            {/* Nội Quy Cộng Đồng - ngay dưới Bảng Danh Dự */}
+            <div className="flex-shrink-0 mb-4">
+              <CommunityGuidelinesCard />
+            </div>
 
-              {/* Bảng Xếp Hạng */}
-              <div className="flex-shrink-0 mb-4">
-                <Leaderboard />
-              </div>
-              
-              {/* Quy tắc thưởng */}
-              <div className="flex-shrink-0 mb-4">
-                <RewardRulesCard dailyLimits={dailyLimits} />
-              </div>
+            {/* Bảng Vinh Danh Tặng Quà - MỚI */}
+            <div className="flex-shrink-0 mb-4">
+              <GiftHonorBoard />
+            </div>
 
-              {/* About Section */}
-              <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-primary/10 mb-4">
-                <h3 className="font-semibold text-primary-deep mb-3">Về Cộng Đồng</h3>
-                <p className="text-sm text-foreground-muted leading-relaxed">
-                  Đây là nơi các thành viên chia sẻ kiến thức về Angel AI, học hỏi về ý chí 
-                  và trí tuệ của Cha Vũ Trụ, cũng như các kiến thức quý giá khác để cùng 
-                  nhau phát triển tâm linh và trí tuệ.
-                </p>
-              </div>
+            {/* Bảng Vinh Danh Mạnh Thường Quân - MỚI */}
+            <div className="flex-shrink-0 mb-4">
+              <DonationHonorBoard />
+            </div>
+
+            {/* Lịch Sử Giao Dịch Quà */}
+            <div className="flex-shrink-0 mb-4">
+              <GiftTransactionHistory />
+            </div>
+
+            {/* Giao Dịch Web3 On-Chain */}
+            <div className="flex-shrink-0 mb-4">
+              <Web3TransactionHistory />
+            </div>
+
+            <div className="flex-shrink-0 mb-4">
+              <CirclesSidebar maxVisible={3} />
+            </div>
+
+            {/* Gợi ý kết bạn */}
+            <div className="flex-shrink-0 mb-4">
+              <SuggestedFriendsCard />
+            </div>
+
+            {/* Bảng Xếp Hạng */}
+            <div className="flex-shrink-0 mb-4">
+              <Leaderboard />
+            </div>
+            
+            {/* Quy tắc thưởng */}
+            <div className="flex-shrink-0 mb-4">
+              <RewardRulesCard dailyLimits={dailyLimits} />
+            </div>
             </aside>
           </div>
         </div>
+        <BackToTopButton scrollRef={mainRef} />
+        
+
+        {/* Gift & Donate Dialogs */}
+        <GiftCoinDialog 
+          open={showGiftDialog} 
+          onOpenChange={setShowGiftDialog} 
+        />
+        <DonateProjectDialog 
+          open={showDonateDialog} 
+          onOpenChange={setShowDonateDialog} 
+        />
+        <SignupPromptDialog open={showSignupPrompt} onOpenChange={setShowSignupPrompt} />
       </div>
-    </LightGate>
   );
 };
 

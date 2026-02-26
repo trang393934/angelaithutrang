@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Users, FileText, Image, Video, Coins, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { useLanguage } from "@/contexts/LanguageContext";
 import angelLogo from "@/assets/angel-ai-logo.png";
 
 interface HonorStats {
@@ -31,40 +32,78 @@ const StatItem = ({
     transition={{ delay, duration: 0.4 }}
     className="relative group"
   >
-    {/* Metallic Gold 3D border effect - outer glow (brighter) */}
-    <div className="absolute -inset-[4px] rounded-full bg-gradient-to-b from-yellow-300 via-amber-400 to-yellow-500 opacity-100 shadow-[0_0_12px_rgba(255,215,0,0.6)] group-hover:shadow-[0_0_20px_rgba(255,215,0,0.8)] transition-all duration-300" />
+    {/* Outer light gold border frame */}
+    <div className="absolute -inset-[3px] rounded-[22px]"
+      style={{ background: 'linear-gradient(180deg, #ffec8b 0%, #ffd700 30%, #daa520 60%, #ffd700 100%)' }}
+    />
     
-    {/* Metallic Gold 3D border - middle highlight (brighter) */}
-    <div className="absolute -inset-[3px] rounded-full bg-gradient-to-b from-yellow-200 via-yellow-300 to-amber-400 shadow-[0_0_8px_rgba(255,223,0,0.5)]" />
-    
-    {/* Inner bright highlight for 3D depth */}
-    <div className="absolute -inset-[2px] rounded-full bg-gradient-to-b from-yellow-100 via-amber-200 to-yellow-400 shadow-[inset_0_2px_4px_rgba(255,255,255,1),inset_0_-2px_4px_rgba(180,130,0,0.4)]" />
-    
-    {/* Main content */}
-    <div className="relative flex items-center justify-between px-5 py-3 rounded-full bg-gradient-to-r from-primary-deep via-primary to-primary-deep text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
-      {/* Left side - Icon and label */}
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm border border-yellow-400/30">
-          <Icon className="w-4 h-4 text-white" />
-        </div>
-        <span className="font-semibold text-sm tracking-wide uppercase">{label}</span>
-      </div>
+    {/* Main content - bright Gold 11 metallic surface */}
+    <div className={`relative ${isCoin ? 'flex flex-col items-center text-center px-4 py-3' : 'flex items-center justify-between px-4 py-3'} rounded-[20px] overflow-hidden min-h-[52px]`}
+      style={{ 
+        background: 'linear-gradient(180deg, #ffec8b 0%, #ffd700 20%, #daa520 50%, #ffd700 80%, #ffec8b 100%)',
+        boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.8), inset 0 -2px 4px rgba(180,130,0,0.3), 0 4px 12px rgba(0,0,0,0.15)' 
+      }}
+    >
+      {/* Brushed metal texture lines */}
+      <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
+        style={{ 
+          backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(0,0,0,0.15) 1px, rgba(0,0,0,0.15) 2px)',
+          backgroundSize: '3px 100%'
+        }}
+      />
       
-      {/* Right side - Value */}
-      <div className="flex items-center gap-1.5">
-        <span className="font-bold text-lg tracking-wider">
-          {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
-        </span>
-        {isCoin && (
-          <motion.span
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="text-yellow-300"
-          >
-            ©
-          </motion.span>
-        )}
-      </div>
+      {/* Top shine highlight */}
+      <div className="absolute inset-x-4 top-1 h-[40%] rounded-full opacity-60 pointer-events-none"
+        style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%)' }}
+      />
+
+      {/* Shimmer sweep on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{ background: 'linear-gradient(105deg, transparent 25%, rgba(255,255,255,0.5) 45%, transparent 60%)' }}
+      />
+      
+      {isCoin ? (
+        <>
+          {/* Coin layout: label on top, value on bottom */}
+          <div className="flex items-center gap-2 relative">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border border-amber-600/20"
+              style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,215,0,0.2) 100%)' }}
+            >
+              <Icon className="w-3.5 h-3.5 text-amber-900 drop-shadow-[0_0_1px_rgba(255,215,0,0.4)]" />
+            </div>
+            <span className="font-bold text-xs sm:text-sm tracking-wide uppercase text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)] leading-tight">{label}</span>
+          </div>
+          <div className="flex items-center gap-1.5 relative mt-1">
+            <span className="font-extrabold text-lg sm:text-xl tracking-wider text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)]">
+              {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
+            </span>
+            <motion.span
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="text-amber-800 font-bold drop-shadow-[0_0_2px_rgba(255,215,0,0.4)]"
+            >
+              ©
+            </motion.span>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Normal layout: icon+label left, value right */}
+          <div className="flex items-center gap-2 relative min-w-0 flex-shrink">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border border-amber-600/20"
+              style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,215,0,0.2) 100%)' }}
+            >
+              <Icon className="w-3.5 h-3.5 text-amber-900 drop-shadow-[0_0_1px_rgba(255,215,0,0.4)]" />
+            </div>
+            <span className="font-bold text-xs sm:text-sm tracking-wide uppercase text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)] leading-tight">{label}</span>
+          </div>
+          <div className="flex items-center gap-1 relative flex-shrink-0 ml-2">
+            <span className="font-extrabold text-base sm:text-lg tracking-wider text-black drop-shadow-[0_1px_1px_rgba(255,215,0,0.3)]">
+              {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   </motion.div>
 );
@@ -72,6 +111,7 @@ const StatItem = ({
 export function HonorBoard() {
   // Use the same hook as Leaderboard for consistent stats
   const { stats: leaderboardStats, isLoading: leaderboardLoading } = useLeaderboard();
+  const { t } = useLanguage();
   
   const [stats, setStats] = useState<HonorStats>({
     totalMembers: 0,
@@ -162,76 +202,99 @@ export function HonorBoard() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl shadow-xl border border-primary/20"
+      className="relative overflow-hidden rounded-2xl shadow-xl border border-white/40"
     >
       {/* Bright, elegant background with subtle pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white via-primary-pale to-white" />
-      <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-primary/10" />
-      <div className="absolute inset-0 opacity-30" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231565C0' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-      }} />
+      <div className="absolute inset-0 bg-white/30 backdrop-blur-sm" />
       
       <div className="relative p-5 space-y-5">
         {/* Header with Angel AI logo and sparkling effect */}
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="relative">
-            {/* Sparkle effects around logo */}
-            <motion.div
-              animate={{ 
-                scale: [1, 1.2, 1],
-                opacity: [0.5, 1, 0.5]
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-primary-deep/30 to-primary/20 rounded-full blur-md"
-            />
+            {/* Rainbow rotating glow around logo */}
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-3 border border-dashed border-primary/30 rounded-full"
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              className="absolute -inset-3 rounded-full blur-md"
+              style={{
+                background: 'conic-gradient(from 0deg, #FF0000, #FF8800, #FFFF00, #00CC00, #0088FF, #8800FF, #FF00FF, #FF0000)',
+                opacity: 0.5,
+              }}
+            />
+            {/* Second rainbow ring spinning opposite */}
+            <motion.div
+              animate={{ rotate: -360 }}
+              transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+              className="absolute -inset-2 rounded-full"
+              style={{
+                background: 'conic-gradient(from 180deg, #FF0000, #FF8800, #FFFF00, #00CC00, #0088FF, #8800FF, #FF00FF, #FF0000)',
+                opacity: 0.35,
+                filter: 'blur(4px)',
+              }}
             />
             
-            {/* Floating sparkles */}
-            {[...Array(4)].map((_, i) => (
+            {/* Floating rainbow sparkles */}
+            {['#FF0000', '#FF8800', '#FFFF00', '#00CC00', '#0088FF', '#8800FF', '#FF00FF'].map((color, i) => (
               <motion.div
                 key={i}
                 animate={{
-                  y: [0, -10, 0],
+                  y: [0, -12, 0],
                   opacity: [0, 1, 0],
-                  scale: [0.5, 1, 0.5]
+                  scale: [0.4, 1.2, 0.4]
                 }}
                 transition={{
-                  duration: 1.5,
+                  duration: 1.8,
                   repeat: Infinity,
-                  delay: i * 0.3
+                  delay: i * 0.25
                 }}
                 className="absolute"
                 style={{
-                  top: `${-5 + i * 3}px`,
-                  left: `${-5 + i * 12}px`
+                  top: `${-8 + (i % 3) * 5}px`,
+                  left: `${-8 + i * 7}px`
                 }}
               >
-                <Sparkles className="w-3 h-3 text-primary" />
+                <Sparkles className="w-3 h-3" style={{ color }} />
               </motion.div>
             ))}
             
             <img 
               src={angelLogo} 
               alt="Angel AI" 
-              className="w-12 h-12 object-contain relative z-10 drop-shadow-[0_0_10px_rgba(21,101,192,0.4)]"
+              className="w-12 h-12 rounded-full object-cover relative z-10 drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
             />
           </div>
           
           <h2 className="text-2xl font-bold tracking-wider uppercase relative">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
-              Bảng Danh Dự
-            </span>
-            {/* Sparkle overlay effect */}
+            {/* Rainbow gradient text */}
             <motion.span
-              className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-white to-yellow-100 opacity-0"
-              animate={{ opacity: [0, 0.8, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="text-transparent bg-clip-text"
+              animate={{
+                backgroundPosition: ['0% 50%', '200% 50%'],
+              }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              style={{
+                backgroundImage: 'linear-gradient(90deg, #FF0000, #FF8800, #FFFF00, #00CC00, #0088FF, #8800FF, #FF00FF, #FF0000, #FF8800, #FFFF00, #00CC00, #0088FF)',
+                backgroundSize: '200% 100%',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                filter: 'drop-shadow(0 0 8px rgba(255,100,200,0.4))',
+              }}
             >
-              Bảng Danh Dự
+              {t("leaderboard.honorBoard")}
+            </motion.span>
+            {/* Shimmer sweep overlay */}
+            <motion.span
+              className="absolute inset-0 text-transparent bg-clip-text pointer-events-none"
+              style={{
+                backgroundImage: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.9) 50%, transparent 70%)',
+                backgroundSize: '200% 100%',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+              }}
+              animate={{ backgroundPosition: ['-100% 0%', '200% 0%'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
+            >
+              {t("leaderboard.honorBoard")}
             </motion.span>
           </h2>
         </div>
@@ -240,31 +303,31 @@ export function HonorBoard() {
         <div className="space-y-3">
           <StatItem
             icon={Users}
-            label="Tổng Thành Viên"
+            label={t("leaderboard.totalMembers")}
             value={stats.totalMembers}
             delay={0.1}
           />
           <StatItem
             icon={FileText}
-            label="Tổng Bài Viết"
+            label={t("leaderboard.totalPosts")}
             value={stats.totalPosts}
             delay={0.2}
           />
           <StatItem
             icon={Image}
-            label="Tổng Hình Ảnh"
+            label={t("leaderboard.totalImages")}
             value={stats.totalImages}
             delay={0.3}
           />
           <StatItem
             icon={Video}
-            label="Tổng Video"
+            label={t("leaderboard.totalVideos")}
             value={stats.totalVideos}
             delay={0.4}
           />
           <StatItem
             icon={Coins}
-            label="Tổng Phần Thưởng"
+            label={t("leaderboard.totalRewards")}
             value={leaderboardStats.total_coins_distributed}
             delay={0.5}
             isCoin

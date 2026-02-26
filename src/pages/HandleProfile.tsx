@@ -1,0 +1,235 @@
+import { useEffect } from "react";
+import { useParams, useSearchParams, useLocation } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { usePublicProfile } from "@/hooks/usePublicProfile";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { PublicProfileHeader } from "@/components/public-profile/PublicProfileHeader";
+import { PublicProfileActions } from "@/components/public-profile/PublicProfileActions";
+import { PublicProfileStats } from "@/components/public-profile/PublicProfileStats";
+import { PublicProfileFriends } from "@/components/public-profile/PublicProfileFriends";
+import { GiftStatsBadges } from "@/components/public-profile/GiftStatsBadges";
+import { FunWorldsTiles } from "@/components/public-profile/FunWorldsTiles";
+import { PublicProfilePosts } from "@/components/public-profile/PublicProfilePosts";
+import { PublicProfileJoinCTA } from "@/components/public-profile/PublicProfileJoinCTA";
+import { PublicProfileFeatured } from "@/components/public-profile/PublicProfileFeatured";
+import { AskAngelButton } from "@/components/public-profile/AskAngelButton";
+import { trackProfileEvent } from "@/lib/profileEvents";
+import { setCanonical, setMetaTags, injectJsonLd, cleanupSeo, getSeoOrigin } from "@/lib/seoHelpers";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Gift } from "lucide-react";
+import angelLogo from "@/assets/angel-ai-golden-logo.png";
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
+import { ProfileMoreMenu } from "@/components/public-profile/ProfileMoreMenu";
+import { useState } from "react";
+
+const applyProfileSeo = (profile: { display_name: string | null; bio: string | null; avatar_url: string | null; handle: string | null }) => {
+  const origin = getSeoOrigin();
+  const name = profile.display_name || "FUN Member";
+  const desc = profile.bio || `${name} trên FUN Ecosystem`;
+  const canonicalUrl = `${origin}/${profile.handle}`;
+
+  setCanonical(canonicalUrl);
+  setMetaTags({
+    title: `${name} | FUN Profile`,
+    description: desc,
+    ogTitle: `${name} | FUN Profile`,
+    ogDescription: desc,
+    ogImage: profile.avatar_url || 'https://angel.fun.rich/og-image.png',
+    ogUrl: canonicalUrl,
+    ogType: "profile",
+    twitterCard: "summary_large_image",
+  });
+  injectJsonLd({
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name,
+    url: canonicalUrl,
+    ...(profile.avatar_url && { image: profile.avatar_url }),
+    description: desc,
+  });
+};
+
+const HandleProfile = () => {
+  const { handle: paramHandle } = useParams<{ handle: string }>();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const { t } = useLanguage();
+  const [showGiftDialog, setShowGiftDialog] = useState(false);
+
+  // Support both /@:handle route param and catch-all /@handle path extraction
+  const handle = paramHandle || location.pathname.match(/^\/@(.+)$/)?.[1];
+
+  const { profile, stats, recentPosts, friends, publicSettings, isLoading, notFound } =
+    usePublicProfile(handle);
+
+  // Store referral param
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      localStorage.setItem("fun_referrer", ref);
+    }
+  }, [searchParams]);
+
+  // Track profile view + set meta tags + SEO
+  useEffect(() => {
+    if (profile?.user_id) {
+      const ref = searchParams.get("ref") || localStorage.getItem("fun_referrer") || undefined;
+      trackProfileEvent(profile.user_id, "view", undefined, ref);
+      applyProfileSeo(profile);
+    }
+    return () => cleanupSeo();
+  }, [profile?.user_id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary-pale via-background to-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-7 h-7 text-primary animate-spin" />
+          <span className="text-sm text-muted-foreground">
+            {t("publicProfile.loading") || "Đang tải hồ sơ..."}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary-pale via-background to-background">
+        <div className="text-center space-y-4 p-8 max-w-sm">
+          <div className="text-6xl">🔍</div>
+          <h1 className="text-2xl font-bold text-foreground">
+            {t("publicProfile.notFoundTitle") || "Không tìm thấy hồ sơ"}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {t("publicProfile.notFoundDesc") || "Link"}{" "}
+            <span className="font-mono font-medium text-primary">
+              angel.fun.rich/{handle}
+            </span>{" "}
+            {t("publicProfile.notFoundSuffix") || "chưa có ai sử dụng."}
+          </p>
+          <Link to="/">
+            <Button className="mt-2">
+              {t("publicProfile.goHome") || "Về Trang Chủ"}
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary-pale/20">
+      {/* Header: Cover + Avatar + Name + Handle + Bio + Tagline + Badge */}
+      <PublicProfileHeader
+        profile={profile}
+        stats={stats}
+        tagline={publicSettings.tagline}
+        badgeType={publicSettings.badge_type}
+        socialLinks={profile.social_links}
+      />
+
+      {/* More Menu + Ask Angel Button + TẶNG THƯỞNG CTA */}
+      <div className="flex items-center justify-center gap-3 mt-2 px-4 flex-wrap">
+        <ProfileMoreMenu
+          userId={profile.user_id}
+          displayName={profile.display_name}
+          handle={profile.handle}
+        />
+        <AskAngelButton
+          displayName={profile.display_name}
+          userId={profile.user_id}
+          handle={profile.handle}
+        />
+        <button
+          onClick={() => setShowGiftDialog(true)}
+          className="btn-golden-3d flex items-center gap-2 px-5 py-2.5 rounded-full !text-black font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-300 animate-shimmer"
+        >
+          <Gift className="w-4 h-4" />
+          🌟 TẶNG THƯỞNG
+        </button>
+      </div>
+
+      {/* Gift Dialog */}
+      <GiftCoinDialog
+        open={showGiftDialog}
+        onOpenChange={setShowGiftDialog}
+        preselectedUser={{
+          id: profile.user_id,
+          display_name: profile.display_name,
+          avatar_url: profile.avatar_url,
+        }}
+        contextType="profile"
+      />
+
+      {/* Action Buttons: Follow, Message, Send Gift (privacy-aware) */}
+      <div className="px-4">
+        <PublicProfileActions
+          userId={profile.user_id}
+          displayName={profile.display_name}
+          publicSettings={publicSettings}
+        />
+      </div>
+
+      {/* Social Proof Stats (privacy-aware) */}
+      <div className="px-4">
+        <PublicProfileStats stats={stats} showStats={publicSettings.show_stats} activeModulesCount={publicSettings.enabled_modules?.length || 0} />
+      </div>
+
+      {/* Gift Stats & Badges */}
+      <div className="px-4">
+        <GiftStatsBadges
+          userId={profile.user_id}
+          poplScore={stats.poplScore}
+          lightPoints={stats.poplScore * 10}
+        />
+      </div>
+
+      {/* Friends Preview (privacy-aware) */}
+      <div className="px-4">
+        <PublicProfileFriends
+          friends={friends}
+          totalFriends={stats.friends}
+          userId={profile.user_id}
+          showFriendsCount={publicSettings.show_friends_count}
+        />
+      </div>
+
+      {/* Featured Content */}
+      <div className="px-4">
+        <PublicProfileFeatured featuredItems={publicSettings.featured_items} />
+      </div>
+
+      {/* Recent Posts */}
+      <div className="px-4">
+        <PublicProfilePosts posts={recentPosts} profile={profile} />
+      </div>
+
+      {/* FUN Worlds / Ecosystem Tiles (filtered by enabled_modules) */}
+      <div className="px-4">
+        <FunWorldsTiles
+          enabledModules={publicSettings.enabled_modules}
+          showModules={publicSettings.show_modules}
+        />
+      </div>
+
+      {/* Join CTA for non-logged-in users */}
+      <div className="px-4">
+        <PublicProfileJoinCTA />
+      </div>
+
+      {/* Footer */}
+      <footer className="mt-12 pb-8 text-center">
+        <Link to="/" className="inline-flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+          <img src={angelLogo} alt="Angel AI" className="w-6 h-6" />
+          <span className="text-xs font-medium text-muted-foreground">
+            FUN Ecosystem · Powered by Angel AI
+          </span>
+        </Link>
+      </footer>
+    </div>
+  );
+};
+
+export default HandleProfile;

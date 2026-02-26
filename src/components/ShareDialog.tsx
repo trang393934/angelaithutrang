@@ -103,7 +103,7 @@ const ShareDialog = ({
     if (shareUrl) return shareUrl;
     
     // Default to current origin with content reference
-    const baseUrl = "https://angelaithutrang.lovable.app";
+    const baseUrl = "https://angel.fun.rich";
     switch (contentType) {
       case 'post':
         return `${baseUrl}/community?post=${contentId}`;
@@ -162,13 +162,13 @@ const ShareDialog = ({
     }
   };
 
-  // Share to social platform
+  // Share to social platform - now uses server-side reward processing
   const handleShare = async (platform: typeof SOCIAL_PLATFORMS[0]) => {
     const url = getShareUrl();
     const text = title || content.substring(0, 200);
     
     // Always open share window first
-    const shareWindow = window.open(
+    window.open(
       platform.getUrl(url, text), 
       '_blank', 
       'width=600,height=500,scrollbars=yes'
@@ -184,71 +184,41 @@ const ShareDialog = ({
     const contentHash = generateContentHash(content);
 
     try {
-      // Check daily share limit
-      const { data: dailyStatus } = await supabase.rpc('get_extended_daily_reward_status', {
-        _user_id: user.id
+      // Call server-side edge function for secure reward processing
+      const { data, error } = await supabase.functions.invoke('process-share-reward', {
+        body: {
+          contentType,
+          contentId: contentId || contentHash,
+          contentHash,
+          platform: platform.name,
+          rewardAmount // Server will validate and use its own fixed amount
+        }
       });
 
-      const sharesRemaining = dailyStatus?.[0]?.shares_remaining ?? 5;
-
-      if (sharesRemaining <= 0) {
-        toast.warning("Bạn đã đạt giới hạn 5 lần chia sẻ/ngày. Quay lại vào ngày mai nhé! 🌅");
+      if (error) {
+        console.error("Share reward error:", error);
+        toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
         setIsSharing(false);
         return;
       }
 
-      // Check for duplicate content share today
-      const today = new Date().toISOString().split('T')[0];
-      const { data: existingShare } = await supabase
-        .from('content_shares')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('content_type', contentType)
-        .eq('share_url', contentHash)
-        .gte('created_at', today)
-        .maybeSingle();
-
-      if (existingShare) {
-        toast.warning("⚠️ Nội dung này đã được chia sẻ hôm nay! Hãy chia sẻ nội dung khác để nhận thưởng.", { duration: 4000 });
+      if (!data.success) {
+        if (data.error === 'daily_limit_reached') {
+          toast.warning(data.message);
+        } else if (data.error === 'duplicate_content') {
+          toast.warning(data.message, { duration: 4000 });
+        } else {
+          toast.error(data.message || "Có lỗi xảy ra. Vui lòng thử lại.");
+        }
         setIsSharing(false);
         return;
       }
 
-      // Record share and give reward
-      await supabase.from('content_shares').insert({
-        user_id: user.id,
-        content_type: contentType,
-        share_type: platform.name.toLowerCase(),
-        share_url: contentHash,
-        content_id: contentId || contentHash,
-        coins_earned: rewardAmount,
-        is_verified: true,
-        verified_at: new Date().toISOString()
-      });
-
-      // Update daily tracking
-      await supabase
-        .from('daily_reward_tracking')
-        .update({
-          shares_rewarded: (dailyStatus?.[0]?.shares_rewarded ?? 0) + 1,
-          total_coins_today: (dailyStatus?.[0]?.total_coins_today ?? 0) + rewardAmount
-        })
-        .eq('user_id', user.id)
-        .eq('reward_date', today);
-
-      // Add coins
-      await supabase.rpc('add_camly_coins', {
-        _user_id: user.id,
-        _amount: rewardAmount,
-        _transaction_type: 'content_share',
-        _description: `Chia sẻ ${contentType} qua ${platform.name}`,
-        _metadata: { platform: platform.name, content_hash: contentHash, content_type: contentType }
-      });
-
+      // Success - show reward notification
       toast.success(
         <div className="flex items-center gap-2">
           <Coins className="w-5 h-5 text-amber-500" />
-          <span>+{rewardAmount} Camly Coin! Cảm ơn con đã lan tỏa Ánh Sáng ✨</span>
+          <span>{data.message}</span>
         </div>
       );
 

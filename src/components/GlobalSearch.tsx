@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Search, X, Loader2, BookOpen, Users, MessageCircle, Sparkles, ArrowRight } from "lucide-react";
+import { getProfilePath } from "@/lib/profileUrl";
+import { Search, X, Loader2, BookOpen, Users, MessageCircle, Sparkles, ArrowRight, User, Wallet } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,7 +13,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SearchResult {
   id: string;
-  type: "knowledge" | "community" | "question";
+  type: "knowledge" | "community" | "question" | "user";
   title: string;
   description: string;
   url: string;
@@ -23,19 +25,30 @@ interface SearchResults {
   knowledge: SearchResult[];
   community: SearchResult[];
   questions: SearchResult[];
+  users: SearchResult[];
   aiSummary: { content: string; source: string } | null;
+}
+
+interface UserResult {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  handle: string | null;
 }
 
 interface GlobalSearchProps {
   variant?: "header" | "community" | "standalone";
   placeholder?: string;
   className?: string;
+  autoFocus?: boolean;
 }
 
 export function GlobalSearch({ 
   variant = "header", 
   placeholder,
-  className = "" 
+  className = "",
+  autoFocus = false
 }: GlobalSearchProps) {
   const { t } = useLanguage();
   const searchPlaceholder = placeholder || t("search.placeholder");
@@ -43,18 +56,82 @@ export function GlobalSearch({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<SearchResults | null>(null);
+  const [userResults, setUserResults] = useState<UserResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
-  // Close dropdown when clicking outside
+  // Update dropdown position based on container
+  const updateDropdownPosition = useCallback(() => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: Math.max(rect.width, 320),
+      });
+    }
+  }, []);
+
+  // Recalculate position on scroll/resize when open
+  useEffect(() => {
+    if (!isOpen) return;
+    updateDropdownPosition();
+    const handleUpdate = () => updateDropdownPosition();
+    window.addEventListener("scroll", handleUpdate, true);
+    window.addEventListener("resize", handleUpdate);
+    return () => {
+      window.removeEventListener("scroll", handleUpdate, true);
+      window.removeEventListener("resize", handleUpdate);
+    };
+  }, [isOpen, updateDropdownPosition]);
+
+  // Auto-focus and load all users when prop is set (community variant)
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+        setIsOpen(true);
+      }, 100);
+      // Auto-load users list for community variant
+      if (variant === "community") {
+        loadAllUsers();
+      }
+    }
+  }, [autoFocus, variant]);
+
+  const loadAllUsers = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error: dbError } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, avatar_url, bio, handle")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (dbError) throw dbError;
+      setUserResults(data || []);
+      setIsOpen(true);
+    } catch (err) {
+      console.error("Load users error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Close dropdown when clicking outside (account for portal-rendered dropdown)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+      const target = event.target as Node;
+      // Check if click is inside the container (input area)
+      if (containerRef.current?.contains(target)) return;
+      // Check if click is inside the portal dropdown (look for our specific dropdown)
+      const portalDropdown = document.querySelector('[data-global-search-dropdown]');
+      if (portalDropdown?.contains(target)) return;
+      setIsOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -80,6 +157,7 @@ export function GlobalSearch({
   const performSearch = useCallback(async (searchQuery: string) => {
     if (searchQuery.trim().length < 2) {
       setResults(null);
+      setUserResults([]);
       setError(null);
       return;
     }
@@ -88,16 +166,31 @@ export function GlobalSearch({
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("global-search", {
-        body: { query: searchQuery, searchType: "all" },
-      });
+      // Community variant: search users only
+      if (variant === "community") {
+        const { data, error: dbError } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url, bio, handle")
+          .ilike("display_name", `%${searchQuery.trim()}%`)
+          .limit(15);
 
-      if (fnError) throw fnError;
-
-      if (data.success) {
-        setResults(data.results);
+        if (dbError) throw dbError;
+        setUserResults(data || []);
+        setResults(null);
       } else {
-        setError(data.error || t("common.error"));
+        // Default: global search via edge function
+        const { data, error: fnError } = await supabase.functions.invoke("global-search", {
+          body: { query: searchQuery, searchType: "all" },
+        });
+
+        if (fnError) throw fnError;
+
+        if (data && data.success) {
+          setResults(data.results);
+        } else {
+          setError(data?.error || t("common.error"));
+        }
+        setUserResults([]);
       }
     } catch (err) {
       console.error("Search error:", err);
@@ -105,7 +198,7 @@ export function GlobalSearch({
     } finally {
       setIsLoading(false);
     }
-  }, [t]);
+  }, [t, variant]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -153,6 +246,7 @@ export function GlobalSearch({
   const clearSearch = () => {
     setQuery("");
     setResults(null);
+    setUserResults([]);
     setError(null);
     inputRef.current?.focus();
   };
@@ -165,6 +259,8 @@ export function GlobalSearch({
         return <Users className="w-4 h-4 text-blue-600" />;
       case "question":
         return <MessageCircle className="w-4 h-4 text-purple-600" />;
+      case "user":
+        return <User className="w-4 h-4 text-amber-600" />;
       default:
         return <Search className="w-4 h-4" />;
     }
@@ -184,15 +280,15 @@ export function GlobalSearch({
   };
 
   const totalResults = results 
-    ? results.knowledge.length + results.community.length + results.questions.length 
+    ? results.knowledge.length + results.community.length + results.questions.length + (results.users?.length || 0)
     : 0;
 
   const inputClasses = variant === "community"
-    ? "pl-9 pr-10 h-10 bg-white/10 border-0 rounded-full text-sm text-white placeholder:text-white/50 focus:bg-white/20 focus:ring-2 focus:ring-white/30"
+    ? "pl-9 pr-10 h-10 bg-white/70 border-2 border-yellow-600/30 rounded-full text-sm text-black placeholder:text-black/60 focus:bg-white/90 focus:ring-2 focus:ring-yellow-500/40 shadow-[inset_0_1px_3px_rgba(0,0,0,0.1)]"
     : "pl-9 pr-10 h-10 bg-muted/50 border-border/50 rounded-full text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30";
 
   const iconClasses = variant === "community"
-    ? "text-white/60"
+    ? "text-black/70"
     : "text-muted-foreground";
 
   return (
@@ -219,139 +315,223 @@ export function GlobalSearch({
         )}
       </div>
 
-      {/* Search Results Dropdown */}
-      <AnimatePresence>
-        {isOpen && query.length >= 2 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-border/50 overflow-hidden z-[100] min-w-[320px] max-w-[480px]"
-          >
-            {/* Loading State */}
-            {isLoading && (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                <span className="ml-2 text-sm text-muted-foreground">{t("search.searching")}</span>
-              </div>
-            )}
+      {/* Search Results Dropdown - rendered via Portal to escape stacking contexts */}
+      {createPortal(
+        <AnimatePresence>
+          {isOpen && dropdownPos && (query.length >= 2 || (variant === "community" && userResults.length > 0)) && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="fixed bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-border/50 overflow-hidden"
+              data-global-search-dropdown
+              style={{
+                zIndex: 99999,
+                top: dropdownPos.top,
+                left: dropdownPos.left,
+                width: dropdownPos.width,
+                maxWidth: 480,
+                minWidth: 320,
+              }}
+            >
+              {/* Loading State */}
+              {isLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <span className="ml-2 text-sm text-muted-foreground">{t("search.searching")}</span>
+                </div>
+              )}
 
-            {/* Error State */}
-            {error && !isLoading && (
-              <div className="p-4 text-center text-sm text-red-500">
-                {error}
-              </div>
-            )}
+              {/* Error State */}
+              {error && !isLoading && (
+                <div className="p-4 text-center text-sm text-red-500">
+                  {error}
+                </div>
+              )}
 
-            {/* Results */}
-            {!isLoading && !error && results && (
-              <div className="max-h-[400px] overflow-y-auto">
-                {/* AI Summary */}
-                {results.aiSummary && (
-                  <div className="p-4 bg-gradient-to-r from-primary/5 to-purple-50 dark:from-primary/10 dark:to-purple-900/20 border-b">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="w-8 h-8 ring-2 ring-primary/30">
-                        <AvatarImage src={angelAvatar} />
-                        <AvatarFallback>AI</AvatarFallback>
+              {/* Community Variant: User Results */}
+              {!isLoading && !error && variant === "community" && userResults.length > 0 && (
+                <div className="max-h-[400px] overflow-y-auto">
+                  <div className="px-4 py-2 bg-muted/30 border-b">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t("search.users") || "Users"} ({userResults.length})
+                    </span>
+                  </div>
+                  {userResults.map((user) => (
+                    <button
+                      key={user.user_id}
+                      onClick={() => {
+                        setIsOpen(false);
+                        setQuery("");
+                        navigate(getProfilePath(user.user_id, (user as any).handle));
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-b border-border/30 last:border-b-0"
+                    >
+                      <Avatar className="w-9 h-9">
+                        <AvatarImage src={user.avatar_url || ""} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {user.display_name?.charAt(0)?.toUpperCase() || "U"}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Sparkles className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-semibold text-primary">{t("search.angelAnswer")}</span>
-                        </div>
-                        <p className="text-sm text-foreground leading-relaxed">
-                          {results.aiSummary.content}
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {user.display_name || t("common.anonymous")}
                         </p>
+                        {user.bio && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                            {user.bio}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Community Variant: No Results */}
+              {!isLoading && !error && variant === "community" && userResults.length === 0 && (query.length >= 2 || autoFocus) && (
+                <div className="p-6 text-center">
+                  <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    {query.length >= 2 
+                      ? `${t("search.noResults")} "${query}"`
+                      : t("search.noUsers") || "Chưa có thành viên nào"
+                    }
+                  </p>
+                </div>
+              )}
+
+              {/* Default Variant: Global Results */}
+              {!isLoading && !error && variant !== "community" && results && (
+                <div className="max-h-[400px] overflow-y-auto">
+                  {/* AI Summary */}
+                  {results.aiSummary && (
+                    <div className="p-4 bg-gradient-to-r from-primary/5 to-purple-50 dark:from-primary/10 dark:to-purple-900/20 border-b">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="w-8 h-8 ring-2 ring-primary/30">
+                          <AvatarImage src={angelAvatar} />
+                          <AvatarFallback>AI</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            <span className="text-xs font-semibold text-primary">{t("search.angelAnswer")}</span>
+                          </div>
+                          <p className="text-sm text-foreground leading-relaxed">
+                            {results.aiSummary.content}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Knowledge Results */}
-                {results.knowledge.length > 0 && (
-                  <div>
-                    <div className="px-4 py-2 bg-muted/30 border-b">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        {t("search.knowledge")} ({results.knowledge.length})
-                      </span>
+                  {/* Knowledge Results */}
+                  {results.knowledge.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-muted/30 border-b">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          {t("search.knowledge")} ({results.knowledge.length})
+                        </span>
+                      </div>
+                      {results.knowledge.map((result) => (
+                        <ResultItem 
+                          key={result.id} 
+                          result={result} 
+                          onClick={() => handleResultClick(result)}
+                          icon={getTypeIcon(result.type)}
+                        />
+                      ))}
                     </div>
-                    {results.knowledge.map((result) => (
-                      <ResultItem 
-                        key={result.id} 
-                        result={result} 
-                        onClick={() => handleResultClick(result)}
-                        icon={getTypeIcon(result.type)}
-                      />
-                    ))}
-                  </div>
-                )}
+                  )}
 
-                {/* Community Results */}
-                {results.community.length > 0 && (
-                  <div>
-                    <div className="px-4 py-2 bg-muted/30 border-b">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        {t("search.community")} ({results.community.length})
-                      </span>
+                  {/* User Results */}
+                  {results.users && results.users.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-muted/30 border-b">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          {t("search.users") || "Thành viên"} ({results.users.length})
+                        </span>
+                      </div>
+                      {results.users.map((result) => (
+                        <ResultItem 
+                          key={result.id} 
+                          result={result} 
+                          onClick={() => handleResultClick(result)}
+                          icon={getTypeIcon(result.type)}
+                          showAvatar
+                        />
+                      ))}
                     </div>
-                    {results.community.map((result) => (
-                      <ResultItem 
-                        key={result.id} 
-                        result={result} 
-                        onClick={() => handleResultClick(result)}
-                        icon={getTypeIcon(result.type)}
-                        showAvatar
-                      />
-                    ))}
-                  </div>
-                )}
+                  )}
 
-                {/* Question Results */}
-                {results.questions.length > 0 && (
-                  <div>
-                    <div className="px-4 py-2 bg-muted/30 border-b">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        {t("search.questions")} ({results.questions.length})
-                      </span>
+                  {/* Community Results */}
+                  {results.community.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-muted/30 border-b">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          {t("search.community")} ({results.community.length})
+                        </span>
+                      </div>
+                      {results.community.map((result) => (
+                        <ResultItem 
+                          key={result.id} 
+                          result={result} 
+                          onClick={() => handleResultClick(result)}
+                          icon={getTypeIcon(result.type)}
+                          showAvatar
+                        />
+                      ))}
                     </div>
-                    {results.questions.map((result) => (
-                      <ResultItem 
-                        key={result.id} 
-                        result={result} 
-                        onClick={() => handleResultClick(result)}
-                        icon={getTypeIcon(result.type)}
-                      />
-                    ))}
-                  </div>
-                )}
+                  )}
 
-                {/* No Results */}
-                {totalResults === 0 && !results.aiSummary && (
-                  <div className="p-6 text-center">
-                    <Search className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {t("search.noResults")} "{query}"
-                    </p>
-                  </div>
-                )}
+                  {/* Question Results */}
+                  {results.questions.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-muted/30 border-b">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          {t("search.questions")} ({results.questions.length})
+                        </span>
+                      </div>
+                      {results.questions.map((result) => (
+                        <ResultItem 
+                          key={result.id} 
+                          result={result} 
+                          onClick={() => handleResultClick(result)}
+                          icon={getTypeIcon(result.type)}
+                        />
+                      ))}
+                    </div>
+                  )}
 
-                {/* Ask Angel AI Button */}
-                <div className="p-3 border-t bg-muted/20">
-                  <Button
-                    onClick={handleAskAngel}
-                    className="w-full bg-sapphire-gradient text-white hover:opacity-90 transition-opacity"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {t("search.askAngel")} "{query.length > 20 ? query.substring(0, 20) + "..." : query}"
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  {/* No Results */}
+                  {totalResults === 0 && !results.aiSummary && (
+                    <div className="p-6 text-center">
+                      <Search className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {t("search.noResults")} "{query}"
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Ask Angel AI Button */}
+                  <div className="p-3 border-t bg-muted/20">
+                    <Button
+                      onClick={handleAskAngel}
+                      className="w-full bg-sapphire-gradient text-white hover:opacity-90 transition-opacity"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      {t("search.askAngel")} "{query.length > 20 ? query.substring(0, 20) + "..." : query}"
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

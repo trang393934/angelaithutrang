@@ -3,10 +3,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History, Bell, Copy } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, Wallet, RefreshCw, Search, Filter, AlertTriangle, History, Bell, Copy, X, Loader2, Gift, MessageSquare, BookOpen, Calendar, Users } from "lucide-react";
+import { TransactionExportButton } from "@/components/admin/TransactionExportButton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { TreasuryBalanceCard } from "@/components/admin/TreasuryBalanceCard";
 import { useNewWithdrawalNotification } from "@/components/admin/NewWithdrawalNotification";
 import {
@@ -35,6 +39,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import angelAvatar from "@/assets/angel-avatar.png";
 
+interface EarningBreakdown {
+  chat_coins: number;
+  journal_coins: number;
+  gifts_received: number;
+  login_coins: number;
+  post_coins: number;
+  other_coins: number;
+}
+
 interface Withdrawal {
   id: string;
   user_id: string;
@@ -49,6 +62,14 @@ interface Withdrawal {
   retry_count?: number;
   error_message?: string | null;
   user_email?: string;
+  // Anti-fraud fields
+  lifetime_earned?: number;
+  chat_count?: number;
+  coins_per_chat?: number;
+  is_suspicious?: boolean;
+  suspicious_reasons?: string[];
+  // Earning breakdown
+  earning_breakdown?: EarningBreakdown;
 }
 
 interface WithdrawalStats {
@@ -58,6 +79,14 @@ interface WithdrawalStats {
   total_failed: number;
   total_amount_pending: number;
   total_amount_completed: number;
+}
+
+interface BatchProgress {
+  current: number;
+  total: number;
+  success: number;
+  failed: number;
+  currentWallet?: string;
 }
 
 const AdminWithdrawals = () => {
@@ -75,6 +104,14 @@ const AdminWithdrawals = () => {
   const [txHash, setTxHash] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Batch selection states
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<BatchProgress>({ current: 0, total: 0, success: 0, failed: 0 });
+  const [showBatchApproveDialog, setShowBatchApproveDialog] = useState(false);
+  const [showBatchRejectDialog, setShowBatchRejectDialog] = useState(false);
+  const [batchRejectReason, setBatchRejectReason] = useState("");
   
   // Real-time withdrawal notifications
   const { newWithdrawals } = useNewWithdrawalNotification();
@@ -111,21 +148,132 @@ const AdminWithdrawals = () => {
 
       if (error) throw error;
 
-      // Fetch user emails
+      // Fetch user emails and names
       const userIds = [...new Set(data?.map(w => w.user_id) || [])];
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, display_name")
         .in("user_id", userIds);
 
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
-      
-      const withdrawalsWithEmail = data?.map(w => ({
-        ...w,
-        user_email: profileMap.get(w.user_id) || w.user_id.slice(0, 8) + "..."
-      })) || [];
+      // Fetch balance data for anti-fraud detection
+      const { data: balances } = await supabase
+        .from("camly_coin_balances")
+        .select("user_id, lifetime_earned")
+        .in("user_id", userIds);
 
-      setWithdrawals(withdrawalsWithEmail);
+      // Fetch chat count for each user using count query to bypass 1000 row limit
+      const chatCountMap = new Map<string, number>();
+      
+      // Fetch all earning breakdown data in parallel
+      const earningBreakdownPromises = userIds.map(async (userId) => {
+        const [
+          chatCountRes,
+          chatCoinsRes,
+          journalCoinsRes,
+          giftsReceivedRes,
+          loginCoinsRes,
+          postCoinsRes
+        ] = await Promise.all([
+          // Chat count
+          supabase.from("chat_history").select("*", { count: "exact", head: true }).eq("user_id", userId),
+          // Chat coins (from chat_questions)
+          supabase.from("chat_questions").select("reward_amount").eq("user_id", userId).eq("is_rewarded", true),
+          // Journal coins
+          supabase.from("gratitude_journal").select("reward_amount").eq("user_id", userId).eq("is_rewarded", true),
+          // Gifts received
+          supabase.from("coin_gifts").select("amount").eq("receiver_id", userId),
+          // Login coins  
+          supabase.from("daily_login_tracking").select("coins_earned").eq("user_id", userId),
+          // Post coins
+          supabase.from("community_posts").select("reward_amount").eq("user_id", userId).eq("is_rewarded", true),
+        ]);
+
+        const chatCount = chatCountRes.count ?? 0;
+        const chatCoins = chatCoinsRes.data?.reduce((sum, r) => sum + (r.reward_amount || 0), 0) ?? 0;
+        const journalCoins = journalCoinsRes.data?.reduce((sum, r) => sum + (r.reward_amount || 0), 0) ?? 0;
+        const giftsReceived = giftsReceivedRes.data?.reduce((sum, r) => sum + (r.amount || 0), 0) ?? 0;
+        const loginCoins = loginCoinsRes.data?.reduce((sum, r) => sum + (r.coins_earned || 0), 0) ?? 0;
+        const postCoins = postCoinsRes.data?.reduce((sum, r) => sum + (r.reward_amount || 0), 0) ?? 0;
+
+        return {
+          userId,
+          chatCount,
+          breakdown: {
+            chat_coins: chatCoins,
+            journal_coins: journalCoins,
+            gifts_received: giftsReceived,
+            login_coins: loginCoins,
+            post_coins: postCoins,
+            other_coins: 0, // Will be calculated
+          }
+        };
+      });
+      
+      const earningResults = await Promise.all(earningBreakdownPromises);
+      const earningMap = new Map(earningResults.map(r => [r.userId, r]));
+
+      // Find duplicate wallets
+      const walletUserMap = new Map<string, string[]>();
+      data?.forEach(w => {
+        const users = walletUserMap.get(w.wallet_address) || [];
+        if (!users.includes(w.user_id)) {
+          users.push(w.user_id);
+        }
+        walletUserMap.set(w.wallet_address, users);
+      });
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
+      const balanceMap = new Map(balances?.map(b => [b.user_id, b.lifetime_earned]) || []);
+      
+      const withdrawalsWithData = data?.map(w => {
+        const lifetimeEarned = balanceMap.get(w.user_id) || 0;
+        const earningData = earningMap.get(w.user_id);
+        const chatCount = earningData?.chatCount ?? 0;
+        const breakdown = earningData?.breakdown;
+        
+        // Calculate other coins (difference between lifetime and known sources)
+        const knownCoins = breakdown 
+          ? breakdown.chat_coins + breakdown.journal_coins + breakdown.gifts_received + breakdown.login_coins + breakdown.post_coins
+          : 0;
+        const otherCoins = Math.max(0, lifetimeEarned - knownCoins);
+        
+        const fullBreakdown: EarningBreakdown = breakdown 
+          ? { ...breakdown, other_coins: otherCoins }
+          : { chat_coins: 0, journal_coins: 0, gifts_received: 0, login_coins: 0, post_coins: 0, other_coins: lifetimeEarned };
+
+        const walletUsers = walletUserMap.get(w.wallet_address) || [];
+        const isDuplicateWallet = walletUsers.length > 1;
+        
+        // Determine suspicious status - now smarter with breakdown
+        const suspiciousReasons: string[] = [];
+        
+        // Only flag if gifts are NOT the main source and ratio is still high
+        const nonGiftEarnings = lifetimeEarned - fullBreakdown.gifts_received;
+        const coinsPerChatFromActivities = chatCount > 0 ? nonGiftEarnings / chatCount : 0;
+        
+        if (coinsPerChatFromActivities > 6000 && fullBreakdown.gifts_received < lifetimeEarned * 0.5) {
+          suspiciousReasons.push(`Hoạt động/Chat cao bất thường`);
+        }
+        if (isDuplicateWallet) {
+          suspiciousReasons.push(`Ví dùng chung bởi ${walletUsers.length} users`);
+        }
+        if (chatCount > 0 && chatCount < 5 && nonGiftEarnings > 50000) {
+          suspiciousReasons.push(`Ít chat nhưng kiếm nhiều`);
+        }
+
+        return {
+          ...w,
+          user_email: profileMap.get(w.user_id) || w.user_id.slice(0, 8) + "...",
+          lifetime_earned: lifetimeEarned,
+          chat_count: chatCount,
+          coins_per_chat: chatCount > 0 ? lifetimeEarned / chatCount : 0,
+          is_suspicious: suspiciousReasons.length > 0,
+          suspicious_reasons: suspiciousReasons,
+          earning_breakdown: fullBreakdown,
+        };
+      }) || [];
+
+      setWithdrawals(withdrawalsWithData);
     } catch (error) {
       console.error("Error fetching withdrawals:", error);
       toast.error("Không thể tải danh sách yêu cầu rút");
@@ -175,6 +323,169 @@ const AdminWithdrawals = () => {
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
+  };
+
+  // Get selectable withdrawals (pending or processing) from filtered list
+  const selectableWithdrawals = withdrawals.filter(w => 
+    w.status === "pending" || w.status === "processing"
+  );
+
+  // Get selectable withdrawals from the current filtered view
+  const getFilteredSelectableWithdrawals = () => {
+    return filteredWithdrawals.filter(w => 
+      w.status === "pending" || w.status === "processing"
+    );
+  };
+
+  // Toggle single selection
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  // Toggle all selection - only selects from currently filtered/displayed list
+  const toggleSelectAll = () => {
+    const filteredSelectable = getFilteredSelectableWithdrawals();
+    const filteredSelectableIds = new Set(filteredSelectable.map(w => w.id));
+    
+    // Check if all filtered selectable items are already selected
+    const allSelected = filteredSelectable.every(w => selectedIds.has(w.id));
+    
+    if (allSelected && filteredSelectable.length > 0) {
+      // Deselect all filtered items
+      const newSelected = new Set(selectedIds);
+      filteredSelectable.forEach(w => newSelected.delete(w.id));
+      setSelectedIds(newSelected);
+    } else {
+      // Select all filtered items (add to existing selection)
+      const newSelected = new Set(selectedIds);
+      filteredSelectable.forEach(w => newSelected.add(w.id));
+      setSelectedIds(newSelected);
+    }
+  };
+
+  // Select only pending withdrawals from current filter
+  const selectAllPending = () => {
+    const pendingWithdrawals = filteredWithdrawals.filter(w => w.status === "pending");
+    if (pendingWithdrawals.length === 0) {
+      toast.info("Không có yêu cầu chờ duyệt nào");
+      return;
+    }
+    setSelectedIds(new Set(pendingWithdrawals.map(w => w.id)));
+    toast.success(`Đã chọn ${pendingWithdrawals.length} yêu cầu chờ duyệt`);
+  };
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  // Get selected withdrawals
+  const getSelectedWithdrawals = () => {
+    return withdrawals.filter(w => selectedIds.has(w.id) && (w.status === "pending" || w.status === "processing"));
+  };
+
+  // Calculate total amount of selected
+  const selectedTotalAmount = getSelectedWithdrawals().reduce((sum, w) => sum + w.amount, 0);
+
+  // Batch approve handler
+  const handleBatchApprove = async () => {
+    const selectedWithdrawals = getSelectedWithdrawals();
+    if (selectedWithdrawals.length === 0) return;
+
+    setIsBatchProcessing(true);
+    setBatchProgress({ current: 0, total: selectedWithdrawals.length, success: 0, failed: 0 });
+
+    for (const withdrawal of selectedWithdrawals) {
+      setBatchProgress(prev => ({ ...prev, currentWallet: withdrawal.wallet_address }));
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('process-withdrawal', {
+          body: { withdrawal_id: withdrawal.id }
+        });
+
+        if (error || !data?.success) {
+          setBatchProgress(prev => ({ 
+            ...prev, 
+            current: prev.current + 1, 
+            failed: prev.failed + 1 
+          }));
+        } else {
+          setBatchProgress(prev => ({ 
+            ...prev, 
+            current: prev.current + 1, 
+            success: prev.success + 1 
+          }));
+        }
+      } catch (error) {
+        setBatchProgress(prev => ({ 
+          ...prev, 
+          current: prev.current + 1, 
+          failed: prev.failed + 1 
+        }));
+      }
+    }
+
+    // Finish batch processing
+    setTimeout(() => {
+      setIsBatchProcessing(false);
+      setShowBatchApproveDialog(false);
+      setSelectedIds(new Set());
+      fetchWithdrawals();
+      fetchStats();
+      
+      const finalProgress = batchProgress;
+      toast.success(`Hoàn thành xử lý hàng loạt`, {
+        description: `Thành công: ${batchProgress.success + 1}, Thất bại: ${batchProgress.failed}`
+      });
+    }, 500);
+  };
+
+  // Batch reject handler
+  const handleBatchReject = async () => {
+    const selectedWithdrawals = getSelectedWithdrawals();
+    if (selectedWithdrawals.length === 0 || !batchRejectReason.trim()) return;
+
+    setIsBatchProcessing(true);
+    setBatchProgress({ current: 0, total: selectedWithdrawals.length, success: 0, failed: 0 });
+
+    for (const withdrawal of selectedWithdrawals) {
+      try {
+        const { error } = await supabase
+          .from("coin_withdrawals")
+          .update({
+            status: "failed",
+            admin_notes: batchRejectReason.trim(),
+            processed_at: new Date().toISOString(),
+            processed_by: user?.id,
+          })
+          .eq("id", withdrawal.id);
+
+        if (error) {
+          setBatchProgress(prev => ({ ...prev, current: prev.current + 1, failed: prev.failed + 1 }));
+        } else {
+          setBatchProgress(prev => ({ ...prev, current: prev.current + 1, success: prev.success + 1 }));
+        }
+      } catch (error) {
+        setBatchProgress(prev => ({ ...prev, current: prev.current + 1, failed: prev.failed + 1 }));
+      }
+    }
+
+    // Finish batch processing
+    setTimeout(() => {
+      setIsBatchProcessing(false);
+      setShowBatchRejectDialog(false);
+      setBatchRejectReason("");
+      setSelectedIds(new Set());
+      fetchWithdrawals();
+      fetchStats();
+      toast.success(`Đã từ chối ${batchProgress.success + 1} yêu cầu rút`);
+    }, 500);
   };
 
   const handleApprove = async () => {
@@ -351,6 +662,7 @@ const AdminWithdrawals = () => {
               <History className="w-4 h-4" />
               Lịch sử chat
             </Link>
+            <TransactionExportButton />
             <Button
               variant="outline"
               size="sm"
@@ -364,7 +676,7 @@ const AdminWithdrawals = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-24">
         {/* Treasury Balance Card */}
         <TreasuryBalanceCard />
         
@@ -477,6 +789,40 @@ const AdminWithdrawals = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-primary-pale/30">
+                <TableHead className="w-12">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Checkbox
+                            checked={getFilteredSelectableWithdrawals().length > 0 && getFilteredSelectableWithdrawals().every(w => selectedIds.has(w.id))}
+                            onCheckedChange={toggleSelectAll}
+                            disabled={getFilteredSelectableWithdrawals().length === 0}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <div className="space-y-1">
+                          <p className="font-medium">Chọn tất cả ({getFilteredSelectableWithdrawals().length})</p>
+                          {filteredWithdrawals.filter(w => w.status === "pending").length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs h-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                selectAllPending();
+                              }}
+                            >
+                              <Clock className="w-3 h-3 mr-1" />
+                              Chỉ chọn chờ duyệt ({filteredWithdrawals.filter(w => w.status === "pending").length})
+                            </Button>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
                 <TableHead className="font-semibold">Thời gian</TableHead>
                 <TableHead className="font-semibold">Người dùng</TableHead>
                 <TableHead className="font-semibold">Số lượng</TableHead>
@@ -488,18 +834,132 @@ const AdminWithdrawals = () => {
             <TableBody>
               {filteredWithdrawals.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-foreground-muted">
+                  <TableCell colSpan={7} className="text-center py-8 text-foreground-muted">
                     Không có yêu cầu rút nào
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredWithdrawals.map((withdrawal) => (
-                  <TableRow key={withdrawal.id} className="hover:bg-primary-pale/10">
+                  <TableRow 
+                    key={withdrawal.id} 
+                    className={`hover:bg-primary-pale/10 ${selectedIds.has(withdrawal.id) ? 'bg-primary-pale/20' : ''} ${withdrawal.is_suspicious ? 'bg-red-50/50' : ''}`}
+                  >
+                    <TableCell>
+                      {(withdrawal.status === "pending" || withdrawal.status === "processing") && (
+                        <Checkbox
+                          checked={selectedIds.has(withdrawal.id)}
+                          onCheckedChange={() => toggleSelection(withdrawal.id)}
+                        />
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm">
                       {formatDate(withdrawal.created_at)}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {withdrawal.user_email}
+                      <div className="flex flex-col gap-1.5">
+                        <span className="font-semibold">{withdrawal.user_email}</span>
+                        
+                        {/* Earning Breakdown - always show */}
+                        {withdrawal.earning_breakdown && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex flex-wrap gap-1 cursor-help">
+                                  {withdrawal.earning_breakdown.chat_coins > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
+                                      <MessageSquare className="w-2.5 h-2.5 mr-0.5" />
+                                      {(withdrawal.earning_breakdown.chat_coins / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                  {withdrawal.earning_breakdown.journal_coins > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-50 text-purple-700 border-purple-200">
+                                      <BookOpen className="w-2.5 h-2.5 mr-0.5" />
+                                      {(withdrawal.earning_breakdown.journal_coins / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                  {withdrawal.earning_breakdown.gifts_received > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-pink-50 text-pink-700 border-pink-200">
+                                      <Gift className="w-2.5 h-2.5 mr-0.5" />
+                                      {(withdrawal.earning_breakdown.gifts_received / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                  {withdrawal.earning_breakdown.login_coins > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-50 text-green-700 border-green-200">
+                                      <Calendar className="w-2.5 h-2.5 mr-0.5" />
+                                      {(withdrawal.earning_breakdown.login_coins / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                  {withdrawal.earning_breakdown.post_coins > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-50 text-amber-700 border-amber-200">
+                                      <Users className="w-2.5 h-2.5 mr-0.5" />
+                                      {(withdrawal.earning_breakdown.post_coins / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                  {withdrawal.earning_breakdown.other_coins > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-gray-50 text-gray-700 border-gray-200">
+                                      +{(withdrawal.earning_breakdown.other_coins / 1000).toFixed(0)}K
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="space-y-1 text-xs">
+                                  <p className="font-semibold border-b pb-1 mb-1">Chi tiết nguồn thu</p>
+                                  <p className="flex justify-between gap-4">
+                                    <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3 text-blue-600" /> Chat:</span>
+                                    <span className="font-mono">{withdrawal.earning_breakdown.chat_coins.toLocaleString()}</span>
+                                  </p>
+                                  <p className="flex justify-between gap-4">
+                                    <span className="flex items-center gap-1"><BookOpen className="w-3 h-3 text-purple-600" /> Nhật ký:</span>
+                                    <span className="font-mono">{withdrawal.earning_breakdown.journal_coins.toLocaleString()}</span>
+                                  </p>
+                                  <p className="flex justify-between gap-4">
+                                    <span className="flex items-center gap-1"><Gift className="w-3 h-3 text-pink-600" /> Quà tặng:</span>
+                                    <span className="font-mono">{withdrawal.earning_breakdown.gifts_received.toLocaleString()}</span>
+                                  </p>
+                                  <p className="flex justify-between gap-4">
+                                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3 text-green-600" /> Điểm danh:</span>
+                                    <span className="font-mono">{withdrawal.earning_breakdown.login_coins.toLocaleString()}</span>
+                                  </p>
+                                  <p className="flex justify-between gap-4">
+                                    <span className="flex items-center gap-1"><Users className="w-3 h-3 text-amber-600" /> Cộng đồng:</span>
+                                    <span className="font-mono">{withdrawal.earning_breakdown.post_coins.toLocaleString()}</span>
+                                  </p>
+                                  {withdrawal.earning_breakdown.other_coins > 0 && (
+                                    <p className="flex justify-between gap-4">
+                                      <span>Khác:</span>
+                                      <span className="font-mono">{withdrawal.earning_breakdown.other_coins.toLocaleString()}</span>
+                                    </p>
+                                  )}
+                                  <p className="flex justify-between gap-4 border-t pt-1 font-semibold">
+                                    <span>Tổng:</span>
+                                    <span className="font-mono">{withdrawal.lifetime_earned?.toLocaleString()}</span>
+                                  </p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        
+                        {/* Suspicious warnings - only show if truly suspicious */}
+                        {withdrawal.is_suspicious && (
+                          <div className="flex flex-col gap-0.5">
+                            {withdrawal.suspicious_reasons?.map((reason, idx) => (
+                              <span key={idx} className="text-xs text-red-600 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" />
+                                {reason}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Chat count info */}
+                        {withdrawal.chat_count !== undefined && (
+                          <span className="text-[10px] text-foreground-muted">
+                            {withdrawal.chat_count} chats • Tổng: {withdrawal.lifetime_earned?.toLocaleString() || 0}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="font-bold text-primary-deep">
                       {formatAmount(withdrawal.amount)}
@@ -520,7 +980,14 @@ const AdminWithdrawals = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(withdrawal.status, withdrawal.retry_count)}
+                      <div className="flex flex-col gap-1">
+                        {getStatusBadge(withdrawal.status, withdrawal.retry_count)}
+                        {withdrawal.is_suspicious && withdrawal.status === "pending" && (
+                          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
+                            ⚠️ Cần kiểm tra
+                          </Badge>
+                        )}
+                      </div>
                       {withdrawal.error_message && (
                         <p className="text-xs text-red-500 mt-1 max-w-[200px] truncate" title={withdrawal.error_message}>
                           {withdrawal.error_message}
@@ -611,6 +1078,178 @@ const AdminWithdrawals = () => {
           </Table>
         </div>
       </main>
+
+      {/* Batch Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={true} disabled />
+                <span className="font-medium">Đã chọn: {selectedIds.size} yêu cầu</span>
+              </div>
+              <div className="text-sm text-foreground-muted">
+                Tổng: <span className="font-bold text-primary">{formatAmount(selectedTotalAmount)} CAMLY</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearSelection}
+                className="gap-1"
+              >
+                <X className="w-4 h-4" />
+                Bỏ chọn
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowBatchRejectDialog(true)}
+                className="gap-1"
+              >
+                <XCircle className="w-4 h-4" />
+                Từ chối tất cả
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setShowBatchApproveDialog(true)}
+                className="gap-1 bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Duyệt tất cả
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Approve Dialog */}
+      <Dialog open={showBatchApproveDialog} onOpenChange={(open) => !isBatchProcessing && setShowBatchApproveDialog(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <CheckCircle className="w-5 h-5" />
+              Duyệt hàng loạt
+            </DialogTitle>
+            <DialogDescription>
+              Bạn sắp duyệt <span className="font-bold">{selectedIds.size}</span> yêu cầu rút với tổng cộng <span className="font-bold">{formatAmount(selectedTotalAmount)} CAMLY</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isBatchProcessing ? (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between text-sm">
+                <span>Tiến độ: {batchProgress.current}/{batchProgress.total}</span>
+                <span className="text-green-600">✓ {batchProgress.success} | ✕ {batchProgress.failed}</span>
+              </div>
+              <Progress value={(batchProgress.current / batchProgress.total) * 100} className="h-3" />
+              {batchProgress.currentWallet && (
+                <p className="text-xs text-foreground-muted text-center">
+                  Đang xử lý: {batchProgress.currentWallet.slice(0, 10)}...{batchProgress.currentWallet.slice(-6)}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 my-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-800">Lưu ý quan trọng</p>
+                  <p className="text-amber-700 mt-1">
+                    Hệ thống sẽ tuần tự xử lý từng yêu cầu rút và chuyển CAMLY từ ví Treasury. 
+                    Quá trình này không thể hủy sau khi bắt đầu.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBatchApproveDialog(false)}
+              disabled={isBatchProcessing}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleBatchApprove} 
+              disabled={isBatchProcessing}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isBatchProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                "Xác nhận duyệt tất cả"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Reject Dialog */}
+      <Dialog open={showBatchRejectDialog} onOpenChange={(open) => !isBatchProcessing && setShowBatchRejectDialog(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <XCircle className="w-5 h-5" />
+              Từ chối hàng loạt
+            </DialogTitle>
+            <DialogDescription>
+              Từ chối <span className="font-bold">{selectedIds.size}</span> yêu cầu rút. Số coin sẽ được hoàn lại cho người dùng.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isBatchProcessing ? (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between text-sm">
+                <span>Tiến độ: {batchProgress.current}/{batchProgress.total}</span>
+              </div>
+              <Progress value={(batchProgress.current / batchProgress.total) * 100} className="h-3" />
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Lý do từ chối (áp dụng cho tất cả) *</label>
+                <Textarea
+                  placeholder="Nhập lý do từ chối..."
+                  value={batchRejectReason}
+                  onChange={(e) => setBatchRejectReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBatchRejectDialog(false)}
+              disabled={isBatchProcessing}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleBatchReject} 
+              disabled={isBatchProcessing || !batchRejectReason.trim()}
+              variant="destructive"
+            >
+              {isBatchProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                "Xác nhận từ chối tất cả"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Approve Dialog - Automated */}
       <Dialog open={actionType === "approve"} onOpenChange={() => { setActionType(null); setSelectedWithdrawal(null); setTxHash(""); setAdminNotes(""); }}>

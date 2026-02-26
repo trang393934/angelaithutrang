@@ -10,6 +10,8 @@ import { motion } from "framer-motion";
 import angelLogo from "@/assets/angel-ai-logo.png";
 import { TopRankingHero } from "@/components/leaderboard/TopRankingHero";
 import { RankingRow } from "@/components/leaderboard/RankingRow";
+import { RainbowTitle } from "@/components/leaderboard/RainbowTitle";
+import { LeaderboardFloatingEffects } from "@/components/leaderboard/LeaderboardEffects";
 
 export function Leaderboard() {
   const { topUsers, stats, isLoading, allUsers } = useLeaderboard();
@@ -30,7 +32,7 @@ export function Leaderboard() {
 
   if (isLoading) {
     return (
-      <Card className="bg-white/90 backdrop-blur-sm border-primary/10 shadow-xl animate-pulse">
+      <Card className="bg-white/30 backdrop-blur-sm border-white/40 shadow-lg animate-pulse">
         <CardContent className="p-6">
           <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto mb-6" />
           <div className="flex justify-center gap-4 mb-6">
@@ -49,9 +51,12 @@ export function Leaderboard() {
   }
 
   return (
-    <Card className="bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50 border-amber-200/50 shadow-xl overflow-hidden">
-      <CardContent className="p-3 md:p-4">
-        {/* Compact Header with Logo and Title */}
+    <Card className="bg-white/30 backdrop-blur-sm border-white/40 shadow-lg overflow-hidden relative">
+      {/* Floating effects in the main card */}
+      <LeaderboardFloatingEffects />
+
+      <CardContent className="p-3 md:p-4 relative z-10">
+        {/* Compact Header with Logo and Rainbow Title */}
         <div className="flex items-center justify-center gap-2 mb-3">
           {/* Logo with Glow Effect */}
           <motion.div
@@ -81,19 +86,8 @@ export function Leaderboard() {
             </motion.div>
           </motion.div>
 
-          {/* Title with Golden Shimmer - Single Line */}
-          <h2 className="text-lg md:text-xl font-bold tracking-wider uppercase relative whitespace-nowrap">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 via-amber-600 to-yellow-500 drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]">
-              TOP RANKING
-            </span>
-            <motion.span
-              className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none"
-              animate={{ x: ["-100%", "100%"] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-            >
-              TOP RANKING
-            </motion.span>
-          </h2>
+          {/* Rainbow 3D Title */}
+          <RainbowTitle text={t("leaderboard.topRanking")} />
         </div>
 
         {/* Compact Stats Bar */}
@@ -115,7 +109,7 @@ export function Leaderboard() {
               <Coins className="w-3 h-3 text-white" />
             </div>
             <div className="text-left">
-              <p className="text-[10px] text-muted-foreground leading-tight">Camly Coin</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">{t("leaderboard.camlyCoin")}</p>
               <p className="text-sm font-bold text-amber-600">{stats.total_coins_distributed.toLocaleString()}</p>
             </div>
           </div>

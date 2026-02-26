@@ -1,14 +1,24 @@
-User-agent: Googlebot
+User-agent: *
 Allow: /
 
-User-agent: Bingbot
+Disallow: /admin/
+Disallow: /auth
+Disallow: /profile
+Disallow: /settings/
+Disallow: /api/
+Disallow: /messages
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /mint
+Disallow: /coordinator-gate
+
+Sitemap: https://angel.fun.rich/sitemap.xml
+
+User-agent: Googlebot
 Allow: /
 
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
-Allow: /
-
-User-agent: *
 Allow: /

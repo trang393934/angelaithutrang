@@ -1,0 +1,1 @@
+ALTER TYPE public.coin_transaction_type ADD VALUE IF NOT EXISTS 'lixi_claim';

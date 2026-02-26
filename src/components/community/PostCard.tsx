@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download } from "lucide-react";
+import { Heart, MessageCircle, Share2, Award, Coins, Send, Loader2, MoreHorizontal, Pencil, Trash2, X, Check, Image, ImageOff, Volume2, VolumeX, Download, Gift, Copy, Link as LinkIcon, Sparkles, ArrowRight, ExternalLink } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { getProfilePath, getPostPath } from "@/lib/profileUrl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +17,8 @@ import { PostImageGrid } from "./PostImageGrid";
 import { LikeButtonWithReactions, ReactionType } from "./PostReactionPicker";
 import ShareDialog from "@/components/ShareDialog";
 import { LinkifiedContent } from "./LinkifiedContent";
+import { toast } from "sonner";
+import { CelebrationPostCard } from "./CelebrationPostCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +41,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 
 interface PostCardProps {
   post: CommunityPost;
@@ -87,6 +92,9 @@ export function PostCard({
   
   // Share dialog state
   const [showShareDialog, setShowShareDialog] = useState(false);
+  
+  // Tip dialog state
+  const [showTipDialog, setShowTipDialog] = useState(false);
 
   // TTS Hook for audio playback and download
   const { isLoading: ttsLoading, isPlaying: ttsPlaying, isDownloading: ttsDownloading, currentMessageId: ttsMessageId, playText, stopAudio, downloadAudio } = useTextToSpeech();
@@ -131,8 +139,23 @@ export function PostCard({
     void onLike(post.id).finally(() => setIsLiking(false));
   };
 
+  const [sharePopoverOpen, setSharePopoverOpen] = useState(false);
+
   const handleShareClick = () => {
+    setSharePopoverOpen(false);
     setShowShareDialog(true);
+  };
+
+  const handleCopyPostLink = async () => {
+    const path = getPostPath(post.id, post.slug, post.user_handle);
+    const fullUrl = `https://angel.fun.rich${path}`;
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      toast.success("Đã sao chép liên kết! 🔗");
+    } catch {
+      toast.error("Không thể sao chép.");
+    }
+    setSharePopoverOpen(false);
   };
 
   const handleShareSuccess = async () => {
@@ -333,16 +356,53 @@ export function PostCard({
   const sharesCount = post.shares_count || 0;
   const isNearThreshold = likesCount >= 3 && likesCount < 5;
 
+  // Celebration post helpers
+  const isCelebration = (post as any).post_type === "celebration";
+  const celebrationMeta = isCelebration ? (post as any).metadata : null;
+  const expiresAt = isCelebration ? (post as any).expires_at : null;
+  const [countdownText, setCountdownText] = useState("");
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const update = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) { setCountdownText("Đã hết hạn"); return; }
+      const hours = Math.floor(diff / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      setCountdownText(`${hours}h ${mins}m`);
+    };
+    update();
+    const id = setInterval(update, 60000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
   return (
     <>
       <Card className={`
         overflow-hidden transition-all duration-300 w-full max-w-full
-        ${post.is_rewarded ? 'border-amber-300 bg-gradient-to-r from-amber-50/50 to-orange-50/30' : 'border-primary/10'}
+        ${isCelebration ? 'border-amber-400 bg-gradient-to-br from-amber-50/60 via-yellow-50/40 to-orange-50/30 shadow-[0_0_20px_-5px_rgba(218,165,32,0.2)]' : ''}
+        ${!isCelebration && post.is_rewarded ? 'border-amber-300 bg-gradient-to-r from-amber-50/50 to-orange-50/30' : ''}
+        ${!isCelebration && !post.is_rewarded ? 'border-primary/10' : ''}
       `}>
         <CardContent className="p-4 sm:p-5 overflow-hidden">
+          {/* Celebration Badge */}
+          {isCelebration && (
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-amber-200/60">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-bold shadow-sm">
+                <Gift className="w-3.5 h-3.5" />
+                Thiệp Tặng Thưởng
+              </span>
+              {expiresAt && countdownText && (
+                <span className="text-xs text-amber-600/80 font-medium">
+                  ⏳ {countdownText}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex items-start gap-3 mb-4 min-w-0">
-            <Link to={`/user/${post.user_id}`}>
+            <Link to={getProfilePath(post.user_id, (post as any).user_handle)}>
               <Avatar className="w-11 h-11 border-2 border-primary/20 hover:border-primary/50 transition-colors cursor-pointer">
                 <AvatarImage src={post.user_avatar_url || angelAvatar} alt={post.user_display_name} />
                 <AvatarFallback>{post.user_display_name?.charAt(0) || "U"}</AvatarFallback>
@@ -351,7 +411,7 @@ export function PostCard({
 
             <div className="flex-1 min-w-0 overflow-hidden">
               <div className="flex items-center gap-2 flex-wrap">
-                <Link to={`/user/${post.user_id}`} className="hover:underline min-w-0">
+                <Link to={getProfilePath(post.user_id, (post as any).user_handle)} className="hover:underline min-w-0">
                   <span className="font-semibold text-foreground truncate block max-w-[150px] sm:max-w-[200px]">
                     {post.user_display_name}
                   </span>
@@ -364,13 +424,16 @@ export function PostCard({
                   </span>
                 )}
               </div>
-              <span className="text-xs text-foreground-muted block truncate">
+              <Link
+                to={getPostPath(post.id, post.slug, post.user_handle)}
+                className="text-xs text-foreground-muted block truncate hover:underline"
+              >
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: vi })}
-              </span>
+              </Link>
             </div>
 
             {/* Owner Actions Menu */}
-            {isOwner && (
+            {isOwner && !isCelebration && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -393,6 +456,11 @@ export function PostCard({
               </DropdownMenu>
             )}
           </div>
+
+          {/* Celebration Rich Card */}
+          {isCelebration && celebrationMeta && (
+            <CelebrationPostCard meta={celebrationMeta} />
+          )}
 
           {/* Content - Normal or Edit Mode */}
           {isEditing ? (
@@ -569,21 +637,60 @@ export function PostCard({
               <span className="hidden sm:inline">Bình luận</span>
             </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleShareClick}
-              disabled={isSharing || !currentUserId}
-              className={`flex-1 hover:bg-primary/5 ${post.is_shared_by_me ? 'text-green-600' : 'text-foreground-muted'}`}
-              title={!currentUserId ? 'Vui lòng đăng nhập để chia sẻ' : ''}
-            >
-              {isSharing ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <Share2 className={`w-5 h-5 mr-2 ${post.is_shared_by_me ? 'fill-green-200' : ''}`} />
-              )}
-              <span className="hidden sm:inline">{post.is_shared_by_me ? 'Đã chia sẻ' : 'Chia sẻ'}</span>
-            </Button>
+            <Popover open={sharePopoverOpen} onOpenChange={setSharePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={isSharing || !currentUserId}
+                  className={`flex-1 hover:bg-primary/5 ${post.is_shared_by_me ? 'text-green-600' : 'text-foreground-muted'}`}
+                  title={!currentUserId ? 'Vui lòng đăng nhập để chia sẻ' : ''}
+                >
+                  {isSharing ? (
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  ) : (
+                    <Share2 className={`w-5 h-5 mr-2 ${post.is_shared_by_me ? 'fill-green-200' : ''}`} />
+                  )}
+                  <span className="hidden sm:inline">{post.is_shared_by_me ? 'Đã chia sẻ' : 'Chia sẻ'}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-52 p-1" side="top" align="center">
+                <button
+                  onClick={handleShareClick}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-muted transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Chia sẻ lên trang cá nhân
+                </button>
+                <button
+                  onClick={handleCopyPostLink}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-muted transition-colors"
+                >
+                  <Copy className="w-4 h-4" />
+                  Sao chép liên kết
+                </button>
+              </PopoverContent>
+            </Popover>
+
+            {/* Tip/Reward Button */}
+            {currentUserId && currentUserId !== post.user_id && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowTipDialog(true)}
+                    className="hover:bg-amber-100/70 text-amber-600 hover:text-amber-700"
+                  >
+                    <Gift className="w-5 h-5 mr-1" />
+                    <span className="hidden sm:inline">Thưởng</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-primary-deep text-white border-0">
+                  Tặng thưởng cho tác giả
+                </TooltipContent>
+              </Tooltip>
+            )}
 
             {/* Audio Button - Listen to post */}
             <Tooltip>
@@ -771,6 +878,19 @@ export function PostCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Tip Dialog */}
+      <GiftCoinDialog
+        open={showTipDialog}
+        onOpenChange={setShowTipDialog}
+        preselectedUser={{
+          id: post.user_id,
+          display_name: post.user_display_name,
+          avatar_url: post.user_avatar_url || null,
+        }}
+        contextType="post"
+        contextId={post.id}
+      />
 
       {/* Share Dialog */}
       <ShareDialog

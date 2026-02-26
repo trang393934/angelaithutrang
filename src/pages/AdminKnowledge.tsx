@@ -9,9 +9,23 @@ import {
   FileType, AlertCircle, FolderPlus, Folder,
   Edit2, X, ChevronDown, ChevronRight, GripVertical,
   Search, Filter, XCircle, Link as LinkIcon, ExternalLink, Eye,
-  History
+  History, RefreshCw, BookOpen, Download, FolderInput
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import angelAvatar from "@/assets/angel-avatar.png";
+import { 
+  PPLP_KNOWLEDGE_TEMPLATES, 
+  PPLP_FOLDER_NAME, 
+  getPPLPDocumentTitle,
+  type PPLPKnowledgeTemplate 
+} from "@/data/pplpKnowledgeTemplates";
 
 interface KnowledgeFolder {
   id: string;
@@ -26,10 +40,12 @@ interface KnowledgeDocument {
   description: string | null;
   file_name: string;
   file_type: string;
+  file_url: string;
   file_size: number;
   is_processed: boolean;
   created_at: string;
   folder_id: string | null;
+  extracted_content: string | null;
 }
 
 type ProcessedFilter = "all" | "processed" | "pending";
@@ -44,37 +60,52 @@ const AdminKnowledge = () => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   
+  // Helper: load from sessionStorage with fallback
+  const loadSession = <T,>(key: string, fallback: T): T => {
+    try {
+      const raw = sessionStorage.getItem(`admin_knowledge_${key}`);
+      return raw !== null ? JSON.parse(raw) : fallback;
+    } catch { return fallback; }
+  };
+  const saveSession = <T,>(key: string, value: T) => {
+    try { sessionStorage.setItem(`admin_knowledge_${key}`, JSON.stringify(value)); } catch {}
+  };
+
   // Search and filter state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterFolder, setFilterFolder] = useState<string | null | "all" | "uncategorized">("all");
-  const [filterProcessed, setFilterProcessed] = useState<ProcessedFilter>("all");
+  const [searchQuery, setSearchQuery] = useState<string>(() => loadSession("searchQuery", ""));
+  const [filterFolder, setFilterFolder] = useState<string | null | "all" | "uncategorized">(() => loadSession("filterFolder", "all"));
+  const [filterProcessed, setFilterProcessed] = useState<ProcessedFilter>(() => loadSession("filterProcessed", "all" as ProcessedFilter));
   
   // Drag and drop state
   const [draggedDoc, setDraggedDoc] = useState<KnowledgeDocument | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null | "uncategorized">(null);
   
   // Folder form
-  const [showFolderForm, setShowFolderForm] = useState(false);
+  const [showFolderForm, setShowFolderForm] = useState<boolean>(() => loadSession("showFolderForm", false));
   const [editingFolder, setEditingFolder] = useState<KnowledgeFolder | null>(null);
-  const [folderForm, setFolderForm] = useState({ name: "", description: "" });
+  const [folderForm, setFolderForm] = useState<{ name: string; description: string }>(() => loadSession("folderForm", { name: "", description: "" }));
   
   // Upload form
-  const [uploadForm, setUploadForm] = useState({
-    title: "",
-    description: "",
-    file: null as File | null,
-    folderId: null as string | null,
-  });
+  const [uploadForm, setUploadForm] = useState<{ title: string; description: string; file: File | null; folderId: string | null }>(() => ({
+    ...loadSession("uploadForm", { title: "", description: "", folderId: null }),
+    file: null, // File objects cannot be serialized
+  }));
 
   // Google URL import
-  const [googleUrlForm, setGoogleUrlForm] = useState({
+  const [googleUrlForm, setGoogleUrlForm] = useState<{ url: string; title: string; description: string; folderId: string | null }>(() => loadSession("googleUrlForm", {
     url: "",
     title: "",
     description: "",
-    folderId: null as string | null,
-  });
+    folderId: null,
+  }));
   const [isFetchingGoogle, setIsFetchingGoogle] = useState(false);
   const [googlePreview, setGooglePreview] = useState<{ content: string; sourceType: string } | null>(null);
+  const [syncingDocId, setSyncingDocId] = useState<string | null>(null);
+
+  // PPLP Documents state
+  const [importedPPLPDocs, setImportedPPLPDocs] = useState<Set<string>>(new Set());
+  const [importingPPLP, setImportingPPLP] = useState<string | null>(null);
+  const [importingAllPPLP, setImportingAllPPLP] = useState(false);
 
   // Filtered documents based on search and filters
   const filteredDocuments = useMemo(() => {
@@ -107,6 +138,28 @@ const AdminKnowledge = () => {
     setFilterProcessed("all");
   };
 
+  // Persist form states to sessionStorage whenever they change
+  useEffect(() => { saveSession("searchQuery", searchQuery); }, [searchQuery]);
+  useEffect(() => { saveSession("filterFolder", filterFolder); }, [filterFolder]);
+  useEffect(() => { saveSession("filterProcessed", filterProcessed); }, [filterProcessed]);
+  useEffect(() => { saveSession("showFolderForm", showFolderForm); }, [showFolderForm]);
+  useEffect(() => { saveSession("folderForm", folderForm); }, [folderForm]);
+  useEffect(() => {
+    saveSession("uploadForm", { title: uploadForm.title, description: uploadForm.description, folderId: uploadForm.folderId });
+  }, [uploadForm.title, uploadForm.description, uploadForm.folderId]);
+  useEffect(() => { saveSession("googleUrlForm", googleUrlForm); }, [googleUrlForm]);
+
+  // Save & restore scroll position
+  useEffect(() => {
+    const savedScroll = loadSession<number>("scrollY", 0);
+    if (savedScroll) {
+      requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: "instant" as ScrollBehavior }));
+    }
+    const handleScroll = () => saveSession("scrollY", window.scrollY);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   useEffect(() => {
     if (!authLoading && isAdminChecked) {
       if (!user) {
@@ -122,7 +175,7 @@ const AdminKnowledge = () => {
 
   const fetchData = async () => {
     setIsLoading(true);
-    await Promise.all([fetchFolders(), fetchDocuments()]);
+    await Promise.all([fetchFolders(), fetchDocuments(), fetchImportedPPLPDocs()]);
     setIsLoading(false);
   };
 
@@ -152,6 +205,143 @@ const AdminKnowledge = () => {
       toast.error("Không thể tải danh sách tài liệu");
     } else {
       setDocuments(data || []);
+    }
+  };
+
+  // Fetch imported PPLP documents
+  const fetchImportedPPLPDocs = async () => {
+    const { data, error } = await supabase
+      .from("knowledge_documents")
+      .select("title")
+      .like("title", "[PPLP]%");
+
+    if (!error && data) {
+      const importedIds = new Set<string>();
+      PPLP_KNOWLEDGE_TEMPLATES.forEach(template => {
+        const expectedTitle = getPPLPDocumentTitle(template.title);
+        if (data.some(doc => doc.title === expectedTitle)) {
+          importedIds.add(template.id);
+        }
+      });
+      setImportedPPLPDocs(importedIds);
+    }
+  };
+
+  // Get or create PPLP folder
+  const getOrCreatePPLPFolder = async (): Promise<string | null> => {
+    // Check if folder exists
+    const { data: existingFolder } = await supabase
+      .from("knowledge_folders")
+      .select("id")
+      .eq("name", PPLP_FOLDER_NAME)
+      .single();
+
+    if (existingFolder) {
+      return existingFolder.id;
+    }
+
+    // Create folder
+    const { data: newFolder, error } = await supabase
+      .from("knowledge_folders")
+      .insert({
+        name: PPLP_FOLDER_NAME,
+        description: "Tài liệu về giao thức PPLP - Proof of Pure Love",
+        created_by: user?.id
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Error creating PPLP folder:", error);
+      return null;
+    }
+
+    await fetchFolders();
+    return newFolder?.id || null;
+  };
+
+  // Import single PPLP template
+  const handleImportPPLPTemplate = async (template: PPLPKnowledgeTemplate) => {
+    if (importedPPLPDocs.has(template.id)) {
+      toast.info("Tài liệu này đã được import");
+      return;
+    }
+
+    setImportingPPLP(template.id);
+
+    try {
+      const folderId = await getOrCreatePPLPFolder();
+      const title = getPPLPDocumentTitle(template.title);
+
+      const { error } = await supabase
+        .from("knowledge_documents")
+        .insert({
+          title,
+          description: template.description,
+          file_name: `pplp-${template.id}.txt`,
+          file_url: "",
+          file_type: "text/plain",
+          file_size: new Blob([template.content]).size,
+          extracted_content: template.content,
+          is_processed: true,
+          created_by: user?.id,
+          folder_id: folderId
+        });
+
+      if (error) throw error;
+
+      setImportedPPLPDocs(prev => new Set([...prev, template.id]));
+      toast.success(`Đã import "${template.title}" ✨`);
+      await fetchDocuments();
+    } catch (error) {
+      console.error("Import error:", error);
+      toast.error("Không thể import tài liệu");
+    } finally {
+      setImportingPPLP(null);
+    }
+  };
+
+  // Import all PPLP templates
+  const handleImportAllPPLP = async () => {
+    const notImported = PPLP_KNOWLEDGE_TEMPLATES.filter(t => !importedPPLPDocs.has(t.id));
+    
+    if (notImported.length === 0) {
+      toast.info("Tất cả tài liệu PPLP đã được import");
+      return;
+    }
+
+    setImportingAllPPLP(true);
+
+    try {
+      const folderId = await getOrCreatePPLPFolder();
+      
+      for (const template of notImported) {
+        const title = getPPLPDocumentTitle(template.title);
+        
+        await supabase
+          .from("knowledge_documents")
+          .insert({
+            title,
+            description: template.description,
+            file_name: `pplp-${template.id}.txt`,
+            file_url: "",
+            file_type: "text/plain",
+            file_size: new Blob([template.content]).size,
+            extracted_content: template.content,
+            is_processed: true,
+            created_by: user?.id,
+            folder_id: folderId
+          });
+      }
+
+      setImportedPPLPDocs(new Set(PPLP_KNOWLEDGE_TEMPLATES.map(t => t.id)));
+      toast.success(`Đã import ${notImported.length} tài liệu PPLP! ✨`);
+      await fetchDocuments();
+    } catch (error) {
+      console.error("Import all error:", error);
+      toast.error("Có lỗi khi import tài liệu");
+    } finally {
+      setImportingAllPPLP(false);
     }
   };
 
@@ -218,6 +408,36 @@ const AdminKnowledge = () => {
     setDraggedDoc(null);
   };
 
+  // Move document to folder via button
+  const handleMoveToFolder = async (doc: KnowledgeDocument, targetFolderId: string | null) => {
+    if (doc.folder_id === targetFolderId) return;
+
+    try {
+      const { error } = await supabase
+        .from("knowledge_documents")
+        .update({ folder_id: targetFolderId })
+        .eq("id", doc.id);
+
+      if (error) throw error;
+
+      // Update local state immediately for smooth UX
+      setDocuments(prev => 
+        prev.map(d => 
+          d.id === doc.id 
+            ? { ...d, folder_id: targetFolderId } 
+            : d
+        )
+      );
+
+      const folderName = targetFolderId 
+        ? folders.find(f => f.id === targetFolderId)?.name 
+        : "Chưa phân loại";
+      toast.success(`Đã chuyển "${doc.title}" sang "${folderName}"`);
+    } catch (error) {
+      console.error("Move error:", error);
+      toast.error("Không thể di chuyển tài liệu");
+    }
+  };
   // Folder CRUD
   const handleSaveFolder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -367,6 +587,7 @@ const AdminKnowledge = () => {
 
       toast.success("Upload tài liệu thành công! ✨");
       setUploadForm({ title: "", description: "", file: null, folderId: selectedFolderId });
+      saveSession("uploadForm", { title: "", description: "", folderId: selectedFolderId });
       fetchDocuments();
     } catch (error) {
       console.error("Upload error:", error);
@@ -426,35 +647,43 @@ const AdminKnowledge = () => {
   // Helper function to extract Excel content (dynamic import to avoid React conflict)
   const extractExcelContent = async (buffer: ArrayBuffer): Promise<string> => {
     try {
-      const XLSX = await import('xlsx');
-      const workbook = XLSX.read(buffer, { type: 'array' });
+      const ExcelJS = await import('exceljs');
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
       let content = '';
 
-      workbook.SheetNames.forEach((sheetName: string, sheetIndex: number) => {
-        const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
-        
-        if (data.length === 0) return;
+      workbook.worksheets.forEach((worksheet, sheetIndex) => {
+        const sheetName = worksheet.name;
+        const rowCount = worksheet.rowCount;
+        if (rowCount === 0) return;
 
         content += `\n📋 SHEET ${sheetIndex + 1}: ${sheetName}\n`;
         content += `${'═'.repeat(50)}\n`;
 
-        const headers = data[0] || [];
-        const rows = data.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== ''));
+        const headerRow = worksheet.getRow(1);
+        const headers: string[] = [];
+        headerRow.eachCell((cell, colNumber) => {
+          headers[colNumber - 1] = String(cell.value ?? `Cột ${colNumber}`);
+        });
 
         content += `Các cột: ${headers.join(' | ')}\n`;
         content += `${'─'.repeat(50)}\n\n`;
 
-        rows.forEach((row, index) => {
-          content += `--- Dòng ${index + 1} ---\n`;
+        for (let rowNum = 2; rowNum <= rowCount; rowNum++) {
+          const row = worksheet.getRow(rowNum);
+          const hasData = row.values && (row.values as unknown[]).some(v => v !== undefined && v !== null && v !== '');
+          if (!hasData) continue;
+
+          content += `--- Dòng ${rowNum - 1} ---\n`;
           headers.forEach((header, i) => {
-            const value = row[i];
-            if (value !== undefined && value !== '') {
-              content += `${header || `Cột ${i + 1}`}: ${value}\n`;
+            const cell = row.getCell(i + 1);
+            const value = cell.value;
+            if (value !== undefined && value !== null && value !== '') {
+              content += `${header}: ${value}\n`;
             }
           });
           content += '\n';
-        });
+        }
       });
 
       return content || 'Không thể trích xuất nội dung từ file Excel';
@@ -547,6 +776,7 @@ const AdminKnowledge = () => {
 
       toast.success("Đã lưu tài liệu thành công! ✨");
       setGoogleUrlForm({ url: "", title: "", description: "", folderId: selectedFolderId });
+      saveSession("googleUrlForm", { url: "", title: "", description: "", folderId: selectedFolderId });
       setGooglePreview(null);
       fetchDocuments();
     } catch (error) {
@@ -587,6 +817,61 @@ const AdminKnowledge = () => {
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Không thể xóa tài liệu");
+    }
+  };
+
+  // Handle sync Google document
+  const handleSyncDocument = async (doc: KnowledgeDocument) => {
+    // Check if this is a Google URL
+    const isGoogleUrl = doc.file_url.includes('docs.google.com/document') || 
+                        doc.file_url.includes('docs.google.com/spreadsheets');
+    
+    if (!isGoogleUrl) {
+      toast.error("Chỉ có thể đồng bộ tài liệu từ Google Docs/Sheets");
+      return;
+    }
+
+    setSyncingDocId(doc.id);
+
+    try {
+      const response = await supabase.functions.invoke('fetch-google-content', {
+        body: { url: doc.file_url }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to fetch content');
+      }
+
+      const data = response.data;
+      
+      if (data.error) {
+        toast.error(data.error);
+        if (data.hint) {
+          toast.info(data.hint, { duration: 5000 });
+        }
+        return;
+      }
+
+      // Update the document with new content
+      const { error: updateError } = await supabase
+        .from("knowledge_documents")
+        .update({
+          extracted_content: data.content,
+          file_size: new Blob([data.content]).size,
+          is_processed: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", doc.id);
+
+      if (updateError) throw updateError;
+
+      toast.success(`Đã đồng bộ "${doc.title}" thành công! ✨`);
+      fetchDocuments();
+    } catch (error) {
+      console.error("Sync error:", error);
+      toast.error(error instanceof Error ? error.message : 'Không thể đồng bộ tài liệu');
+    } finally {
+      setSyncingDocId(null);
     }
   };
 
@@ -1031,6 +1316,232 @@ const AdminKnowledge = () => {
           </div>
         </div>
 
+        {/* PPLP Documents Section */}
+        <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-serif text-xl font-semibold text-primary-deep flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
+                Tài liệu PPLP - Hướng dẫn Mint FUN Money
+                <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                  {documents.filter(d => d.title.startsWith('[PPLP]') || d.folder_id === folders.find(f => f.name === PPLP_FOLDER_NAME)?.id).length} tài liệu
+                </span>
+              </h2>
+              <p className="text-sm text-foreground-muted mt-1">
+                Các tài liệu giúp Angel AI trả lời về quy trình mint FUN Money theo PPLP
+              </p>
+            </div>
+            {importedPPLPDocs.size < PPLP_KNOWLEDGE_TEMPLATES.length && (
+              <button
+                onClick={handleImportAllPPLP}
+                disabled={importingAllPPLP}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-sapphire-gradient text-white font-medium shadow-sacred hover:shadow-divine disabled:opacity-50 transition-all"
+              >
+                {importingAllPPLP ? (
+                  <>
+                    <Sparkles className="w-4 h-4 animate-pulse" />
+                    Đang import...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Import mẫu PPLP
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Show ALL PPLP Documents (imported from any source) */}
+          <div className="space-y-3 mb-6">
+            {documents
+              .filter(doc => doc.title.startsWith('[PPLP]') || doc.folder_id === folders.find(f => f.name === PPLP_FOLDER_NAME)?.id)
+              .map((doc) => {
+                const isGoogleUrl = doc.file_url?.includes('docs.google.com');
+                
+                return (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 rounded-xl border bg-green-50 border-green-200"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-2xl flex-shrink-0">{getFileIcon(doc.file_type, doc.file_name)}</span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-medium text-foreground">{doc.title}</h3>
+                          {isGoogleUrl && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full flex-shrink-0">
+                              Google Docs
+                            </span>
+                          )}
+                          {doc.is_processed && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full flex-shrink-0">
+                              ✓ Đã xử lý
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-foreground-muted truncate">{doc.description}</p>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-foreground-muted">
+                          <span>{formatFileSize(doc.file_size)}</span>
+                          <span>•</span>
+                          <span>{new Date(doc.created_at).toLocaleDateString("vi-VN")}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* View Full Button */}
+                      <button
+                        onClick={() => {
+                          const content = doc.extracted_content;
+                          if (content) {
+                            const newWindow = window.open('', '_blank');
+                            if (newWindow) {
+                              newWindow.document.write(`
+                                <html>
+                                  <head>
+                                    <title>${doc.title}</title>
+                                    <style>
+                                      body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 900px; margin: 0 auto; line-height: 1.6; }
+                                      pre { white-space: pre-wrap; word-wrap: break-word; background: #f5f5f5; padding: 1rem; border-radius: 8px; }
+                                      h1 { color: #4f46e5; }
+                                    </style>
+                                  </head>
+                                  <body>
+                                    <h1>${doc.title}</h1>
+                                    <p><em>${doc.description || ''}</em></p>
+                                    <hr/>
+                                    <pre>${content}</pre>
+                                  </body>
+                                </html>
+                              `);
+                              newWindow.document.close();
+                            }
+                          } else if (doc.file_url) {
+                            window.open(doc.file_url, '_blank');
+                          } else {
+                            toast.info('Nội dung chưa được trích xuất');
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-pale text-primary hover:bg-primary hover:text-white transition-colors text-sm"
+                        title="Xem đầy đủ"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span className="hidden sm:inline">Xem</span>
+                      </button>
+
+                      {/* Download Button */}
+                      <button
+                        onClick={() => {
+                          const content = doc.extracted_content;
+                          if (content) {
+                            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${doc.title.replace(/[^a-zA-Z0-9\u00C0-\u024F\u1E00-\u1EFF]/g, '_')}.txt`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            toast.success('Đã tải xuống!');
+                          } else if (doc.file_url) {
+                            window.open(doc.file_url, '_blank');
+                          } else {
+                            toast.error('Không có nội dung để tải');
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-colors text-sm"
+                        title="Tải về"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span className="hidden sm:inline">Tải về</span>
+                      </button>
+
+                      {/* Sync Button for Google Docs */}
+                      {isGoogleUrl && (
+                        <button
+                          onClick={() => handleSyncDocument(doc)}
+                          disabled={syncingDocId === doc.id}
+                          className={`p-2 rounded-lg transition-colors ${
+                            syncingDocId === doc.id 
+                              ? "text-primary bg-primary/10 cursor-not-allowed" 
+                              : "text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white"
+                          }`}
+                          title="Đồng bộ lại từ Google"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${syncingDocId === doc.id ? 'animate-spin' : ''}`} />
+                        </button>
+                      )}
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => handleDelete(doc)}
+                        className="p-2 rounded-lg text-red-500 bg-red-50 hover:bg-red-500 hover:text-white transition-colors"
+                        title="Xóa tài liệu"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            
+            {documents.filter(doc => doc.title.startsWith('[PPLP]') || doc.folder_id === folders.find(f => f.name === PPLP_FOLDER_NAME)?.id).length === 0 && (
+              <div className="text-center py-8 text-foreground-muted">
+                <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>Chưa có tài liệu PPLP nào</p>
+                <p className="text-sm">Import từ mẫu bên dưới hoặc từ Google Docs</p>
+              </div>
+            )}
+          </div>
+
+          {/* Template Import Section */}
+          {PPLP_KNOWLEDGE_TEMPLATES.filter(t => !importedPPLPDocs.has(t.id)).length > 0 && (
+            <div className="border-t border-primary-pale pt-4">
+              <h3 className="text-sm font-medium text-foreground-muted mb-3">📝 Mẫu tài liệu có sẵn để import:</h3>
+              <div className="space-y-2">
+                {PPLP_KNOWLEDGE_TEMPLATES.filter(t => !importedPPLPDocs.has(t.id)).map((template) => {
+                  const isImporting = importingPPLP === template.id;
+
+                  return (
+                    <div
+                      key={template.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-primary-pale/20 border-primary-pale hover:border-primary transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{template.icon}</span>
+                        <div>
+                          <h3 className="font-medium text-foreground text-sm">{template.title}</h3>
+                          <p className="text-xs text-foreground-muted">{template.description}</p>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => handleImportPPLPTemplate(template)}
+                        disabled={isImporting || importingAllPPLP}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-white text-sm hover:bg-primary-deep disabled:opacity-50 transition-colors"
+                      >
+                        {isImporting ? (
+                          <>
+                            <Sparkles className="w-3 h-3 animate-pulse" />
+                            <span>Importing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-3 h-3" />
+                            <span>Import</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Search and Filter */}
         <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
@@ -1174,6 +1685,9 @@ const AdminKnowledge = () => {
                     key={doc.id} 
                     doc={doc} 
                     onDelete={handleDelete}
+                    onSync={handleSyncDocument}
+                    onMoveToFolder={handleMoveToFolder}
+                    isSyncing={syncingDocId === doc.id}
                     formatFileSize={formatFileSize}
                     getFileIcon={getFileIcon}
                     onDragStart={handleDragStart}
@@ -1181,6 +1695,7 @@ const AdminKnowledge = () => {
                     isDragging={draggedDoc?.id === doc.id}
                     showFolder
                     folderName={doc.folder_id ? folders.find(f => f.id === doc.folder_id)?.name : "Chưa phân loại"}
+                    folders={folders}
                   />
                 ))
               )}
@@ -1240,11 +1755,15 @@ const AdminKnowledge = () => {
                               key={doc.id} 
                               doc={doc} 
                               onDelete={handleDelete}
+                              onSync={handleSyncDocument}
+                              onMoveToFolder={handleMoveToFolder}
+                              isSyncing={syncingDocId === doc.id}
                               formatFileSize={formatFileSize}
                               getFileIcon={getFileIcon}
                               onDragStart={handleDragStart}
                               onDragEnd={handleDragEnd}
                               isDragging={draggedDoc?.id === doc.id}
+                              folders={folders}
                             />
                           ))
                         )}
@@ -1290,11 +1809,15 @@ const AdminKnowledge = () => {
                         key={doc.id} 
                         doc={doc} 
                         onDelete={handleDelete}
+                        onSync={handleSyncDocument}
+                        onMoveToFolder={handleMoveToFolder}
+                        isSyncing={syncingDocId === doc.id}
                         formatFileSize={formatFileSize}
                         getFileIcon={getFileIcon}
                         onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                         isDragging={draggedDoc?.id === doc.id}
+                        folders={folders}
                       />
                     ))
                   )}
@@ -1312,8 +1835,10 @@ const AdminKnowledge = () => {
           <ul className="space-y-2 text-sm text-foreground-muted">
             <li>• <strong>Tạo thư mục:</strong> Tổ chức tài liệu theo chủ đề như "Giáo lý", "Thiền định", "Tình yêu"...</li>
             <li>• <strong>Kéo thả:</strong> Giữ và kéo tài liệu để di chuyển giữa các thư mục</li>
+            <li>• <strong>Di chuyển nhanh:</strong> Nhấn nút <FolderInput className="w-4 h-4 inline mx-1" /> để chọn thư mục đích cho tài liệu</li>
             <li>• <strong>File TXT/MD/CSV/Excel:</strong> Nội dung sẽ được trích xuất tự động và Angel AI có thể sử dụng ngay</li>
             <li>• <strong>Google Docs/Sheets:</strong> Paste URL và nhấn "Lấy & Xem Trước" để import nội dung (file phải được chia sẻ công khai)</li>
+            <li>• <strong className="text-blue-600">🔄 Đồng bộ lại:</strong> Với tài liệu Google, nhấn nút <RefreshCw className="w-3 h-3 inline mx-1" /> để cập nhật nội dung mới nhất từ bản gốc</li>
             <li>• <strong>File PDF/DOCX:</strong> Cần được xử lý thêm để trích xuất nội dung</li>
             <li>• <strong>Không giới hạn dung lượng:</strong> Upload bất kỳ file nào bạn muốn</li>
             <li>• Nội dung trong các tài liệu sẽ được Angel AI sử dụng như nguồn kiến thức bổ sung</li>
@@ -1328,16 +1853,23 @@ const AdminKnowledge = () => {
 const DocumentItem = ({ 
   doc, 
   onDelete, 
+  onSync,
+  onMoveToFolder,
+  isSyncing,
   formatFileSize, 
   getFileIcon,
   onDragStart,
   onDragEnd,
   isDragging,
   showFolder = false,
-  folderName
+  folderName,
+  folders = []
 }: { 
   doc: KnowledgeDocument; 
   onDelete: (doc: KnowledgeDocument) => void;
+  onSync?: (doc: KnowledgeDocument) => void;
+  onMoveToFolder?: (doc: KnowledgeDocument, folderId: string | null) => void;
+  isSyncing?: boolean;
   formatFileSize: (bytes: number) => string;
   getFileIcon: (type: string, fileName: string) => string;
   onDragStart: (e: DragEvent<HTMLDivElement>, doc: KnowledgeDocument) => void;
@@ -1345,7 +1877,12 @@ const DocumentItem = ({
   isDragging: boolean;
   showFolder?: boolean;
   folderName?: string;
+  folders?: KnowledgeFolder[];
 }) => {
+  // Check if this is a Google URL that can be synced
+  const isGoogleUrl = doc.file_url?.includes('docs.google.com/document') || 
+                      doc.file_url?.includes('docs.google.com/spreadsheets');
+
   return (
     <div 
       className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
@@ -1361,7 +1898,14 @@ const DocumentItem = ({
         <GripVertical className="w-4 h-4 text-foreground-muted/50 flex-shrink-0" />
         <span className="text-xl flex-shrink-0">{getFileIcon(doc.file_type, doc.file_name)}</span>
         <div className="min-w-0">
-          <h3 className="font-medium text-foreground truncate">{doc.title}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-foreground truncate">{doc.title}</h3>
+            {isGoogleUrl && (
+              <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                Google
+              </span>
+            )}
+          </div>
           {doc.description && (
             <p className="text-sm text-foreground-muted truncate">{doc.description}</p>
           )}
@@ -1391,13 +1935,85 @@ const DocumentItem = ({
           </div>
         </div>
       </div>
-      <button
-        onClick={(e) => { e.stopPropagation(); onDelete(doc); }}
-        className="p-2 rounded-full text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-        title="Xóa tài liệu"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {/* Move to folder dropdown */}
+        {onMoveToFolder && folders.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="p-2 rounded-full text-primary hover:bg-primary-pale transition-colors"
+                title="Di chuyển đến thư mục"
+              >
+                <FolderInput className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 p-0 max-h-80 overflow-y-auto">
+              <div className="px-2 py-1.5 text-xs font-semibold text-foreground-muted border-b sticky top-0 bg-popover z-10">
+                Di chuyển đến thư mục
+              </div>
+              <div className="p-1">
+                {folders.map((folder) => (
+                  <DropdownMenuItem 
+                    key={folder.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (doc.folder_id !== folder.id) {
+                        onMoveToFolder(doc, folder.id);
+                      }
+                    }}
+                    className={doc.folder_id === folder.id ? "bg-primary-pale/50" : ""}
+                  >
+                    <Folder className="w-4 h-4 mr-2 text-primary" />
+                    {folder.name}
+                    {doc.folder_id === folder.id && (
+                      <CheckCircle className="w-3 h-3 ml-auto text-green-600" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (doc.folder_id !== null) {
+                      onMoveToFolder(doc, null);
+                    }
+                  }}
+                  className={doc.folder_id === null ? "bg-primary-pale/50" : ""}
+                >
+                  <Folder className="w-4 h-4 mr-2 text-foreground-muted" />
+                  Chưa phân loại
+                  {doc.folder_id === null && (
+                    <CheckCircle className="w-3 h-3 ml-auto text-green-600" />
+                  )}
+                </DropdownMenuItem>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        
+        {isGoogleUrl && onSync && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onSync(doc); }}
+            disabled={isSyncing}
+            className={`p-2 rounded-full transition-colors ${
+              isSyncing 
+                ? "text-primary bg-primary/10 cursor-not-allowed" 
+                : "text-blue-600 hover:bg-blue-50"
+            }`}
+            title="Đồng bộ lại từ Google"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+          </button>
+        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(doc); }}
+          className="p-2 rounded-full text-red-500 hover:bg-red-50 transition-colors"
+          title="Xóa tài liệu"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };

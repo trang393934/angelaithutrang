@@ -20,7 +20,7 @@ export const MissionSection = () => {
   ];
 
   return (
-    <section className="py-12 sm:py-16 md:py-24 lg:py-32 bg-background-pure relative overflow-hidden">
+    <section className="py-12 sm:py-16 md:py-24 lg:py-32 bg-white/60 backdrop-blur-[2px] relative overflow-hidden">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-1/4 left-0 w-48 sm:w-72 md:w-96 h-48 sm:h-72 md:h-96 bg-primary-pale/50 rounded-full blur-3xl" />

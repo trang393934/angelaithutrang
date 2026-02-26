@@ -1,15 +1,41 @@
 import { useState, useRef } from "react";
-import { Image, Send, X, Loader2, Plus } from "lucide-react";
+import { Image, Send, X, Loader2, Plus, Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import angelAvatar from "@/assets/angel-avatar.png";
 import { fullContentCheck, checkImageFilename } from "@/lib/contentModeration";
 import { ContentModerationDialog } from "./ContentModerationDialog";
+import { compressImage, formatFileSize } from "@/lib/imageCompression";
 
 const MAX_IMAGES = 30;
+
+// Common emojis for quick access - grouped by category
+const EMOJI_CATEGORIES = [
+  {
+    name: "Cảm xúc",
+    emojis: ["😊", "😂", "🥰", "😍", "🤗", "😇", "🥺", "😢", "😭", "😤", "😡", "🤔", "😴", "🤒", "😎", "🤩"]
+  },
+  {
+    name: "Yêu thương",
+    emojis: ["❤️", "💕", "💖", "💗", "💓", "💞", "💝", "🧡", "💛", "💚", "💙", "💜", "🤎", "🖤", "🤍", "💔"]
+  },
+  {
+    name: "Tay & Cử chỉ",
+    emojis: ["👍", "👏", "🙏", "💪", "✌️", "🤝", "👋", "🤲", "🙌", "👐", "✋", "🤚", "🖐️", "👊", "✊", "🤛"]
+  },
+  {
+    name: "Thiên nhiên",
+    emojis: ["🌟", "⭐", "✨", "🌈", "☀️", "🌙", "🌸", "🌺", "🌻", "🌹", "🍀", "🌿", "🌴", "🦋", "🐦", "🕊️"]
+  },
+  {
+    name: "Hoạt động",
+    emojis: ["🎉", "🎊", "🎁", "🎂", "🎈", "🎵", "🎶", "📚", "✍️", "💼", "🏆", "🥇", "🎯", "💡", "🔥", "💎"]
+  }
+];
 
 interface CreatePostFormProps {
   userAvatar?: string | null;
@@ -27,7 +53,27 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
   const [moderationDialogOpen, setModerationDialogOpen] = useState(false);
   const [moderationMessage, setModerationMessage] = useState("");
   const [moderationBlockedItems, setModerationBlockedItems] = useState<string[]>([]);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertEmoji = (emoji: string) => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newContent = content.substring(0, start) + emoji + content.substring(end);
+      setContent(newContent);
+      
+      // Set cursor position after emoji
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+      }, 0);
+    } else {
+      setContent(content + emoji);
+    }
+  };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -92,7 +138,22 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
     
     try {
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+        let file = files[i];
+        
+        // Compress image before upload
+        try {
+          const originalSize = file.size;
+          file = await compressImage(file, {
+            maxWidth: 1920,
+            maxHeight: 1920,
+            quality: 0.9,
+            format: 'webp'
+          });
+          console.log(`Image compressed: ${formatFileSize(originalSize)} → ${formatFileSize(file.size)}`);
+        } catch (compressError) {
+          console.warn("Image compression failed, using original:", compressError);
+        }
+        
         const fileExt = file.name.split(".").pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `posts/${fileName}`;
@@ -170,6 +231,7 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
 
           <div className="flex-1 space-y-3 min-w-0 overflow-hidden">
             <Textarea
+              ref={textareaRef}
               placeholder="Chia sẻ kiến thức, trải nghiệm của bạn về Angel AI, về Cha Vũ Trụ..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -230,7 +292,7 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
             )}
 
             <div className="flex items-center justify-between">
-              <div className="flex gap-2">
+              <div className="flex gap-1 sm:gap-2">
                 <input
                   type="file"
                   accept="image/*"
@@ -247,8 +309,51 @@ export function CreatePostForm({ userAvatar, userName, onSubmit }: CreatePostFor
                   className="text-primary/70 hover:text-primary hover:bg-primary/10"
                 >
                   <Image className="w-5 h-5 mr-1" />
-                  Ảnh ({imageFiles.length}/{MAX_IMAGES})
+                  <span className="hidden sm:inline">Ảnh</span> ({imageFiles.length}/{MAX_IMAGES})
                 </Button>
+
+                {/* Emoji Picker Button */}
+                <Popover open={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isSubmitting || isUploading}
+                      className="text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                    >
+                      <Smile className="w-5 h-5 mr-1" />
+                      <span className="hidden sm:inline">Cảm xúc</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent 
+                    className="w-80 p-3" 
+                    align="start"
+                    side="top"
+                  >
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-foreground/80">Chọn cảm xúc</h4>
+                      {EMOJI_CATEGORIES.map((category) => (
+                        <div key={category.name}>
+                          <p className="text-xs text-muted-foreground mb-1.5">{category.name}</p>
+                          <div className="grid grid-cols-8 gap-1">
+                            {category.emojis.map((emoji) => (
+                              <button
+                                key={emoji}
+                                onClick={() => {
+                                  insertEmoji(emoji);
+                                  setEmojiPickerOpen(false);
+                                }}
+                                className="w-8 h-8 flex items-center justify-center text-xl hover:bg-primary/10 rounded-md transition-colors"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <Button

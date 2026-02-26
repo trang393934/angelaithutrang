@@ -5,6 +5,7 @@ import { EarnProgress } from "@/components/earn/EarnProgress";
 import { StreakCalendar } from "@/components/earn/StreakCalendar";
 import { EarlyAdopterProgress } from "@/components/earn/EarlyAdopterProgress";
 import { EarnBreakdown } from "@/components/earn/EarnBreakdown";
+import { FUNMoneyStatsBanner } from "@/components/earn/FUNMoneyStatsBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,12 +29,13 @@ import {
   Eye,
   Wallet,
   Info,
-  PenLine
+  PenLine,
+  Coins as CoinsIcon
 } from "lucide-react";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { LightGate } from "@/components/LightGate";
+
 
 export default function Earn() {
   const { user } = useAuth();
@@ -60,34 +62,8 @@ export default function Earn() {
     fetchTotalWithdrawn();
   }, [user]);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8 pt-28">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-              <img src={camlyCoinLogo} alt="Camly Coin" className="w-16 h-16" />
-            </div>
-            <h1 className="text-3xl font-bold">{t("earn.title")}</h1>
-            <p className="text-muted-foreground">
-              {t("earn.loginRequired")}
-            </p>
-            <Button asChild size="lg" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
-              <Link to="/auth">
-                {t("earn.signInNow")}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
-    <LightGate>
+    <>
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
@@ -101,8 +77,8 @@ export default function Earn() {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
               {t("earn.title")}
             </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t("earn.subtitle")}
+            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+              {t("earn.subtitleSpiritual")}
             </p>
           </div>
 
@@ -121,9 +97,9 @@ export default function Earn() {
                     </div>
                     <CardContent>
                       <div className="flex items-center gap-3">
-                        <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12" />
-                        <span className="text-4xl font-bold">
-                          {isLoading ? "..." : balance.toLocaleString()}
+                        <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12 rounded-full" />
+                        <span className="text-4xl font-bold flex items-center gap-2">
+                          ✨ {isLoading ? "..." : balance.toLocaleString()}
                         </span>
                       </div>
                     </CardContent>
@@ -200,6 +176,9 @@ export default function Earn() {
 
           {/* Early Adopter Progress */}
           <EarlyAdopterProgress />
+
+          {/* FUN Money Stats Banner */}
+          <FUNMoneyStatsBanner userId={user?.id} />
 
           {/* Main content grid */}
           <div className="grid gap-6 lg:grid-cols-3 pt-4">
@@ -290,11 +269,23 @@ export default function Earn() {
                 </Link>
               </CardContent>
             </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer group border-amber-200 dark:border-amber-800">
+              <CardContent className="p-6 text-center">
+                <Link to="/mint" className="space-y-3">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <CoinsIcon className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="font-semibold">Mint FUN Money</h3>
+                  <p className="text-xs text-muted-foreground">Claim token về ví Web3</p>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>
       <Footer />
     </div>
-    </LightGate>
+    </>
   );
 }

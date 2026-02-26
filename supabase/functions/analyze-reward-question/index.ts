@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
+import { checkAntiSybil, applyAgeGateReward, extractIpHash, registerDeviceAndIp } from "../_shared/anti-sybil.ts";
+
+const VERSION = "v2.0.1";
+console.log(`[analyze-reward-question ${VERSION}] Function initialized at ${new Date().toISOString()}`);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,10 +42,11 @@ function isGreeting(text: string): boolean {
   return false;
 }
 
+// ============= ANTI-FRAUD: Minimum length increased to 25 chars =============
 function isSpamOrLowQuality(text: string): boolean {
   const trimmed = text.trim();
-  // Too short (less than 10 chars)
-  if (trimmed.length < 10) return true;
+  // Too short (less than 25 chars) - INCREASED from 10 to prevent spam
+  if (trimmed.length < 25) return true;
   // Repeated characters
   if (/(.)\1{4,}/.test(trimmed)) return true;
   // Just numbers or special chars
@@ -197,7 +203,7 @@ serve(async (req) => {
     console.log(`Processing reward question for authenticated user: ${userId}`);
 
     // Get questionText and aiResponse from body (NOT userId)
-    const { questionText, aiResponse } = await req.json();
+    const { questionText, aiResponse, device_hash } = await req.json();
 
     if (!questionText) {
       return new Response(
@@ -208,6 +214,29 @@ serve(async (req) => {
 
     // Use service role for database operations
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ============= ANTI-SYBIL: Account Age Gate + Suspension Check =============
+    const antiSybil = await checkAntiSybil(supabase, userId, 'question');
+
+    // Register device fingerprint + IP hash (fire and forget)
+    const ipHash = await extractIpHash(req);
+    registerDeviceAndIp(supabase, userId, device_hash || null, ipHash);
+
+    if (!antiSybil.allowed) {
+      console.log(`[AntiSybil] Blocked user ${userId}: ${antiSybil.reason}`);
+      return new Response(
+        JSON.stringify({ 
+          rewarded: false, 
+          reason: antiSybil.is_suspended ? "suspended" : "frozen",
+          message: antiSybil.reason || "Tài khoản đang bị giới hạn",
+          coins: 0,
+          gateLevel: antiSybil.gate_level,
+          accountAgeDays: antiSybil.account_age_days,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // ============= End Anti-Sybil Check =============
 
     // Check rate limits first
     const { data: rateLimit } = await supabase
@@ -272,6 +301,38 @@ serve(async (req) => {
         questions_last_hour: questionsLastHour || 0,
         last_question_at: new Date().toISOString(),
       });
+
+    // ============= ANTI-FRAUD: Cooldown check (30 seconds minimum between rewarded questions) =============
+    const COOLDOWN_SECONDS = 30;
+    const { data: lastRewardedQuestion } = await supabase
+      .from("chat_questions")
+      .select("created_at")
+      .eq("user_id", userId)
+      .eq("is_rewarded", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastRewardedQuestion) {
+      const lastRewardTime = new Date(lastRewardedQuestion.created_at).getTime();
+      const timeSinceLastReward = (Date.now() - lastRewardTime) / 1000;
+      
+      if (timeSinceLastReward < COOLDOWN_SECONDS) {
+        const waitTime = Math.ceil(COOLDOWN_SECONDS - timeSinceLastReward);
+        console.log(`Cooldown active for user ${userId}: ${waitTime}s remaining`);
+        return new Response(
+          JSON.stringify({ 
+            rewarded: false, 
+            reason: "cooldown",
+            message: `Vui lòng đợi ${waitTime} giây trước khi đặt câu hỏi tiếp theo để nhận thưởng. 🙏`,
+            coins: 0,
+            cooldownRemaining: waitTime
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    // ============= End Cooldown Check =============
 
     // Get daily reward status
     const { data: dailyStatus } = await supabase
@@ -458,33 +519,38 @@ serve(async (req) => {
     if (LOVABLE_API_KEY) {
       try {
         // Use gemini-2.5-flash-lite for simple analysis (cost optimization)
-        const analysisResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash-lite", // Optimized: use lighter model for analysis
-            messages: [
-              {
-                role: "system",
-                content: `Đánh giá tâm thuần khiết. Trả về JSON: {"purity_score": 0.X}
+        // --- AI Gateway Config ---
+        const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+        const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+        const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
+        const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
+        const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
+        const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
+        if (CF_API_TOKEN) {
+          aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
+        } else {
+          aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
+        }
+
+        const qBody = { model: cfModel("google/gemini-2.5-flash-lite"), messages: [
+              { role: "system", content: `Đánh giá tâm thuần khiết. Trả về JSON: {"purity_score": 0.X}
 - 0.8-1.0: Tâm linh sâu sắc, yêu thương, giúp đỡ
 - 0.6-0.8: Chân thành, phát triển bản thân
 - 0.4-0.6: Thông thường, tò mò
 - 0.2-0.4: Ích kỷ nhẹ
-- 0.0-0.2: Tiêu cực`
-              },
-              {
-                role: "user",
-                content: questionText.substring(0, 500) // Limit input for cost
-              }
-            ],
-            temperature: 0.1,
-            max_tokens: 50, // Only need JSON response
-          }),
+- 0.0-0.2: Tiêu cực` },
+              { role: "user", content: questionText.substring(0, 500) }
+            ], temperature: 0.1, max_tokens: 50 };
+        let analysisResponse = await fetch(AI_GATEWAY_URL, {
+          method: "POST", headers: aiHeaders, body: JSON.stringify(qBody),
         });
+        if (!analysisResponse.ok && CF_API_TOKEN) {
+          analysisResponse = await fetch(LOVABLE_GATEWAY_URL, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ ...qBody, model: "google/gemini-2.5-flash-lite" }),
+          });
+        }
 
         if (analysisResponse.ok) {
           const analysisData = await analysisResponse.json();
@@ -502,18 +568,26 @@ serve(async (req) => {
       }
     }
 
-    // Calculate reward based on purity score
+    // Calculate reward based on purity score (Updated: 1,000 - 3,500 coin)
     if (purityScore >= 0.9) {
-      rewardAmount = 5000;
+      rewardAmount = 3500;
     } else if (purityScore >= 0.75) {
-      rewardAmount = 4000;
-    } else if (purityScore >= 0.6) {
       rewardAmount = 3000;
-    } else if (purityScore >= 0.4) {
+    } else if (purityScore >= 0.6) {
       rewardAmount = 2000;
+    } else if (purityScore >= 0.4) {
+      rewardAmount = 1500;
     } else {
       rewardAmount = 1000;
     }
+
+    // ============= ANTI-SYBIL: Áp dụng hệ số Account Age Gate =============
+    const originalReward = rewardAmount;
+    rewardAmount = applyAgeGateReward(rewardAmount, antiSybil.reward_multiplier);
+    if (rewardAmount !== originalReward) {
+      console.log(`[AntiSybil] Reward adjusted for user ${userId}: ${originalReward} → ${rewardAmount} (x${antiSybil.reward_multiplier}, age=${antiSybil.account_age_days}d)`);
+    }
+    // ============= End Age Gate Reward =============
 
     // Update question with purity score and reward
     await supabase
@@ -563,8 +637,8 @@ serve(async (req) => {
         });
     }
 
-    // Add Camly coins
-    const { data: newBalance } = await supabase.rpc("add_camly_coins", {
+    // Add Camly coins (sử dụng pending hoặc instant tùy tier/tuổi)
+    const { data: rewardResult } = await supabase.rpc("add_pending_or_instant_reward", {
       _user_id: userId,
       _amount: rewardAmount,
       _transaction_type: "chat_reward",
@@ -573,11 +647,49 @@ serve(async (req) => {
       _metadata: { question_id: questionRecord?.id }
     });
 
+    const rewardMode = rewardResult?.mode || 'instant';
+    const newBalance = rewardResult?.new_balance;
+    console.log(`[Reward] Question reward mode=${rewardMode}, amount=${rewardAmount}`);
+
     // Increment early adopter question count (atomic, server-side)
     // This ensures the count is updated even if client disconnects
     await supabase.rpc("increment_early_adopter_questions", {
       p_user_id: userId
     });
+
+    // ============= PPLP Integration =============
+    // Submit to PPLP engine for Light Score tracking + AUTO SCORING
+    const pplpResult = await submitAndScorePPLPAction(supabase, {
+      action_type: PPLP_ACTION_TYPES.QUESTION_ASK,
+      actor_id: userId,
+      metadata: {
+        question_id: questionRecord?.id,
+        question_length: questionText.length,
+        has_ai_response: !!aiResponse,
+      },
+      impact: {
+        scope: 'individual',
+        quality_indicators: purityScore >= 0.8 ? ['high_purity', 'meaningful'] : purityScore >= 0.6 ? ['genuine'] : [],
+      },
+      integrity: {
+        content_hash: generateContentHash(questionText),
+        source_verified: true,
+        duplicate_check: true,
+      },
+      evidences: [{
+        evidence_type: 'content',
+        content_hash: questionHash,
+        metadata: { type: 'question', purity_score: purityScore }
+      }],
+      reward_amount: rewardAmount,
+      purity_score: purityScore,
+      content_length: questionText.length,
+    });
+    
+    if (pplpResult.success) {
+      console.log(`[PPLP] Question action submitted: ${pplpResult.action_id}, scored=${pplpResult.scored}, minted=${pplpResult.minted}`);
+    }
+    // ============= End PPLP Integration =============
 
     return new Response(
       JSON.stringify({
@@ -586,12 +698,16 @@ serve(async (req) => {
         purityScore,
         newBalance,
         questionsRemaining: questionsRemaining - 1,
-        message: `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% ✨`,
+        message: rewardMode === 'pending'
+          ? `+${rewardAmount.toLocaleString()} Camly Coin đang chờ xác nhận (${rewardResult?.delay_hours || 24}h) ⏳`
+          : `+${rewardAmount.toLocaleString()} Camly Coin! Tâm thuần khiết ${Math.round(purityScore * 100)}% ✨`,
         questionId: questionRecord?.id,
         isGreeting: false,
         isSpam: false,
         isDuplicate: false,
-        isResponseRecycled: false
+        isResponseRecycled: false,
+        rewardMode,
+        pplpActionId: pplpResult.success ? pplpResult.action_id : undefined
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

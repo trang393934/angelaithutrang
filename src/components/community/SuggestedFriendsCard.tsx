@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useFriendship } from "@/hooks/useFriendship";
 import { useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import angelAvatar from "@/assets/angel-avatar.png";
 import { toast } from "sonner";
 
@@ -14,6 +15,7 @@ interface SuggestedUser {
   user_id: string;
   display_name: string;
   avatar_url: string | null;
+  handle: string | null;
   mutualFriends?: number;
 }
 
@@ -46,7 +48,7 @@ export function SuggestedFriendsCard() {
       // Get random users not in exclude list
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url")
+        .select("user_id, display_name, avatar_url, handle")
         .limit(50);
 
       if (error) throw error;
@@ -88,7 +90,7 @@ export function SuggestedFriendsCard() {
   if (!user) return null;
 
   return (
-    <Card className="border-primary/10 bg-white/90 backdrop-blur-sm">
+    <Card className="border-white/40 bg-white/30 backdrop-blur-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold flex items-center justify-between text-foreground">
           <div className="flex items-center gap-2">
@@ -123,7 +125,7 @@ export function SuggestedFriendsCard() {
             >
               <Avatar
                 className="w-10 h-10 cursor-pointer border-2 border-transparent hover:border-primary/30 transition-colors"
-                onClick={() => navigate(`/user/${suggestion.user_id}`)}
+                onClick={() => navigate(getProfilePath(suggestion.user_id, suggestion.handle))}
               >
                 <AvatarImage
                   src={suggestion.avatar_url || angelAvatar}
@@ -137,7 +139,7 @@ export function SuggestedFriendsCard() {
               <div className="flex-1 min-w-0">
                 <p
                   className="font-medium text-sm truncate cursor-pointer hover:text-primary transition-colors"
-                  onClick={() => navigate(`/user/${suggestion.user_id}`)}
+                  onClick={() => navigate(getProfilePath(suggestion.user_id, suggestion.handle))}
                 >
                   {suggestion.display_name || "Người dùng"}
                 </p>

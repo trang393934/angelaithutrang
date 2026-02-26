@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LeaderboardUser } from "@/hooks/useLeaderboard";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 import { ImageLightbox } from "@/components/community/ImageLightbox";
 import angelAvatar from "@/assets/angel-avatar.png";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
+import { Coins } from "lucide-react";
+import { RainbowTitle } from "./RainbowTitle";
+import { LeaderboardFloatingEffects } from "./LeaderboardEffects";
 
 // Firework Camly Coin component
 const FireworkCoin = ({ delay, startX, startY }: { delay: number; startX: number; startY: number }) => {
@@ -33,7 +38,7 @@ const FireworkCoin = ({ delay, startX, startY }: { delay: number; startX: number
         ease: "easeOut",
       }}
     >
-      <img src={camlyCoinLogo} alt="" className="w-full h-full drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]" />
+      <img src={camlyCoinLogo} alt="" className="w-full h-full drop-shadow-[0_0_8px_rgba(255,215,0,0.8)] rounded-full" />
     </motion.div>
   );
 };
@@ -51,6 +56,7 @@ interface RankingCardProps {
 }
 
 function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProps) {
+  const { t } = useLanguage();
   if (!user) return null;
 
   // Compact sizes for homepage sidebar display
@@ -84,7 +90,7 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
   const handleAvatarClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onAvatarClick(avatarUrl, user.display_name || "Ẩn danh");
+    onAvatarClick(avatarUrl, user.display_name || t("common.anonymous"));
   };
 
   return (
@@ -207,16 +213,30 @@ function RankingCard({ user, rank, size, delay, onAvatarClick }: RankingCardProp
       </div>
 
       {/* User Name */}
-      <Link to={`/user/${user.user_id}`} className="group mt-0.5">
+      <Link to={getProfilePath(user.user_id)} className="group mt-0.5">
         <p className={`${config.name} font-bold text-amber-900 group-hover:text-amber-600 transition-colors text-center max-w-[80px] md:max-w-[100px] leading-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] truncate`}>
-          {user.display_name || "Ẩn danh"}
+          {user.display_name || t("common.anonymous")}
         </p>
       </Link>
+      
+      {/* Camly Coin Balance */}
+      <div className="flex items-center gap-0.5 mt-0.5 bg-gradient-to-r from-amber-100/80 to-yellow-100/80 px-1.5 py-0.5 rounded-full border border-amber-300/50 shadow-sm">
+        <img src={camlyCoinLogo} alt="Camly" className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full" />
+        <span 
+          className="text-[9px] md:text-[10px] font-bold text-amber-700"
+          style={{
+            textShadow: "0 1px 1px rgba(255,255,255,0.8)"
+          }}
+        >
+          {user.lifetime_earned.toLocaleString()}
+        </span>
+      </div>
     </motion.div>
   );
 }
 
 export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
+  const { t } = useLanguage();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState({ url: "", name: "" });
   
@@ -292,22 +312,17 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
           ))}
         </div>
 
-        {/* Title - Single line */}
+        {/* Floating coins & blossoms */}
+        <LeaderboardFloatingEffects />
+
+        {/* Title - Rainbow 3D */}
         <motion.h2 
-          className="text-center font-black text-lg md:text-xl mb-3 relative z-10 whitespace-nowrap"
+          className="text-center mb-3 relative z-10"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          style={{
-            background: "linear-gradient(180deg, #5D4037 0%, #3E2723 50%, #1B0F08 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            textShadow: "2px 2px 4px rgba(255, 235, 59, 0.5)",
-            fontFamily: "'Impact', 'Arial Black', sans-serif",
-            letterSpacing: "2px",
-          }}
         >
-          ⭐ TOP RANKING ⭐
+          <RainbowTitle text={`⭐ ${t("leaderboard.topRanking")} ⭐`} />
         </motion.h2>
 
         {/* Compact Rankings Layout */}
@@ -363,7 +378,7 @@ export function TopRankingHero({ topUsers }: TopRankingHeroProps) {
 
       <ImageLightbox
         imageUrl={selectedImage.url}
-        alt={`Avatar của ${selectedImage.name}`}
+        alt={`${selectedImage.name}`}
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
       />

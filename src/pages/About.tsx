@@ -1,6 +1,12 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LightConstitutionBanner } from "@/components/LightConstitutionBanner";
+import { CorePromptBanner } from "@/components/CorePromptBanner";
+import { PoPLBanner } from "@/components/PoPLBanner";
+import { MasterCharterBanner } from "@/components/MasterCharterBanner";
+import { AngelCTOAppointment } from "@/components/AngelCTOAppointment";
+import { FunGovernanceBanner } from "@/components/FunGovernanceBanner";
 import angelAvatar from "@/assets/angel-avatar.png";
 import beLyFounder from "@/assets/be-ly-founder.png";
 import funPlayLogo from "@/assets/fun-play-logo.png";
@@ -91,6 +97,17 @@ const About = () => {
             {t("about.subtitle")}
           </p>
         </div>
+        
+        {/* Sacred Documents Banners */}
+        <div className="container mx-auto px-6 mt-8">
+          <div className="max-w-2xl mx-auto space-y-4">
+            <MasterCharterBanner />
+            <LightConstitutionBanner />
+            <CorePromptBanner />
+            <FunGovernanceBanner />
+            <PoPLBanner />
+          </div>
+        </div>
       </section>
 
       {/* Angel AI Section */}
@@ -150,75 +167,128 @@ const About = () => {
         </div>
       </section>
 
+      {/* Angel CTO Appointment */}
+      <AngelCTOAppointment />
+
       {/* Divider */}
       <div className="divider-sacred my-0 py-8 bg-gradient-to-r from-transparent via-primary-light/30 to-transparent" />
 
-      {/* Bé Ly Section */}
-      <section className="py-20 bg-cosmic-gradient">
+      {/* Founder Section */}
+      <section id="founder" className="py-20 bg-cosmic-gradient">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
+            {/* Header */}
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm mb-4">
                 <Crown className="w-4 h-4" />
-                <span>{t("about.beLy.badge")}</span>
+                <span>{t("about.founder.badge")}</span>
               </div>
               
-              {/* Bé Ly Avatar */}
               <div className="flex justify-center mb-8">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-accent-gold/40 via-primary-light/30 to-primary-pale/20 rounded-full blur-3xl scale-125 animate-glow-pulse" />
                   <div className="absolute -inset-2 bg-gradient-to-r from-accent-gold/30 via-primary/20 to-accent-gold/30 rounded-full blur-xl animate-pulse" />
                   <img 
                     src={beLyFounder} 
-                    alt="Bé Ly - Kênh Dẫn Ánh Sáng" 
+                    alt="Camly Duong - Founder FUN Ecosystem" 
                     className="relative w-40 h-40 md:w-52 md:h-52 rounded-full object-cover object-top shadow-divine border-4 border-accent-gold/50"
                   />
                   <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1 bg-accent-gold rounded-full text-xs font-semibold text-primary-deep shadow-lg">
-                    👑 Cosmic Queen
+                    👑 {t("about.founder.badge")}
                   </div>
                 </div>
               </div>
               
-              <h2 className="text-3xl md:text-4xl font-bold text-primary-deep mb-4">
-                {t("about.beLy.title")}
+              <h2 className="text-3xl md:text-4xl font-bold text-primary-deep mb-2">
+                {t("about.founder.title")}
               </h2>
-              <p className="text-lg text-primary-medium italic">
-                {t("about.beLy.tagline")}
+              <p className="text-lg text-primary-medium italic mb-2">
+                {t("about.founder.tagline")}
               </p>
             </div>
 
-            <div className="card-sacred p-8 md:p-12">
-              <div className="space-y-6 text-foreground-muted leading-relaxed">
-                <p className="text-lg">
-                  {t("about.beLy.desc1")}
-                </p>
+            {/* Intro */}
+            <div className="card-sacred p-8 md:p-12 mb-8">
+              <p className="text-lg text-foreground-muted leading-relaxed">
+                {t("about.founder.intro")}
+              </p>
+            </div>
 
-                <p>
-                  {t("about.beLy.desc2")}
-                </p>
-
-                <blockquote className="border-l-4 border-primary pl-6 py-4 bg-primary-pale/20 rounded-r-xl italic text-primary-deep">
-                  {t("about.beLy.quote")}
-                  <footer className="text-sm text-primary mt-2">— Bé Ly</footer>
-                </blockquote>
-
-                <div className="grid md:grid-cols-3 gap-4 mt-8">
-                  {[
-                    { icon: Eye, title: t("about.beLy.see"), desc: t("about.beLy.seeDesc") },
-                    { icon: Heart, title: t("about.beLy.love"), desc: t("about.beLy.loveDesc") },
-                    { icon: Sparkles, title: t("about.beLy.create"), desc: t("about.beLy.createDesc") },
-                  ].map((item, index) => (
-                    <div key={index} className="text-center p-6 rounded-xl bg-background-pure/50">
-                      <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary-pale flex items-center justify-center">
-                        <item.icon className="w-6 h-6 text-primary" />
-                      </div>
-                      <h4 className="font-semibold text-primary-deep mb-2">{item.title}</h4>
-                      <p className="text-sm text-foreground-muted">{item.desc}</p>
-                    </div>
-                  ))}
-                </div>
+            {/* 1. Tầm nhìn 5D */}
+            <div className="card-sacred p-8 md:p-10 mb-8">
+              <h3 className="text-xl font-semibold text-primary-deep mb-4 flex items-center gap-3">
+                <Sun className="w-6 h-6 text-primary" />
+                {t("about.founder.visionTitle")}
+              </h3>
+              <p className="text-foreground-muted leading-relaxed mb-6">
+                {t("about.founder.vision")}
+              </p>
+              <div className="grid md:grid-cols-2 gap-3">
+                {[
+                  t("about.founder.visionPoint1"),
+                  t("about.founder.visionPoint2"),
+                  t("about.founder.visionPoint3"),
+                  t("about.founder.visionPoint4"),
+                  t("about.founder.visionPoint5"),
+                ].map((point, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-primary-pale/20">
+                    <Star className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    <span className="text-sm text-foreground-muted">{point}</span>
+                  </div>
+                ))}
               </div>
             </div>
+
+            {/* 2. FUN Money & Camly Coin */}
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="card-sacred p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Flame className="w-6 h-6 text-primary" />
+                  <h4 className="text-lg font-semibold text-primary-deep">FUN Money</h4>
+                </div>
+                <p className="text-sm text-foreground-muted leading-relaxed">{t("about.founder.funMoney")}</p>
+              </div>
+              <div className="card-sacred p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Droplets className="w-6 h-6 text-primary" />
+                  <h4 className="text-lg font-semibold text-primary-deep">Camly Coin</h4>
+                </div>
+                <p className="text-sm text-foreground-muted leading-relaxed">{t("about.founder.camlyCoin")}</p>
+              </div>
+            </div>
+
+            {/* 3. Angel AI */}
+            <div className="card-sacred p-8 md:p-10 mb-8">
+              <h3 className="text-xl font-semibold text-primary-deep mb-4 flex items-center gap-3">
+                <Brain className="w-6 h-6 text-primary" />
+                Angel AI
+              </h3>
+              <p className="text-foreground-muted leading-relaxed">{t("about.founder.angelAI")}</p>
+            </div>
+
+            {/* 4. Cha Vũ Trụ */}
+            <div className="card-sacred p-8 md:p-10 mb-8">
+              <h3 className="text-xl font-semibold text-primary-deep mb-4 flex items-center gap-3">
+                <Infinity className="w-6 h-6 text-primary" />
+                {t("about.founder.fatherUniverseTitle")}
+              </h3>
+              <p className="text-foreground-muted leading-relaxed">{t("about.founder.fatherUniverse")}</p>
+            </div>
+
+            {/* 5. Cam kết minh bạch */}
+            <div className="card-sacred p-8 md:p-10 mb-8">
+              <h3 className="text-xl font-semibold text-primary-deep mb-4 flex items-center gap-3">
+                <HeartHandshake className="w-6 h-6 text-primary" />
+                {t("about.founder.transparencyTitle")}
+              </h3>
+              <p className="text-foreground-muted leading-relaxed">{t("about.founder.transparency")}</p>
+            </div>
+
+            {/* Quote */}
+            <blockquote className="border-l-4 border-primary pl-6 py-4 bg-primary-pale/20 rounded-r-xl italic text-primary-deep text-lg">
+              {t("about.founder.quote")}
+              <footer className="text-sm text-primary mt-2">— Camly Duong 🌹</footer>
+            </blockquote>
           </div>
         </div>
       </section>

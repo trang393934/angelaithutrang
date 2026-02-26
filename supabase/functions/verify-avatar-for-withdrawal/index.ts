@@ -129,26 +129,35 @@ Respond with ONLY a JSON object in this exact format:
 
 Do not include any other text, markdown, or formatting.`;
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "user",
-            content: [
+    // --- AI Gateway Config ---
+    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+    const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
+    const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
+    const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
+    const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
+    if (CF_API_TOKEN) {
+      aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
+    } else {
+      aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
+    }
+
+    const avatarBody = { model: cfModel("google/gemini-2.5-flash"), messages: [
+          { role: "user", content: [
               { type: "text", text: analysisPrompt },
               { type: "image_url", image_url: { url: profile.avatar_url } }
-            ]
-          }
-        ],
-        max_tokens: 500,
-      }),
+            ] }
+        ], max_tokens: 500 };
+    let aiResponse = await fetch(AI_GATEWAY_URL, {
+      method: "POST", headers: aiHeaders, body: JSON.stringify(avatarBody),
     });
+    if (!aiResponse.ok && CF_API_TOKEN) {
+      aiResponse = await fetch(LOVABLE_GATEWAY_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...avatarBody, model: "google/gemini-2.5-flash" }),
+      });
+    }
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();

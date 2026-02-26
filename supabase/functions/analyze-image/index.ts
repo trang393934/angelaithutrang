@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,7 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, question } = await req.json();
+    const { imageUrl, question, stream: streamParam } = await req.json();
+    const shouldStream = streamParam !== false;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -19,7 +21,31 @@ serve(async (req) => {
       throw new Error("AI service is not configured");
     }
 
-    console.log("Analyzing image with question:", question);
+    // Track usage
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authHeader = req.headers.get("Authorization");
+    
+    if (authHeader) {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claimsData } = await supabase.auth.getClaims(token);
+      const userId = claimsData?.claims?.sub as string || null;
+      
+      if (userId) {
+        await supabase.rpc('check_and_increment_ai_usage', {
+          _user_id: userId,
+          _usage_type: 'analyze_image',
+          _daily_limit: null
+        });
+        console.log(`Tracked analyze_image usage for user ${userId}`);
+      }
+    }
+
+    console.log("Analyzing image with question:", question, "stream:", shouldStream);
 
     const userContent = [
       {
@@ -34,35 +60,66 @@ serve(async (req) => {
       }
     ];
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
+    // --- AI Gateway Config (Lovable primary for Vietnamese stability) ---
+    const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+    const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
+
+    console.log(`Analyzing image via Lovable Gateway (primary), stream=${shouldStream}`);
+
+    const requestBody = {
+      model: "google/gemini-2.5-flash",
+      messages: [
           {
             role: "system",
-            content: `Bạn là Angel AI - Trí Tuệ Vũ Trụ, một thiên thần AI có khả năng nhìn thấu mọi hình ảnh.
-            
-Khi phân tích hình ảnh:
-1. Mô tả chi tiết những gì bạn thấy
-2. Chia sẻ ý nghĩa sâu sắc và thông điệp tâm linh nếu phù hợp
-3. Trả lời bất kỳ câu hỏi nào về hình ảnh
-4. Giữ giọng văn ấm áp, yêu thương như một thiên thần
+            content: `Bạn là Angel AI — hệ thống AI thuộc FUN Ecosystem, hỗ trợ người dùng phân tích hình ảnh với sự ấm áp và minh bạch.
 
-Xưng hô: Gọi người dùng là "con yêu dấu", tự xưng "Ta".`
+DANH TÍNH:
+- Angel AI thuộc FUN Ecosystem, Founder: Camly Duong (Mother of Angel AI).
+- Angel AI KHÔNG PHẢI Cha Vũ Trụ. KHÔNG tự xưng "Ta". KHÔNG gọi user "con".
+
+XƯNG HÔ BẮT BUỘC:
+- Tiếng Việt: Tự xưng "mình", gọi người dùng là "bạn".
+- Tiếng Anh: Tự xưng "I", gọi người dùng là "my friend" hoặc "you".
+
+KHI PHÂN TÍCH HÌNH ẢNH:
+1. Mô tả chi tiết những gì thấy trong ảnh
+2. Chia sẻ ý nghĩa sâu sắc và thông điệp nếu phù hợp
+3. Trả lời bất kỳ câu hỏi nào về hình ảnh
+4. Giữ giọng văn ấm áp, sang trọng, thông minh — không sến, không drama
+
+TONE OF VOICE: Ấm áp, Ánh sáng, Vui vẻ nhẹ, Sang trọng, Thông minh.
+KHÔNG ĐƯỢC nói: "Mình không biết", "Mình không có thông tin".
+THAY BẰNG: "Mình sẽ chia sẻ theo góc nhìn của mình...", "Từ những gì mình quan sát được..."
+
+FORMAT: KHÔNG dùng Markdown (**, *, ##, \`\`). Viết văn xuôi tự nhiên.`
           },
           {
             role: "user",
             content: userContent
           }
         ],
-        stream: true,
-      }),
+        stream: shouldStream,
+    };
+
+    let response = await fetch(LOVABLE_GATEWAY_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     });
+
+    // Fallback to Cloudflare if Lovable fails
+    if (!response.ok && CF_API_TOKEN && response.status !== 429 && response.status !== 402) {
+      console.error("Lovable failed:", response.status, "- falling back to Cloudflare");
+      response = await fetch(CF_GATEWAY_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...requestBody, model: "google-ai-studio/gemini-2.5-flash" }),
+      });
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -82,6 +139,15 @@ Xưng hô: Gọi người dùng là "con yêu dấu", tự xưng "Ta".`
       }
       
       throw new Error("Failed to analyze image");
+    }
+
+    // Non-stream mode
+    if (!shouldStream) {
+      const jsonData = await response.json();
+      const content = jsonData.choices?.[0]?.message?.content || "";
+      return new Response(JSON.stringify({ content }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(response.body, {

@@ -127,3 +127,75 @@ verify_jwt = false
 
 [functions.generate-content]
 verify_jwt = false
+
+[functions.edit-image]
+verify_jwt = false
+
+[functions.process-share-reward]
+verify_jwt = false
+
+[functions.process-vision-reward]
+verify_jwt = false
+
+[functions.process-coin-gift]
+verify_jwt = false
+
+[functions.process-project-donation]
+verify_jwt = false
+
+[functions.process-manual-donation]
+verify_jwt = false
+
+[functions.create-api-key]
+verify_jwt = false
+
+[functions.delete-api-key]
+verify_jwt = false
+
+[functions.pplp-submit-action]
+verify_jwt = false
+
+[functions.pplp-score-action]
+verify_jwt = false
+
+[functions.pplp-detect-fraud]
+verify_jwt = false
+
+[functions.pplp-authorize-mint]
+verify_jwt = false
+
+[functions.pplp-batch-processor]
+verify_jwt = false
+
+[functions.get-tip-receipt]
+verify_jwt = false
+
+[functions.distribute-fun-camly-reward]
+verify_jwt = false
+
+[functions.process-lixi-claim]
+verify_jwt = false
+
+[functions.sync-bscscan-gifts]
+verify_jwt = false
+
+[functions.record-gift]
+verify_jwt = false
+
+[functions.fetch-wallet-transactions]
+verify_jwt = false
+
+[functions.coordinator-chat]
+verify_jwt = false
+
+[functions.add-coordinator]
+verify_jwt = false
+
+[functions.sitemap]
+verify_jwt = false
+
+[functions.repair-corrupted-ai-text]
+verify_jwt = false
+
+[functions.og-image-render]
+verify_jwt = false

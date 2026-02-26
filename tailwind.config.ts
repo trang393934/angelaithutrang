@@ -17,6 +17,7 @@ export default {
         serif: ['Be Vietnam Pro', 'Noto Sans', 'Roboto', 'system-ui', 'sans-serif'],
         sans: ['Be Vietnam Pro', 'Noto Sans', 'Roboto', 'system-ui', 'sans-serif'],
         display: ['Be Vietnam Pro', 'Noto Sans', 'system-ui', 'sans-serif'],
+        brand: ['Cinzel', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -107,8 +108,8 @@ export default {
           "100%": { opacity: "1", transform: "scale(1)" },
         },
         "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 20px -5px hsla(214, 82%, 34%, 0.15)" },
-          "50%": { boxShadow: "0 0 40px -5px hsla(214, 82%, 34%, 0.3)" },
+          "0%, 100%": { boxShadow: "0 0 20px -5px hsla(38, 70%, 38%, 0.18)" },
+          "50%": { boxShadow: "0 0 40px -5px hsla(38, 70%, 38%, 0.35)" },
         },
         "float": {
           "0%, 100%": { transform: "translateY(0)" },

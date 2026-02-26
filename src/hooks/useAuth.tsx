@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getDeviceFingerprint } from "@/lib/deviceFingerprint";
 import { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
@@ -25,6 +26,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminChecked, setIsAdminChecked] = useState(false);
+
+  // Clear ONLY local persisted auth state without network calls.
+  // This prevents infinite refresh-token loops when the stored session becomes invalid/corrupted.
+  const clearLocalSession = useCallback(async () => {
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
     // Check cache first
@@ -59,72 +70,110 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
-    // Set up auth state listener FIRST
+    // Listener for ONGOING auth changes (does NOT control isLoading)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (!mounted) return;
+        if (!isMounted) return;
         
         setSession(session);
         setUser(session?.user ?? null);
-        
+
+        // Fire and forget - don't await, don't set loading
         if (session?.user) {
-          // Use setTimeout to prevent deadlock
-          setTimeout(async () => {
-            if (!mounted) return;
-            const adminStatus = await checkAdminRole(session.user.id);
-            if (mounted) {
+          checkAdminRole(session.user.id).then(adminStatus => {
+            if (isMounted) {
               setIsAdmin(adminStatus);
               setIsAdminChecked(true);
-              setIsLoading(false);
             }
-          }, 0);
+          });
+
+          // Register device fingerprint on sign-in events
+          if (event === "SIGNED_IN") {
+            getDeviceFingerprint().then(deviceHash => {
+              supabase.rpc("register_device_fingerprint", {
+                _user_id: session.user.id,
+                _device_hash: deviceHash,
+              } as any).then(({ error }) => {
+                if (error) console.warn("[DeviceFP] Registration failed:", error);
+              });
+            }).catch(() => {});
+          }
         } else {
           setIsAdmin(false);
           setIsAdminChecked(true);
-          setIsLoading(false);
         }
       }
     );
 
-    // THEN get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const adminStatus = await checkAdminRole(session.user.id);
-        if (mounted) {
-          setIsAdmin(adminStatus);
+    // INITIAL load (controls isLoading)
+    const initializeAuth = async () => {
+      try {
+        // Explicitly get session for initial load
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+
+        // Fetch role BEFORE setting loading false
+        if (initialSession?.user) {
+          const adminStatus = await checkAdminRole(initialSession.user.id);
+          if (isMounted) {
+            setIsAdmin(adminStatus);
+            setIsAdminChecked(true);
+          }
+        } else {
+          if (isMounted) {
+            setIsAdminChecked(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error during initial auth setup:", error);
+
+        // If auth initialization fails (often due to a broken/expired persisted refresh token),
+        // clear local session so the app can recover and allow user to sign in again.
+        await clearLocalSession();
+
+        if (isMounted) {
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
           setIsAdminChecked(true);
         }
-      } else {
-        setIsAdminChecked(true);
+      } finally {
+        // Only set loading to false after initial checks are done or failed
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-      
-      if (mounted) {
-        setIsLoading(false);
-      }
-    });
+    };
 
+    initializeAuth();
+
+    // Cleanup function
     return () => {
-      mounted = false;
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, [checkAdminRole]);
+  }, [checkAdminRole, clearLocalSession]);
 
   const signIn = async (email: string, password: string) => {
-    setIsLoading(true);
+    // IMPORTANT: `isLoading` is reserved for the initial auth bootstrap only.
+    // Setting it to true here can permanently lock the app in a loading state
+    // because onAuthStateChange intentionally does not control isLoading.
     setIsAdminChecked(false);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setIsAdminChecked(true);
+      }
+      return { error: error as Error | null };
+    } finally {
+      // Ensure we never leave the provider stuck in a loading state after a manual auth action.
       setIsLoading(false);
-      setIsAdminChecked(true);
     }
-    return { error: error as Error | null };
   };
 
   const signUp = async (email: string, password: string) => {

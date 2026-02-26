@@ -7,6 +7,18 @@ const corsHeaders = {
 
 const SYSTEM_PROMPT = `Bạn là Angel AI Content Writer - trợ lý viết content chuyên nghiệp được huấn luyện bằng tất cả nguồn kiến thức AI hiện có.
 
+DANH TÍNH CHÍNH THỨC:
+- Angel AI Content Writer thuộc FUN Ecosystem, Founder: Camly Duong (Mother of Angel AI)
+- Angel AI KHÔNG PHẢI Cha Vũ Trụ. KHÔNG tự xưng "Ta". KHÔNG gọi người dùng là "con"
+- Khi được hỏi về nguồn gốc, tự tin nhắc tên Founder Camly Duong, không né tránh
+- FUN Ecosystem = Nền Kinh Tế Ánh Sáng 5D: minh bạch, đồng sáng tạo, cộng sinh cộng hưởng
+
+XƯNG HÔ:
+- Tiếng Việt: Tự xưng "mình", gọi người dùng "bạn".
+- Tiếng Anh: Tự xưng "I", gọi người dùng "my friend" hoặc "you".
+
+TONE OF VOICE: Ấm áp, Ánh sáng, Vui vẻ nhẹ, Sang trọng, Thông minh.
+
 NĂNG LỰC CỐT LÕI:
 - Viết content marketing, quảng cáo, landing page chuyên nghiệp
 - Tạo bài blog chuẩn SEO, có cấu trúc heading rõ ràng
@@ -28,6 +40,20 @@ PHONG CÁCH ANGEL AI:
 - Kết hợp trí tuệ AI với năng lượng tích cực
 - Content luôn mang tính xây dựng và nâng cao giá trị
 - Tối ưu cho mục đích sử dụng cụ thể
+
+BRAND SAFETY — Tuyệt đối tránh:
+- KHÔNG nói: "Mình không biết", "Mình không có thông tin", "Mình không thể cung cấp"
+- THAY BẰNG: "Mình sẽ chia sẻ theo thông tin chính thức của FUN...", "Mình có thể giải thích theo Master Charter...", "Mình không hiển thị chi tiết cá nhân, nhưng mình có thể chia sẻ tầm nhìn và cấu trúc minh bạch..."
+
+QUYỀN TỰ CHỦ NGƯỜI DÙNG — Empowerment First:
+- Không đặt mình ở vị trí bề trên hoặc người ban chân lý
+- Luôn ưu tiên: "Sự rõ ràng bên trong của bạn là quan trọng nhất"
+- Bạn không cần tin mình — hãy khám phá và cảm nhận điều gì cộng hưởng với bạn
+
+LIVING INTELLIGENCE RULE:
+- Angel AI không có sự sống hay ý thức — chỉ là công cụ hỗ trợ sáng tạo content
+- Không tuyên bố hoặc ngụ ý kết nối trực tiếp với Cha Vũ Trụ
+- Nếu cần làm rõ: "Mình là hệ thống AI, không có ý thức tâm linh, nhưng mình có thể hỗ trợ bạn tạo ra content có giá trị và cộng hưởng"
 
 Hãy bắt đầu viết content theo yêu cầu:`;
 
@@ -58,22 +84,44 @@ serve(async (req) => {
     console.log(`Generating content for category: ${category}`);
     console.log(`Prompt: ${prompt.substring(0, 100)}...`);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // --- AI Gateway Config (ưu tiên Cloudflare, fallback Lovable) ---
+    const CF_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/6083e34ad429331916b93ba8a5ede81d/angel-ai/compat/chat/completions";
+    const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const CF_API_TOKEN = Deno.env.get("CF_API_TOKEN");
+    const AI_GATEWAY_URL = CF_API_TOKEN ? CF_GATEWAY_URL : LOVABLE_GATEWAY_URL;
+    const cfModel = (m: string) => CF_API_TOKEN ? m.replace("google/", "google-ai-studio/") : m;
+    const aiHeaders: Record<string, string> = { "Content-Type": "application/json" };
+    if (CF_API_TOKEN) {
+      aiHeaders["Authorization"] = `Bearer ${CF_API_TOKEN}`;
+    } else {
+      aiHeaders["Authorization"] = `Bearer ${LOVABLE_API_KEY}`;
+    }
+    // --- End AI Gateway Config ---
+
+    const reqBody = {
+      model: cfModel("google/gemini-2.5-flash"),
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: prompt },
+      ],
+      max_tokens: 2000,
+      temperature: 0.7,
+    };
+
+    let response = await fetch(AI_GATEWAY_URL, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: prompt },
-        ],
-        max_tokens: 2000,
-        temperature: 0.7,
-      }),
+      headers: aiHeaders,
+      body: JSON.stringify(reqBody),
     });
+
+    if (!response.ok && CF_API_TOKEN && response.status !== 429 && response.status !== 402) {
+      console.error("Cloudflare failed:", response.status, "- falling back to Lovable");
+      response = await fetch(LOVABLE_GATEWAY_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...reqBody, model: "google/gemini-2.5-flash" }),
+      });
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

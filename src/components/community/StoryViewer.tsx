@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, Trash2, Eye, Pause, Play } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,14 @@ export function StoryViewer({
 
   const currentGroup = groupedStories[currentGroupIndex];
   const currentStory = currentGroup?.stories[currentStoryIndex];
+
+  // Lock body scroll when viewer is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
 
   // Mark story as viewed
   useEffect(() => {
@@ -157,12 +166,12 @@ export function StoryViewer({
 
   const isOwner = currentUserId === currentStory.user_id;
 
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
+      className="fixed inset-0 z-[9999] bg-black flex items-center justify-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -325,6 +334,7 @@ export function StoryViewer({
           onClick={goToNextStory}
         />
       </div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }

@@ -1,24 +1,39 @@
 import { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { GiftCoinDialog } from "@/components/gifts/GiftCoinDialog";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { useAuth } from "@/hooks/useAuth";
+import { useCoordinatorRole } from "@/hooks/useCoordinatorRole";
+import { Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   LogIn, LogOut, User, MessageCircle, Search,
   Home, Info, BookOpen, Users, PenLine, ArrowRightLeft, 
-  Star, Wallet, ChevronRight, ChevronDown
+  Star, Wallet, ChevronRight, ChevronDown, ArrowLeft, Settings, Gift
 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCamlyCoin } from "@/hooks/useCamlyCoin";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { VideoThemeSelector } from "@/components/VideoThemeSelector";
+import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 import angelAvatar from "@/assets/angel-avatar.png";
+
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 
 interface UserProfile {
@@ -26,16 +41,36 @@ interface UserProfile {
   avatar_url: string | null;
 }
 
+// Gift Button component for header
+const GiftButton = () => {
+  const [giftOpen, setGiftOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setGiftOpen(true)}
+        className="flex items-center gap-1 px-2 lg:px-2.5 py-1 lg:py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 transition-all shadow-sm hover:shadow-md"
+        title="Tặng thưởng"
+      >
+        <Gift className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-black" />
+        <span className="hidden xl:inline text-xs font-bold text-black">Tặng thưởng</span>
+      </button>
+      <GiftCoinDialog open={giftOpen} onOpenChange={setGiftOpen} />
+    </>
+  );
+};
+
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut, isLoading } = useAuth();
+  const { user, signOut, isLoading, isAdmin } = useAuth();
   const { balance } = useCamlyCoin();
   const { unreadCount } = useDirectMessages();
   const { t } = useLanguage();
+  const { hasAccess: isCoordinator } = useCoordinatorRole();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -45,27 +80,29 @@ export const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch user profile for avatar and display name
+  // Fetch user profile for avatar and display name - use user.id to prevent unnecessary re-fetches
   useEffect(() => {
+    if (!user?.id) {
+      setUserProfile(null);
+      return;
+    }
+
+    let cancelled = false;
     const fetchProfile = async () => {
-      if (!user) {
-        setUserProfile(null);
-        return;
-      }
-      
       const { data } = await supabase
         .from("profiles")
         .select("display_name, avatar_url")
         .eq("user_id", user.id)
         .maybeSingle();
       
-      if (data) {
+      if (!cancelled && data) {
         setUserProfile(data);
       }
     };
 
     fetchProfile();
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // Get display name to show (priority: display_name > email username)
   const getDisplayName = () => {
@@ -91,98 +128,75 @@ export const Header = () => {
     { label: t("nav.community") || "Cộng đồng", href: "/community", icon: Users },
     { label: t("nav.contentWriter"), href: "/content-writer", icon: PenLine },
     { label: t("nav.swap"), href: "/swap", icon: ArrowRightLeft },
-    { label: t("nav.earn"), href: "/earn", icon: Star },
+    { label: t("nav.gift") || "Tặng thưởng", href: "/earn", icon: Gift },
   ];
 
   return (
+    <>
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`sticky top-0 z-40 transition-all duration-500 ${
         isScrolled 
           ? 'bg-background-pure/90 backdrop-blur-lg shadow-soft' 
-          : 'bg-transparent'
+          : 'bg-background-pure/80 backdrop-blur-sm'
       }`}
     >
       <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-4 xl:px-6 overflow-hidden">
         <div className="flex items-center justify-between h-14 sm:h-16 lg:h-16 gap-1">
-          {/* Logo - Fixed width, hide text on smaller screens */}
-          <Link to="/" className="flex items-center gap-1 sm:gap-1.5 shrink-0 group min-w-0">
-            <div className={`relative transition-all duration-500 shrink-0 ${isScrolled ? 'scale-95' : 'scale-100'}`}>
-              <img 
-                src={angelAvatar} 
-                alt="ANGEL AI" 
-                className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-full object-cover shadow-soft 
-                  group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/20
-                  transition-all duration-300 ease-out"
-              />
-              {/* Glow effect on hover */}
-              <div className="absolute inset-0 rounded-full bg-primary/0 group-hover:bg-primary/10 
-                group-hover:animate-pulse transition-all duration-300" />
-            </div>
-            {/* Hide text on lg (1024-1279px), show on xl+ */}
-            <span className={`hidden xl:inline font-serif text-base xl:text-lg font-bold uppercase tracking-wide 
-              transition-all duration-500 ease-out whitespace-nowrap
-              group-hover:text-primary group-hover:tracking-wider
-              ${isScrolled ? 'text-primary-deep scale-95' : 'text-primary-deep scale-100'}`}>
-              ANGEL AI
-            </span>
+          {/* Back Button - Show on all pages except home - Always go to homepage */}
+          {location.pathname !== "/" && (
+            <a
+              href="/"
+              className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-primary-pale/50 hover:bg-primary-pale text-primary transition-colors shrink-0"
+              title="Quay lại trang chủ"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline text-sm font-medium">Quay lại</span>
+            </a>
+          )}
+          {/* Logo - Hidden on desktop since MainSidebar has it, show only on mobile */}
+          <Link to="/" className={`flex lg:hidden items-center gap-2 shrink-0 group min-w-0 transition-transform duration-500 ${isScrolled ? 'scale-90' : 'scale-100'}`}>
+            <img src={angelAvatar} alt="Angel AI" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]" />
+            <span className="text-brand-golden text-2xl sm:text-3xl">Angel AI</span>
           </Link>
 
-          {/* Search Bar - Desktop - smaller on lg screens */}
-          <div className="hidden lg:block w-32 xl:w-44 2xl:w-56 shrink-0">
-            <GlobalSearch 
-              variant="header" 
-            />
+          {/* Search Bar - Desktop - centered */}
+          <div className="hidden lg:flex flex-1 justify-center items-center gap-2">
+            {isCoordinator && (
+              <Link
+                to="/coordinator-gate"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 shrink-0"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Coordinator</span>
+              </Link>
+            )}
+            <div className="w-64 xl:w-80 2xl:w-96">
+              <GlobalSearch 
+                variant="header" 
+              />
+            </div>
           </div>
 
-          {/* Navigation - Premium golden metallic border with shimmer - Fluid scaling */}
-          <nav className="hidden lg:flex items-center justify-center min-w-0 mx-1 xl:mx-2 2xl:mx-4" style={{ gap: 'clamp(4px, 0.5vw, 8px)' }}>
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={`relative font-semibold transition-all duration-300 whitespace-nowrap rounded-lg overflow-hidden ${
-                  location.pathname === item.href 
-                    ? 'bg-primary text-white' 
-                    : 'bg-primary-deep/95 text-white/95 hover:bg-primary'
-                }`}
-                style={{
-                  fontSize: 'clamp(10px, 0.85vw, 14px)',
-                  padding: 'clamp(6px, 0.5vw, 10px) clamp(8px, 0.8vw, 16px)',
-                  boxShadow: location.pathname === item.href 
-                    ? '0 0 12px rgba(255,215,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)' 
-                    : '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
-                  border: '2px solid transparent',
-                  backgroundImage: location.pathname === item.href
-                    ? 'linear-gradient(hsl(var(--primary)), hsl(var(--primary))), linear-gradient(135deg, #FFEB3B, #FFD700, #FFA500, #FFD700, #FFEB3B)'
-                    : 'linear-gradient(hsl(217 91% 25% / 0.95), hsl(217 91% 25% / 0.95)), linear-gradient(135deg, #DAA520, #FFD700, #B8860B, #FFD700, #DAA520)',
-                  backgroundOrigin: 'border-box',
-                  backgroundClip: 'padding-box, border-box',
-                }}
-              >
-                {/* Shimmer effect */}
-                <span 
-                  className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500"
-                  style={{
-                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
-                    animation: 'shimmer 2s infinite',
-                  }}
-                />
-                <span className="relative z-10">{item.label}</span>
-              </Link>
-            ))}
-          </nav>
+          {/* Navigation removed - now in MainSidebar */}
 
           {/* Auth Buttons - More compact design */}
           <div className="hidden lg:flex items-center gap-0.5 lg:gap-1 xl:gap-1.5 shrink-0">
+            {/* Music & Video Theme Selectors */}
+            <VideoThemeSelector variant="header" />
+
             {/* Language Selector - Compact on lg */}
             <LanguageSelector compact />
+
+            {/* Gift Button */}
+            <GiftButton />
+            
+            {/* Web3 Wallet Button - Always visible */}
+            <Web3WalletButton compact />
             
             {!isLoading && (
               <>
                 {user ? (
                   <div className="flex items-center gap-0.5 lg:gap-1 xl:gap-1.5">
-                    {/* Web3 Wallet Button - Compact on lg */}
-                    <Web3WalletButton compact />
                     
                     {/* Messages Button */}
                     <Link 
@@ -197,44 +211,74 @@ export const Header = () => {
                         </span>
                       )}
                     </Link>
+
+                    {/* Notification Bell */}
+                    <NotificationDropdown variant="header" />
                     
                     {/* Camly Coin Balance */}
                     <Link 
                       to="/earn"
                       className="flex items-center gap-0.5 lg:gap-1 px-1.5 lg:px-2 py-1 lg:py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                     >
-                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                      <img src={camlyCoinLogo} alt="Camly Coin" className="w-3.5 h-3.5 lg:w-4 lg:h-4 rounded-full" />
                       <span className="text-[10px] lg:text-xs font-semibold text-amber-700 dark:text-amber-400">
                         {Math.floor(balance).toLocaleString()}
                       </span>
                     </Link>
                     
-                    {/* User Profile - Hide name on lg, show on xl+ */}
-                    <Link 
-                      to="/profile"
-                      className="flex items-center gap-0.5 lg:gap-1 px-1 lg:px-1.5 xl:px-2 py-1 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
-                    >
-                      {userProfile?.avatar_url ? (
-                        <img 
-                          src={userProfile.avatar_url} 
-                          alt="Avatar" 
-                          className="w-5 h-5 lg:w-5 lg:h-5 xl:w-6 xl:h-6 rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary" />
-                      )}
-                      {/* Only show name on xl+ screens */}
-                      <span className="hidden xl:inline text-xs font-semibold text-foreground max-w-[70px] truncate">
-                        {getDisplayName()}
-                      </span>
-                    </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="p-1 lg:p-1.5 xl:p-2 rounded-full text-foreground-muted hover:text-primary hover:bg-primary-pale transition-all duration-300"
-                      title={t("nav.logout")}
-                    >
-                      <LogOut className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                    </button>
+                    {/* User Profile Dropdown */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button 
+                          className="flex items-center gap-0.5 lg:gap-1 px-1 lg:px-1.5 xl:px-2 py-1 rounded-full bg-primary-pale/50 hover:bg-primary-pale transition-colors"
+                        >
+                          {userProfile?.avatar_url ? (
+                            <img 
+                              src={userProfile.avatar_url} 
+                              alt="Avatar" 
+                              className="w-5 h-5 lg:w-5 lg:h-5 xl:w-6 xl:h-6 rounded-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary" />
+                          )}
+                          {/* Only show name on xl+ screens */}
+                          <span className="hidden xl:inline text-xs font-semibold text-foreground max-w-[70px] truncate">
+                            {getDisplayName()}
+                          </span>
+                          <ChevronDown className="w-3 h-3 text-muted-foreground hidden xl:block" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        {/* User Info Header - clickable to go to profile */}
+                        <Link to={getProfilePath(user.id)} className="block px-3 py-2 border-b border-border hover:bg-accent rounded-t-md transition-colors">
+                          <p className="font-semibold text-sm text-foreground truncate">{getDisplayName()}</p>
+                          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                        </Link>
+                        
+                        {isAdmin && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild className="cursor-pointer">
+                              <Link to="/admin/dashboard" className="flex items-center gap-2">
+                                <Shield className="w-4 h-4 text-purple-600" />
+                                <span className="font-medium">Admin Dashboard</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        
+                        <DropdownMenuSeparator />
+                        
+                        {/* Logout */}
+                        <DropdownMenuItem 
+                          onClick={handleSignOut}
+                          className="cursor-pointer text-destructive focus:text-destructive"
+                        >
+                          <LogOut className="w-4 h-4 mr-2" />
+                          <span>{t("nav.logout")}</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ) : (
                   <Link
@@ -255,6 +299,9 @@ export const Header = () => {
 
           {/* Mobile Actions - Always visible on mobile */}
           <div className="flex lg:hidden items-center gap-2 shrink-0">
+            {/* Mobile Video Theme Selector */}
+            <VideoThemeSelector variant="header" />
+            
             {/* Mobile Language Selector */}
             <LanguageSelector />
             
@@ -276,6 +323,16 @@ export const Header = () => {
             <nav className="flex flex-col gap-4">
               {/* Navigation Grid - 2 columns */}
               <div className="grid grid-cols-2 gap-3 px-4">
+                {isCoordinator && (
+                  <Link
+                    to="/coordinator-gate"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="col-span-2 flex items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 border border-purple-400/50 shadow-lg text-white font-bold transition-all active:scale-95"
+                  >
+                    <Shield className="w-5 h-5" />
+                    <span>Coordinator Gate</span>
+                  </Link>
+                )}
                 {navItems.map((item, index) => {
                   const Icon = item.icon;
                   return (
@@ -337,12 +394,12 @@ export const Header = () => {
                         
                         {/* Profile row */}
                         <Link 
-                          to="/profile" 
+                          to={getProfilePath(user.id)} 
                           onClick={() => setIsMobileMenuOpen(false)}
                           className="flex items-center gap-4 p-4 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-colors"
                         >
                           <div className="relative">
-                            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 opacity-75 blur-sm animate-pulse" />
+                            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 opacity-50 blur-sm" />
                             {userProfile?.avatar_url ? (
                               <img 
                                 src={userProfile.avatar_url} 
@@ -370,7 +427,7 @@ export const Header = () => {
                             hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8" />
+                            <img src={camlyCoinLogo} alt="Camly Coin" className="w-8 h-8 rounded-full" />
                             <span className="font-semibold text-foreground">{t("header.camlyCoin")}</span>
                           </div>
                           <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
@@ -401,6 +458,25 @@ export const Header = () => {
                         <ChevronRight className="w-5 h-5 text-muted-foreground" />
                       </Link>
                       
+                      {/* Admin Dashboard - Only for admins */}
+                      {isAdmin && (
+                        <Link 
+                          to="/admin/dashboard"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="mx-4 flex items-center justify-between p-4 rounded-xl 
+                            bg-gradient-to-r from-purple-100 to-violet-100 dark:from-purple-950/40 dark:to-violet-950/40
+                            border border-purple-300/50 dark:border-purple-700/50 transition-all hover:shadow-md"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-purple-200 dark:bg-purple-900/50 flex items-center justify-center">
+                              <Shield className="w-5 h-5 text-purple-700 dark:text-purple-400" />
+                            </div>
+                            <span className="font-semibold text-foreground">Admin Dashboard</span>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        </Link>
+                      )}
+
                       {/* Sign Out Button */}
                       <button
                         onClick={() => {
@@ -435,5 +511,6 @@ export const Header = () => {
         )}
       </div>
     </header>
+    </>
   );
 };

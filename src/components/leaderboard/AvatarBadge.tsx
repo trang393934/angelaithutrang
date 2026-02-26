@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getProfilePath } from "@/lib/profileUrl";
 import { Crown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LeaderboardUser } from "@/hooks/useLeaderboard";
@@ -46,7 +47,7 @@ export function AvatarBadge({ rank, user, size, crown }: AvatarBadgeProps) {
 
   return (
     <Link
-      to={`/user/${user.user_id}`}
+      to={getProfilePath(user.user_id)}
       className="flex flex-col items-center gap-1 group"
     >
       <motion.div

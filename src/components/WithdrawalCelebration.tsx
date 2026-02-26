@@ -22,7 +22,7 @@ const FallingCoin = ({ delay, left }: { delay: number; left: number }) => (
       ease: 'easeIn',
     }}
   >
-    <img src={camlyCoinLogo} alt="" className="w-full h-full" />
+    <img src={camlyCoinLogo} alt="" className="w-full h-full rounded-full" />
   </motion.div>
 );
 
@@ -50,7 +50,7 @@ export const WithdrawalCelebration = () => {
   const { pendingCelebration, audioUrl, markAsCelebrated } = useWithdrawalNotify();
   const [isOpen, setIsOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const autoCloseRef = useRef<NodeJS.Timeout | null>(null);
+  
 
   // Open dialog when there's a pending celebration
   useEffect(() => {
@@ -74,26 +74,10 @@ export const WithdrawalCelebration = () => {
     }
   }, [isOpen, audioUrl]);
 
-  // Auto-close after 8 seconds
-  useEffect(() => {
-    if (isOpen) {
-      autoCloseRef.current = setTimeout(() => {
-        handleClose();
-      }, 8000);
-
-      return () => {
-        if (autoCloseRef.current) {
-          clearTimeout(autoCloseRef.current);
-        }
-      };
-    }
-  }, [isOpen]);
+  // No auto-close — popup stays until user manually closes
 
   const handleClose = () => {
     setIsOpen(false);
-    if (autoCloseRef.current) {
-      clearTimeout(autoCloseRef.current);
-    }
     markAsCelebrated();
   };
 
@@ -141,7 +125,10 @@ export const WithdrawalCelebration = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: 'spring', duration: 0.5 }}
-              className="relative bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 rounded-2xl p-6 shadow-2xl overflow-hidden"
+              className="relative rounded-2xl p-6 shadow-2xl overflow-hidden"
+              style={{
+                backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 30%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.2) 70%, rgba(255,255,255,0) 100%), linear-gradient(135deg, #b8860b 0%, #daa520 15%, #ffd700 35%, #ffec8b 50%, #ffd700 65%, #daa520 85%, #b8860b 100%)`,
+              }}
             >
               {/* Falling coins animation */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -163,14 +150,14 @@ export const WithdrawalCelebration = () => {
               </div>
 
               {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-white/20 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/15 to-white/30 pointer-events-none" />
 
               {/* Close button */}
               <button
                 onClick={handleClose}
-                className="absolute top-3 right-3 z-20 p-1 rounded-full bg-black/20 hover:bg-black/40 transition-colors"
+                className="absolute top-3 right-3 z-20 p-1 rounded-full bg-amber-900/20 hover:bg-amber-900/40 transition-colors"
               >
-                <X className="w-5 h-5 text-white" />
+                <X className="w-5 h-5 text-amber-900" />
               </button>
 
               {/* Content */}
@@ -199,10 +186,10 @@ export const WithdrawalCelebration = () => {
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <h2 className="text-2xl font-bold text-white flex items-center gap-2 justify-center">
-                    🎉 Chúc mừng! 🎉
+                  <h2 className="text-2xl font-bold text-amber-900 flex items-center gap-2 justify-center drop-shadow-sm">
+                    🎉 Chúc mừng bạn đã chuyển thành công! 🎉
                   </h2>
-                  <p className="text-white/90 mt-1">
+                  <p className="text-amber-800/90 mt-1">
                     Camly Coin đã về ví của bạn!
                   </p>
                 </motion.div>
@@ -224,7 +211,7 @@ export const WithdrawalCelebration = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.6 }}
-                  className="text-white/80 text-sm"
+                  className="text-amber-900/80 text-sm"
                 >
                   Ví: {shortenAddress(pendingCelebration.wallet_address)}
                 </motion.p>
@@ -236,7 +223,7 @@ export const WithdrawalCelebration = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 }}
                     onClick={openBscScan}
-                    className="flex items-center gap-2 text-white/90 hover:text-white underline underline-offset-2 text-sm transition-colors"
+                    className="flex items-center gap-2 text-amber-900/90 hover:text-amber-950 underline underline-offset-2 text-sm transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                     Xem giao dịch trên BSCScan

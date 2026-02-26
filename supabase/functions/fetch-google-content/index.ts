@@ -2,8 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Note: Using standard fetch without custom HTTP client for edge runtime compatibility
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -67,13 +69,31 @@ serve(async (req) => {
       );
     }
 
-    // Fetch content from Google
+    // Fetch content from Google with retry logic
     console.log('Fetching content from Google...');
-    const response = await fetch(exportUrl, {
-      headers: {
-        'Accept': contentType,
+    
+    const fetchWithRetry = async (url: string, retries = 3): Promise<Response> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch(url, {
+            headers: {
+              'Accept': contentType,
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept-Language': 'en-US,en;q=0.9,vi;q=0.8',
+            },
+          });
+          return response;
+        } catch (error) {
+          console.error(`Fetch attempt ${i + 1} failed:`, error);
+          if (i === retries - 1) throw error;
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
       }
-    });
+      throw new Error('All fetch attempts failed');
+    };
+
+    const response = await fetchWithRetry(exportUrl);
 
     if (!response.ok) {
       console.error('Google fetch failed:', response.status, response.statusText);

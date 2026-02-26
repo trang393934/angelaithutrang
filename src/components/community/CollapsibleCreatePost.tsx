@@ -9,6 +9,7 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import { motion, AnimatePresence } from "framer-motion";
 import { fullContentCheck, checkImageFilename } from "@/lib/contentModeration";
 import { ContentModerationDialog } from "./ContentModerationDialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const MAX_IMAGES = 30;
 
@@ -19,6 +20,7 @@ interface CollapsibleCreatePostProps {
 }
 
 export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: CollapsibleCreatePostProps) {
+  const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
   const [content, setContent] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -197,7 +199,7 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
   return (
     <Card 
       ref={containerRef}
-      className="border-primary/10 bg-white/90 backdrop-blur-sm w-full max-w-full overflow-hidden shadow-sm"
+      className="border-primary/10 bg-white/90 backdrop-blur-sm w-full max-w-full overflow-hidden shadow-sm relative z-30"
     >
       <CardContent className="p-3 sm:p-4">
         <AnimatePresence mode="wait">
@@ -219,7 +221,7 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
 
               <div className="flex-1 min-w-0">
                 <div className="bg-muted/50 hover:bg-muted/70 transition-colors rounded-full px-4 py-2.5 text-foreground-muted text-sm sm:text-base">
-                  Chia sẻ kiến thức, trải nghiệm của bạn về Angel AI, về Cha Vũ Trụ...
+                  {t("community.sharePlaceholder")}
                 </div>
               </div>
             </motion.div>
@@ -241,8 +243,8 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
                     <AvatarFallback>{userName?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium text-sm text-foreground">{userName || "Bạn"}</p>
-                    <p className="text-xs text-foreground-muted">Đang tạo bài viết</p>
+                    <p className="font-medium text-sm text-foreground">{userName || t("common.you")}</p>
+                    <p className="text-xs text-foreground-muted">{t("community.creatingPost")}</p>
                   </div>
                 </div>
                 <Button
@@ -262,7 +264,7 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
               {/* Textarea */}
               <Textarea
                 ref={textareaRef}
-                placeholder="Chia sẻ kiến thức, trải nghiệm của bạn về Angel AI, về Cha Vũ Trụ..."
+                placeholder={t("community.sharePlaceholder")}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="min-h-[120px] sm:min-h-[150px] resize-none border-0 focus-visible:ring-0 text-base sm:text-lg leading-relaxed p-0 placeholder:text-foreground-muted/60"
@@ -309,7 +311,7 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
                 <div className="bg-primary/10 rounded-lg p-2">
                   <div className="flex items-center gap-2 text-sm text-primary">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Đang tải ảnh... {uploadProgress}%</span>
+                    <span>{t("community.uploadingImages")} {uploadProgress}%</span>
                   </div>
                   <div className="mt-1 h-1.5 bg-primary/20 rounded-full overflow-hidden">
                     <div
@@ -339,7 +341,7 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
                     className="text-green-600 hover:text-green-700 hover:bg-green-50"
                   >
                     <Image className="w-5 h-5" />
-                    <span className="hidden sm:inline ml-1">Ảnh ({imageFiles.length}/{MAX_IMAGES})</span>
+                    <span className="hidden sm:inline ml-1">{t("community.images")} ({imageFiles.length}/{MAX_IMAGES})</span>
                   </Button>
                   <Button
                     variant="ghost"
@@ -347,7 +349,7 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
                     className="text-amber-500 hover:text-amber-600 hover:bg-amber-50"
                   >
                     <Smile className="w-5 h-5" />
-                    <span className="hidden sm:inline ml-1">Cảm xúc</span>
+                    <span className="hidden sm:inline ml-1">{t("community.feelings")}</span>
                   </Button>
                 </div>
 
@@ -362,7 +364,7 @@ export function CollapsibleCreatePost({ userAvatar, userName, onSubmit }: Collap
                   ) : (
                     <Send className="w-4 h-4 mr-2" />
                   )}
-                  Đăng
+                  {t("community.post")}
                 </Button>
               </div>
             </motion.div>

@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES } from "../_shared/pplp-helper.ts";
+import { checkAntiSybil, applyAgeGateReward, extractIpHash, registerDeviceAndIp } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,7 +50,7 @@ serve(async (req) => {
     console.log(`Processing engagement for authenticated user: ${likerId}`);
 
     // Get questionId from body (NOT likerId)
-    const { questionId } = await req.json();
+    const { questionId, device_hash } = await req.json();
 
     if (!questionId) {
       return new Response(
@@ -59,6 +61,10 @@ serve(async (req) => {
 
     // Use service role for database operations
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Register device fingerprint + IP hash for liker (fire and forget)
+    const ipHash = await extractIpHash(req);
+    registerDeviceAndIp(supabase, likerId, device_hash || null, ipHash);
 
     // Check if user already liked this question
     const { data: existingLike } = await supabase
@@ -137,10 +143,17 @@ serve(async (req) => {
         .maybeSingle();
 
       if (!existingReward) {
-        // Award engagement reward to question author
-        await supabase.rpc("add_camly_coins", {
+        // ============= ANTI-SYBIL: Kiểm tra tác giả câu hỏi =============
+        const authorAntiSybil = await checkAntiSybil(supabase, question.user_id, 'engagement');
+        const ageGatedEngagementReward = authorAntiSybil.allowed 
+          ? applyAgeGateReward(ENGAGEMENT_REWARD, authorAntiSybil.reward_multiplier) 
+          : 0;
+        
+        if (ageGatedEngagementReward > 0) {
+        // Award engagement reward to question author (pending or instant)
+        await supabase.rpc("add_pending_or_instant_reward", {
           _user_id: question.user_id,
-          _amount: ENGAGEMENT_REWARD,
+          _amount: ageGatedEngagementReward,
           _transaction_type: "engagement_reward",
           _description: `Câu hỏi đạt ${newLikesCount} lượt thích! 🎉`,
           _purity_score: null,
@@ -148,6 +161,30 @@ serve(async (req) => {
         });
 
         engagementRewarded = true;
+        } // End ageGatedEngagementReward > 0
+
+        // ============= PPLP Integration: Engagement reward (10+ likes) =============
+        submitAndScorePPLPAction(supabase, {
+          action_type: PPLP_ACTION_TYPES.POST_ENGAGEMENT,
+          actor_id: question.user_id,
+          target_id: questionId,
+          metadata: {
+            question_id: questionId,
+            likes_count: newLikesCount,
+          },
+          impact: {
+            scope: 'group',
+            reach_count: newLikesCount,
+            quality_indicators: ['community_endorsed', 'high_engagement'],
+          },
+          integrity: {
+            source_verified: true,
+          },
+          reward_amount: ENGAGEMENT_REWARD,
+        }).then(r => {
+          if (r.success) console.log(`[PPLP] Engagement scored: ${r.action_id}, FUN: ${r.reward}`);
+        }).catch(e => console.warn('[PPLP] Engagement error:', e));
+        // ============= End PPLP Integration =============
 
         // Send notification to question author (via healing_messages)
         await supabase

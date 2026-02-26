@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { compressImage, formatFileSize } from "@/lib/imageCompression";
 
 export interface Story {
   id: string;
@@ -122,18 +123,36 @@ export function useStories() {
 
   const createStory = async (file: File, caption?: string): Promise<{ success: boolean; message: string }> => {
     if (!user) {
-      return { success: false, message: "Vui lòng đăng nhập" };
+      return { success: false, message: "Con yêu dấu, hãy đăng ký tài khoản để Ta đồng hành cùng con nhé!" };
     }
 
     try {
-      // Upload file to storage
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      let processedFile = file;
       const mediaType = file.type.startsWith("video/") ? "video" : "image";
+      
+      // Compress image before upload (skip videos)
+      if (mediaType === "image") {
+        try {
+          const originalSize = file.size;
+          processedFile = await compressImage(file, {
+            maxWidth: 1080,
+            maxHeight: 1920,
+            quality: 0.9,
+            format: 'webp'
+          });
+          console.log(`Story image compressed: ${formatFileSize(originalSize)} → ${formatFileSize(processedFile.size)}`);
+        } catch (compressError) {
+          console.warn("Story image compression failed, using original:", compressError);
+        }
+      }
+      
+      // Upload file to storage
+      const fileExt = processedFile.name.split(".").pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("stories")
-        .upload(fileName, file);
+        .upload(fileName, processedFile);
 
       if (uploadError) throw uploadError;
 

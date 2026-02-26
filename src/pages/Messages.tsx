@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { MessageCircle, Users, Search, ArrowLeft } from "lucide-react";
+import { MessageCircle, Users, Search, ArrowLeft, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
@@ -24,14 +25,19 @@ import angelAvatar from "@/assets/angel-avatar.png";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
-import { LightGate } from "@/components/LightGate";
 import { Loader2 } from "lucide-react";
+import { UserLiXiCelebrationPopup } from "@/components/UserLiXiCelebrationPopup";
 
 const Messages = () => {
   const { userId: conversationUserId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [isSending, setIsSending] = useState(false);
+
+  const handleOpenLiXi = useCallback((notificationId: string) => {
+    window.dispatchEvent(new CustomEvent("open-lixi-popup", { detail: notificationId }));
+  }, []);
   const [partnerProfile, setPartnerProfile] = useState<{
     display_name: string;
     avatar_url: string | null;
@@ -91,6 +97,27 @@ const Messages = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isPartnerTyping]);
 
+  // Guest view - show login prompt
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background flex items-center justify-center">
+        <Card className="p-8 text-center bg-background-pure max-w-md mx-4">
+          <MessageCircle className="w-16 h-16 text-primary/30 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground/70 mb-2">
+            {t("signup.messagesGuest")}
+          </h3>
+          <p className="text-sm text-foreground-muted mb-4">
+            {t("signup.messagesGuestDesc")}
+          </p>
+          <Button onClick={() => navigate("/auth")} className="gap-2">
+            <LogIn className="w-4 h-4" />
+            {t("signup.loginButton")}
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   const handleSendMessage = async (content: string, imageUrl?: string) => {
     if (!conversationUserId) return;
 
@@ -137,7 +164,7 @@ const Messages = () => {
   // Conversation list view (no userId selected)
   if (!conversationUserId) {
     return (
-      <LightGate>
+        <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
         <div className="min-h-screen bg-gradient-to-b from-primary-pale via-background to-background">
           <header className="sticky top-0 z-50 bg-background-pure/95 backdrop-blur-lg border-b border-primary-pale shadow-sm">
             <div className="container mx-auto px-4 py-4">
@@ -272,7 +299,7 @@ const Messages = () => {
             )}
           </div>
         </div>
-      </LightGate>
+        </div>
     );
   }
 
@@ -280,8 +307,8 @@ const Messages = () => {
   const isOnline = isUserOnline(conversationUserId);
   const lastSeen = getLastSeen(conversationUserId);
 
-  return (
-    <LightGate>
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-pale/30 via-background to-background flex flex-col">
       <div className="min-h-screen bg-gradient-to-b from-primary-pale/30 via-background to-background flex flex-col">
         <ConversationHeader
           partnerId={conversationUserId}
@@ -318,6 +345,7 @@ const Messages = () => {
                     onReply={handleReply}
                     onDelete={deleteMessage}
                     replyToMessage={getReplyToMessage(msg.reply_to_id)}
+                    onOpenLiXi={handleOpenLiXi}
                   />
                 ))
               )}
@@ -346,7 +374,10 @@ const Messages = () => {
           onCancelReply={() => setReplyTo(null)}
         />
       </div>
-    </LightGate>
+
+      {/* Li Xi Celebration Popup */}
+      <UserLiXiCelebrationPopup />
+    </div>
   );
 };
 

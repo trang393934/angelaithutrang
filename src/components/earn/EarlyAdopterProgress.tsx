@@ -58,7 +58,7 @@ export function EarlyAdopterProgress() {
           </div>
           
           <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-            <img src={camlyCoinLogo} alt="Camly Coin" className="w-10 h-10" />
+            <img src={camlyCoinLogo} alt="Camly Coin" className="w-10 h-10 rounded-full" />
             <div>
               <p className="text-sm text-muted-foreground">{t("earlyAdopter.rewardReceived")}</p>
               <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
@@ -128,7 +128,9 @@ export function EarlyAdopterProgress() {
           
           <Progress 
             value={progress} 
-            className="h-3 bg-amber-100 dark:bg-amber-900/50"
+            className={`h-3 bg-amber-100 dark:bg-amber-900/50 ${
+              progress >= 100 ? 'animate-pulse [&>div]:bg-gradient-to-r [&>div]:from-emerald-400 [&>div]:to-teal-500' : ''
+            }`}
           />
           
           {questionsRemaining > 0 && (
@@ -141,7 +143,7 @@ export function EarlyAdopterProgress() {
         {/* Reward Preview */}
         <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
           <div className="relative">
-            <img src={camlyCoinLogo} alt="Camly Coin" className="w-10 h-10" />
+            <img src={camlyCoinLogo} alt="Camly Coin" className="w-10 h-10 rounded-full" />
             <Sparkles className="absolute -top-1 -right-1 h-4 w-4 text-amber-500" />
           </div>
           <div className="flex-1">

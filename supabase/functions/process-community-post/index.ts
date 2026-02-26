@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { submitAndScorePPLPAction, PPLP_ACTION_TYPES, generateContentHash } from "../_shared/pplp-helper.ts";
+import { checkAntiSybil, applyAgeGateReward, extractIpHash, registerDeviceAndIp } from "../_shared/anti-sybil.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +9,8 @@ const corsHeaders = {
 };
 
 const LIKES_THRESHOLD = 5;
-const POST_REWARD = 3000;
+const POST_CREATION_REWARD = 1000;  // Đăng bài mới: 1000 coin
+const POST_ENGAGEMENT_REWARD = 500; // Bài đạt 5+ like: +500 coin
 const SHARE_REWARD = 500;
 const COMMENT_REWARD = 500;
 const COMMENT_MIN_LENGTH = 50;
@@ -57,7 +60,32 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Get action and other params from body (NOT userId)
-    const { action, postId, content, imageUrl, imageUrls } = await req.json();
+    const { action, postId, content, imageUrl, imageUrls, device_hash } = await req.json();
+
+    // ============= ANTI-SYBIL: Account Age Gate (chỉ cho reward actions) =============
+    let antiSybil: Awaited<ReturnType<typeof checkAntiSybil>> | null = null;
+    if (['create_post', 'add_comment', 'share_post'].includes(action)) {
+      antiSybil = await checkAntiSybil(supabase, userId, action);
+
+      // Register device fingerprint + IP hash (fire and forget)
+      const ipHash = await extractIpHash(req);
+      registerDeviceAndIp(supabase, userId, device_hash || null, ipHash);
+
+      if (!antiSybil.allowed) {
+        // Vẫn cho đăng bài nhưng không thưởng nếu bị frozen
+        // Chỉ chặn hoàn toàn nếu bị suspended
+        if (antiSybil.is_suspended) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              message: antiSybil.reason || "Tài khoản đang bị đình chỉ",
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+    // ============= End Anti-Sybil Check =============
 
     console.log(`Processing action: ${action} for user: ${userId}`);
 
@@ -137,14 +165,62 @@ serve(async (req) => {
       }
       // ===== END TEMPLATE DETECTION =====
       
+      // ===== SLUG GENERATION =====
+      const generateSlug = (text: string): string => {
+        // NFD normalization: remove all diacritics + handle đ/Đ
+        let slug = text.trim().substring(0, 80)
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d")
+          .replace(/Đ/g, "D");
+        slug = slug.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '').replace(/_{2,}/g, '_').replace(/^_|_$/g, '');
+        if (!slug) return 'post';
+        if (slug.length > 60) {
+          const trimmed = slug.substring(0, 60);
+          const lastUnderscore = trimmed.lastIndexOf('_');
+          slug = lastUnderscore > 10 ? trimmed.substring(0, lastUnderscore) : trimmed;
+        }
+        return slug;
+      };
+
+      let postSlug = generateSlug(content.substring(0, 80));
+      if (!postSlug) postSlug = `post_${Date.now()}`;
+
+      // Check for duplicate slugs for this user
+      const { data: existingSlugs } = await supabase
+        .from("community_posts")
+        .select("slug")
+        .eq("user_id", userId)
+        .not("slug", "is", null);
+
+      const slugSet = new Set((existingSlugs || []).map((s: { slug: string | null }) => s.slug));
+      if (slugSet.has(postSlug)) {
+        const baseSlug = postSlug;
+        let found = false;
+        // Try _2 to _51
+        for (let i = 2; i <= 51; i++) {
+          if (!slugSet.has(`${baseSlug}_${i}`)) { postSlug = `${baseSlug}_${i}`; found = true; break; }
+        }
+        // Random fallback
+        if (!found) {
+          for (let i = 0; i < 5; i++) {
+            const suffix = Math.random().toString(36).substring(2, 6);
+            if (!slugSet.has(`${baseSlug}_${suffix}`)) { postSlug = `${baseSlug}_${suffix}`; found = true; break; }
+          }
+        }
+        if (!found) postSlug = `${baseSlug}_${Date.now().toString(36).slice(-6)}`;
+      }
+      // ===== END SLUG GENERATION =====
+
       // Create the post
       const { data: newPost, error: postError } = await supabase
         .from("community_posts")
         .insert({
           user_id: userId,
           content,
-          image_url: primaryImageUrl, // Keep for backward compatibility
-          image_urls: finalImageUrls, // New array field
+          image_url: primaryImageUrl,
+          image_urls: finalImageUrls,
+          slug: postSlug,
         })
         .select()
         .single();
@@ -160,13 +236,12 @@ serve(async (req) => {
       let coinsEarned = 0;
       let rewarded = false;
       
-      // Award immediate post creation reward (e.g., 100 coins for posting)
-      const POST_CREATION_REWARD = 100;
-      
-      if (postsRewarded < MAX_POSTS_REWARDED_PER_DAY) {
-        await supabase.rpc("add_camly_coins", {
+      // Award immediate post creation reward: 1000 coins for posting
+      const ageGatedPostReward = antiSybil ? applyAgeGateReward(POST_CREATION_REWARD, antiSybil.reward_multiplier) : POST_CREATION_REWARD;
+      if (postsRewarded < MAX_POSTS_REWARDED_PER_DAY && ageGatedPostReward > 0) {
+        const { data: rewardResult } = await supabase.rpc("add_pending_or_instant_reward", {
           _user_id: userId,
-          _amount: POST_CREATION_REWARD,
+          _amount: ageGatedPostReward,
           _transaction_type: "community_support",
           _description: "Đăng bài viết mới",
         });
@@ -180,9 +255,42 @@ serve(async (req) => {
           })
           .eq("id", tracking.id);
         
-        coinsEarned = POST_CREATION_REWARD;
+        coinsEarned = ageGatedPostReward;
         rewarded = true;
-        console.log(`Post creation reward given to user ${userId}: ${POST_CREATION_REWARD} coins`);
+        console.log(`Post creation reward given to user ${userId}: ${ageGatedPostReward} coins (age gate: x${antiSybil?.reward_multiplier || 1})`);
+
+        // ============= PPLP Integration (Real-time scoring for FUN Money) =============
+        const pplpResult = await submitAndScorePPLPAction(supabase, {
+          action_type: PPLP_ACTION_TYPES.POST_CREATE,
+          actor_id: userId,
+          target_id: newPost.id,
+          metadata: {
+            post_id: newPost.id,
+            content_length: content.length,
+            image_count: finalImageUrls.length,
+          },
+          impact: {
+            scope: 'group',
+            reach_count: 1,
+            quality_indicators: finalImageUrls.length > 0 ? ['has_media'] : [],
+          },
+          integrity: {
+            content_hash: generateContentHash(content),
+            source_verified: true,
+          },
+          evidences: [{
+            evidence_type: 'post_content',
+            content_hash: generateContentHash(content),
+            metadata: { post_id: newPost.id }
+          }],
+          reward_amount: POST_CREATION_REWARD,
+          content_length: content.length,
+        });
+        
+        if (pplpResult.success) {
+          console.log(`[PPLP] Post creation scored: ${pplpResult.action_id}, FUN reward: ${pplpResult.reward}`);
+        }
+        // ============= End PPLP Integration =============
       }
 
       return new Response(
@@ -246,10 +354,10 @@ serve(async (req) => {
           const postsRewarded = tracking?.posts_rewarded || 0;
 
           if (postsRewarded < MAX_POSTS_REWARDED_PER_DAY) {
-            // Award post owner
+            // Award post owner: 500 coin for 5+ likes
             await supabase.rpc("add_camly_coins", {
               _user_id: post.user_id,
-              _amount: POST_REWARD,
+              _amount: POST_ENGAGEMENT_REWARD,
               _transaction_type: "engagement_reward",
               _description: `Bài viết đạt ${LIKES_THRESHOLD}+ lượt thích`,
             });
@@ -257,7 +365,7 @@ serve(async (req) => {
             // Mark post as rewarded
             await supabase
               .from("community_posts")
-              .update({ is_rewarded: true, reward_amount: POST_REWARD })
+              .update({ is_rewarded: true, reward_amount: POST_ENGAGEMENT_REWARD })
               .eq("id", postId);
 
             // Update daily tracking
@@ -265,11 +373,34 @@ serve(async (req) => {
               .from("daily_reward_tracking")
               .update({
                 posts_rewarded: postsRewarded + 1,
-                total_coins_today: (tracking?.total_coins_today || 0) + POST_REWARD,
+                total_coins_today: (tracking?.total_coins_today || 0) + POST_ENGAGEMENT_REWARD,
               })
               .eq("id", tracking.id);
 
-            console.log(`Post reward given to user ${post.user_id}`);
+            console.log(`Post engagement reward given to user ${post.user_id}`);
+
+            // ============= PPLP Integration: Post engagement (5+ likes) =============
+            submitAndScorePPLPAction(supabase, {
+              action_type: PPLP_ACTION_TYPES.POST_ENGAGEMENT,
+              actor_id: post.user_id,
+              target_id: postId,
+              metadata: {
+                post_id: postId,
+                likes_count: newLikesCount,
+              },
+              impact: {
+                scope: 'group',
+                reach_count: newLikesCount,
+                quality_indicators: ['community_endorsed'],
+              },
+              integrity: {
+                source_verified: true,
+              },
+              reward_amount: POST_ENGAGEMENT_REWARD,
+            }).then(r => {
+              if (r.success) console.log(`[PPLP] Post engagement scored: ${r.action_id}, FUN: ${r.reward}`);
+            }).catch(e => console.warn('[PPLP] Post engagement error:', e));
+            // ============= End PPLP Integration =============
 
             return new Response(
               JSON.stringify({
@@ -277,7 +408,7 @@ serve(async (req) => {
                 liked: true,
                 newLikesCount,
                 postRewarded: true,
-                message: `Bài viết đã đạt ${LIKES_THRESHOLD} like! Tác giả nhận ${POST_REWARD} Camly Coin`,
+                message: `Bài viết đã đạt ${LIKES_THRESHOLD} like! Tác giả nhận ${POST_ENGAGEMENT_REWARD} Camly Coin`,
               }),
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
@@ -395,6 +526,29 @@ serve(async (req) => {
 
       console.log(`Share rewards given to sharer ${userId} and post owner ${post.user_id}`);
 
+      // ============= PPLP Integration: Share content =============
+      submitAndScorePPLPAction(supabase, {
+        action_type: PPLP_ACTION_TYPES.SHARE_CONTENT,
+        actor_id: userId,
+        target_id: postId,
+        metadata: {
+          post_id: postId,
+          shared_to: 'community',
+        },
+        impact: {
+          scope: 'platform',
+          reach_count: 1,
+          quality_indicators: ['social_share', 'light_spreading'],
+        },
+        integrity: {
+          source_verified: true,
+        },
+        reward_amount: SHARE_REWARD,
+      }).then(r => {
+        if (r.success) console.log(`[PPLP] Share scored: ${r.action_id}, FUN: ${r.reward}`);
+      }).catch(e => console.warn('[PPLP] Share error:', e));
+      // ============= End PPLP Integration =============
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -464,6 +618,38 @@ serve(async (req) => {
 
         console.log(`Comment reward given to user ${userId}`);
 
+        // ============= PPLP Integration (Real-time scoring for FUN Money) =============
+        const pplpResult = await submitAndScorePPLPAction(supabase, {
+          action_type: PPLP_ACTION_TYPES.COMMENT_CREATE,
+          actor_id: userId,
+          target_id: postId,
+          metadata: {
+            comment_id: newComment.id,
+            post_id: postId,
+            content_length: contentLength,
+          },
+          impact: {
+            scope: 'group',
+            quality_indicators: contentLength >= 100 ? ['detailed_comment'] : [],
+          },
+          integrity: {
+            content_hash: generateContentHash(content),
+            source_verified: true,
+          },
+          evidences: [{
+            evidence_type: 'comment_content',
+            content_hash: generateContentHash(content),
+            metadata: { post_id: postId }
+          }],
+          reward_amount: COMMENT_REWARD,
+          content_length: contentLength,
+        });
+        
+        if (pplpResult.success) {
+          console.log(`[PPLP] Comment scored: ${pplpResult.action_id}, FUN: ${pplpResult.reward}`);
+        }
+        // ============= End PPLP Integration =============
+
         return new Response(
           JSON.stringify({
             success: true,
@@ -499,7 +685,7 @@ serve(async (req) => {
       // Check if user owns the post
       const { data: post } = await supabase
         .from("community_posts")
-        .select("user_id")
+        .select("user_id, slug")
         .eq("id", postId)
         .single();
 
@@ -523,15 +709,91 @@ serve(async (req) => {
 
       console.log(`Editing post ${postId} with ${finalImageUrls.length} images`);
 
-      // Update the post with multiple images support
+      // ===== SLUG GOVERNANCE: generate new slug from edited content =====
+      const generateSlugForEdit = (text: string): string => {
+        let slug = text.trim().substring(0, 80)
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d")
+          .replace(/Đ/g, "D");
+        slug = slug.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '').replace(/_{2,}/g, '_').replace(/^_|_$/g, '');
+        if (!slug) return 'post';
+        if (slug.length > 60) {
+          const trimmed = slug.substring(0, 60);
+          const lastUnderscore = trimmed.lastIndexOf('_');
+          slug = lastUnderscore > 10 ? trimmed.substring(0, lastUnderscore) : trimmed;
+        }
+        return slug;
+      };
+
+      let newSlug = generateSlugForEdit(content.substring(0, 80));
+      if (!newSlug) newSlug = `post_${Date.now()}`;
+      const oldSlug = post.slug;
+
+      const updateData: Record<string, unknown> = {
+        content,
+        image_url: primaryImageUrl,
+        image_urls: finalImageUrls,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Only update slug if it changed
+      if (newSlug !== oldSlug) {
+        // ===== RATE LIMIT: max 3 slug changes per post per day =====
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const { count: slugChangesToday } = await supabase
+          .from("slug_history")
+          .select("id", { count: 'exact', head: true })
+          .eq("content_id", postId)
+          .gte("created_at", todayStart.toISOString());
+
+        if ((slugChangesToday || 0) >= 3) {
+          // Allow content edit but skip slug change
+          console.log(`Slug rate limit reached for post ${postId}: ${slugChangesToday} changes today`);
+        } else {
+          // Check for duplicate slugs for this user (exclude current post)
+          const { data: existingSlugs } = await supabase
+            .from("community_posts")
+            .select("slug")
+            .eq("user_id", userId)
+            .neq("id", postId);
+
+          const slugSet = new Set((existingSlugs || []).map((s: { slug: string }) => s.slug));
+          if (slugSet.has(newSlug)) {
+            const baseSlug = newSlug;
+            let found = false;
+            for (let i = 2; i <= 51; i++) {
+              if (!slugSet.has(`${baseSlug}_${i}`)) { newSlug = `${baseSlug}_${i}`; found = true; break; }
+            }
+            if (!found) {
+              for (let i = 0; i < 5; i++) {
+                const suffix = Math.random().toString(36).substring(2, 6);
+                if (!slugSet.has(`${baseSlug}_${suffix}`)) { newSlug = `${baseSlug}_${suffix}`; found = true; break; }
+              }
+            }
+            if (!found) newSlug = `${baseSlug}_${Date.now().toString(36).slice(-6)}`;
+          }
+
+          // Save old slug to history for 301 redirect
+          await supabase.from("slug_history").upsert({
+            user_id: userId,
+            content_type: 'post',
+            old_slug: oldSlug,
+            new_slug: newSlug,
+            content_id: postId,
+          }, { onConflict: 'content_id,old_slug' });
+
+          updateData.slug = newSlug;
+          console.log(`Slug governance: "${oldSlug}" → "${newSlug}" for post ${postId}`);
+        }
+      }
+      // ===== END SLUG GOVERNANCE =====
+
+      // Update the post
       const { data: updatedPost, error: updateError } = await supabase
         .from("community_posts")
-        .update({
-          content,
-          image_url: primaryImageUrl, // Keep for backward compatibility
-          image_urls: finalImageUrls, // New array field
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", postId)
         .select()
         .single();

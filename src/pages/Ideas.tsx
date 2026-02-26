@@ -24,7 +24,7 @@ import {
   Gift,
 } from "lucide-react";
 import camlyCoinLogo from "@/assets/camly-coin-logo.png";
-import { LightGate } from "@/components/LightGate";
+
 
 interface Idea {
   id: string;
@@ -50,17 +50,27 @@ export default function Ideas() {
   const [category, setCategory] = useState("");
 
   const fetchIdeas = async () => {
-    if (!user) return;
-
     try {
-      const { data, error } = await supabase
-        .from("build_ideas")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      if (!user) {
+        // Guests can see approved/implemented ideas
+        const { data, error } = await supabase
+          .from("build_ideas")
+          .select("*")
+          .in("status", ["approved", "implemented"])
+          .order("created_at", { ascending: false });
+        
+        if (error) throw error;
+        setIdeas(data || []);
+      } else {
+        // Logged-in users see all their ideas + approved ones
+        const { data, error } = await supabase
+          .from("build_ideas")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setIdeas(data || []);
+        if (error) throw error;
+        setIdeas(data || []);
+      }
     } catch (error) {
       console.error("Error fetching ideas:", error);
     } finally {
@@ -69,11 +79,7 @@ export default function Ideas() {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchIdeas();
-    } else {
-      setIsLoading(false);
-    }
+    fetchIdeas();
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -147,42 +153,8 @@ export default function Ideas() {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8 pt-28">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-              <Lightbulb className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold">Góp Ý Tưởng</h1>
-            <p className="text-muted-foreground">
-              Chia sẻ ý tưởng để cùng xây dựng Angel AI tốt hơn
-            </p>
-            <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400">
-              <img src={camlyCoinLogo} alt="Camly Coin" className="w-6 h-6" />
-              <span className="font-medium">Nhận 1000 Camly Coin khi ý tưởng được duyệt!</span>
-            </div>
-            <Button
-              asChild
-              size="lg"
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
-            >
-              <Link to="/auth">
-                Đăng nhập ngay
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
-    <LightGate>
+    <>
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
 
@@ -212,7 +184,7 @@ export default function Ideas() {
                     Mỗi ý tưởng hay được Admin duyệt sẽ nhận <strong>1000 Camly Coin</strong>
                   </p>
                 </div>
-                <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12" />
+                <img src={camlyCoinLogo} alt="Camly Coin" className="w-12 h-12 rounded-full" />
               </CardContent>
             </Card>
 
@@ -350,7 +322,7 @@ export default function Ideas() {
 
                       {idea.is_rewarded && idea.reward_amount && (
                         <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300">
-                          <img src={camlyCoinLogo} alt="Camly Coin" className="w-5 h-5" />
+                          <img src={camlyCoinLogo} alt="Camly Coin" className="w-5 h-5 rounded-full" />
                           <span className="text-sm font-medium">
                             +{idea.reward_amount.toLocaleString()} Camly Coin
                           </span>
@@ -373,6 +345,6 @@ export default function Ideas() {
         </main>
         <Footer />
       </div>
-    </LightGate>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SignupPromptDialog } from "@/components/SignupPromptDialog";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -72,6 +73,7 @@ const ContentWriter = () => {
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [generatedContent, setGeneratedContent] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
 
   const getCategoryPrompt = (categoryId: string) => {
     const prompts: Record<string, string> = {
@@ -94,7 +96,7 @@ const ContentWriter = () => {
     }
 
     if (!user) {
-      toast.error("Vui lòng đăng nhập để sử dụng tính năng này");
+      setShowSignupPrompt(true);
       return;
     }
 
@@ -155,6 +157,7 @@ Hãy viết content hoàn chỉnh, sẵn sàng sử dụng. Không cần giải 
   };
 
   return (
+    <>
     <div className="min-h-screen bg-background">
       <Header />
       
@@ -423,6 +426,9 @@ Hãy viết content hoàn chỉnh, sẵn sàng sử dụng. Không cần giải 
 
       <Footer />
     </div>
+
+    <SignupPromptDialog open={showSignupPrompt} onOpenChange={setShowSignupPrompt} />
+    </>
   );
 };
 

@@ -74,7 +74,7 @@ export function GratitudeJournal() {
           <h3 className="text-lg font-semibold text-indigo-800 mb-2">Nhật Ký Tối</h3>
           <p className="text-indigo-600/70">
             Mở cửa sau 20:00 (8 giờ tối) mỗi ngày.<br />
-            Viết biết ơn hoặc sám hối để nhận 5.000 - 9.000 Camly Coin! 🌙
+            Viết biết ơn hoặc sám hối để nhận 2.000 - 3.000 Camly Coin! 🌙
           </p>
         </CardContent>
       </Card>
@@ -89,7 +89,7 @@ export function GratitudeJournal() {
           Nhật Ký Tối
         </CardTitle>
         <CardDescription className="text-indigo-600/70">
-          Còn {journalsRemaining} bài • 5.000 - 9.000 Camly Coin/bài
+          Còn {journalsRemaining} bài • 2.000 - 3.000 Camly Coin/bài
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

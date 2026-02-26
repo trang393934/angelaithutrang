@@ -8,6 +8,10 @@ import { ReactionPicker } from "./EmojiPicker";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import angelAvatar from "@/assets/angel-avatar.png";
+import { TipMessageCard } from "./TipMessageCard";
+import { TipReceiptMessageCard } from "./TipReceiptMessageCard";
+import { LiXiMessageCard } from "./LiXiMessageCard";
+import { LiXiReceiptCard } from "./LiXiReceiptCard";
 
 interface MessageBubbleProps {
   message: {
@@ -22,12 +26,16 @@ interface MessageBubbleProps {
     is_deleted?: boolean;
     sender_display_name?: string;
     sender_avatar_url?: string | null;
+    message_type?: string | null;
+    tip_gift_id?: string | null;
+    metadata?: any;
   };
   isOwn: boolean;
   onReaction?: (messageId: string, emoji: string) => void;
   onReply?: (message: any) => void;
   onDelete?: (messageId: string) => void;
   replyToMessage?: { content: string; sender_display_name: string } | null;
+  onOpenLiXi?: (notificationId: string) => void;
 }
 
 export function MessageBubble({
@@ -37,9 +45,11 @@ export function MessageBubble({
   onReply,
   onDelete,
   replyToMessage,
+  onOpenLiXi,
 }: MessageBubbleProps) {
   const [showActions, setShowActions] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
+  const [reactionsLocked, setReactionsLocked] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -70,10 +80,12 @@ export function MessageBubble({
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => {
         setShowActions(false);
-        setShowReactions(false);
+        if (!reactionsLocked) {
+          setShowReactions(false);
+        }
       }}
     >
-      <div className={`flex gap-2 max-w-[75%] ${isOwn ? "flex-row-reverse" : ""}`}>
+      <div className={`flex gap-2 max-w-[85%] sm:max-w-[80%] ${isOwn ? "flex-row-reverse" : ""}`}>
         {/* Avatar */}
         {!isOwn && (
           <Avatar className="w-8 h-8 shrink-0 mt-auto">
@@ -112,7 +124,11 @@ export function MessageBubble({
                   )}
                 >
                   <button
-                    onClick={() => setShowReactions(!showReactions)}
+                    onClick={() => {
+                      const next = !showReactions;
+                      setShowReactions(next);
+                      setReactionsLocked(next);
+                    }}
                     className="p-1.5 rounded-full bg-background-pure shadow border border-primary-pale hover:bg-primary/10 transition-colors"
                   >
                     <span className="text-sm">😊</span>
@@ -143,15 +159,15 @@ export function MessageBubble({
               )}
             </AnimatePresence>
 
-            {/* Reaction picker popup */}
+            {/* Reaction picker popup - below message */}
             <AnimatePresence>
               {showReactions && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
+                  exit={{ opacity: 0, y: -5 }}
                   className={cn(
-                    "absolute -top-12 z-10",
+                    "absolute -bottom-12 z-10",
                     isOwn ? "right-0" : "left-0"
                   )}
                 >
@@ -159,6 +175,7 @@ export function MessageBubble({
                     onReactionSelect={(emoji) => {
                       onReaction?.(message.id, emoji);
                       setShowReactions(false);
+                      setReactionsLocked(false);
                     }}
                     existingReactions={reactions}
                   />
@@ -183,16 +200,40 @@ export function MessageBubble({
 
             {/* Text content */}
             {message.content && (
-              <div
-                className={cn(
-                  "px-4 py-3 rounded-2xl transition-all",
-                  isOwn
-                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-br-sm"
-                    : "bg-muted rounded-bl-sm"
-                )}
-              >
-                <p className="text-base sm:text-lg whitespace-pre-wrap break-words leading-relaxed message-content">{message.content}</p>
-              </div>
+              message.message_type === "tet_lixi" ? (
+                <LiXiMessageCard
+                  camlyAmount={Number(message.metadata?.camly_amount) || 0}
+                  funAmount={Number(message.metadata?.fun_amount) || 0}
+                  notificationId={message.metadata?.notification_id || null}
+                  onOpenLiXi={onOpenLiXi}
+                />
+              ) : message.message_type === "tet_lixi_receipt" ? (
+                <LiXiReceiptCard
+                  camlyAmount={Number(message.metadata?.camly_amount) || 0}
+                  funAmount={Number(message.metadata?.fun_amount) || 0}
+                  txHash={message.metadata?.tx_hash || ""}
+                  bscscanUrl={message.metadata?.bscscan_url || ""}
+                />
+              ) : message.message_type === "tip_receipt" ? (
+                <TipReceiptMessageCard metadata={message.metadata || {}} />
+              ) : message.message_type === "tip" ? (
+                <TipMessageCard
+                  content={message.content}
+                  tipGiftId={message.tip_gift_id}
+                  receiptPublicId={null}
+                />
+              ) : (
+                <div
+                  className={cn(
+                    "px-5 py-4 rounded-2xl transition-all",
+                    isOwn
+                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-br-sm"
+                      : "bg-muted rounded-bl-sm"
+                  )}
+                >
+                  <p className="text-[17px] sm:text-xl whitespace-pre-wrap break-words leading-relaxed message-content">{message.content}</p>
+                </div>
+              )
             )}
 
             {/* Reactions display */}

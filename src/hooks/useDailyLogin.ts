@@ -49,6 +49,8 @@ export function useDailyLogin() {
 
       const result = loginResult?.[0];
 
+      // DAILY_LOGIN only earns Camly Coin, not eligible for FUN Money minting
+
       // Fetch login history for calendar display (last 30 days)
       const { data: historyData } = await supabase
         .from("daily_login_tracking")
