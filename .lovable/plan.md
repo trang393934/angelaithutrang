@@ -1,30 +1,31 @@
 
 
-## Plan: Di chuyen muc "Import tu Google Drive" len sau "Upload Tai Lieu Moi"
+## Plan: Xoa video nen — dua ve nen tu nhien Angel AI
 
-### Hien trang
+### Pham vi thay doi
 
-Thu tu hien tai trong AdminKnowledge:
-1. Upload Tai Lieu Moi (dong 1066-1163)
-2. Tai lieu PPLP (dong 1165-1389)
-3. **Import tu Google Drive** (dong 1391-1543)
-4. Tim Kiem & Loc (dong 1545+)
+Xoa toan bo component video nen va nut chon video nen khoi tat ca cac trang va thiet bi.
 
-### Thay doi
+### Cac file can sua (xoa import + xoa JSX)
 
-Di chuyen **toan bo block "Import tu Google Drive"** (dong 1391-1543) len **ngay sau block "Upload Tai Lieu Moi"** (sau dong 1163), truoc block "Tai lieu PPLP" (dong 1165).
+| # | File | Thay doi |
+|---|---|---|
+| 1 | `src/pages/Index.tsx` | Xoa import `ValentineVideoBackground`, xoa `<ValentineVideoBackground />` |
+| 2 | `src/pages/Community.tsx` | Xoa import `ValentineVideoBackground`, xoa `<ValentineVideoBackground />` |
+| 3 | `src/pages/UserProfile.tsx` | Xoa import `ValentineVideoBackground`, xoa `<ValentineVideoBackground />` |
+| 4 | `src/components/Header.tsx` | Xoa import `VideoThemeSelector`, xoa 2 cho `<VideoThemeSelector variant="header" />` (desktop + mobile) |
 
-Thu tu moi:
-1. Upload Tai Lieu Moi
-2. **Import tu Google Drive** ← di chuyen len day
-3. Tai lieu PPLP
-4. Tim Kiem & Loc
+### Cac file xoa hoan toan
 
-### Chi tiet ky thuat
+| # | File | Ly do |
+|---|---|---|
+| 5 | `src/components/ValentineVideoBackground.tsx` | Khong con dung |
+| 6 | `src/components/VideoThemeSelector.tsx` | Khong con dung |
 
-- **File sua:** `src/pages/AdminKnowledge.tsx`
-- Cat block dong 1391-1543 (Google URL Import)
-- Dan vao sau dong 1163 (ket thuc Upload Form)
-- **0 file moi, 0 thay doi logic, 0 thay doi database**
-- Chi thay doi vi tri JSX, khong anh huong chuc nang
+### Ket qua
+
+- Video nen bi xoa hoan toan tren moi trang, moi thiet bi
+- Nut chon video (bieu tuong Film) bi xoa khoi Header
+- Nen trang tro ve nen tu nhien cua Angel AI (gradient/mau nen mac dinh)
+- **0 file moi, 0 thay doi database**
 
