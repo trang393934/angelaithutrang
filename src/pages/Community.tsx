@@ -30,7 +30,7 @@ import { BackToTopButton } from "@/components/BackToTopButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
+
 
 
 const Community = () => {
@@ -154,8 +154,6 @@ const Community = () => {
           <CommunityHeader />
         </div>
 
-        {/* Valentine Background Videos - left & right */}
-        <ValentineVideoBackground />
 
         {/* Content area - fills remaining height, above video */}
         <div className="flex-1 flex overflow-hidden relative z-10">
