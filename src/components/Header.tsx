@@ -30,7 +30,7 @@ import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { Web3WalletButton } from "@/components/Web3WalletButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { GlobalSearch } from "@/components/GlobalSearch";
-import { VideoThemeSelector } from "@/components/VideoThemeSelector";
+
 import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 import angelAvatar from "@/assets/angel-avatar.png";
 
@@ -181,8 +181,6 @@ export const Header = () => {
 
           {/* Auth Buttons - More compact design */}
           <div className="hidden lg:flex items-center gap-0.5 lg:gap-1 xl:gap-1.5 shrink-0">
-            {/* Music & Video Theme Selectors */}
-            <VideoThemeSelector variant="header" />
 
             {/* Language Selector - Compact on lg */}
             <LanguageSelector compact />
@@ -299,8 +297,6 @@ export const Header = () => {
 
           {/* Mobile Actions - Always visible on mobile */}
           <div className="flex lg:hidden items-center gap-2 shrink-0">
-            {/* Mobile Video Theme Selector */}
-            <VideoThemeSelector variant="header" />
             
             {/* Mobile Language Selector */}
             <LanguageSelector />

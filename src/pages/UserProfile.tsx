@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getProfilePath } from "@/lib/profileUrl";
 import { Header } from "@/components/Header";
-import { ValentineVideoBackground } from "@/components/ValentineVideoBackground";
+
 
 import { 
   ArrowLeft, UserPlus, UserCheck, MessageCircle, Loader2, Clock, 
@@ -610,8 +610,6 @@ const UserProfile = () => {
   return (
     <div className="min-h-screen relative" style={{ background: "#f0f2f5" }}>
 
-      {/* ── Video Background ─────────────────────────────────────────────── */}
-      <ValentineVideoBackground />
 
 
       {/* ── Overlay for readability — REMOVED (no overlay on video bg) ── */}
