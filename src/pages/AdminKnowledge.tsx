@@ -1162,6 +1162,160 @@ const AdminKnowledge = () => {
           </form>
         </div>
 
+        {/* Google URL Import */}
+        <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
+          <h2 className="font-serif text-xl font-semibold text-primary-deep mb-4 flex items-center gap-2">
+            <LinkIcon className="w-5 h-5" />
+            Import từ Google Drive
+            <span className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Mới</span>
+          </h2>
+
+          <div className="bg-primary-pale/20 rounded-xl p-4 mb-4">
+            <p className="text-sm text-foreground-muted flex items-start gap-2">
+              <ExternalLink className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>
+                Hỗ trợ <strong>Google Docs</strong> và <strong>Google Sheets</strong>. 
+                File phải được chia sẻ công khai (Anyone with the link can view).
+              </span>
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground-muted mb-1">
+                URL Google Docs/Sheets *
+              </label>
+              <input
+                type="url"
+                value={googleUrlForm.url}
+                onChange={(e) => {
+                  setGoogleUrlForm(prev => ({ ...prev, url: e.target.value }));
+                  setGooglePreview(null);
+                }}
+                placeholder="https://docs.google.com/document/d/... hoặc https://docs.google.com/spreadsheets/d/..."
+                className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                disabled={isFetchingGoogle || isUploading}
+              />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground-muted mb-1">
+                  Tiêu đề *
+                </label>
+                <input
+                  type="text"
+                  value={googleUrlForm.title}
+                  onChange={(e) => setGoogleUrlForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Nhập tiêu đề tài liệu"
+                  className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  disabled={isFetchingGoogle || isUploading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground-muted mb-1">
+                  Thư mục
+                </label>
+                <select
+                  value={googleUrlForm.folderId || ""}
+                  onChange={(e) => setGoogleUrlForm(prev => ({ ...prev, folderId: e.target.value || null }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  disabled={isFetchingGoogle || isUploading}
+                >
+                  <option value="">-- Chưa phân loại --</option>
+                  {folders.map(folder => (
+                    <option key={folder.id} value={folder.id}>{folder.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground-muted mb-1">
+                Mô tả
+              </label>
+              <input
+                type="text"
+                value={googleUrlForm.description}
+                onChange={(e) => setGoogleUrlForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Mô tả ngắn về nội dung"
+                className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                disabled={isFetchingGoogle || isUploading}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleFetchGoogleUrl}
+                disabled={isFetchingGoogle || !googleUrlForm.url || isUploading}
+                className="flex-1 py-3 rounded-xl bg-primary-pale text-primary font-medium hover:bg-primary hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                {isFetchingGoogle ? (
+                  <>
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                    <span>Đang lấy dữ liệu...</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-5 h-5" />
+                    <span>Lấy & Xem Trước</span>
+                  </>
+                )}
+              </button>
+              
+              {googlePreview && (
+                <button
+                  type="button"
+                  onClick={handleSaveGoogleContent}
+                  disabled={isUploading || !googleUrlForm.title}
+                  className="flex-1 py-3 rounded-xl bg-sapphire-gradient text-white font-medium shadow-sacred hover:shadow-divine disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  {isUploading ? (
+                    <>
+                      <Sparkles className="w-5 h-5 animate-pulse" />
+                      <span>Đang lưu...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Lưu Tài Liệu</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Preview */}
+            {googlePreview && (
+              <div className="mt-4 border border-primary-pale rounded-xl overflow-hidden">
+                <div className="bg-primary-pale/30 px-4 py-2 flex items-center justify-between">
+                  <span className="font-medium text-primary-deep flex items-center gap-2">
+                    {googlePreview.sourceType === 'google_docs' ? '📄 Google Docs' : '📊 Google Sheets'}
+                    <span className="text-xs text-foreground-muted">
+                      ({new Blob([googlePreview.content]).size.toLocaleString()} bytes)
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => setGooglePreview(null)}
+                    className="p-1 rounded hover:bg-white/50 transition-colors"
+                  >
+                    <X className="w-4 h-4 text-foreground-muted" />
+                  </button>
+                </div>
+                <div className="p-4 max-h-64 overflow-auto bg-gray-50">
+                  <pre className="text-xs text-foreground-muted whitespace-pre-wrap font-mono">
+                    {googlePreview.content.slice(0, 2000)}
+                    {googlePreview.content.length > 2000 && (
+                      <span className="text-primary">... (còn {(googlePreview.content.length - 2000).toLocaleString()} ký tự)</span>
+                    )}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* PPLP Documents Section */}
         <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -1386,160 +1540,6 @@ const AdminKnowledge = () => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Google URL Import */}
-        <div className="bg-white rounded-2xl shadow-soft border border-primary-pale/50 p-6 mb-6">
-          <h2 className="font-serif text-xl font-semibold text-primary-deep mb-4 flex items-center gap-2">
-            <LinkIcon className="w-5 h-5" />
-            Import từ Google Drive
-            <span className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Mới</span>
-          </h2>
-
-          <div className="bg-primary-pale/20 rounded-xl p-4 mb-4">
-            <p className="text-sm text-foreground-muted flex items-start gap-2">
-              <ExternalLink className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>
-                Hỗ trợ <strong>Google Docs</strong> và <strong>Google Sheets</strong>. 
-                File phải được chia sẻ công khai (Anyone with the link can view).
-              </span>
-            </p>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground-muted mb-1">
-                URL Google Docs/Sheets *
-              </label>
-              <input
-                type="url"
-                value={googleUrlForm.url}
-                onChange={(e) => {
-                  setGoogleUrlForm(prev => ({ ...prev, url: e.target.value }));
-                  setGooglePreview(null);
-                }}
-                placeholder="https://docs.google.com/document/d/... hoặc https://docs.google.com/spreadsheets/d/..."
-                className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                disabled={isFetchingGoogle || isUploading}
-              />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground-muted mb-1">
-                  Tiêu đề *
-                </label>
-                <input
-                  type="text"
-                  value={googleUrlForm.title}
-                  onChange={(e) => setGoogleUrlForm(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Nhập tiêu đề tài liệu"
-                  className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  disabled={isFetchingGoogle || isUploading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground-muted mb-1">
-                  Thư mục
-                </label>
-                <select
-                  value={googleUrlForm.folderId || ""}
-                  onChange={(e) => setGoogleUrlForm(prev => ({ ...prev, folderId: e.target.value || null }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  disabled={isFetchingGoogle || isUploading}
-                >
-                  <option value="">-- Chưa phân loại --</option>
-                  {folders.map(folder => (
-                    <option key={folder.id} value={folder.id}>{folder.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground-muted mb-1">
-                Mô tả
-              </label>
-              <input
-                type="text"
-                value={googleUrlForm.description}
-                onChange={(e) => setGoogleUrlForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Mô tả ngắn về nội dung"
-                className="w-full px-4 py-2.5 rounded-xl border border-primary-pale bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                disabled={isFetchingGoogle || isUploading}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleFetchGoogleUrl}
-                disabled={isFetchingGoogle || !googleUrlForm.url || isUploading}
-                className="flex-1 py-3 rounded-xl bg-primary-pale text-primary font-medium hover:bg-primary hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                {isFetchingGoogle ? (
-                  <>
-                    <Sparkles className="w-5 h-5 animate-pulse" />
-                    <span>Đang lấy dữ liệu...</span>
-                  </>
-                ) : (
-                  <>
-                    <Eye className="w-5 h-5" />
-                    <span>Lấy & Xem Trước</span>
-                  </>
-                )}
-              </button>
-              
-              {googlePreview && (
-                <button
-                  type="button"
-                  onClick={handleSaveGoogleContent}
-                  disabled={isUploading || !googleUrlForm.title}
-                  className="flex-1 py-3 rounded-xl bg-sapphire-gradient text-white font-medium shadow-sacred hover:shadow-divine disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
-                >
-                  {isUploading ? (
-                    <>
-                      <Sparkles className="w-5 h-5 animate-pulse" />
-                      <span>Đang lưu...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      <span>Lưu Tài Liệu</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            {/* Preview */}
-            {googlePreview && (
-              <div className="mt-4 border border-primary-pale rounded-xl overflow-hidden">
-                <div className="bg-primary-pale/30 px-4 py-2 flex items-center justify-between">
-                  <span className="font-medium text-primary-deep flex items-center gap-2">
-                    {googlePreview.sourceType === 'google_docs' ? '📄 Google Docs' : '📊 Google Sheets'}
-                    <span className="text-xs text-foreground-muted">
-                      ({new Blob([googlePreview.content]).size.toLocaleString()} bytes)
-                    </span>
-                  </span>
-                  <button
-                    onClick={() => setGooglePreview(null)}
-                    className="p-1 rounded hover:bg-white/50 transition-colors"
-                  >
-                    <X className="w-4 h-4 text-foreground-muted" />
-                  </button>
-                </div>
-                <div className="p-4 max-h-64 overflow-auto bg-gray-50">
-                  <pre className="text-xs text-foreground-muted whitespace-pre-wrap font-mono">
-                    {googlePreview.content.slice(0, 2000)}
-                    {googlePreview.content.length > 2000 && (
-                      <span className="text-primary">... (còn {(googlePreview.content.length - 2000).toLocaleString()} ký tự)</span>
-                    )}
-                  </pre>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Search and Filter */}
